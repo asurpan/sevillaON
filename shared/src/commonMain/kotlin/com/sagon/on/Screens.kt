@@ -602,29 +602,6 @@ fun RadioPanel(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // 🔑 BOTÓN MAESTRO (PARA EXPORTAR / AJUSTES PRO)
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(0.05f))
-                            .border(1.dp, Color.White.copy(0.1f), CircleShape)
-                            .clickable { 
-                                isMasterControlsVisible = !isMasterControlsVisible
-                                triggerUiSound("switch")
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Rounded.VpnKey, 
-                            null, 
-                            tint = if (isMasterControlsVisible) LuxeColors.Gold else Color.White.copy(0.3f), 
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Spacer(Modifier.width(12.dp))
-
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -828,10 +805,23 @@ fun RadioPanel(
 
                                 Spacer(Modifier.height(8.dp))
 
-                                // 🏃 MODO ACTIVIDAD (Deportes)
+                                // 🏃 MODO ACTIVIDAD (Deportes) - PREMIUM NEXUS EDITION
                                 val activityPulseScale by infiniteTransition.animateFloat(
-                                    initialValue = 1f, targetValue = 1.15f,
+                                    initialValue = 1f, targetValue = 1.35f,
                                     animationSpec = infiniteRepeatable(tween(2000), RepeatMode.Reverse)
+                                )
+                                
+                                // --- 🔄 LÓGICA DE ICONO DINÁMICO (ALTERNANTE) ---
+                                val alternatingIcons = listOf(
+                                    Icons.Rounded.TwoWheeler, Icons.Rounded.PedalBike, Icons.Rounded.Terrain,
+                                    Icons.Rounded.Phishing, Icons.Rounded.DirectionsRun, Icons.Rounded.Landscape,
+                                    Icons.Rounded.Sailing, Icons.Rounded.Kayaking, Icons.Rounded.AirplanemodeActive
+                                )
+                                val iconIndex by infiniteTransition.animateValue(
+                                    initialValue = 0,
+                                    targetValue = alternatingIcons.size,
+                                    typeConverter = Int.VectorConverter,
+                                    animationSpec = infiniteRepeatable(tween(alternatingIcons.size * 1000, easing = LinearEasing))
                                 )
 
                                 Surface(
@@ -843,48 +833,53 @@ fun RadioPanel(
                                         }
                                         triggerUiSound("click") 
                                     },
-                                    color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f),
+                                    color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.08f),
                                     shape = CircleShape,
-                                    border = BorderStroke(1.5.dp, if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.1f)),
+                                    border = BorderStroke(2.dp, if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else LuxeColors.Gold.copy(0.3f)),
                                     modifier = Modifier
-                                        .size(44.dp)
+                                        .size(56.dp) // --- 💎 TAMAÑO ELITE ---
                                         .drawBehind {
+                                            val color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else LuxeColors.Gold.copy(0.2f)
+                                            drawCircle(
+                                                color.copy(0.15f),
+                                                radius = size.maxDimension / 2 * activityPulseScale,
+                                                style = Stroke(3.dp.toPx())
+                                            )
                                             if (state.activeProfile != ActivityProfile.NORMAL) {
                                                 drawCircle(
-                                                    LuxeColors.Gold.copy(0.15f),
-                                                    radius = size.maxDimension / 2 * activityPulseScale,
-                                                    style = Stroke(2.dp.toPx())
-                                                )
-                                                drawCircle(
-                                                    LuxeColors.Gold.copy(0.05f),
-                                                    radius = size.maxDimension / 2 * (activityPulseScale + 0.1f),
+                                                    LuxeColors.Gold.copy(0.1f),
+                                                    radius = size.maxDimension / 2 * (activityPulseScale + 0.2f),
                                                     style = Stroke(1.dp.toPx())
                                                 )
                                             }
                                         }
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        val icon = when(state.activeProfile) {
-                                            ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
-                                            ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
-                                            ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
-                                            ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
-                                            ActivityProfile.MONTANA -> Icons.Rounded.Landscape
-                                            ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
-                                            ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
-                                            ActivityProfile.VELA -> Icons.Rounded.Sailing
-                                            ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
-                                            ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
-                                            ActivityProfile.CAZA -> Icons.Rounded.Radar
-                                            ActivityProfile.PESCA -> Icons.Rounded.Phishing
-                                            ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
-                                            else -> Icons.Rounded.DirectionsRun
+                                        val icon = if (state.activeProfile == ActivityProfile.NORMAL) {
+                                            alternatingIcons[iconIndex % alternatingIcons.size]
+                                        } else {
+                                            when(state.activeProfile) {
+                                                ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
+                                                ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
+                                                ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
+                                                ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
+                                                ActivityProfile.MONTANA -> Icons.Rounded.Landscape
+                                                ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
+                                                ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
+                                                ActivityProfile.VELA -> Icons.Rounded.Sailing
+                                                ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
+                                                ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
+                                                ActivityProfile.CAZA -> Icons.Rounded.Radar
+                                                ActivityProfile.PESCA -> Icons.Rounded.Phishing
+                                                ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
+                                                else -> Icons.Rounded.DirectionsRun
+                                            }
                                         }
                                         Icon(
                                             icon, 
                                             null, 
-                                            tint = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.4f), 
-                                            modifier = Modifier.size(22.dp)
+                                            tint = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White, 
+                                            modifier = Modifier.size(28.dp)
                                         )
                                     }
                                 }
@@ -913,7 +908,7 @@ fun RadioPanel(
                                 Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(if(state.subtone == "0000") Icons.Rounded.LockOpen else Icons.Rounded.Lock, null, tint = if(state.subtone != "0000") LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(12.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text(if(state.subtone == "0000") "CTC: OFF" else "SUB: ${state.subtone}", color = Color.White.copy(0.6f), fontSize = 9.sp, fontWeight = FontWeight.Black)
+                                    Text(if(state.subtone == "0000") "CÓD. PRIVADO: OFF" else "CÓDIGO: ${state.subtone}", color = Color.White.copy(0.6f), fontSize = 9.sp, fontWeight = FontWeight.Black)
                                 }
                             }
 
@@ -1273,145 +1268,6 @@ fun RadioPanel(
             Spacer(Modifier.height(16.dp))
             
             Spacer(Modifier.height(32.dp))
-
-            // --- 🎚️ CONSOLA DE AJUSTES DESLIZABLE ---
-            AnimatedVisibility(
-                visible = isMasterControlsVisible,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color.White.copy(0.03f),
-                    border = BorderStroke(1.dp, Color.White.copy(0.08f))
-                ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Text("CONSOLA DE PRECISIÓN", color = LuxeColors.Gold, fontWeight = FontWeight.Black, fontSize = 12.sp, letterSpacing = 2.sp)
-                        Spacer(Modifier.height(24.dp))
-                        
-                        EliteSlider("SQUELCH", state.squelch) { onStateChange(state.copy(squelch = it)) }
-                        Spacer(Modifier.height(20.dp))
-                        EliteSlider("RF GAIN", state.rfGain) { onStateChange(state.copy(rfGain = it)) }
-                        
-                        Spacer(Modifier.height(32.dp))
-                        
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            EliteSwitch(Modifier.weight(1f), "R. BEEP", state.isRogerBeepEnabled) { onStateChange(state.copy(isRogerBeepEnabled = it)) }
-                            EliteSwitch(Modifier.weight(1f), "MANOS LIBRES", state.isVoxEnabled) { onStateChange(state.copy(isVoxEnabled = it)) }
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            EliteSwitch(Modifier.weight(1f), "MONITOR", state.isMonitorEnabled) { onStateChange(state.copy(isMonitorEnabled = it)) }
-                            EliteSwitch(Modifier.weight(1f), "ECHO DSP", state.isEchoEnabled) { onStateChange(state.copy(isEchoEnabled = it)) }
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        EliteSwitch(Modifier.fillMaxWidth(), "CONTROL DE RED (BOT)", state.isSystemVoiceEnabled) { onStateChange(state.copy(isSystemVoiceEnabled = it)) }
-                        
-                        AnimatedVisibility(visible = state.isVoxEnabled || state.isMonitorEnabled || state.isEchoEnabled) {
-                            Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(top = 20.dp)) {
-                                if (state.isVoxEnabled) EliteSlider("SENSIBILIDAD VOX", state.voxSensitivity) { onStateChange(state.copy(voxSensitivity = it)) }
-                                if (state.isMonitorEnabled) EliteSlider("VOLUMEN MONITOR", state.monitorVolume) { onStateChange(state.copy(monitorVolume = it)) }
-                                if (state.isEchoEnabled) EliteSlider("REVERB / ECO", state.echoDelay) { onStateChange(state.copy(echoDelay = it)) }
-                            }
-                        }
-
-                        Spacer(Modifier.height(32.dp))
-                        Text("SISTEMA Y SOPORTE", color = LuxeColors.Gold, fontWeight = FontWeight.Black, fontSize = 12.sp, letterSpacing = 2.sp)
-                        Spacer(Modifier.height(20.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // Ahorro de Batería (ECO)
-                            EliteSwitch(Modifier.weight(1f), "MODO ECO", state.isEcoMode) { onStateChange(state.copy(isEcoMode = it)) }
-                            
-                            // Sin Restricciones (Ayuda / Guía)
-                            Surface(
-                                onClick = { onShowHelp() },
-                                modifier = Modifier.weight(1.5f).height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                color = LuxeColors.ElectricBlue.copy(0.1f),
-                                border = BorderStroke(1.dp, LuxeColors.ElectricBlue.copy(0.4f))
-                            ) {
-                                Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    Icon(Icons.Rounded.BatteryChargingFull, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("SIN RESTRICCIONES", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(12.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // Mapa Radar (Movido aquí)
-                            Surface(
-                                onClick = { onPendingDialogChange(RadioDialogType.RADAR_MAP) },
-                                modifier = Modifier.weight(1f).height(44.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.White.copy(0.05f),
-                                border = BorderStroke(1.dp, Color.White.copy(0.1f))
-                            ) {
-                                Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    Icon(Icons.Rounded.Radar, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("MAPA", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
-                                }
-                            }
-
-                            // Tutorial Completo
-                            Surface(
-                                onClick = { onPendingDialogChange(RadioDialogType.ONBOARDING) },
-                                modifier = Modifier.weight(1f).height(44.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.White.copy(0.05f),
-                                border = BorderStroke(1.dp, Color.White.copy(0.1f))
-                            ) {
-                                Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    Icon(Icons.Rounded.Info, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("TUTORIAL", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
-                                }
-                            }
-
-                            // Derecho al Olvido (Borrar datos)
-                            Surface(
-                                onClick = { onPendingDialogChange(RadioDialogType.DELETE_DATA) },
-                                modifier = Modifier.weight(1f).height(44.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.Red.copy(0.1f),
-                                border = BorderStroke(1.dp, Color.Red.copy(0.3f))
-                            ) {
-                                Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    Icon(Icons.Rounded.DeleteSweep, null, tint = Color.Red, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("OLVIDO", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(32.dp))
-                        Text("PRODUCCIÓN PLAY STORE", color = LuxeColors.Gold, fontWeight = FontWeight.Black, fontSize = 12.sp, letterSpacing = 2.sp)
-                        Spacer(Modifier.height(20.dp))
-                        
-                        // Información de Versionado
-                        Surface(
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color.White.copy(0.05f),
-                            border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.2f))
-                        ) {
-                            Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.CloudUpload, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(16.dp))
-                                Column {
-                                    Text("RELEASE STABLE 42.0", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
-                                    Text("Compilación final para distribución en Google Play", color = Color.White.copy(0.4f), fontSize = 8.sp)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
 
             Spacer(Modifier.height(180.dp)) // 🛡️ FIX: Aumentado para asegurar que NADA quede bajo el banner
             }
@@ -1889,7 +1745,7 @@ fun ActivityPanel(
                 contentAlignment = Alignment.Center
             ) {
                 // Background layers (Real Map or City Image)
-                Box(Modifier.fillMaxSize().alpha(if (state.motoLatitude != null) 1f else 0.3f)) {
+                Box(Modifier.fillMaxSize().alpha(if (state.motoLatitude != null) 1f else 0.8f)) {
                     if (showRealMap) {
                         // --- 🌍 MAPA CARTOGRÁFICO TÁCTICO (CALLEREO REALISTA) ---
                         Canvas(Modifier.fillMaxSize()) {
@@ -1936,9 +1792,9 @@ fun ActivityPanel(
                         Image(
                             painter = painterResource(backgroundRes),
                             contentDescription = null,
-                            modifier = Modifier.fillMaxSize().alpha(0.12f),
+                            modifier = Modifier.fillMaxSize().alpha(0.65f),
                             contentScale = ContentScale.Crop,
-                            colorFilter = ColorFilter.tint(LuxeColors.ElectricBlue, BlendMode.Screen)
+                            colorFilter = ColorFilter.tint(LuxeColors.ElectricBlue.copy(0.2f), BlendMode.Screen)
                         )
                     }
                 }
@@ -2118,7 +1974,7 @@ fun ActivityPanel(
                 // --- 🛡️ AVISO GPS DESACTIVADO (MOVIDO AL FINAL PARA EVITAR SOLAPAMIENTO) ---
                 if (state.motoLatitude == null) {
                     Box(
-                        modifier = Modifier.fillMaxSize().background(Color.Black.copy(0.4f)).clickable { onGpsRequest { } },
+                        modifier = Modifier.fillMaxSize().background(Color.Black.copy(0.2f)).clickable { onGpsRequest { } },
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {

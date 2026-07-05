@@ -979,7 +979,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                     val shareText = if (city == "RADAR") {
                                         "📡 ¡Vigilancia Hertz Activa! Estoy analizando la presencia biológica en la red ON AIR SPAIN. Únete a la frecuencia: https://asurpan.github.io/sevillaON/"
                                     } else {
-                                        val subText = if (subtone != null && subtone != "0000") " (Subtono: $subtone)" else ""
+                                        val subText = if (subtone != null && subtone != "0000") " (Código: $subtone)" else ""
                                         val proText = if (proRole != null) " [$proRole]" else ""
                                         "📻 ¡Modulamos! Te espero en ON AIR SPAIN.\n📍 Ciudad: $city\n🔊 Sala: $channel$subText$proText\n\nEntra ahora: https://asurpan.github.io/sevillaON/"
                                     }

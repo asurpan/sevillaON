@@ -486,10 +486,12 @@ fun App(
 
     // --- 🎙️ GUARDIÁN DE FRECUENCIA: NOTIFICACIÓN AUTOMÁTICA DE NUEVOS OPERADORES ---
     var lastUserCount by remember { mutableStateOf(0) }
-    LaunchedEffect(remoteUsers) {
+    var lastActiveTxNick by remember { mutableStateOf<String?>(null) }
+    
+    LaunchedEffect(remoteUsers, remoteTransmitterName) {
         val currentUsers = remoteUsers.filter { it.city == radioState.city && it.channel == radioState.channel && it.nick != nick }
         
-        // Si hay más gente que antes, significa que alguien ha entrado
+        // 1. Aviso de entrada en frecuencia (Nuevos Operadores)
         if (currentUsers.size > lastUserCount && lastUserCount > 0) {
             val newUser = currentUsers.last()
             localNotification = AppNotification(
@@ -500,6 +502,17 @@ fun App(
             triggerUiSound("click") // Pitido de aviso
         }
         lastUserCount = currentUsers.size
+
+        // 2. 🤖 ANUNCIADOR POR VOZ (MODO GPS/FONDO)
+        // Si alguien empieza a hablar y no es quien hablaba antes, lo anunciamos
+        if (remoteTransmitterName != null && remoteTransmitterName != lastActiveTxNick) {
+            // Solo anunciamos si el usuario no está viendo la radio (está en Maps o modo Actividad)
+            if (radioState.activeProfile != ActivityProfile.NORMAL) {
+                val announceText = "Estación $remoteTransmitterName al aire"
+                onExecuteEngineeringAction("SPEAK|$announceText")
+            }
+        }
+        lastActiveTxNick = remoteTransmitterName
     }
 
     LaunchedEffect(radioState.isChatVisible) {

@@ -1917,15 +1917,15 @@ fun ActivityPanel(
                             Modifier
                                 .size(44.dp)
                                 .drawBehind {
-                                    drawCircle(LuxeColors.ElectricBlue.copy(0.15f), radius = 22.dp.toPx() * pulseScale)
+                                    drawCircle(if(isTransmitting) Color.Red.copy(0.15f) else LuxeColors.ElectricBlue.copy(0.15f), radius = 22.dp.toPx() * pulseScale)
                                 },
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
                                 modifier = Modifier
                                     .size(36.dp)
-                                    .background(LuxeColors.ElectricBlue.copy(0.2f), CircleShape)
-                                    .border(2.dp, LuxeColors.ElectricBlue, CircleShape),
+                                    .background(if(isTransmitting) Color.Red.copy(0.2f) else LuxeColors.ElectricBlue.copy(0.2f), CircleShape)
+                                    .border(2.dp, if(isTransmitting) Color.Red else LuxeColors.ElectricBlue, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 val myIcon = when(profile) {
@@ -1936,10 +1936,10 @@ fun ActivityPanel(
                                     ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
                                     else -> Icons.Rounded.DirectionsRun
                                 }
-                                Icon(myIcon, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(22.dp))
+                                Icon(myIcon, null, tint = if(isTransmitting) Color.Red else LuxeColors.ElectricBlue, modifier = Modifier.size(22.dp))
                             }
                         }
-                        Text("ESTACIÓN BASE", color = LuxeColors.ElectricBlue, fontSize = 7.sp, fontWeight = FontWeight.Black)
+                        Text(nick, color = if(isTransmitting) Color.Red else LuxeColors.ElectricBlue, fontSize = 7.sp, fontWeight = FontWeight.Black)
                     }
                 }
                 

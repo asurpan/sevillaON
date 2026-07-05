@@ -439,6 +439,7 @@ fun RadioDialogs(
         )
         RadioDialogType.ACTIVITY_SELECTOR -> {
             var tempRouteName by remember { mutableStateOf("") }
+            var tempRouteRules by remember { mutableStateOf("") }
             
             AlertDialog(
                 onDismissRequest = onDismiss,
@@ -473,11 +474,28 @@ fun RadioDialogs(
                             )
                         )
 
+                        Spacer(Modifier.height(12.dp))
+
+                        OutlinedTextField(
+                            value = tempRouteRules,
+                            onValueChange = { if (it.length <= 100) tempRouteRules = it },
+                            label = { Text("REGLAS O INFO (Ej: Punto de encuentro...)", fontSize = 10.sp) },
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 3,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = LuxeColors.Gold,
+                                focusedLabelColor = LuxeColors.Gold,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                unfocusedBorderColor = Color.White.copy(0.1f)
+                            )
+                        )
+
                         Spacer(Modifier.height(24.dp))
                         Text("SELECCIONA TU ACTIVIDAD:", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold)
                         Spacer(Modifier.height(12.dp))
                         
-                        val activities = ActivityProfile.entries
+                        val activities = ActivityProfile.entries.filter { it != ActivityProfile.NORMAL }
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.heightIn(max = 240.dp)) {
                             items(activities) { act ->
                                 val isSelected = state.activeProfile == act
@@ -490,7 +508,8 @@ fun RadioDialogs(
                                             onStateChange(state.copy(
                                                 activeProfile = act, 
                                                 isMotoModeEnabled = act != ActivityProfile.NORMAL,
-                                                channel = finalChannel
+                                                channel = finalChannel,
+                                                routeRules = tempRouteRules.ifBlank { null }
                                             ))
                                             onDismiss()
                                             if (act != ActivityProfile.NORMAL) {
@@ -517,6 +536,12 @@ fun RadioDialogs(
                                             ActivityProfile.OFFROAD -> Icons.Rounded.Agriculture
                                             ActivityProfile.TACTICO -> Icons.Rounded.Security
                                             ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
+                                            ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
+                                            ActivityProfile.VELA -> Icons.Rounded.Sailing
+                                            ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
+                                            ActivityProfile.CAZA -> Icons.Rounded.Radar
+                                            ActivityProfile.PESCA -> Icons.Rounded.Phishing
+                                            ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
                                             else -> Icons.Rounded.Person
                                         }
                                         Icon(icon, null, tint = (if (isSelected) LuxeColors.Gold else Color.White.copy(0.4f)).copy(alpha = contentAlpha))
@@ -534,6 +559,12 @@ fun RadioDialogs(
                                                 ActivityProfile.OFFROAD -> "OFFROAD / 4X4"
                                                 ActivityProfile.TACTICO -> "CANAL TÁCTICO"
                                                 ActivityProfile.RUNNING -> "RUNNING"
+                                                ActivityProfile.ESQUI -> "ESQUÍ / NIEVE"
+                                                ActivityProfile.VELA -> "NAVEGACIÓN VELA"
+                                                ActivityProfile.PARAPENTE -> "PARAPENTE / AIRE"
+                                                ActivityProfile.CAZA -> "MODO CAZA"
+                                                ActivityProfile.PESCA -> "MODO PESCA"
+                                                ActivityProfile.KAYAK -> "KAYAK / REMO"
                                                 else -> "ESTÁNDAR"
                                             }
                                             Text(label, color = Color.White.copy(alpha = contentAlpha), fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -549,6 +580,12 @@ fun RadioDialogs(
                                                 ActivityProfile.OFFROAD -> "Radar de Polvo + GPS Táctico"
                                                 ActivityProfile.TACTICO -> "Malla WiFi + Encriptación"
                                                 ActivityProfile.RUNNING -> "Manos Libres + Ritmo"
+                                                ActivityProfile.ESQUI -> "Filtro Frío + Radar Nieve"
+                                                ActivityProfile.VELA -> "Filtro Mar + GPS Náutico"
+                                                ActivityProfile.PARAPENTE -> "Voz Térmica + Altímetro"
+                                                ActivityProfile.CAZA -> "Modo Silencioso + Radar"
+                                                ActivityProfile.PESCA -> "Bajo Consumo + Posición"
+                                                ActivityProfile.KAYAK -> "Filtro Agua + Estanqueidad"
                                                 else -> "Modo Estándar"
                                             }
                                             Text(desc, color = Color.White.copy(alpha = contentAlpha * 0.4f), fontSize = 10.sp)

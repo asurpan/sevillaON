@@ -574,47 +574,70 @@ object RadioCore {
                             var fullChunks = [window.app.headerChunk].concat(window.app.replayChunks);
                             var blob = new Blob(fullChunks, { type: window.app.replayRecorder.mimeType || 'audio/webm' });
                             
-                            blob.arrayBuffer().then(function(buffer) {
-                                window.app.ctx.decodeAudioData(buffer, function(audioBuffer) {
-                                    if (window.app.currentReplaySource) {
-                                        try { window.app.currentReplaySource.stop(); } catch(e) {}
-                                    }
-                                    
-                                    if(window.dispatch_replay_start) window.dispatch_replay_start();
-                                    
-                                    var source = window.app.ctx.createBufferSource();
-                                    source.buffer = audioBuffer;
-                                    source.connect(window.app.masterOut);
-                                    window.app.currentReplaySource = source;
-                                    
-                                    var oldNoise = window.app.noise ? window.app.noise.gain.value : 0;
-                                    if (window.app.noise) {
-                                        window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
-                                        window.app.noise.gain.setTargetAtTime(0.0001, window.app.ctx.currentTime, 0.1);
-                                    }
-                                    
-                                    source.onended = function() {
-                                        if (window.app.noise) {
-                                            window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
-                                            window.app.noise.gain.setTargetAtTime(oldNoise, window.app.ctx.currentTime, 1.0);
-                                        }
-                                        if (window.app.replayProgressInterval) clearInterval(window.app.replayProgressInterval);
-                                        if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
-                                        window.app.currentReplaySource = null;
-                                    };
-                                    
-                                    source.start(0);
-                                    var startTime = window.app.ctx.currentTime;
-                                    var duration = audioBuffer.duration;
-                                    
-                                    if (window.app.replayProgressInterval) clearInterval(window.app.replayProgressInterval);
-                                    window.app.replayProgressInterval = setInterval(function() {
-                                        var elapsed = window.app.ctx.currentTime - startTime;
-                                        var progress = Math.min(1.0, elapsed / duration);
-                                        if (window.dispatch_replay_progress) window.dispatch_replay_progress(progress);
-                                        if (progress >= 1.0) clearInterval(window.app.replayProgressInterval);
-                                    }, 100);
-                                }, function(err) {
+                                    blob.arrayBuffer().then(function(buffer) {
+                                        window.app.ctx.decodeAudioData(buffer, function(audioBuffer) {
+                                            if (window.app.currentReplaySource) {
+                                                try { window.app.currentReplaySource.stop(); } catch(e) {}
+                                            }
+
+                                            // --- 🧠 MOTOR DE REPLAY INTELIGENTE (ANTI-SILENCIO) ---
+                                            var data = audioBuffer.getChannelData(0);
+                                            var threshold = 0.005; // Umbral de detección de voz ultrasensible
+                                            var firstVoiceIndex = -1;
+                                            
+                                            // Escaneamos el buffer buscando el primer pico de señal real
+                                            for (var i = 0; i < data.length; i += 100) { // Salto de 100 para eficiencia
+                                                if (Math.abs(data[i]) > threshold) {
+                                                    firstVoiceIndex = i;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (firstVoiceIndex === -1) {
+                                                // Si todo el buffer es silencio, informamos y salimos
+                                                if(window.dispatch_replay_empty) window.dispatch_replay_empty();
+                                                return;
+                                            }
+
+                                            var startTimeOffset = firstVoiceIndex / audioBuffer.sampleRate;
+                                            // Dejamos 0.2s de margen previo para no cortar la primera palabra
+                                            startTimeOffset = Math.max(0, startTimeOffset - 0.2);
+                                            
+                                            if(window.dispatch_replay_start) window.dispatch_replay_start();
+                                            
+                                            var source = window.app.ctx.createBufferSource();
+                                            source.buffer = audioBuffer;
+                                            source.connect(window.app.masterOut);
+                                            window.app.currentReplaySource = source;
+                                            
+                                            var oldNoise = window.app.noise ? window.app.noise.gain.value : 0;
+                                            if (window.app.noise) {
+                                                window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
+                                                window.app.noise.gain.setTargetAtTime(0.0001, window.app.ctx.currentTime, 0.1);
+                                            }
+                                            
+                                            source.onended = function() {
+                                                if (window.app.noise) {
+                                                    window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
+                                                    window.app.noise.gain.setTargetAtTime(oldNoise, window.app.ctx.currentTime, 1.0);
+                                                }
+                                                if (window.app.replayProgressInterval) clearInterval(window.app.replayProgressInterval);
+                                                if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
+                                                window.app.currentReplaySource = null;
+                                            };
+                                            
+                                            source.start(0, startTimeOffset);
+                                            var startTime = window.app.ctx.currentTime;
+                                            var duration = audioBuffer.duration - startTimeOffset;
+                                            
+                                            if (window.app.replayProgressInterval) clearInterval(window.app.replayProgressInterval);
+                                            window.app.replayProgressInterval = setInterval(function() {
+                                                var elapsed = window.app.ctx.currentTime - startTime;
+                                                var progress = Math.min(1.0, elapsed / duration);
+                                                if (window.dispatch_replay_progress) window.dispatch_replay_progress(progress);
+                                                if (progress >= 1.0) clearInterval(window.app.replayProgressInterval);
+                                            }, 100);
+                                        }, function(err) {
                                     console.error("Decode error:", err);
                                     // Si falla el decodificador por cabeceras corruptas, reiniciamos el ciclo
                                     window.app.headerChunk = null;

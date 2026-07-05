@@ -601,32 +601,57 @@ fun RadioPanel(
                         Text(nick, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(0.05f))
-                        .border(1.dp, Color.White.copy(0.1f), CircleShape)
-                        .combinedClickable(
-                            onClick = { onPendingDialogChange(RadioDialogType.SETTINGS) },
-                            onLongClick = {
-                                triggerUiSound("click")
-                                onHertzSentinelRequest()
-                            }
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.Tune, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // 🔑 BOTÓN MAESTRO (PARA EXPORTAR / AJUSTES PRO)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(0.05f))
+                            .border(1.dp, Color.White.copy(0.1f), CircleShape)
+                            .clickable { 
+                                isMasterControlsVisible = !isMasterControlsVisible
+                                triggerUiSound("switch")
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Rounded.VpnKey, 
+                            null, 
+                            tint = if (isMasterControlsVisible) LuxeColors.Gold else Color.White.copy(0.3f), 
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(0.05f))
+                            .border(1.dp, Color.White.copy(0.1f), CircleShape)
+                            .combinedClickable(
+                                onClick = { onPendingDialogChange(RadioDialogType.SETTINGS) },
+                                onLongClick = {
+                                    triggerUiSound("click")
+                                    onHertzSentinelRequest()
+                                }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Rounded.Tune, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
                 }
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(20.dp))
 
             // --- 📟 PANTALLA DIGITAL ELITE "NEXUS" ---
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp)
+                    .height(215.dp)
                     .clip(RoundedCornerShape(32.dp))
                     .clickable { 
                         if (!state.isInterfaceLocked) { 
@@ -650,42 +675,9 @@ fun RadioPanel(
                     )
 
                     Column(
-                        modifier = Modifier.fillMaxSize().padding(20.dp),
+                        modifier = Modifier.fillMaxSize().padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // --- 🚥 VÚMETRO DE LEDS LINEAL (MAESTRO ELITE) ---
-                        Row(
-                            modifier = Modifier.fillMaxWidth().height(22.dp),
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
-                        ) {
-                            val activeLevel = if(isTransmitting || rx) mic else qrmIntensity
-                            repeat(24) { i ->
-                                val isActive = i < (activeLevel * 24)
-                                val ledColor = when {
-                                    i > 20 -> Color.Red
-                                    i > 16 -> Color(0xFFFACC15) // Gold
-                                    else -> if(rx) Color(0xFF22D3EE) else Color(0xFF4ADE80) // Cyan vs Green
-                                }
-                                
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight()
-                                        .clip(RoundedCornerShape(2.dp))
-                                        .background(if (isActive) ledColor else Color.White.copy(0.04f))
-                                        .border(0.5.dp, if (isActive) ledColor.copy(0.3f) else Color.Transparent, RoundedCornerShape(2.dp))
-                                        .drawBehind {
-                                            if (isActive) {
-                                                drawCircle(ledColor, radius = size.width * 4f, alpha = 0.3f)
-                                                drawCircle(ledColor, radius = size.width * 1.5f, alpha = 0.5f)
-                                            }
-                                        }
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(16.dp))
-
                         // --- 🏷️ INFORMACIÓN PRINCIPAL (Layout Profesional) ---
                         Row(
                             modifier = Modifier.fillMaxWidth().weight(1f),
@@ -721,7 +713,34 @@ fun RadioPanel(
                                     letterSpacing = 2.sp
                                 )
                                 
-                                Spacer(Modifier.height(4.dp))
+                                Spacer(Modifier.height(8.dp))
+
+                                // --- 🚥 VÚMETRO DE LEDS CENTRADO (Luxe Edition) ---
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().height(20.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    val activeLevel = if(isTransmitting || rx) mic else qrmIntensity
+                                    repeat(12) { i ->
+                                        val isActive = i < (activeLevel * 12)
+                                        val ledColor = when {
+                                            i > 9 -> Color.Red
+                                            i > 7 -> Color(0xFFFACC15)
+                                            else -> if(rx) Color(0xFF22D3EE) else Color(0xFF4ADE80)
+                                        }
+                                        
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .fillMaxHeight()
+                                                .clip(RoundedCornerShape(2.dp))
+                                                .background(if (isActive) ledColor else Color.White.copy(0.06f))
+                                                .border(1.dp, if (isActive) ledColor.copy(0.3f) else Color.White.copy(0.02f), RoundedCornerShape(2.dp))
+                                        )
+                                    }
+                                }
+
+                                Spacer(Modifier.height(8.dp))
                                 
                                 Text(
                                     text = if(rx) (transmitterNick ?: "ANÓNIMO") else state.channel,
@@ -778,26 +797,31 @@ fun RadioPanel(
                                     fontWeight = FontWeight.Black
                                 )
                                 
-                                Spacer(Modifier.height(12.dp))
+                                Spacer(Modifier.height(8.dp))
                                 
-                                // MODO DISCRETO (Candado de Voz)
+                                // 🔄 REPLAY 15s (Integrado en pantalla)
                                 Surface(
-                                    onClick = { 
-                                        if (!state.hasSeenDiscreteIntro) onPendingDialogChange(RadioDialogType.DISCRETE)
-                                        else onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled))
-                                        triggerUiSound("switch")
-                                    },
-                                    color = if (state.isDiscreteModeEnabled) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
+                                    onClick = { if (!state.isInterfaceLocked) onReplay(); triggerUiSound("click") },
+                                    color = if (isReplayReady) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
                                     shape = CircleShape,
-                                    border = BorderStroke(1.dp, if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.1f)),
-                                    modifier = Modifier.size(28.dp)
+                                    border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.1f)),
+                                    modifier = Modifier.size(38.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
+                                        if (replayProgress > 0f) {
+                                            CircularProgressIndicator(
+                                                progress = { replayProgress },
+                                                modifier = Modifier.fillMaxSize(),
+                                                color = LuxeColors.Gold,
+                                                strokeWidth = 2.dp,
+                                                trackColor = Color.Transparent
+                                            )
+                                        }
                                         Icon(
-                                            if (state.isDiscreteModeEnabled) Icons.Rounded.Lock else Icons.Rounded.LockOpen, 
+                                            Icons.Rounded.History, 
                                             null, 
-                                            tint = if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.4f), 
-                                            modifier = Modifier.size(12.dp)
+                                            tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.3f), 
+                                            modifier = Modifier.size(18.dp)
                                         )
                                     }
                                 }
@@ -817,33 +841,60 @@ fun RadioPanel(
                                     color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
                                     shape = CircleShape,
                                     border = BorderStroke(1.dp, if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.1f)),
-                                    modifier = Modifier.size(40.dp) // Aumentado de 28.dp para visibilidad
+                                    modifier = Modifier.size(38.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         val icon = when(state.activeProfile) {
                                             ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
                                             ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
-                                            ActivityProfile.SENDERISMO -> Icons.Rounded.DirectionsWalk
-                                            ActivityProfile.MONTANA -> Icons.Rounded.Terrain
+                                            ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
+                                            ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
+                                            ActivityProfile.MONTANA -> Icons.Rounded.Landscape
                                             ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
+                                            ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
+                                            ActivityProfile.VELA -> Icons.Rounded.Sailing
+                                            ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
                                             else -> Icons.Rounded.DirectionsRun
                                         }
-                                        Icon(icon, null, tint = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.4f), modifier = Modifier.size(20.dp)) // Aumentado de 12.dp
+                                        Icon(icon, null, tint = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.4f), modifier = Modifier.size(18.dp))
                                     }
                                 }
 
                                 Spacer(Modifier.height(8.dp))
 
-                                // Botón Compartir Integrado
-                                Surface(
-                                    onClick = { onShare(state.channel, state.subtone, state.myProRole, null); triggerUiSound("click") },
-                                    shape = CircleShape,
-                                    color = Color.White.copy(0.05f),
-                                    border = BorderStroke(1.dp, Color.White.copy(0.1f)),
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Rounded.Share, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(12.dp))
+                                // DUAL DOCK: MODO DISCRETO & COMPARTIR
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Surface(
+                                        onClick = { 
+                                            if (!state.hasSeenDiscreteIntro) onPendingDialogChange(RadioDialogType.DISCRETE)
+                                            else onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled))
+                                            triggerUiSound("switch")
+                                        },
+                                        color = if (state.isDiscreteModeEnabled) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
+                                        shape = CircleShape,
+                                        border = BorderStroke(1.dp, if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.1f)),
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing,
+                                                null, 
+                                                tint = if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.4f), 
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Surface(
+                                        onClick = { onShare(state.channel, state.subtone, state.myProRole, null); triggerUiSound("click") },
+                                        shape = CircleShape,
+                                        color = Color.White.copy(0.05f),
+                                        border = BorderStroke(1.dp, Color.White.copy(0.1f)),
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Rounded.Share, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(12.dp))
+                                        }
                                     }
                                 }
                             }
@@ -853,11 +904,11 @@ fun RadioPanel(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 12.dp)
+                                .padding(top = 8.dp)
                                 .drawBehind {
                                     drawLine(Color.White.copy(0.1f), Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1.dp.toPx())
                                 }
-                                .padding(top = 12.dp),
+                                .padding(top = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -875,26 +926,74 @@ fun RadioPanel(
                                 }
                             }
 
-                            // Reloj / Tiempo TX
-                            if (isTransmitting) {
-                                val seconds = pttTimer
-                                Text("TX TIME: ${seconds}s", color = Color.Red, fontSize = 9.sp, fontWeight = FontWeight.Black)
-                            } else {
-                                Text(
-                                    "NET: ${if(audioIntegrity) "CONNECTED" else "SYNC ERROR"}", 
-                                    color = if(audioIntegrity) Color(0xFF4ADE80).copy(0.6f) else Color.Red, 
-                                    fontSize = 8.sp, 
-                                    fontWeight = FontWeight.Black
-                                )
+                            // Actividades / Estado Red (Centro)
+                            val statusContent = remember(state.activeProfile, audioIntegrity, isTransmitting, pttTimer) {
+                                when {
+                                    isTransmitting -> "TX TIME: ${pttTimer}s"
+                                    state.activeProfile != ActivityProfile.NORMAL -> state.activeProfile.name
+                                    else -> if(audioIntegrity) "NET: CONNECTED" else "SYNC ERROR"
+                                }
+                            }
+                            
+                            val statusIcon = when(state.activeProfile) {
+                                ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
+                                ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
+                                ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
+                                ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
+                                ActivityProfile.MONTANA -> Icons.Rounded.Landscape
+                                ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
+                                ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
+                                ActivityProfile.VELA -> Icons.Rounded.Sailing
+                                ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
+                                ActivityProfile.CAZA -> Icons.Rounded.Radar
+                                ActivityProfile.PESCA -> Icons.Rounded.Phishing
+                                ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
+                                ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
+                                else -> Icons.Rounded.Wifi
                             }
 
-                            // Botón Ajustes Rápidos (Dentro de la pantalla)
-                            Icon(
-                                Icons.Rounded.Info,
-                                null,
-                                tint = Color.White.copy(0.2f),
-                                modifier = Modifier.size(16.dp).clickable { onShowHelp() }
-                            )
+                            Surface(
+                                onClick = { 
+                                    if (!state.isInterfaceLocked) {
+                                        if (state.activeProfile == ActivityProfile.NORMAL) onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR)
+                                        else onActivityPanelRequest()
+                                        triggerUiSound("click")
+                                    }
+                                },
+                                color = if(state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.15f) else Color.Transparent,
+                                shape = RoundedCornerShape(8.dp),
+                                border = if(state.activeProfile != ActivityProfile.NORMAL) BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)) else null
+                            ) {
+                                AnimatedContent(
+                                    targetState = statusContent,
+                                    transitionSpec = {
+                                        (slideInVertically { it } + fadeIn()).togetherWith(slideOutVertically { -it } + fadeOut())
+                                    }
+                                ) { text ->
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            statusIcon, 
+                                            null, 
+                                            tint = if(isTransmitting) Color.Red else if(state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color(0xFF4ADE80).copy(0.6f), 
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            text = text, 
+                                            color = if(isTransmitting) Color.Red else if(state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.6f), 
+                                            fontSize = 9.sp, 
+                                            fontWeight = FontWeight.Black,
+                                            letterSpacing = 1.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Espaciador para equilibrar el layout
+                            Box(modifier = Modifier.size(40.dp))
                         }
                     }
                 }
@@ -902,8 +1001,8 @@ fun RadioPanel(
 
             Spacer(Modifier.height(24.dp))
 
-            // --- 🎛️ DOCK DE CONTROLES RÁPIDOS ---
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // --- 🎛️ DOCK DE CONTROLES RÁPIDOS (TRI-MODO) ---
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 EliteControlTile(
                     modifier = Modifier.weight(1f).pointerInput(bgStationName) {
                         detectTapGestures(
@@ -918,39 +1017,20 @@ fun RadioPanel(
                 )
 
                 EliteControlTile(
-                    modifier = Modifier.weight(1f).clickable { if (!state.isInterfaceLocked) onReplay() },
-                    icon = Icons.Rounded.History,
-                    label = "REPLAY 15s",
-                    status = if (replayProgress > 0f) "AL AIRE" else if (isReplayReady) "LISTO" else "VACÍO",
-                    isActive = isReplayReady,
-                    progress = replayProgress
-                )
-
-                EliteControlTile(
-                    modifier = Modifier.weight(1f).clickable { onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR) },
-                    icon = when(state.activeProfile) {
-                        ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
-                        ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
-                        ActivityProfile.SENDERISMO -> Icons.Rounded.DirectionsWalk
-                        ActivityProfile.MONTANA -> Icons.Rounded.Terrain
-                        ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
-                        else -> Icons.Rounded.DirectionsRun
-                    },
-                    label = "DEPORTES",
-                    status = if (state.activeProfile != ActivityProfile.NORMAL) state.activeProfile.name else "OFF",
-                    isActive = state.activeProfile != ActivityProfile.NORMAL
-                )
-                
-                // --- 🛰️ ACCESO DIRECTO AL RADAR (ELITE PROMO) ---
-                EliteControlTile(
                     modifier = Modifier.weight(1f).clickable { onHertzSentinelRequest() }, 
                     icon = Icons.Rounded.Radar, 
-                    label = "RADAR", 
-                    status = "HERTZ",
+                    label = "RADAR HERTZ", 
+                    status = if(radarActivo) "SENSING" else "IDLE",
                     isActive = radarActivo
                 )
 
-                EliteControlTile(Modifier.weight(1f).clickable { onStateChange(state.copy(isChatVisible = !state.isChatVisible)); if(!state.isChatVisible) onPublicChat() }, Icons.AutoMirrored.Rounded.Chat, "CHAT", "${chatMessages.size} MSGS")
+                EliteControlTile(
+                    modifier = Modifier.weight(1f).clickable { onStateChange(state.copy(isChatVisible = !state.isChatVisible)); if(!state.isChatVisible) onPublicChat() }, 
+                    icon = Icons.AutoMirrored.Rounded.Chat, 
+                    label = "CHAT VOZ", 
+                    status = "${chatMessages.size} MSGS",
+                    isActive = chatMessages.isNotEmpty()
+                )
             }
 
             Spacer(Modifier.height(16.dp))
@@ -1281,6 +1361,27 @@ fun RadioPanel(
                                     Icon(Icons.Rounded.DeleteSweep, null, tint = Color.Red, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(8.dp))
                                     Text("OLVIDO", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(32.dp))
+                        Text("PRODUCCIÓN PLAY STORE", color = LuxeColors.Gold, fontWeight = FontWeight.Black, fontSize = 12.sp, letterSpacing = 2.sp)
+                        Spacer(Modifier.height(20.dp))
+                        
+                        // Información de Versionado
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color.White.copy(0.05f),
+                            border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.2f))
+                        ) {
+                            Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.CloudUpload, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(16.dp))
+                                Column {
+                                    Text("RELEASE STABLE 42.0", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                                    Text("Compilación final para distribución en Google Play", color = Color.White.copy(0.4f), fontSize = 8.sp)
                                 }
                             }
                         }
@@ -1899,6 +2000,21 @@ fun ActivityPanel(
                                     val icon = when(user.activity) {
                                         ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
                                         ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
+                                        ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
+                                        ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
+                                        ActivityProfile.MONTANA -> Icons.Rounded.Landscape
+                                        ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
+                                        ActivityProfile.CAMIONEROS -> Icons.Rounded.LocalShipping
+                                        ActivityProfile.CARAVANAS -> Icons.Rounded.AirportShuttle
+                                        ActivityProfile.OFFROAD -> Icons.Rounded.Agriculture
+                                        ActivityProfile.TACTICO -> Icons.Rounded.Security
+                                        ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
+                                        ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
+                                        ActivityProfile.VELA -> Icons.Rounded.Sailing
+                                        ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
+                                        ActivityProfile.CAZA -> Icons.Rounded.Radar
+                                        ActivityProfile.PESCA -> Icons.Rounded.Phishing
+                                        ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
                                         else -> Icons.Rounded.Person
                                     }
                                     Icon(icon, null, tint = if(user.isTransmitting) Color.Red else Color.White, modifier = Modifier.size(16.dp))
@@ -1947,6 +2063,12 @@ fun ActivityPanel(
                                     ActivityProfile.OFFROAD -> Icons.Rounded.Agriculture
                                     ActivityProfile.TACTICO -> Icons.Rounded.Security
                                     ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
+                                    ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
+                                    ActivityProfile.VELA -> Icons.Rounded.Sailing
+                                    ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
+                                    ActivityProfile.CAZA -> Icons.Rounded.Radar
+                                    ActivityProfile.PESCA -> Icons.Rounded.Phishing
+                                    ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
                                     else -> Icons.Rounded.Person
                                 }
                                 Icon(myIcon, null, tint = if(isTransmitting) Color.Red else LuxeColors.ElectricBlue, modifier = Modifier.size(22.dp))
@@ -2067,10 +2189,29 @@ fun ActivityPanel(
                     color = if (state.isVoxEnabled) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),
                     border = BorderStroke(1.dp, if (state.isVoxEnabled) LuxeColors.Gold else Color.White.copy(0.1f))
                 ) {
-                    Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Mic, null, tint = if (state.isVoxEnabled) LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(if(state.isVoxEnabled) "M. LIBRES ON" else "M. LIBRES OFF", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                    Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        Icon(Icons.Rounded.Mic, null, tint = if (state.isVoxEnabled) LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(if(state.isVoxEnabled) "VOX ON" else "VOX OFF", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
+                    }
+                }
+
+                Surface(
+                    onClick = { onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled)); triggerUiSound("switch") },
+                    modifier = Modifier.weight(1f).height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (state.isDiscreteModeEnabled) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),
+                    border = BorderStroke(1.dp, if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.1f))
+                ) {
+                    Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        Icon(
+                            if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, 
+                            null, 
+                            tint = if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.3f), 
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(if(state.isDiscreteModeEnabled) "DISCRETO" else "PÚBLICO", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
                     }
                 }
 
@@ -2080,10 +2221,10 @@ fun ActivityPanel(
                     color = Color.White.copy(0.05f),
                     border = BorderStroke(1.dp, Color.White.copy(0.1f))
                 ) {
-                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.WifiTethering, null, tint = LuxeColors.Green, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(10.dp))
-                        Text("MALLA OK", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                    Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        Icon(Icons.Rounded.WifiTethering, null, tint = LuxeColors.Green, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("MALLA OK", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
                     }
                 }
             }

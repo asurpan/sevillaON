@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -38,20 +39,46 @@ android {
         applicationId = "com.sagon.on"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 41
-        versionName = "41.0"
+        versionCode = 42
+        versionName = "42.0"
     }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    signingConfigs {
+        create("release") {
+            // 🛡️ MOTOR DE FIRMA DINÁMICO: Carga desde keystore.properties o variables de entorno
+            val keystorePropertiesFile = rootProject.file("keystore.properties")
+            if (keystorePropertiesFile.exists()) {
+                val props = Properties()
+                keystorePropertiesFile.inputStream().use { stream ->
+                    props.load(stream)
+                }
+                
+                val sFile = props.getProperty("storeFile")
+                if (sFile != null) {
+                    storeFile = rootProject.file(sFile)
+                }
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            } else {
+                storeFile = file("release.keystore")
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("KEY_ALIAS") ?: ""
+                keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            }
+        }
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // signingConfig = signingConfigs.getByName("debug") // ELIMINADO: No usar firma debug para versiones de Play Store
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

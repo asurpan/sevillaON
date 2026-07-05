@@ -135,7 +135,7 @@ fun App(
     var nick by remember { mutableStateOf(savedNick) }
     var radioState by remember { mutableStateOf(initialState) }
     var localNotification by remember { mutableStateOf<AppNotification?>(null) }
-    var showActivityRadar by remember { mutableStateOf(false) } // 🛡️ Pantalla de Radar de Actividad / Rutas
+    var showActivityRadar by remember { mutableStateOf(false) } // 🛡️ Pantalla de Radar de Presencia / Actividad
     var showActivityMap by remember { mutableStateOf(false) } // 🛡️ Nueva pantalla de Deporte/Ruta
     var engineeringPanelVisible by remember { mutableStateOf(false) } // 🛡️ Levantado para control quirúrgico de Back
     var engineeringResetTrigger by remember { mutableStateOf(0) }
@@ -391,7 +391,7 @@ fun App(
             when {
                 showWebHelpDialog -> showWebHelpDialog = false
                 engineeringPanelVisible -> engineeringPanelVisible = false // 🛡️ Cierre quirúrgico de Consola de Ingeniería
-                showActivityRadar -> showActivityRadar = false // 🛡️ Cierre quirúrgico de Radar de Actividad
+                showActivityRadar -> showActivityRadar = false // 🛡️ Cierre quirúrgico de Radar de Presencia
                 showActivityMap -> showActivityMap = false // 🛡️ Cierre quirúrgico de Mapa de Ruta
                 pendingDialog != null -> pendingDialog = null
                 showOnboarding -> showOnboarding = false

@@ -394,6 +394,15 @@ object RadioCore {
 
                             if (totalEnergy === 0) {
                                 this.failures++;
+                                if (this.failures === 10) {
+                                    console.warn("Guardián: Sordera persistente (Firewall?). Forzando RE-CONEXIÓN WebRTC...");
+                                    // Si tras 10s vemos portadora pero no hay audio, el P2P está bloqueado.
+                                    // Intentamos cerrar y reabrir todas las llamadas activas.
+                                    for (var id in window.app.activeCalls) {
+                                        window.app.activeCalls[id].close();
+                                        delete window.app.activeCalls[id];
+                                    }
+                                }
                                 if (this.failures > 3) {
                                     console.warn("Guardián: Recepción sorda detectada. Ejecutando RE-PATCH...");
                                     if (window.app.masterOut) {
@@ -1111,6 +1120,8 @@ object RadioCore {
                     }
 
                     window.app.peer = new Peer(sessionID, { 
+                        debug: 1, // Solo errores en producción
+                        secure: true,
                         config: {
                             'iceServers': [
                                 { 'urls': 'stun:stun.l.google.com:19302' },
@@ -1118,8 +1129,21 @@ object RadioCore {
                                 { 'urls': 'stun:stun2.l.google.com:19302' },
                                 { 'urls': 'stun:stun3.l.google.com:19302' },
                                 { 'urls': 'stun:stun4.l.google.com:19302' },
-                                { 'urls': 'stun:stun.services.mozilla.com' }
-                            ]
+                                { 'urls': 'stun:stun.services.mozilla.com' },
+                                { 'urls': 'stun:stun.relay.metered.ca:80' },
+                                { 'urls': 'stun:stun.ekiga.net' },
+                                { 
+                                    'urls': 'turn:openrelay.metered.ca:80', 
+                                    'username': 'openrelay', 
+                                    'credential': 'openrelay' 
+                                },
+                                { 
+                                    'urls': 'turn:openrelay.metered.ca:443', 
+                                    'username': 'openrelay', 
+                                    'credential': 'openrelay' 
+                                }
+                            ],
+                            'iceCandidatePoolSize': 10
                         } 
                     });
                     

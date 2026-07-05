@@ -1521,9 +1521,9 @@ private fun EngineeringHelpDialog(mode: String, onDismiss: () -> Unit) {
 private fun StatusHelpDialog(status: String, onDismiss: () -> Unit, onRequestPermission: () -> Unit, onOpenSettings: () -> Unit, onExecuteEngineeringAction: (String) -> Unit) {
     val (title, color, text) = when {
         status.contains("COMPATIBLE") -> Triple(
-            "SISTEMA NO COMPATIBLE",
+            "SISTEMA NO SOPORTADO",
             Color.Gray,
-            "El Radar Hertz requiere acceso directo al chip de radiofrecuencia (RSSI Variance), una función táctica que solo está disponible en nuestra APP NATIVA para Android.\n\nEn este dispositivo (Navegador/iPhone), el sistema operativo bloquea el acceso al hardware por seguridad."
+            "El Radar de Presencia requiere acceso directo al chip de radiofrecuencia para detectar perturbaciones físicas a tu alrededor.\n\nEsta función no está disponible en este navegador o sistema operativo. Para utilizar el escáner de presencia real tras muros, abre la aplicación nativa en un dispositivo Android compatible."
         )
         status.contains("LIMITACIÓN") || status.contains("LIMITACION") || status.contains("ESPERANDO") || status.contains("BUSCANDO") -> Triple(
             "PROTOCOLOS DE ACTIVACIÓN",

@@ -880,8 +880,8 @@ fun OnboardingDialog(onDismiss: () -> Unit) {
                                 Text("Recupera el placer de la radioafición real. Sin fotos, sin filtros, solo tu voz modulando en directo. Siente la dopamina de conectar con otros en una red viva y auténtica.", fontSize = 13.sp, color = Color.White.copy(0.9f), modifier = Modifier.padding(top = 8.dp))
                             }
                             2 -> {
-                                Text("🌍 SINTONIZA CUALQUIER PUEBLO", fontWeight = FontWeight.Bold, color = LuxeColors.ElectricBlue, fontSize = 15.sp)
-                                Text("Busca y conecta con cualquier rincón de España. Usa el sintonizador para entrar en frecuencias locales de ciudades o pequeños pueblos y conoce gente de la zona en tiempo real.", fontSize = 13.sp, color = Color.White.copy(0.9f), modifier = Modifier.padding(top = 8.dp))
+                                Text("🌍 CONEXIÓN INTERNACIONAL", fontWeight = FontWeight.Bold, color = LuxeColors.ElectricBlue, fontSize = 15.sp)
+                                Text("Hemos habilitado túneles TURN para saltar firewalls en Sudamérica y el resto del mundo. Sintoniza 'MUNDO (INTERNACIONAL)' y usa el canal 'INTERNACIONAL MUNDO' para hablar con cualquier rincón del planeta.", fontSize = 13.sp, color = Color.White.copy(0.9f), modifier = Modifier.padding(top = 8.dp))
                             }
                             3 -> {
                                 Text("🏛️ GUÍA TURÍSTICA DINÁMICA", fontWeight = FontWeight.Bold, color = LuxeColors.Green, fontSize = 15.sp)

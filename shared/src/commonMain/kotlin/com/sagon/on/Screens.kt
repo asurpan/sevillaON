@@ -829,6 +829,11 @@ fun RadioPanel(
                                 Spacer(Modifier.height(8.dp))
 
                                 // 🏃 MODO ACTIVIDAD (Deportes)
+                                val activityPulseScale by infiniteTransition.animateFloat(
+                                    initialValue = 1f, targetValue = 1.15f,
+                                    animationSpec = infiniteRepeatable(tween(2000), RepeatMode.Reverse)
+                                )
+
                                 Surface(
                                     onClick = { 
                                         if (state.activeProfile == ActivityProfile.NORMAL) {
@@ -838,10 +843,25 @@ fun RadioPanel(
                                         }
                                         triggerUiSound("click") 
                                     },
-                                    color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
+                                    color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f),
                                     shape = CircleShape,
-                                    border = BorderStroke(1.dp, if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.1f)),
-                                    modifier = Modifier.size(38.dp)
+                                    border = BorderStroke(1.5.dp, if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.1f)),
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .drawBehind {
+                                            if (state.activeProfile != ActivityProfile.NORMAL) {
+                                                drawCircle(
+                                                    LuxeColors.Gold.copy(0.15f),
+                                                    radius = size.maxDimension / 2 * activityPulseScale,
+                                                    style = Stroke(2.dp.toPx())
+                                                )
+                                                drawCircle(
+                                                    LuxeColors.Gold.copy(0.05f),
+                                                    radius = size.maxDimension / 2 * (activityPulseScale + 0.1f),
+                                                    style = Stroke(1.dp.toPx())
+                                                )
+                                            }
+                                        }
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         val icon = when(state.activeProfile) {
@@ -854,9 +874,18 @@ fun RadioPanel(
                                             ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
                                             ActivityProfile.VELA -> Icons.Rounded.Sailing
                                             ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
+                                            ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
+                                            ActivityProfile.CAZA -> Icons.Rounded.Radar
+                                            ActivityProfile.PESCA -> Icons.Rounded.Phishing
+                                            ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
                                             else -> Icons.Rounded.DirectionsRun
                                         }
-                                        Icon(icon, null, tint = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.4f), modifier = Modifier.size(18.dp))
+                                        Icon(
+                                            icon, 
+                                            null, 
+                                            tint = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.4f), 
+                                            modifier = Modifier.size(22.dp)
+                                        )
                                     }
                                 }
                             }
@@ -1777,15 +1806,21 @@ fun ActivityPanel(
         val welcomeMsg = when(profile) {
             ActivityProfile.MOTO -> "Modo Moto activado. Filtro de viento listo y guardián de impactos vigilando."
             ActivityProfile.CICLISMO -> "Modo Ciclismo listo. Si detecto una caída fuerte, avisaré a tus compañeros."
-            ActivityProfile.MONTANA -> "Modo Montaña activo. El radar GPS te mantendrá localizado."
-            ActivityProfile.PASEO -> "Modo Paseo iniciado. Disfruta del camino y mantén el contacto con el grupo."
-            ActivityProfile.SENDERISMO -> "Senderismo activo. El radar te ayudará a no perder al grupo en la montaña."
-            ActivityProfile.CAMIONEROS -> "Atención camionero. Canal de ruta activo. ¡Buena ruta y cuidado en la carretera!"
-            ActivityProfile.CARAVANAS -> "Modo Caravana iniciado. Mantén la distancia y disfruta del viaje en grupo."
-            ActivityProfile.OFFROAD -> "Modo Offroad táctico. El radar te ayudará a no perder al grupo en el polvo."
-            ActivityProfile.TACTICO -> "Canal táctico encriptado. Red de malla operativa para misiones de campo."
-            ActivityProfile.RUNNING -> "Modo Running listo. Manos libres activado para tu entrenamiento."
-            else -> "Modo Actividad iniciado. Sintoniza tu canal y comparte la ruta con tus amigos."
+            ActivityProfile.MONTANA -> "Modo Montaña activo. El radar GPS te mantendrá localizado y el audio filtrado para ráfagas."
+            ActivityProfile.PASEO -> "Modo Paseo iniciado. Audio natural y ahorro de batería activado."
+            ActivityProfile.SENDERISMO -> "Senderismo activo. Filtro de voz optimizado y radar GPS de baja potencia."
+            ActivityProfile.CAMIONEROS -> "Atención camionero. Filtro de cabina activado para eliminar el ruido de rodadura."
+            ActivityProfile.CARAVANAS -> "Modo Caravana iniciado. Audio suavizado para viajes largos en grupo."
+            ActivityProfile.OFFROAD -> "Modo Offroad táctico. Filtro de vibración y radar de alta persistencia."
+            ActivityProfile.TACTICO -> "Canal táctico encriptado. Red de malla operativa y audio militar ultra-nítido."
+            ActivityProfile.RUNNING -> "Modo Running listo. VOX adaptado a tu respiración y ritmo."
+            ActivityProfile.ESQUI -> "Modo Nieve activado. Filtro para viento gélido y eco de montaña."
+            ActivityProfile.VELA -> "Navegación activa. Filtro de mar agresivo para eliminar el ruido de las olas y viento marino."
+            ActivityProfile.PARAPENTE -> "Vuelo iniciado. Filtro de aire extremo activado. Prioridad absoluta a la voz."
+            ActivityProfile.CAZA -> "Modo Caza activo. Micro de alta sensibilidad para susurros y radar silencioso."
+            ActivityProfile.PESCA -> "Modo Pesca iniciado. Silencio absoluto de fondo y máxima duración de batería."
+            ActivityProfile.KAYAK -> "Kayak en marcha. Filtro de agua y golpes de remo activado."
+            else -> "Modo Actividad iniciado. Optimizando audio y GPS para tu ruta."
         }
         
         delay(1000) // Breve pausa tras la animación de entrada
@@ -2355,15 +2390,46 @@ fun ActivityPanel(
             AlertDialog(
                 onDismissRequest = { showHelpDialog = false },
                 containerColor = LuxeColors.Slate900,
-                title = { Text("GUÍA DE RUTA Y SEGURIDAD", color = LuxeColors.Gold, fontWeight = FontWeight.Black) },
+                title = { 
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Info, null, tint = LuxeColors.Gold)
+                        Spacer(Modifier.width(12.dp))
+                        Text("INGENIERÍA DE AUDIO", color = LuxeColors.Gold, fontWeight = FontWeight.Black) 
+                    }
+                },
                 text = {
                     Column(Modifier.verticalScroll(rememberScrollState())) {
-                        Text("1. CREAR UNA RUTA", fontWeight = FontWeight.Bold, color = LuxeColors.Gold)
-                        Text("Toca el nombre del grupo arriba para ponerle nombre a tu ruta (ej: RUTA SIERRA). Luego usa el botón compartir para enviar el enlace por WhatsApp. Tus amigos entrarán directamente a tu grupo.", fontSize = 12.sp, color = Color.White.copy(0.7f))
+                        val optDesc = when(profile) {
+                            ActivityProfile.MOTO -> "FILTRO MOTOR (300Hz): Corta el ruido del escape y el viento del casco. El VOX está endurecido para no saltar con las revoluciones."
+                            ActivityProfile.CICLISMO -> "FILTRO VIENTO (200Hz): Optimizado para el silbido del aire en el micro. Incluye detección de caídas (G-Force)."
+                            ActivityProfile.PARAPENTE -> "FILTRO EXTREMO (280Hz): Diseñado para el flujo de aire constante en vuelo. Voz prioritaria sobre el ruido ambiente."
+                            ActivityProfile.VELA -> "FILTRO MARINO (250Hz): Elimina el ruido de las olas y el viento racheado de costa. Radar náutico activado."
+                            ActivityProfile.MONTANA -> "FILTRO RÁFAGAS (120Hz): Mantiene la voz nítida frente al viento de montaña. Máxima precisión GPS."
+                            ActivityProfile.CAZA -> "MODO SUSURRO: Sensibilidad del micro aumentada al máximo. Permite hablar muy bajo sin perder la conexión."
+                            ActivityProfile.TACTICO -> "MODO MILITAR: Audio comprimido para máxima inteligibilidad en combate o misiones. Encriptación de malla activa."
+                            ActivityProfile.CAMIONEROS -> "FILTRO RODADURA: Atenúa el ruido de fondo de la cabina y el motor diesel."
+                            ActivityProfile.RUNNING -> "VOX RÍTMICO: El algoritmo ignora el sonido de los pasos y la respiración fuerte del corredor."
+                            else -> "OPTIMIZACIÓN ESTÁNDAR: Balance entre calidad de audio y consumo de batería."
+                        }
                         
-                        Spacer(Modifier.height(12.dp))
-                        Text("2. GUARDIÁN DE IMPACTOS", fontWeight = FontWeight.Bold, color = LuxeColors.Gold)
-                        Text("Si sufres una caída fuerte, la app lo detectará y avisará a tus compañeros con tu GPS tras 15 seg. si no cancelas.", fontSize = 12.sp, color = Color.White.copy(0.7f))
+                        Surface(
+                            color = LuxeColors.Gold.copy(0.1f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = optDesc,
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+                        Text("SEGURIDAD Y RUTA", fontWeight = FontWeight.Bold, color = LuxeColors.Gold, fontSize = 11.sp)
+                        Text("• Toca el mapa para ver la ruta real.\n• El botón compartir envía tu posición GPS exacta.\n• Si te separas más de 50km del grupo, entrarás en modo repetidor WiFi.", fontSize = 11.sp, color = Color.White.copy(0.7f))
 
                         Spacer(Modifier.height(16.dp))
                         Surface(
@@ -2373,14 +2439,14 @@ fun ActivityPanel(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(Modifier.padding(8.dp)) {
-                                Text("⚠️ AVISO LEGAL IMPORTANTE", fontWeight = FontWeight.Black, color = Color.Red, fontSize = 10.sp)
-                                Text("El uso de auriculares mientras se conduce (bici, moto, coche) puede estar prohibido según la normativa de tráfico de tu zona. El usuario asume toda la responsabilidad legal y de seguridad por el uso de manos libres o dispositivos de audio. ON AIR SPAIN no se hace responsable de sanciones o accidentes derivados del uso indebido de la app en marcha.", 
-                                    fontSize = 9.sp, color = Color.White, lineHeight = 12.sp)
+                                Text("⚠️ AVISO LEGAL", fontWeight = FontWeight.Black, color = Color.Red, fontSize = 9.sp)
+                                Text("El uso de auriculares conduciendo puede ser ilegal. ON AIR SPAIN no se hace responsable de sanciones.", 
+                                    fontSize = 8.sp, color = Color.White.copy(0.9f), lineHeight = 10.sp)
                             }
                         }
                     }
                 },
-                confirmButton = { LuxeButton("ACEPTO Y ENTIENDO", { showHelpDialog = false }, true, Modifier.fillMaxWidth().height(44.dp), LuxeColors.Gold, Color.Black) }
+                confirmButton = { LuxeButton("ENTENDIDO", { showHelpDialog = false }, true, Modifier.fillMaxWidth().height(44.dp), LuxeColors.Gold, Color.Black) }
             )
         }
 

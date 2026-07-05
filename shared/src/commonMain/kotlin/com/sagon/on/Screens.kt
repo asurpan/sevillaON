@@ -1750,63 +1750,51 @@ fun ActivityPanel(
                     .border(2.dp, LuxeColors.Gold.copy(0.3f), RoundedCornerShape(24.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                if (showRealMap) {
-                    // --- 🌍 MAPA CARTOGRÁFICO TÁCTICO (CALLEREO REALISTA) ---
-                    Canvas(Modifier.fillMaxSize()) {
-                        val zoom = if (isZoomed) 2.5f else 1f
-                        val center = Offset(size.width / 2, size.height / 2)
-                        
-                        // 1. Dibujar Manzanas de la Ciudad
-                        val blockSize = 80.dp.toPx() * zoom
-                        for(x in -5..5) {
-                            for(y in -5..5) {
-                                drawRect(
-                                    color = Color(0xFF0F172A),
-                                    topLeft = Offset(center.x + x * blockSize + 10, center.y + y * blockSize + 10),
-                                    size = androidx.compose.ui.geometry.Size(blockSize - 20, blockSize - 20)
-                                )
+                // Background layers (Real Map or City Image)
+                Box(Modifier.fillMaxSize().alpha(if (state.motoLatitude != null) 1f else 0.3f)) {
+                    if (showRealMap) {
+                        // --- 🌍 MAPA CARTOGRÁFICO TÁCTICO (CALLEREO REALISTA) ---
+                        Canvas(Modifier.fillMaxSize()) {
+                            val zoom = if (isZoomed) 2.5f else 1f
+                            val center = Offset(size.width / 2, size.height / 2)
+                            
+                            // 1. Dibujar Manzanas de la Ciudad
+                            val blockSize = 80.dp.toPx() * zoom
+                            for(x in -5..5) {
+                                for(y in -5..5) {
+                                    drawRect(
+                                        color = Color(0xFF0F172A),
+                                        topLeft = Offset(center.x + x * blockSize + 10, center.y + y * blockSize + 10),
+                                        size = androidx.compose.ui.geometry.Size(blockSize - 20, blockSize - 20)
+                                    )
+                                }
                             }
-                        }
 
-                        // 2. Dibujar Calles y Avenidas
-                        val streetColor = Color.White.copy(0.08f)
-                        for(i in -5..5) {
-                            // Calles Verticales
-                            drawLine(streetColor, Offset(center.x + i * blockSize, 0f), Offset(center.x + i * blockSize, size.height), 2.dp.toPx())
-                            // Calles Horizontales
-                            drawLine(streetColor, Offset(0f, center.y + i * blockSize), Offset(size.width, center.y + i * blockSize), 2.dp.toPx())
-                        }
+                            // 2. Dibujar Calles y Avenidas
+                            val streetColor = Color.White.copy(0.08f)
+                            for(i in -5..5) {
+                                // Calles Verticales
+                                drawLine(streetColor, Offset(center.x + i * blockSize, 0f), Offset(center.x + i * blockSize, size.height), 2.dp.toPx())
+                                // Calles Horizontales
+                                drawLine(streetColor, Offset(0f, center.y + i * blockSize), Offset(size.width, center.y + i * blockSize), 2.dp.toPx())
+                            }
 
-                        // 3. Avenidas Principales (Resaltadas)
-                        drawLine(LuxeColors.Gold.copy(0.05f), Offset(center.x, 0f), Offset(center.x, size.height), 4.dp.toPx())
-                        drawLine(LuxeColors.Gold.copy(0.05f), Offset(0f, center.y), Offset(size.width, center.y), 4.dp.toPx())
-                    }
-                    
-                    // Capa de Ambientación
-                    Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color.Transparent, Color.Black.copy(0.4f)))))
-                } else {
-                    // --- 📡 CAPA RADAR TÁCTICO ---
-                    Image(
-                        painter = painterResource(Res.drawable.hero_city),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize().alpha(0.08f),
-                        contentScale = ContentScale.Crop,
-                        colorFilter = ColorFilter.tint(LuxeColors.ElectricBlue, BlendMode.Screen)
-                    )
-                }
-
-                // --- 🛡️ AVISO GPS DESACTIVADO ---
-                if (state.motoLatitude == null) {
-                    Box(
-                        modifier = Modifier.fillMaxSize().background(Color.Black.copy(0.7f)).clickable { onGpsRequest { } },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Rounded.GpsFixed, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp))
-                            Spacer(Modifier.height(12.dp))
-                            Text("BÚSQUEDA DE SEÑAL GPS...", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp)
-                            Text("Toca para activar ubicación", color = Color.White.copy(0.5f), fontSize = 10.sp)
+                            // 3. Avenidas Principales (Resaltadas)
+                            drawLine(LuxeColors.Gold.copy(0.05f), Offset(center.x, 0f), Offset(center.x, size.height), 4.dp.toPx())
+                            drawLine(LuxeColors.Gold.copy(0.05f), Offset(0f, center.y), Offset(size.width, center.y), 4.dp.toPx())
                         }
+                        
+                        // Capa de Ambientación
+                        Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color.Transparent, Color.Black.copy(0.4f)))))
+                    } else {
+                        // --- 📡 CAPA RADAR TÁCTICO ---
+                        Image(
+                            painter = painterResource(Res.drawable.hero_city),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize().alpha(0.08f),
+                            contentScale = ContentScale.Crop,
+                            colorFilter = ColorFilter.tint(LuxeColors.ElectricBlue, BlendMode.Screen)
+                        )
                     }
                 }
 
@@ -1816,35 +1804,38 @@ fun ActivityPanel(
                     animationSpec = infiniteRepeatable(tween(5000, easing = LinearEasing))
                 )
 
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val center = Offset(size.width / 2, size.height / 2)
-                    val baseRadius = size.minDimension / 2.2f
-                    val zoomFactor = if (isZoomed) 0.5f else 2.0f // Rango: 0.5km o 2km
-                    val radius = baseRadius
-                    
-                    // --- 🧭 BRÚJULA Y RANGO ---
-                    drawCircle(Color.White.copy(0.03f), radius = radius, style = Stroke(1.dp.toPx()))
-                    drawCircle(Color.White.copy(0.02f), radius = radius * 0.66f, style = Stroke(1.dp.toPx()))
-                    drawCircle(Color.White.copy(0.01f), radius = radius * 0.33f, style = Stroke(1.dp.toPx()))
+                // Radar Drawing Logic with alpha
+                Box(Modifier.fillMaxSize().alpha(if (state.motoLatitude != null) 1f else 0.1f)) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val center = Offset(size.width / 2, size.height / 2)
+                        val baseRadius = size.minDimension / 2.2f
+                        val zoomFactor = if (isZoomed) 0.5f else 2.0f // Rango: 0.5km o 2km
+                        val radius = baseRadius
+                        
+                        // --- 🧭 BRÚJULA Y RANGO ---
+                        drawCircle(Color.White.copy(0.03f), radius = radius, style = Stroke(1.dp.toPx()))
+                        drawCircle(Color.White.copy(0.02f), radius = radius * 0.66f, style = Stroke(1.dp.toPx()))
+                        drawCircle(Color.White.copy(0.01f), radius = radius * 0.33f, style = Stroke(1.dp.toPx()))
 
-                    // Líneas cardinales
-                    repeat(4) { i ->
-                        val angle = i * 90f * (PI / 180f).toFloat()
-                        drawLine(
-                            color = Color.White.copy(0.05f),
-                            start = Offset(center.x + cos(angle) * (radius - 10.dp.toPx()), center.y + sin(angle) * (radius - 10.dp.toPx())),
-                            end = Offset(center.x + cos(angle) * radius, center.y + sin(angle) * radius),
-                            strokeWidth = 2.dp.toPx()
+                        // Líneas cardinales
+                        repeat(4) { i ->
+                            val angle = i * 90f * (PI / 180f).toFloat()
+                            drawLine(
+                                color = Color.White.copy(0.05f),
+                                start = Offset(center.x + cos(angle) * (radius - 10.dp.toPx()), center.y + sin(angle) * (radius - 10.dp.toPx())),
+                                end = Offset(center.x + cos(angle) * radius, center.y + sin(angle) * radius),
+                                strokeWidth = 2.dp.toPx()
+                            )
+                        }
+
+                        // Haz de escaneo
+                        drawArc(
+                            brush = Brush.sweepGradient(listOf(Color.Transparent, LuxeColors.ElectricBlue.copy(0.15f), Color.Transparent)),
+                            startAngle = scanRotation - 90f,
+                            sweepAngle = 45f,
+                            useCenter = true
                         )
                     }
-
-                    // Haz de escaneo
-                    drawArc(
-                        brush = Brush.sweepGradient(listOf(Color.Transparent, LuxeColors.ElectricBlue.copy(0.15f), Color.Transparent)),
-                        startAngle = scanRotation - 90f,
-                        sweepAngle = 45f,
-                        useCenter = true
-                    )
                 }
 
                 // --- 🛰️ ICONOS DE COMPAÑEROS (PROXIMIDAD REAL) ---
@@ -1952,6 +1943,21 @@ fun ActivityPanel(
                     }
                 }
                 
+                // --- 🛡️ AVISO GPS DESACTIVADO (MOVIDO AL FINAL PARA EVITAR SOLAPAMIENTO) ---
+                if (state.motoLatitude == null) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(Color.Black.copy(0.4f)).clickable { onGpsRequest { } },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Rounded.GpsFixed, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp))
+                            Spacer(Modifier.height(12.dp))
+                            Text("BÚSQUEDA DE SEÑAL GPS...", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                            Text("Toca para activar ubicación", color = Color.White.copy(0.5f), fontSize = 10.sp)
+                        }
+                    }
+                }
+
                 // INDICADOR DE ESCALA Y SELECTOR
                 Row(
                     modifier = Modifier

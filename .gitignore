@@ -41,8 +41,14 @@ androidApp/debug/
 *.keystore
 *.p12
 *.pem
+llave
 
 # Archivos de propiedades sensibles
 secrets.properties
 # gradle.properties (descomentar si contiene claves sensibles)
-# gradle.properties
+
+# --- 🗑️ LIMPIEZA DE ARCHIVOS PESADOS Y BACKUPS ---
+.artifacts/
+backup_ui/
+imagenesSevillaON/
+INSTRUCCIONES_AGENTE.txt

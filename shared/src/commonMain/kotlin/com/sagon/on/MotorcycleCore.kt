@@ -65,17 +65,14 @@ fun SurvivalMeshMonitor(
     onMeshStatusChange: (Boolean) -> Unit,
     onExecuteAction: (String) -> Unit
 ) {
-    LaunchedEffect(state.activeProfile) {
-        if (state.activeProfile != ActivityProfile.NORMAL) {
-            // MODO ACTIVIDAD: Vigilancia continua de cobertura
-            while (true) {
-                // Aquí el Bridge nativo informará si no hay cobertura de datos
-                // Simulamos chequeo cada 10 segundos
-                delay(10000)
-                
-                // Si la app detecta que no hay internet, pedimos al Bridge activar P2P
-                // onExecuteAction("ACTIVATE_WIFI_MESH")
-            }
+    // --- 🛰️ MONITOR GLOBAL: Vigilancia continua de cobertura ---
+    LaunchedEffect(Unit) {
+        while (true) {
+            // El Bridge nativo informa si hay pérdida total de red (4G/5G)
+            // Si detectamos desconexión crítica, activamos el Failover P2P (Malla)
+            delay(15000) // Chequeo cada 15 segundos
+            
+            // onExecuteAction("CHECK_NETWORK_CRITICAL")
         }
     }
 }

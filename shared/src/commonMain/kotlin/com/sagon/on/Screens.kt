@@ -602,6 +602,35 @@ fun RadioPanel(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // 🔄 REPLAY 15s (Reubicado arriba)
+                    Surface(
+                        onClick = { if (!state.isInterfaceLocked) onReplay(); triggerUiSound("click") },
+                        color = if (isReplayReady) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
+                        shape = CircleShape,
+                        border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.1f)),
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            if (replayProgress > 0f) {
+                                CircularProgressIndicator(
+                                    progress = { replayProgress },
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = LuxeColors.Gold,
+                                    strokeWidth = 2.dp,
+                                    trackColor = Color.Transparent
+                                )
+                            }
+                            Icon(
+                                Icons.Rounded.History, 
+                                null, 
+                                tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.3f), 
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.width(12.dp))
+
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -774,43 +803,9 @@ fun RadioPanel(
                                     fontWeight = FontWeight.Black
                                 )
                                 
-                                Spacer(Modifier.height(8.dp))
-                                
-                                // 🔄 REPLAY 15s (Integrado en pantalla)
-                                Surface(
-                                    onClick = { if (!state.isInterfaceLocked) onReplay(); triggerUiSound("click") },
-                                    color = if (isReplayReady) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
-                                    shape = CircleShape,
-                                    border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.1f)),
-                                    modifier = Modifier.size(38.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        if (replayProgress > 0f) {
-                                            CircularProgressIndicator(
-                                                progress = { replayProgress },
-                                                modifier = Modifier.fillMaxSize(),
-                                                color = LuxeColors.Gold,
-                                                strokeWidth = 2.dp,
-                                                trackColor = Color.Transparent
-                                            )
-                                        }
-                                        Icon(
-                                            Icons.Rounded.History, 
-                                            null, 
-                                            tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.3f), 
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                }
+                                Spacer(Modifier.height(4.dp)) // --- 🔼 POSICIÓN MÁS ALTA ---
 
-                                Spacer(Modifier.height(8.dp))
-
-                                // 🏃 MODO ACTIVIDAD (Deportes) - PREMIUM NEXUS EDITION
-                                val activityPulseScale by infiniteTransition.animateFloat(
-                                    initialValue = 1f, targetValue = 1.35f,
-                                    animationSpec = infiniteRepeatable(tween(2000), RepeatMode.Reverse)
-                                )
-                                
+                                // 🏃 MODO ACTIVIDAD (Deportes) - NEXUS CLEAN EDITION
                                 // --- 🔄 LÓGICA DE ICONO DINÁMICO (ALTERNANTE) ---
                                 val alternatingIcons = listOf(
                                     Icons.Rounded.TwoWheeler, Icons.Rounded.PedalBike, Icons.Rounded.Terrain,
@@ -836,23 +831,7 @@ fun RadioPanel(
                                     color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.08f),
                                     shape = CircleShape,
                                     border = BorderStroke(2.dp, if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else LuxeColors.Gold.copy(0.3f)),
-                                    modifier = Modifier
-                                        .size(56.dp) // --- 💎 TAMAÑO ELITE ---
-                                        .drawBehind {
-                                            val color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else LuxeColors.Gold.copy(0.2f)
-                                            drawCircle(
-                                                color.copy(0.15f),
-                                                radius = size.maxDimension / 2 * activityPulseScale,
-                                                style = Stroke(3.dp.toPx())
-                                            )
-                                            if (state.activeProfile != ActivityProfile.NORMAL) {
-                                                drawCircle(
-                                                    LuxeColors.Gold.copy(0.1f),
-                                                    radius = size.maxDimension / 2 * (activityPulseScale + 0.2f),
-                                                    style = Stroke(1.dp.toPx())
-                                                )
-                                            }
-                                        }
+                                    modifier = Modifier.size(56.dp) // --- 💎 MANTENEMOS TAMAÑO PERO SIN GLOW EXTRA ---
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         val icon = if (state.activeProfile == ActivityProfile.NORMAL) {
@@ -883,6 +862,8 @@ fun RadioPanel(
                                         )
                                     }
                                 }
+
+                                Spacer(Modifier.height(14.dp)) // --- 🔼 ELEVACIÓN QUIRÚRGICA PARA VISIBILIDAD ---
                             }
                         }
 
@@ -913,28 +894,30 @@ fun RadioPanel(
                             }
 
                             // Actividades / Estado Red (Centro)
-                            val statusContent = remember(state.activeProfile, audioIntegrity, isTransmitting, pttTimer) {
+                            val statusContent = remember(state.activeProfile, audioIntegrity, isTransmitting, pttTimer, state.isMeshActive) {
                                 when {
                                     isTransmitting -> "TX TIME: ${pttTimer}s"
+                                    state.isMeshActive -> "MALLA: ACTIVA"
                                     state.activeProfile != ActivityProfile.NORMAL -> state.activeProfile.name
                                     else -> if(audioIntegrity) "NET: CONNECTED" else "SYNC ERROR"
                                 }
                             }
                             
-                            val statusIcon = when(state.activeProfile) {
-                                ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
-                                ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
-                                ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
-                                ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
-                                ActivityProfile.MONTANA -> Icons.Rounded.Landscape
-                                ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
-                                ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
-                                ActivityProfile.VELA -> Icons.Rounded.Sailing
-                                ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
-                                ActivityProfile.CAZA -> Icons.Rounded.Radar
-                                ActivityProfile.PESCA -> Icons.Rounded.Phishing
-                                ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
-                                ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
+                            val statusIcon = when {
+                                state.isMeshActive -> Icons.Rounded.WifiTethering
+                                state.activeProfile == ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
+                                state.activeProfile == ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
+                                state.activeProfile == ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
+                                state.activeProfile == ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
+                                state.activeProfile == ActivityProfile.MONTANA -> Icons.Rounded.Landscape
+                                state.activeProfile == ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
+                                state.activeProfile == ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
+                                state.activeProfile == ActivityProfile.VELA -> Icons.Rounded.Sailing
+                                state.activeProfile == ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
+                                state.activeProfile == ActivityProfile.CAZA -> Icons.Rounded.Radar
+                                state.activeProfile == ActivityProfile.PESCA -> Icons.Rounded.Phishing
+                                state.activeProfile == ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
+                                state.activeProfile == ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
                                 else -> Icons.Rounded.Wifi
                             }
 

@@ -35,7 +35,6 @@ jobs:
           cache-read-only: false
           add-job-summary: true
           # Caché de configuración desactivada por incompatibilidad con Kotlin JS
-          arguments: --build-cache
 
       - name: Build Web App (JS)
         run: ./gradlew :webApp:jsBrowserDistribution --stacktrace -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseParallelGC"

@@ -34,7 +34,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 
 enum class RadioDialogType {
-    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, PRO, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK
+    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, PRO, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK, MASTER_HELP
 }
 
 @Composable
@@ -437,6 +437,15 @@ fun RadioDialogs(
                 triggerUiSound("switch")
             }
         )
+        RadioDialogType.MASTER_HELP -> FeatureHelpDialog(
+            title = "Ajustes de Maestro",
+            icon = Icons.Rounded.VpnKey,
+            description = "Has desbloqueado la consola de ingeniería. Aquí puedes calibrar el Squelch, la ganancia de RF y los efectos DSP en tiempo real sin salir de la pantalla principal.",
+            onDismiss = { 
+                onDismiss()
+                onStateChange(state.copy(hasSeenMasterIntro = true))
+            }
+        )
         RadioDialogType.ACTIVITY_SELECTOR -> {
             var tempRouteName by remember { mutableStateOf("") }
             var tempRouteRules by remember { mutableStateOf("") }
@@ -639,11 +648,11 @@ fun RadioDialogs(
             titleContentColor = LuxeColors.Gold,
             textContentColor = Color.White,
             modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(12.dp)),
-            title = { Text("CONFIGURAR SUBTONO (CTCSS)", fontWeight = FontWeight.Black, fontSize = 16.sp) },
+            title = { Text("CÓDIGO DE PRIVACIDAD", fontWeight = FontWeight.Black, fontSize = 16.sp) },
             text = {
                 Column {
                     Text(
-                        "Al activar un subtono creas un canal privado. Solo quienes tengan tu mismo código podrán escucharte.",
+                        "Al activar un código creas un canal privado. Solo quienes tengan tu mismo código podrán escucharte.",
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
                         color = Color.White.copy(0.7f)
@@ -749,7 +758,7 @@ fun RadioDialogs(
                             Column(Modifier.weight(1f)) {
                                 Text("CANAL PRIVADO", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    if (isPrivateSelection) "Solo entrarán quienes sepan el subtono." else "Cualquiera podrá entrar y escuchar.",
+                                    if (isPrivateSelection) "Solo entrarán quienes sepan el código." else "Cualquiera podrá entrar y escuchar.",
                                     color = Color.White.copy(0.5f),
                                     fontSize = 10.sp
                                 )
@@ -766,7 +775,7 @@ fun RadioDialogs(
                             OutlinedTextField(
                                 value = tempSubtone, 
                                 onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) tempSubtone = it }, 
-                                placeholder = { Text("SUBTONO (4 CIFRAS)", color = Color.White.copy(0.2f)) }, 
+                                placeholder = { Text("CÓDIGO (4 CIFRAS)", color = Color.White.copy(0.2f)) },
                                 modifier = Modifier.fillMaxWidth(), 
                                 shape = RoundedCornerShape(16.dp), 
                                 singleLine = true,

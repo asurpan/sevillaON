@@ -119,6 +119,7 @@ data class RadioState(
     val hasSeenAntennaIntro: Boolean = false,
     val hasSeenDiscreteIntro: Boolean = false,
     val hasSeenMotoIntro: Boolean = false,
+    val hasSeenMasterIntro: Boolean = false,
     val hasAcceptedMicExplain: Boolean = false,
     val hasMicPermission: Boolean = false,
     val isSystemVoiceEnabled: Boolean = false, // Control de Red (Apagado por defecto)

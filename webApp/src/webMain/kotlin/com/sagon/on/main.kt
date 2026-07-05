@@ -3305,6 +3305,7 @@ fun main() {
                     localStorage.setItem("hasSeenAds", s.hasSeenAdsIntro.toString())
                     localStorage.setItem("hasSeenSquelch", s.hasSeenSquelchWarning.toString())
                     localStorage.setItem("hasSeenDis", s.hasSeenDiscreteIntro.toString())
+                    localStorage.setItem("hasSeenMaster", s.hasSeenMasterIntro.toString())
                     localStorage.setItem("disMode", s.isDiscreteModeEnabled.toString())
                     localStorage.setItem("mic_accepted", s.hasAcceptedMicExplain.toString())
                     localStorage.setItem("isNightMode", s.isNightMode.toString())

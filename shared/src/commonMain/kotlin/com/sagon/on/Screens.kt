@@ -602,6 +602,7 @@ fun RadioPanel(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
+<<<<<<< HEAD
                     // 🔄 REPLAY 15s (Reubicado arriba)
                     Surface(
                         onClick = { if (!state.isInterfaceLocked) onReplay(); triggerUiSound("click") },
@@ -631,6 +632,8 @@ fun RadioPanel(
 
                     Spacer(Modifier.width(12.dp))
 
+=======
+>>>>>>> c17bcc85d8cc0a3ad628f81407dfa173f712dcbb
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -805,7 +808,29 @@ fun RadioPanel(
                                 
                                 Spacer(Modifier.height(4.dp)) // --- 🔼 POSICIÓN MÁS ALTA ---
 
+<<<<<<< HEAD
                                 // 🏃 MODO ACTIVIDAD (Deportes) - NEXUS CLEAN EDITION
+                                // --- 🔄 LÓGICA DE ICONO DINÁMICO (ALTERNANTE) ---
+                                val alternatingIcons = listOf(
+                                    Icons.Rounded.TwoWheeler, Icons.Rounded.PedalBike, Icons.Rounded.Terrain,
+                                    Icons.Rounded.Phishing, Icons.Rounded.DirectionsRun, Icons.Rounded.Landscape,
+                                    Icons.Rounded.Sailing, Icons.Rounded.Kayaking, Icons.Rounded.AirplanemodeActive
+                                )
+                                val iconIndex by infiniteTransition.animateValue(
+                                    initialValue = 0,
+                                    targetValue = alternatingIcons.size,
+                                    typeConverter = Int.VectorConverter,
+                                    animationSpec = infiniteRepeatable(tween(alternatingIcons.size * 1000, easing = LinearEasing))
+=======
+                                Spacer(Modifier.height(8.dp))
+
+                                // 🏃 MODO ACTIVIDAD (Deportes) - PREMIUM NEXUS EDITION
+                                val activityPulseScale by infiniteTransition.animateFloat(
+                                    initialValue = 1f, targetValue = 1.35f,
+                                    animationSpec = infiniteRepeatable(tween(2000), RepeatMode.Reverse)
+>>>>>>> c17bcc85d8cc0a3ad628f81407dfa173f712dcbb
+                                )
+                                
                                 // --- 🔄 LÓGICA DE ICONO DINÁMICO (ALTERNANTE) ---
                                 val alternatingIcons = listOf(
                                     Icons.Rounded.TwoWheeler, Icons.Rounded.PedalBike, Icons.Rounded.Terrain,
@@ -831,7 +856,27 @@ fun RadioPanel(
                                     color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.08f),
                                     shape = CircleShape,
                                     border = BorderStroke(2.dp, if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else LuxeColors.Gold.copy(0.3f)),
+<<<<<<< HEAD
                                     modifier = Modifier.size(56.dp) // --- 💎 MANTENEMOS TAMAÑO PERO SIN GLOW EXTRA ---
+=======
+                                    modifier = Modifier
+                                        .size(56.dp) // --- 💎 TAMAÑO ELITE ---
+                                        .drawBehind {
+                                            val color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else LuxeColors.Gold.copy(0.2f)
+                                            drawCircle(
+                                                color.copy(0.15f),
+                                                radius = size.maxDimension / 2 * activityPulseScale,
+                                                style = Stroke(3.dp.toPx())
+                                            )
+                                            if (state.activeProfile != ActivityProfile.NORMAL) {
+                                                drawCircle(
+                                                    LuxeColors.Gold.copy(0.1f),
+                                                    radius = size.maxDimension / 2 * (activityPulseScale + 0.2f),
+                                                    style = Stroke(1.dp.toPx())
+                                                )
+                                            }
+                                        }
+>>>>>>> c17bcc85d8cc0a3ad628f81407dfa173f712dcbb
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         val icon = if (state.activeProfile == ActivityProfile.NORMAL) {

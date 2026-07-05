@@ -1,0 +1,4 @@
+{
+  "version": 1715600000040,
+  "notes": "FINAL ECHO AND SYNC FIX: Completely removed duplicate master output and synchronized PTT/Beep states."
+}

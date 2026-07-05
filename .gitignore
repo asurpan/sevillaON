@@ -1,0 +1,48 @@
+# PROTECTED CORE: REGLAS DE EXCLUSIÓN
+# ESTADO: CONGELADO / SEGURIDAD REFORZADA
+
+*.iml
+.kotlin
+.gradle/
+.kotlin-js-store/
+kotlin-js-store/
+**/build/
+build/
+**/node_modules/
+node_modules/
+package-lock.json
+yarn.lock
+
+# --- 🛠️ IDE & SISTEMA ---
+.idea/
+*.iws
+*.out
+local.properties
+.DS_Store
+Thumbs.db
+captures/
+.externalNativeBuild/
+.cxx/
+
+# --- 🔐 SEGURIDAD: ARCHIVOS CON CLAVES Y SECRETOS ---
+# Bloqueo de credenciales de Google/Firebase
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Bloqueo de paquetes pesados y compilados
+*.aab
+*.apk
+*.jar
+androidApp/release/
+androidApp/debug/
+
+# Bloqueo de llaves de firma (Keystores)
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# Archivos de propiedades sensibles
+secrets.properties
+# gradle.properties (descomentar si contiene claves sensibles)
+# gradle.properties

@@ -36,6 +36,9 @@ jobs:
           add-job-summary: true
           # Caché de configuración desactivada por incompatibilidad con Kotlin JS
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Build Web App (JS)
         run: ./gradlew :webApp:jsBrowserDistribution --stacktrace -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseParallelGC"
 

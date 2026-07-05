@@ -500,6 +500,31 @@ fun RadioDialogs(
                             )
                         )
 
+                        Spacer(Modifier.height(16.dp))
+
+                        // --- 🛰️ AVISO DE RED DE SUPERVIVENCIA (MESH) ---
+                        Surface(
+                            color = LuxeColors.ElectricBlue.copy(0.1f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, LuxeColors.ElectricBlue.copy(0.4f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.WifiTethering, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text("RED DE SUPERVIVENCIA ACTIVA", color = LuxeColors.ElectricBlue, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                                    Text(
+                                        "Si falla el 4G/5G o hay una catástrofe, la radio conecta con tus compañeros vía WiFi Direct (alcance 100-300m) automáticamente y sin internet.",
+                                        color = Color.White.copy(0.7f),
+                                        fontSize = 8.sp,
+                                        lineHeight = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
                         Spacer(Modifier.height(24.dp))
                         Text("SELECCIONA TU ACTIVIDAD:", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold)
                         Spacer(Modifier.height(12.dp))

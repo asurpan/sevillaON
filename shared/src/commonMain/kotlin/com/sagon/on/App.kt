@@ -838,6 +838,7 @@ fun App(
 
             androidx.compose.animation.AnimatedVisibility(
                 visible = radioState.isWorkModeActive,
+                modifier = Modifier.fillMaxSize(),
                 enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                 exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
             ) {
@@ -1058,7 +1059,7 @@ fun App(
                             nivelPerturbacion = nivel
                             radarModoRango = modo
                         },
-                        onShare = { c, s, u, g -> onShareRequest(c, s, nick, u, g) },
+                        onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g) },
                         onNotification = { localNotification = it },
                         onPlaySound = onPlaySound,
                         onExecuteEngineeringAction = onExecuteEngineeringAction,
@@ -1080,6 +1081,7 @@ fun App(
 
                 androidx.compose.animation.AnimatedVisibility(
                     visible = showActivityMap,
+                    modifier = Modifier.fillMaxSize(),
                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                     exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
                 ) {
@@ -1097,7 +1099,7 @@ fun App(
                         onMic = { a, p -> onMicEnable(a, radioState.isRogerBeepEnabled, p) },
                         onExecuteEngineeringAction = onExecuteEngineeringAction,
                         onGpsRequest = onGpsRequest,
-                        onShare = { c, s, u, g -> onShareRequest(c, s, nick, u, g) },
+                        onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g) },
                         onClose = { 
                             showActivityMap = false 
                             // --- 🛡️ LIMPIEZA DE RUTA AL CERRAR ---

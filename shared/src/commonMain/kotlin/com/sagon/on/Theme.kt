@@ -32,7 +32,7 @@ object LuxeColors {
     
     // Gradientes Editoriales
     val BackgroundGradient = Brush.verticalGradient(listOf(Color.Black, Color(0xFF1E1B4B)))
-    val NightGradient = Brush.verticalGradient(listOf(Color(0xFF0C0A09), Color(0xFF451A03))) // Negro a Ámbar profundo
+    val NightGradient = Brush.verticalGradient(listOf(Color(0xFF020617), Color(0xFF1E3A8A))) // Negro a Azul Profundo Táctico
     val GlossyGold = Brush.verticalGradient(listOf(Color(0xFFBBF7D0), Color(0xFF22C55E), Color(0xFF16A34A)))
     val NightAmber = Color(0xFFF59E0B) // Ámbar para LEDs y Dial nocturno
     val LiquidGlass = Brush.linearGradient(listOf(Color.White.copy(0.1f), Color.White.copy(0.02f)))

@@ -25,7 +25,7 @@ val SPAIN_CITIES = listOf(
 enum class Screen { Welcome, RadioCB }
 
 enum class ActivityProfile {
-    NORMAL, MOTO, CICLISMO, SENDERISMO, MONTANA, SOCORRISTAS
+    NORMAL, MOTO, CICLISMO, SENDERISMO, PASEO, MONTANA, SOCORRISTAS, CAMIONEROS, CARAVANAS, OFFROAD, TACTICO, RUNNING
 }
 
 data class RemoteUser(
@@ -135,6 +135,7 @@ data class RadioState(
     val nasaImageTitle: String? = null, // Título de la imagen
     val nasaImageExplanation: String? = null, // Explicación de la imagen
     val forceShowNasa: Boolean = false, // Disparador para deep-linking
+    val routeRules: String? = null, // Normas o info de la ruta activa
     val capturedCodes: List<CapturedCode> = emptyList(),
     val wifiNetworks: List<WifiNetwork> = emptyList()
 )

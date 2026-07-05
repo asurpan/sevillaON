@@ -508,21 +508,47 @@ fun RadioDialogs(
                                         val icon = when(act) {
                                             ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
                                             ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
-                                            ActivityProfile.SENDERISMO -> Icons.Rounded.DirectionsWalk
-                                            ActivityProfile.MONTANA -> Icons.Rounded.Terrain
+                                            ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
+                                            ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
+                                            ActivityProfile.MONTANA -> Icons.Rounded.Landscape
                                             ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
+                                            ActivityProfile.CAMIONEROS -> Icons.Rounded.LocalShipping
+                                            ActivityProfile.CARAVANAS -> Icons.Rounded.AirportShuttle
+                                            ActivityProfile.OFFROAD -> Icons.Rounded.Agriculture
+                                            ActivityProfile.TACTICO -> Icons.Rounded.Security
+                                            ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
                                             else -> Icons.Rounded.Person
                                         }
                                         Icon(icon, null, tint = (if (isSelected) LuxeColors.Gold else Color.White.copy(0.4f)).copy(alpha = contentAlpha))
                                         Spacer(Modifier.width(16.dp))
                                         Column {
-                                            Text(act.name, color = Color.White.copy(alpha = contentAlpha), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            val label = when(act) {
+                                                ActivityProfile.MOTO -> "MODO MOTO"
+                                                ActivityProfile.CICLISMO -> "MODO CICLISMO"
+                                                ActivityProfile.SENDERISMO -> "SENDERISMO"
+                                                ActivityProfile.PASEO -> "CAMINAR / PASEO"
+                                                ActivityProfile.MONTANA -> "MONTAÑA"
+                                                ActivityProfile.SOCORRISTAS -> "SOCORRISTAS"
+                                                ActivityProfile.CAMIONEROS -> "CAMIONEROS"
+                                                ActivityProfile.CARAVANAS -> "CARAVANAS"
+                                                ActivityProfile.OFFROAD -> "OFFROAD / 4X4"
+                                                ActivityProfile.TACTICO -> "CANAL TÁCTICO"
+                                                ActivityProfile.RUNNING -> "RUNNING"
+                                                else -> "ESTÁNDAR"
+                                            }
+                                            Text(label, color = Color.White.copy(alpha = contentAlpha), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                                             val desc = when(act) {
                                                 ActivityProfile.MOTO -> "Filtro Viento/Motor + G-Force"
                                                 ActivityProfile.CICLISMO -> "Filtro Viento + G-Force"
+                                                ActivityProfile.SENDERISMO -> "Filtro Voz + Radar GPS"
+                                                ActivityProfile.PASEO -> "Ahorro Batería + Compañía"
                                                 ActivityProfile.MONTANA -> "Radar GPS + Emergencia"
-                                                ActivityProfile.SENDERISMO -> "Filtro Voz + Ahorro Batería"
                                                 ActivityProfile.SOCORRISTAS -> "Prioridad SOS + Voz Nítida"
+                                                ActivityProfile.CAMIONEROS -> "Canal de Ruta + Tráfico"
+                                                ActivityProfile.CARAVANAS -> "Viaje en Grupo + Chat"
+                                                ActivityProfile.OFFROAD -> "Radar de Polvo + GPS Táctico"
+                                                ActivityProfile.TACTICO -> "Malla WiFi + Encriptación"
+                                                ActivityProfile.RUNNING -> "Manos Libres + Ritmo"
                                                 else -> "Modo Estándar"
                                             }
                                             Text(desc, color = Color.White.copy(alpha = contentAlpha * 0.4f), fontSize = 10.sp)

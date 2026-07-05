@@ -1679,9 +1679,16 @@ fun ActivityPanel(
         onExecuteEngineeringAction("SHOW_BANNER") // 💰 ACTIVAR PUBLICIDAD ADMOB
 
         val welcomeMsg = when(profile) {
-            ActivityProfile.MOTO -> "Modo Moto activado. Filtro de viento listo y guardián de impactos vigilando. Pulsa el PTT grande para hablar con el grupo."
-            ActivityProfile.CICLISMO -> "Modo Ciclismo listo. Si detecto una caída fuerte, avisaré a tus compañeros con tu ubicación. ¡Buena ruta!"
-            ActivityProfile.MONTANA -> "Modo Montaña activo. El radar GPS te mantendrá localizado. En caso de peligro, usa el protocolo S.O.S."
+            ActivityProfile.MOTO -> "Modo Moto activado. Filtro de viento listo y guardián de impactos vigilando."
+            ActivityProfile.CICLISMO -> "Modo Ciclismo listo. Si detecto una caída fuerte, avisaré a tus compañeros."
+            ActivityProfile.MONTANA -> "Modo Montaña activo. El radar GPS te mantendrá localizado."
+            ActivityProfile.PASEO -> "Modo Paseo iniciado. Disfruta del camino y mantén el contacto con el grupo."
+            ActivityProfile.SENDERISMO -> "Senderismo activo. El radar te ayudará a no perder al grupo en la montaña."
+            ActivityProfile.CAMIONEROS -> "Atención camionero. Canal de ruta activo. ¡Buena ruta y cuidado en la carretera!"
+            ActivityProfile.CARAVANAS -> "Modo Caravana iniciado. Mantén la distancia y disfruta del viaje en grupo."
+            ActivityProfile.OFFROAD -> "Modo Offroad táctico. El radar te ayudará a no perder al grupo en el polvo."
+            ActivityProfile.TACTICO -> "Canal táctico encriptado. Red de malla operativa para misiones de campo."
+            ActivityProfile.RUNNING -> "Modo Running listo. Manos libres activado para tu entrenamiento."
             else -> "Modo Actividad iniciado. Sintoniza tu canal y comparte la ruta con tus amigos."
         }
         
@@ -1931,10 +1938,16 @@ fun ActivityPanel(
                                 val myIcon = when(profile) {
                                     ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
                                     ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
-                                    ActivityProfile.SENDERISMO -> Icons.Rounded.DirectionsWalk
-                                    ActivityProfile.MONTANA -> Icons.Rounded.Terrain
+                                    ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
+                                    ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
+                                    ActivityProfile.MONTANA -> Icons.Rounded.Landscape
                                     ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
-                                    else -> Icons.Rounded.DirectionsRun
+                                    ActivityProfile.CAMIONEROS -> Icons.Rounded.LocalShipping
+                                    ActivityProfile.CARAVANAS -> Icons.Rounded.AirportShuttle
+                                    ActivityProfile.OFFROAD -> Icons.Rounded.Agriculture
+                                    ActivityProfile.TACTICO -> Icons.Rounded.Security
+                                    ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
+                                    else -> Icons.Rounded.Person
                                 }
                                 Icon(myIcon, null, tint = if(isTransmitting) Color.Red else LuxeColors.ElectricBlue, modifier = Modifier.size(22.dp))
                             }

@@ -661,6 +661,7 @@ fun RadioPanel(
                     .clickable { 
                         if (!state.isInterfaceLocked) { 
                             if (!state.hasAcceptedMicExplain) onPendingDialogChange(RadioDialogType.MIC_REQUEST) 
+                            else if (state.channel == "GENERAL") onPendingDialogChange(RadioDialogType.CREATE_CHANNEL)
                             else onPendingDialogChange(RadioDialogType.SELECT_CITY) 
                         } 
                     },
@@ -762,6 +763,7 @@ fun RadioPanel(
                                 Spacer(Modifier.height(8.dp))
 
                                 Surface(
+                                    onClick = { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY) },
                                     color = Color.White.copy(0.08f),
                                     shape = RoundedCornerShape(6.dp),
                                     border = BorderStroke(1.dp, Color.White.copy(0.1f))
@@ -1226,11 +1228,11 @@ fun RadioPanel(
                     }
                 } else if (state.channel == "GENERAL") {
                     Text(
-                        "No hay barrios activos. ¡Pulsa el título para crear uno!",
+                        "No hay barrios activos. ¡Pulsa el título o aquí para crear uno!",
                         color = Color.White.copy(0.2f),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 12.dp)
+                        modifier = Modifier.padding(vertical = 12.dp).clickable { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.CREATE_CHANNEL) }
                     )
                 }
             }
@@ -1585,6 +1587,7 @@ fun ActivityPanel(
     onExecuteEngineeringAction: (String) -> Unit,
     onGpsRequest: (callback: (String?) -> Unit) -> Unit,
     onShare: (String, String, String?, String?) -> Unit,
+    onPendingDialogChange: (RadioDialogType?) -> Unit,
     onClose: () -> Unit
 ) {
     val profile = state.activeProfile
@@ -2095,7 +2098,11 @@ fun ActivityPanel(
                 }
 
                 Surface(
-                    onClick = { onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled)); triggerUiSound("switch") },
+                    onClick = { 
+                        if (!state.hasSeenDiscreteIntro) onPendingDialogChange(RadioDialogType.DISCRETE)
+                        else onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled))
+                        triggerUiSound("switch")
+                    },
                     modifier = Modifier.weight(1f).height(44.dp),
                     shape = RoundedCornerShape(12.dp),
                     color = if (state.isDiscreteModeEnabled) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),

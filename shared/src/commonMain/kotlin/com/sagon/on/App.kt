@@ -1117,6 +1117,7 @@ fun App(
                         onExecuteEngineeringAction = onExecuteEngineeringAction,
                         onGpsRequest = onGpsRequest,
                         onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g) },
+                        onPendingDialogChange = { pendingDialog = it },
                         onClose = { 
                             showActivityMap = false 
                             // --- 🛡️ LIMPIEZA DE RUTA AL CERRAR ---

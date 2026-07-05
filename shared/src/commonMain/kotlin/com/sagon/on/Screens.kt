@@ -859,44 +859,6 @@ fun RadioPanel(
                                         Icon(icon, null, tint = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.4f), modifier = Modifier.size(18.dp))
                                     }
                                 }
-
-                                Spacer(Modifier.height(8.dp))
-
-                                // DUAL DOCK: MODO DISCRETO & COMPARTIR
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Surface(
-                                        onClick = { 
-                                            if (!state.hasSeenDiscreteIntro) onPendingDialogChange(RadioDialogType.DISCRETE)
-                                            else onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled))
-                                            triggerUiSound("switch")
-                                        },
-                                        color = if (state.isDiscreteModeEnabled) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
-                                        shape = CircleShape,
-                                        border = BorderStroke(1.dp, if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.1f)),
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing,
-                                                null, 
-                                                tint = if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.4f), 
-                                                modifier = Modifier.size(12.dp)
-                                            )
-                                        }
-                                    }
-
-                                    Surface(
-                                        onClick = { onShare(state.channel, state.subtone, state.myProRole, null); triggerUiSound("click") },
-                                        shape = CircleShape,
-                                        color = Color.White.copy(0.05f),
-                                        border = BorderStroke(1.dp, Color.White.copy(0.1f)),
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Rounded.Share, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(12.dp))
-                                        }
-                                    }
-                                }
                             }
                         }
 
@@ -992,8 +954,41 @@ fun RadioPanel(
                                 }
                             }
 
-                            // Espaciador para equilibrar el layout
-                            Box(modifier = Modifier.size(40.dp))
+                            // --- 🔐 DUAL DOCK: MODO DISCRETO & COMPARTIR (REUBICADO PARA VISIBILIDAD) ---
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Surface(
+                                    onClick = { 
+                                        if (!state.hasSeenDiscreteIntro) onPendingDialogChange(RadioDialogType.DISCRETE)
+                                        else onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled))
+                                        triggerUiSound("switch")
+                                    },
+                                    color = if (state.isDiscreteModeEnabled) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
+                                    shape = CircleShape,
+                                    border = BorderStroke(1.dp, if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.1f)),
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing,
+                                            null, 
+                                            tint = if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.4f), 
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+
+                                Surface(
+                                    onClick = { onShare(state.channel, state.subtone, state.myProRole, null); triggerUiSound("click") },
+                                    shape = CircleShape,
+                                    color = Color.White.copy(0.05f),
+                                    border = BorderStroke(1.dp, Color.White.copy(0.1f)),
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Rounded.Share, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(14.dp))
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1895,11 +1890,18 @@ fun ActivityPanel(
                         // Capa de Ambientación
                         Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color.Transparent, Color.Black.copy(0.4f)))))
                     } else {
-                        // --- 📡 CAPA RADAR TÁCTICO ---
+                        // --- 📡 CAPA RADAR TÁCTICO CON FONDO SEGÚN DEPORTE ---
+                        val backgroundRes = when(profile) {
+                            ActivityProfile.MOTO -> Res.drawable.moto
+                            ActivityProfile.CICLISMO -> Res.drawable.ciclismo
+                            ActivityProfile.MONTANA, ActivityProfile.SENDERISMO -> Res.drawable.montana
+                            ActivityProfile.SOCORRISTAS -> Res.drawable.socorrista
+                            else -> Res.drawable.hero_city
+                        }
                         Image(
-                            painter = painterResource(Res.drawable.hero_city),
+                            painter = painterResource(backgroundRes),
                             contentDescription = null,
-                            modifier = Modifier.fillMaxSize().alpha(0.08f),
+                            modifier = Modifier.fillMaxSize().alpha(0.12f),
                             contentScale = ContentScale.Crop,
                             colorFilter = ColorFilter.tint(LuxeColors.ElectricBlue, BlendMode.Screen)
                         )

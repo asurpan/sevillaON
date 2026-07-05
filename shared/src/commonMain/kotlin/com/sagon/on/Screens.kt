@@ -1151,20 +1151,31 @@ fun RadioPanel(
                 }
             }
 
-            if (activeRooms.isNotEmpty() || state.channel != "GENERAL") {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = if (state.channel != "GENERAL") "SINTONIZADOR DE BARRIOS" else "BARRIOS Y SALAS ACTIVAS EN ${state.city}", 
-                        color = LuxeColors.Gold.copy(0.6f), 
-                        fontSize = 9.sp, 
-                        fontWeight = FontWeight.Black, 
-                        letterSpacing = 2.sp, 
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.clickable { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.CREATE_CHANNEL) }
-                    )
+                    ) {
+                        Text(
+                            text = "SINTONIZADOR DE BARRIOS", 
+                            color = LuxeColors.Gold.copy(0.6f), 
+                            fontSize = 9.sp, 
+                            fontWeight = FontWeight.Black, 
+                            letterSpacing = 2.sp
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            Icons.Rounded.AddCircleOutline, 
+                            null, 
+                            tint = LuxeColors.Gold.copy(0.6f), 
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
                     
                     if (state.channel != "GENERAL") {
                         IconButton(
@@ -1175,47 +1186,58 @@ fun RadioPanel(
                         }
                     }
                 }
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(activeRooms) { (room, count) ->
-                        val isCurrent = state.channel == room
-                        val isGeneral = room == "GENERAL"
-                        
-                        Surface(
-                            onClick = { if (!state.isInterfaceLocked) onStateChange(state.copy(channel = room)) },
-                            modifier = Modifier.height(44.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isCurrent) LuxeColors.Gold.copy(0.15f) else if (isGeneral) LuxeColors.ElectricBlue.copy(0.1f) else Color.White.copy(0.05f),
-                            border = BorderStroke(1.dp, if (isCurrent) LuxeColors.Gold else if (isGeneral) LuxeColors.ElectricBlue.copy(0.4f) else Color.White.copy(0.1f))
-                        ) {
-                            Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                if (isGeneral) Icon(Icons.Rounded.Home, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(14.dp))
-                                if (isGeneral) Spacer(Modifier.width(8.dp))
-                                
-                                Text(
-                                    text = if (isGeneral) "VOLVER A GENERAL" else room, 
-                                    color = if (isGeneral) LuxeColors.ElectricBlue else Color.White, 
-                                    fontSize = 11.sp, 
-                                    fontWeight = FontWeight.Black
-                                )
-                                
-                                if (count > 0) {
-                                    Spacer(Modifier.width(8.dp))
-                                    Box(Modifier.background(if (isCurrent) LuxeColors.Gold else Color.White.copy(0.2f), CircleShape).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                                        Text(count.toString(), color = if (isCurrent) Color.Black else Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                
+                if (activeRooms.isNotEmpty()) {
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(activeRooms) { (room, count) ->
+                            val isCurrent = state.channel == room
+                            val isGeneral = room == "GENERAL"
+                            
+                            Surface(
+                                onClick = { if (!state.isInterfaceLocked) onStateChange(state.copy(channel = room)) },
+                                modifier = Modifier.height(44.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isCurrent) LuxeColors.Gold.copy(0.15f) else if (isGeneral) LuxeColors.ElectricBlue.copy(0.1f) else Color.White.copy(0.05f),
+                                border = BorderStroke(1.dp, if (isCurrent) LuxeColors.Gold else if (isGeneral) LuxeColors.ElectricBlue.copy(0.4f) else Color.White.copy(0.1f))
+                            ) {
+                                Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    if (isGeneral) Icon(Icons.Rounded.Home, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(14.dp))
+                                    if (isGeneral) Spacer(Modifier.width(8.dp))
+                                    
+                                    Text(
+                                        text = if (isGeneral) "VOLVER A GENERAL" else room, 
+                                        color = if (isGeneral) LuxeColors.ElectricBlue else Color.White, 
+                                        fontSize = 11.sp, 
+                                        fontWeight = FontWeight.Black
+                                    )
+                                    
+                                    if (count > 0) {
+                                        Spacer(Modifier.width(8.dp))
+                                        Box(Modifier.background(if (isCurrent) LuxeColors.Gold else Color.White.copy(0.2f), CircleShape).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                                            Text(count.toString(), color = if (isCurrent) Color.Black else Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+                } else if (state.channel == "GENERAL") {
+                    Text(
+                        "No hay barrios activos. ¡Pulsa el título para crear uno!",
+                        color = Color.White.copy(0.2f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
                 }
-                Spacer(Modifier.height(16.dp))
             }
+            Spacer(Modifier.height(16.dp))
 
             // --- 👥 ESTACIONES EN ESTE CANAL ---
-            Text(if (state.channel == "GENERAL") "OPERADORES EN ${state.city}" else "OPERADORES EN SALA ${state.channel}", color = Color.White.copy(0.3f), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.fillMaxWidth())
+            Text(if (state.channel == "GENERAL") "OPERADORES EN ${state.city}" else "OPERADORES EN BARRIO ${state.channel}", color = Color.White.copy(0.3f), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.fillMaxWidth())
             
             val allToShow = remember(nick, isTransmitting, state.city, state.channel, state.subtone, mappedUsers) {
                 (listOf(
@@ -1692,7 +1714,7 @@ fun ActivityPanel(
                 }
                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = if (state.channel == "GENERAL") "MODO ACTIVIDAD" else "GRUPO: ${state.channel}", 
+                        text = if (state.channel == "GENERAL") "MODO ACTIVIDAD" else "BARRIO: ${state.channel}",
                         color = LuxeColors.Gold, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp,
                         modifier = Modifier.basicMarquee()
                     )

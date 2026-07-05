@@ -755,6 +755,10 @@ fun App(
                                 onMicRequest = { active, power -> onMicEnable(active, radioState.isRogerBeepEnabled, power) },
                                 onConnect = { genre ->
                                     if (nick.isNotBlank()) {
+                                        // 🛡️ FIX: Al conectar desde bienvenida, aseguramos entrar en modo radio normal
+                                        radioState = radioState.copy(activeProfile = ActivityProfile.NORMAL)
+                                        showActivityMap = false
+
                                         if (genre != null) {
                                             radioState = radioState.copy(bgRadioGenre = genre)
                                             // Disparamos el scan para que al entrar ya esté sonando o buscando

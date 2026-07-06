@@ -912,10 +912,9 @@ fun RadioPanel(
                             // Actividades / Estado Red (Centro)
                             val statusContent = remember(state.activeProfile, audioIntegrity, isTransmitting, state.isMeshActive) {
                                 when {
-                                    isTransmitting -> "TRANSMISIÓN ACTIVA"
-                                    state.isMeshActive -> "MALLA: ACTIVA"
+                                    state.isMeshActive -> "RED P2P"
                                     state.activeProfile != ActivityProfile.NORMAL -> state.activeProfile.name
-                                    else -> if(audioIntegrity) "NET: CONNECTED" else "SYNC ERROR"
+                                    else -> if(audioIntegrity) "NET" else "SYNC ERROR"
                                 }
                             }
                             
@@ -940,17 +939,20 @@ fun RadioPanel(
                             Surface(
                                 color = if(state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.15f) else Color.Transparent,
                                 shape = RoundedCornerShape(8.dp),
-                                border = if(state.activeProfile != ActivityProfile.NORMAL) BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)) else null
+                                border = if(state.activeProfile != ActivityProfile.NORMAL) BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)) else null,
+                                modifier = Modifier.weight(1f)
                             ) {
                                 AnimatedContent(
                                     targetState = statusContent,
+                                    modifier = Modifier.fillMaxWidth(),
                                     transitionSpec = {
                                         (slideInVertically { it } + fadeIn()).togetherWith(slideOutVertically { -it } + fadeOut())
                                     }
                                 ) { text ->
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp).fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
                                     ) {
                                         Icon(
                                             statusIcon, 
@@ -964,7 +966,8 @@ fun RadioPanel(
                                             color = if(isTransmitting) Color.Red else if(state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.6f), 
                                             fontSize = 9.sp, 
                                             fontWeight = FontWeight.Black,
-                                            letterSpacing = 1.sp
+                                            letterSpacing = 1.sp,
+                                            maxLines = 1
                                         )
                                     }
                                 }
@@ -1164,41 +1167,6 @@ fun RadioPanel(
             }
 
             Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.CREATE_CHANNEL) }
-                    ) {
-                        Text(
-                            text = "SINTONIZADOR DE BARRIOS", 
-                            color = LuxeColors.Gold.copy(0.6f), 
-                            fontSize = 9.sp, 
-                            fontWeight = FontWeight.Black, 
-                            letterSpacing = 2.sp
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Icon(
-                            Icons.Rounded.AddCircleOutline, 
-                            null, 
-                            tint = LuxeColors.Gold.copy(0.6f), 
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
-                    
-                    if (state.channel != "GENERAL") {
-                        IconButton(
-                            onClick = { onShare(state.channel, state.subtone, null, null) },
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold, modifier = Modifier.size(14.dp))
-                        }
-                    }
-                }
-                
                 if (activeRooms.isNotEmpty()) {
                     LazyRow(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -1238,7 +1206,7 @@ fun RadioPanel(
                     }
                 } else if (state.channel == "GENERAL") {
                     Text(
-                        "No hay barrios activos. ¡Pulsa el título o aquí para crear uno!",
+                        "No hay barrios activos. Toca aquí para crear uno.",
                         color = Color.White.copy(0.2f),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
@@ -1850,7 +1818,7 @@ fun ActivityPanel(
                         modifier = Modifier.basicMarquee()
                     )
                     Text(
-                        if (state.subtone != "0000") "CÓDIGO PRIVADO: ${state.subtone}" else "RED DE MALLA ACTIVA", 
+                        if (state.subtone != "0000") "CÓDIGO PRIVADO: ${state.subtone}" else "RED P2P ACTIVA",
                         color = if (state.subtone != "0000") LuxeColors.Gold.copy(0.7f) else LuxeColors.Green, 
                         fontSize = 7.sp, fontWeight = FontWeight.Bold
                     )
@@ -2256,7 +2224,7 @@ fun ActivityPanel(
                     Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                         Icon(Icons.Rounded.WifiTethering, null, tint = LuxeColors.Green, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("MALLA OK", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
+                        Text("RED OK", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
                     }
                 }
             }

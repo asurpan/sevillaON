@@ -34,7 +34,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 
 enum class RadioDialogType {
-    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, PRO, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK, MASTER_HELP
+    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, PRO, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK, MASTER_HELP, HELP_SQUELCH, HELP_GAIN
 }
 
 @Composable
@@ -93,13 +93,48 @@ fun RadioDialogs(
                 triggerUiSound("switch")
             }
         )
-        RadioDialogType.WATTS -> FeatureHelpDialog(
-            title = "Potencia y Watts (W)",
-            icon = Icons.Rounded.Speed,
-            description = "Tu indicativo gana potencia cuanto más usas la radio. Al emitir verás tus vatios (W) reales.",
-            onDismiss = { 
-                onDismiss()
-                onStateChange(state.copy(hasSeenWattsIntro = true))
+        RadioDialogType.WATTS -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            titleContentColor = LuxeColors.Gold,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            icon = { Icon(Icons.Rounded.Speed, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
+            title = { Text("POTENCIA Y VATAJE (W)", fontWeight = FontWeight.Black) },
+            text = {
+                Column {
+                    Text(
+                        "Tu indicativo gana potencia real (W) automáticamente cuanto más tiempo pases modulando en la red.",
+                        fontSize = 13.sp,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "• Las estaciones nuevas empiezan con 0.7W.\n• El máximo permitido es 15W.\n• A mayor potencia, tu voz tendrá prioridad en caso de colisión con otros operadores.",
+                        fontSize = 12.sp,
+                        color = Color.White.copy(0.7f),
+                        lineHeight = 18.sp
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Surface(
+                        color = LuxeColors.Gold.copy(0.1f),
+                        shape = RoundedCornerShape(8.dp),
+                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f))
+                    ) {
+                        Text(
+                            "Dato actual: Tu potencia es de ${(state.veteranPower * 15f).toInt()} W",
+                            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                            color = LuxeColors.Gold,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                LuxeButton("ENTENDIDO", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
             }
         )
         RadioDialogType.FRIENDS -> FeatureHelpDialog(
@@ -1546,6 +1581,62 @@ fun RadioDialogs(
                 }
             )
         }
+        RadioDialogType.HELP_SQUELCH -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            titleContentColor = LuxeColors.Gold,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            icon = { Icon(Icons.Rounded.FilterAlt, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
+            title = { Text("¿QUÉ ES EL SQUELCH?", fontWeight = FontWeight.Black) },
+            text = {
+                Column {
+                    Text(
+                        "Es el silenciador de ruido. Corta el sonido de fondo (estática) para que solo oigas a tus compañeros cuando hablen.",
+                        fontSize = 13.sp,
+                        color = Color.White.copy(0.8f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "• SÚBELO: Si oyes mucho ruido de fondo molesto.\n• BÁJALO: Si tus compañeros se oyen entrecortados o muy lejos.",
+                        fontSize = 12.sp,
+                        color = LuxeColors.Gold.copy(0.7f),
+                        lineHeight = 18.sp
+                    )
+                }
+            },
+            confirmButton = {
+                LuxeButton("AJUSTAR EN CONSOLA", { onDismiss(); onPendingDialogChange(RadioDialogType.SETTINGS) }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+            }
+        )
+        RadioDialogType.HELP_GAIN -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            titleContentColor = LuxeColors.Gold,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            icon = { Icon(Icons.Rounded.SettingsInputAntenna, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
+            title = { Text("GANANCIA DE RF", fontWeight = FontWeight.Black) },
+            text = {
+                Column {
+                    Text(
+                        "Controla la sensibilidad de tu antena digital. Determina cuánta señal eres capaz de captar del aire.",
+                        fontSize = 13.sp,
+                        color = Color.White.copy(0.8f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "• AL 100%: Máximo alcance, pero captarás más interferencias.\n• BÁJALA: Si estás en una zona con mucha saturación o muchos usuarios hablando a la vez.",
+                        fontSize = 12.sp,
+                        color = LuxeColors.Gold.copy(0.7f),
+                        lineHeight = 18.sp
+                    )
+                }
+            },
+            confirmButton = {
+                LuxeButton("AJUSTAR EN CONSOLA", { onDismiss(); onPendingDialogChange(RadioDialogType.SETTINGS) }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+            }
+        )
         else -> {}
     }
 }

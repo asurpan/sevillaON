@@ -684,11 +684,11 @@ fun RadioPanel(
                         ) {
                             Column(Modifier.width(70.dp), horizontalAlignment = Alignment.Start) {
                                 TechLabel("SQUELCH", "${(state.squelch * 100).toInt()}%") {
-                                    onPendingDialogChange(RadioDialogType.SETTINGS)
+                                    onPendingDialogChange(RadioDialogType.HELP_SQUELCH)
                                 }
                                 Spacer(Modifier.height(16.dp))
                                 TechLabel("GANANCIA", "${(state.rfGain * 100).toInt()}%") {
-                                    onPendingDialogChange(RadioDialogType.SETTINGS)
+                                    onPendingDialogChange(RadioDialogType.HELP_GAIN)
                                 }
                                 Spacer(Modifier.height(16.dp))
                                 TechLabel("VOX", if(state.isVoxEnabled) "ACTIVO" else "OFF", if(state.isVoxEnabled) LuxeColors.Gold else Color.White.copy(0.3f)) {
@@ -910,9 +910,9 @@ fun RadioPanel(
                             }
 
                             // Actividades / Estado Red (Centro)
-                            val statusContent = remember(state.activeProfile, audioIntegrity, isTransmitting, pttTimer, state.isMeshActive) {
+                            val statusContent = remember(state.activeProfile, audioIntegrity, isTransmitting, state.isMeshActive) {
                                 when {
-                                    isTransmitting -> "TX TIME: ${pttTimer}s"
+                                    isTransmitting -> "TRANSMISIÓN ACTIVA"
                                     state.isMeshActive -> "MALLA: ACTIVA"
                                     state.activeProfile != ActivityProfile.NORMAL -> state.activeProfile.name
                                     else -> if(audioIntegrity) "NET: CONNECTED" else "SYNC ERROR"

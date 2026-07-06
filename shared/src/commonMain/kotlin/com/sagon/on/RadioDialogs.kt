@@ -427,14 +427,60 @@ fun RadioDialogs(
                 onShare(state.channel, state.subtone, null, null)
             }
         )
-        RadioDialogType.DISCRETE -> FeatureHelpDialog(
-            title = "Modo Discreto",
-            icon = Icons.Rounded.VolumeOff,
-            description = "Para tu privacidad, si la radio está guardada o la pantalla apagada, no soltará voces automáticamente. Te daremos un aviso y tú decides si quieres escuchar.",
-            onDismiss = { 
-                onDismiss()
-                onStateChange(state.copy(hasSeenDiscreteIntro = true, isDiscreteModeEnabled = !state.isDiscreteModeEnabled))
-                triggerUiSound("switch")
+        RadioDialogType.DISCRETE -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            titleContentColor = LuxeColors.Gold,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            icon = { Icon(if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
+            title = { Text("MODO DISCRETO", fontWeight = FontWeight.Black) },
+            text = {
+                Column {
+                    Text(
+                        "Para tu privacidad, cuando este modo está activo, la radio no emitirá voces automáticamente si tienes la pantalla apagada o la app en segundo plano.",
+                        fontSize = 13.sp,
+                        color = Color.White.copy(0.7f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "Recibirás un aviso visual y tú decides cuándo pulsar para escuchar al compañero. Ideal para el trabajo o lugares públicos.",
+                        fontSize = 11.sp,
+                        color = LuxeColors.Gold.copy(0.6f),
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(24.dp))
+                    
+                    Surface(
+                        onClick = { 
+                            onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled))
+                            triggerUiSound("switch")
+                        },
+                        color = if (state.isDiscreteModeEnabled) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.1f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Icon(
+                                if (state.isDiscreteModeEnabled) Icons.Rounded.NotificationsPaused else Icons.Rounded.NotificationsActive,
+                                null,
+                                tint = if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.4f)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                if (state.isDiscreteModeEnabled) "MODO DISCRETO: ACTIVADO" else "MODO DISCRETO: DESACTIVADO",
+                                color = if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                LuxeButton("ENTENDIDO", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
             }
         )
         RadioDialogType.MASTER_HELP -> FeatureHelpDialog(

@@ -806,7 +806,7 @@ fun RadioPanel(
                                 modifier = Modifier
                                     .width(70.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .clickable { onPendingDialogChange(RadioDialogType.SETTINGS) },
+                                    .clickable { onPendingDialogChange(RadioDialogType.WATTS) },
                                 horizontalAlignment = Alignment.End
                             ) {
                                 Text("POTENCIA", color = Color.White.copy(0.3f), fontSize = 7.sp, fontWeight = FontWeight.Black)
@@ -978,9 +978,8 @@ fun RadioPanel(
                             ) {
                                 Surface(
                                     onClick = { 
-                                        if (!state.hasSeenDiscreteIntro) onPendingDialogChange(RadioDialogType.DISCRETE)
-                                        else onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled))
-                                        triggerUiSound("switch")
+                                        onPendingDialogChange(RadioDialogType.DISCRETE)
+                                        triggerUiSound("click")
                                     },
                                     color = if (state.isDiscreteModeEnabled) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
                                     shape = CircleShape,
@@ -2116,9 +2115,8 @@ fun ActivityPanel(
 
                 Surface(
                     onClick = { 
-                        if (!state.hasSeenDiscreteIntro) onPendingDialogChange(RadioDialogType.DISCRETE)
-                        else onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled))
-                        triggerUiSound("switch")
+                        onPendingDialogChange(RadioDialogType.DISCRETE)
+                        triggerUiSound("click")
                     },
                     modifier = Modifier.weight(1f).height(44.dp),
                     shape = RoundedCornerShape(12.dp),

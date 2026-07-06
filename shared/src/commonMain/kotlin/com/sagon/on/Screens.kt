@@ -964,7 +964,11 @@ fun RadioPanel(
                             }
 
                             // --- 🔐 DUAL DOCK: MODO DISCRETO & COMPARTIR (REUBICADO PARA VISIBILIDAD) ---
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                modifier = Modifier.wrapContentWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp), 
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Surface(
                                     onClick = { 
                                         if (!state.hasSeenDiscreteIntro) onPendingDialogChange(RadioDialogType.DISCRETE)
@@ -974,7 +978,7 @@ fun RadioPanel(
                                     color = if (state.isDiscreteModeEnabled) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
                                     shape = CircleShape,
                                     border = BorderStroke(1.dp, if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.1f)),
-                                    modifier = Modifier.size(28.dp)
+                                    modifier = Modifier.requiredSize(28.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
@@ -991,7 +995,7 @@ fun RadioPanel(
                                     shape = CircleShape,
                                     color = Color.White.copy(0.05f),
                                     border = BorderStroke(1.dp, Color.White.copy(0.1f)),
-                                    modifier = Modifier.size(28.dp)
+                                    modifier = Modifier.requiredSize(28.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(Icons.Rounded.Share, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(14.dp))
@@ -1282,11 +1286,14 @@ fun RadioPanel(
 
         // --- 🛰️ MINI-VÚMETRO DE VIGILANCIA HERTZ (VERTICAL) ---
         if (radarActivo) {
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(end = 12.dp, bottom = 120.dp),
+                contentAlignment = Alignment.BottomEnd
+            ) {
                 Box(
                     modifier = Modifier
-                        .padding(end = 12.dp, bottom = 120.dp)
-                        .align(Alignment.BottomEnd)
                         .width(10.dp)
                         .height(150.dp)
                         .clip(RoundedCornerShape(4.dp))
@@ -1310,19 +1317,21 @@ fun RadioPanel(
 
         // CHAT OVERLAY
         if (state.isChatVisible) {
-            EliteChatOverlay(
-                messages = chatMessages,
-                target = privateChatTarget,
-                currentText = currentChatMessage,
-                onTextChange = { currentChatMessage = it },
-                onSend = { 
-                    if (currentChatMessage.text.isNotBlank()) {
-                        onSendMessage(currentChatMessage.text, privateChatTarget)
-                        currentChatMessage = androidx.compose.ui.text.input.TextFieldValue("")
-                    }
-                },
-                onClose = { onStateChange(state.copy(isChatVisible = false)) }
-            )
+            Box(modifier = Modifier.fillMaxSize().clickable(enabled = false) { }) {
+                EliteChatOverlay(
+                    messages = chatMessages,
+                    target = privateChatTarget,
+                    currentText = currentChatMessage,
+                    onTextChange = { currentChatMessage = it },
+                    onSend = { 
+                        if (currentChatMessage.text.isNotBlank()) {
+                            onSendMessage(currentChatMessage.text, privateChatTarget)
+                            currentChatMessage = androidx.compose.ui.text.input.TextFieldValue("")
+                        }
+                    },
+                    onClose = { onStateChange(state.copy(isChatVisible = false)) }
+                )
+            }
         }
     }
 }
@@ -1388,7 +1397,7 @@ fun EliteChatOverlay(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(Color.Black.copy(0.95f)).padding(24.dp)) {
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(0.95f)).clickable(enabled = false) { }.padding(24.dp)) {
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {

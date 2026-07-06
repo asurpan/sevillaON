@@ -32,7 +32,7 @@ En un mundo saturado de textos, **ON AIR** apuesta por el directo. Escuchar a al
 - **Filtro de Viento Adaptativo**: Procesado DSP agresivo (Corte 300Hz) para eliminar el ruido del aire y motor en cascos Bluetooth.
 - **VOX de Alta Precisión**: Sensibilidad milimétrica ajustable para cada tipo de deporte (Ciclismo, Montaña, Senderismo).
 - **Mapa de Ruta en Tiempo Real**: Visualización de compañeros sobre OpenStreetMap con etiquetas de Nick y estado de TX.
-- **Red de Supervivencia WiFi Malla**: Sistema híbrido que activa comunicaciones WiFi Direct (P2P) automáticamente si falla la cobertura 4G/5G. Los móviles actúan como puentes repetidores.
+- **Red de Supervivencia P2P**: Sistema híbrido que activa comunicaciones WiFi Direct (P2P) automáticamente si falla la cobertura 4G/5G. Los móviles actúan como puentes repetidores.
 - **Perfiles Especializados**: Configuraciones preestablecidas para Socorristas, Montañismo y Grupos Ciclistas.
 
 ### 📡 Radar de Presencia y Actividad (WiFi Sensing)

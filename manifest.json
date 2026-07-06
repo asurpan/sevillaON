@@ -6,7 +6,7 @@
   "orientation": "portrait-primary",
   "background_color": "#0F172A",
   "theme_color": "#0F172A",
-  "description": "Radio CB Digital, Modo Moto con filtro de viento y Red de Supervivencia WiFi Malla para deportes y seguridad.",
+  "description": "Radio CB Digital, Modo Moto con filtro de viento y Red de Supervivencia P2P para deportes y seguridad.",
   "categories": ["social", "sports", "utilities", "security"],
   "icons": [
     {
@@ -23,10 +23,10 @@
   ],
   "screenshots": [
     {
-      "src": "https://asurpan.github.io/sevillaON/preview.png",
+      "src": "https://asurpan.github.io/sevillaON/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "label": "Interfaz del Terminal de Voz"
+      "label": "Logo ON AIR SPAIN"
     }
   ]
 }

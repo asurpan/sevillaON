@@ -938,13 +938,6 @@ fun RadioPanel(
                             }
 
                             Surface(
-                                onClick = { 
-                                    if (!state.isInterfaceLocked) {
-                                        if (state.activeProfile == ActivityProfile.NORMAL) onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR)
-                                        else onActivityPanelRequest()
-                                        triggerUiSound("click")
-                                    }
-                                },
                                 color = if(state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.15f) else Color.Transparent,
                                 shape = RoundedCornerShape(8.dp),
                                 border = if(state.activeProfile != ActivityProfile.NORMAL) BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)) else null

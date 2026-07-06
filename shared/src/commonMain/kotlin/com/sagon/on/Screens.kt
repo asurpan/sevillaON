@@ -1045,8 +1045,9 @@ fun RadioPanel(
                     modifier = Modifier.weight(1f).clickable { onStateChange(state.copy(isChatVisible = !state.isChatVisible)); if(!state.isChatVisible) onPublicChat() }, 
                     icon = Icons.AutoMirrored.Rounded.Chat, 
                     label = "CHAT VOZ", 
-                    status = "${chatMessages.size} MSGS",
-                    isActive = chatMessages.isNotEmpty()
+                    status = if(state.unreadCount > 0) "${state.unreadCount} NUEVOS" else "${chatMessages.size} MSGS",
+                    isActive = state.unreadCount > 0 || chatMessages.isNotEmpty(),
+                    progress = if(state.unreadCount > 0) 1f else 0f
                 )
             }
 
@@ -1543,6 +1544,16 @@ fun EliteChatOverlay(
                 }
             }
 
+            if (currentText.text.contains("ANUNCIO:")) {
+                Text(
+                    "📢 Los mensajes con 'ANUNCIO:' serán leídos por voz a todos los operadores aunque tengan el móvil guardado.",
+                    color = LuxeColors.Gold,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+            }
+
             // Panel de Emojis
             AnimatedVisibility(visible = showEmojiPicker) {
                 val emojis = listOf("👍", "😎", "📻", "🏍️", "👋", "🔥", "⚠️", "🆘", "👏", "✅")
@@ -1562,7 +1573,7 @@ fun EliteChatOverlay(
                             modifier = Modifier.size(44.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(emoji, fontSize = 20.sp)
+                                Text(emoji, fontSize = 20.sp, color = Color.White)
                             }
                         }
                     }

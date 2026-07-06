@@ -474,12 +474,27 @@ fun App(
 
     // --- 💬 MOTOR DE CONTEO DE MENSAJES NO LEÍDOS ---
     LaunchedEffect(chatMessages.size) {
-        if (!radioState.isChatVisible && chatMessages.isNotEmpty()) {
+        if (chatMessages.isNotEmpty()) {
             val latest = chatMessages.last()
             val myNick = nick.trim().uppercase()
-            // Solo contamos si el mensaje no es nuestro y es muy reciente (evitar contar historial al entrar)
+            // Solo procesamos si el mensaje no es nuestro y es muy reciente (evitar historial)
             if (latest.senderNick.trim().uppercase() != myNick && latest.timestamp > (getTimeMillis() - 3000)) {
-                radioState = radioState.copy(unreadCount = radioState.unreadCount + 1)
+                if (!radioState.isChatVisible) {
+                    radioState = radioState.copy(unreadCount = radioState.unreadCount + 1)
+                    
+                    // --- 🔔 AVISO VISUAL Y SONORO ---
+                    triggerUiSound("click")
+                    localNotification = AppNotification(
+                        title = "MENSAJE DE ${latest.senderNick}",
+                        message = if (latest.text.startsWith("ANUNCIO:")) latest.text.removePrefix("ANUNCIO: ") else latest.text,
+                        type = NotificationType.Info,
+                        actionLabel = "ABRIR",
+                        onAction = {
+                            radioState = radioState.copy(isChatVisible = true, unreadCount = 0)
+                            localNotification = null
+                        }
+                    )
+                }
             }
         }
     }

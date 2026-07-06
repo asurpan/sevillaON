@@ -1335,7 +1335,9 @@ fun RadioPanel(
                             currentChatMessage = androidx.compose.ui.text.input.TextFieldValue("")
                         }
                     },
-                    onClose = { onStateChange(state.copy(isChatVisible = false)) }
+                    onClose = { onStateChange(state.copy(isChatVisible = false)) },
+                    onDeleteMessage = onDeleteMessage,
+                    myNick = nick
                 )
             }
         }
@@ -1386,6 +1388,7 @@ fun EliteControlTile(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EliteChatOverlay(
     messages: List<ChatMessage>,
@@ -1393,10 +1396,14 @@ fun EliteChatOverlay(
     currentText: androidx.compose.ui.text.input.TextFieldValue,
     onTextChange: (androidx.compose.ui.text.input.TextFieldValue) -> Unit,
     onSend: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onDeleteMessage: (String, String?) -> Unit = { _, _ -> },
+    myNick: String = ""
 ) {
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-    
+    var messageToDelete by remember { mutableStateOf<ChatMessage?>(null) }
+    var showEmojiPicker by remember { mutableStateOf(false) }
+
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -1468,25 +1475,41 @@ fun EliteChatOverlay(
                 ) {
                     items(messages) { msg ->
                         val isAnuncio = msg.text.startsWith("ANUNCIO:")
+                        val isMe = msg.senderNick.trim().uppercase() == myNick.trim().uppercase()
                         
                         Surface(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = { },
+                                    onLongClick = {
+                                        if (isMe) {
+                                            messageToDelete = msg
+                                            triggerUiSound("click")
+                                        }
+                                    }
+                                ),
                             color = if (isAnuncio) LuxeColors.Gold.copy(0.12f) else Color.White.copy(0.04f),
                             shape = RoundedCornerShape(20.dp),
                             border = BorderStroke(1.dp, if (isAnuncio) LuxeColors.Gold.copy(0.4f) else Color.White.copy(0.08f))
                         ) {
                             Column(Modifier.padding(20.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        msg.senderNick, 
-                                        color = if (isAnuncio) LuxeColors.Gold else Color(0xFF22D3EE), 
-                                        fontSize = 13.sp, 
-                                        fontWeight = FontWeight.Black,
-                                        letterSpacing = 1.5.sp
-                                    )
-                                    if (isAnuncio) {
-                                        Spacer(Modifier.width(10.dp))
-                                        Icon(Icons.Rounded.Campaign, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            msg.senderNick, 
+                                            color = if (isAnuncio) LuxeColors.Gold else Color(0xFF22D3EE), 
+                                            fontSize = 13.sp, 
+                                            fontWeight = FontWeight.Black,
+                                            letterSpacing = 1.5.sp
+                                        )
+                                        if (isAnuncio) {
+                                            Spacer(Modifier.width(10.dp))
+                                            Icon(Icons.Rounded.Campaign, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                    if (isMe) {
+                                        Icon(Icons.Rounded.MoreVert, null, tint = Color.White.copy(0.2f), modifier = Modifier.size(16.dp))
                                     }
                                 }
                                 Text(
@@ -1511,26 +1534,69 @@ fun EliteChatOverlay(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    onClick = { 
-                        if (!currentText.text.contains("ANUNCIO:")) {
-                            onTextChange(androidx.compose.ui.text.input.TextFieldValue("ANUNCIO: " + currentText.text))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        onClick = { 
+                            if (!currentText.text.contains("ANUNCIO:")) {
+                                onTextChange(androidx.compose.ui.text.input.TextFieldValue("ANUNCIO: " + currentText.text))
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = LuxeColors.Gold.copy(0.15f),
+                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f))
+                    ) {
+                        Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Campaign, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("LEER POR VOZ", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
                         }
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    color = LuxeColors.Gold.copy(0.15f),
-                    border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f))
-                ) {
-                    Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Campaign, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("LEER POR VOZ", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                    }
+                    
+                    Spacer(Modifier.width(12.dp))
+
+                    // --- 😃 SELECTOR DE EMOJIS RÁPIDOS ---
+                    Surface(
+                        onClick = { showEmojiPicker = !showEmojiPicker },
+                        shape = CircleShape,
+                        color = if (showEmojiPicker) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f),
+                        border = BorderStroke(1.dp, if (showEmojiPicker) LuxeColors.Gold else Color.White.copy(0.1f)),
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.SentimentSatisfiedAlt, null, tint = if (showEmojiPicker) LuxeColors.Gold else Color.White.copy(0.6f), modifier = Modifier.size(20.dp))
+                        }
                     }
                 }
 
                 if (currentText.text.isNotBlank()) {
                     TextButton(onClick = { onTextChange(androidx.compose.ui.text.input.TextFieldValue("")) }) {
                         Text("BORRAR TODO", color = Color.Red.copy(0.7f), fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
+
+            // Panel de Emojis
+            AnimatedVisibility(visible = showEmojiPicker) {
+                val emojis = listOf("👍", "😎", "📻", "🏍️", "👋", "🔥", "⚠️", "🆘", "👏", "✅")
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(emojis) { emoji ->
+                        Surface(
+                            onClick = { 
+                                val newText = currentText.text + emoji
+                                onTextChange(androidx.compose.ui.text.input.TextFieldValue(newText, androidx.compose.ui.text.TextRange(newText.length)))
+                                triggerUiSound("click")
+                            },
+                            shape = CircleShape,
+                            color = Color.White.copy(0.08f),
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(emoji, fontSize = 20.sp)
+                            }
+                        }
                     }
                 }
             }
@@ -1594,6 +1660,26 @@ fun EliteChatOverlay(
                     Text("CERRAR TERMINAL", color = Color.White.copy(0.4f), fontSize = 10.sp, fontWeight = FontWeight.Black)
                 }
             }
+        }
+
+        // --- 🗑️ DIÁLOGO DE BORRADO ---
+        if (messageToDelete != null) {
+            AlertDialog(
+                onDismissRequest = { messageToDelete = null },
+                containerColor = LuxeColors.DeepSea,
+                title = { Text("¿ELIMINAR MENSAJE?", color = Color.White, fontWeight = FontWeight.Black) },
+                text = { Text("Esta acción borrará el mensaje para todos los operadores.", color = Color.White.copy(0.7f)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onDeleteMessage(messageToDelete!!.id, target)
+                        messageToDelete = null
+                        triggerUiSound("click")
+                    }) { Text("BORRAR", color = Color.Red, fontWeight = FontWeight.Black) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { messageToDelete = null }) { Text("CANCELAR", color = Color.White.copy(0.4f)) }
+                }
+            )
         }
     }
 }

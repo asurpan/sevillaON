@@ -2,7 +2,7 @@ package com.sagon.on
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - PANTALLAS DE NAVEGACIÓN
- * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 1.5 (REDISEÑO ELITE)
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 1.6 (NEXUS ELITE SWAP)
  * 
  * Gestiona el renderizado de la pantalla de Bienvenida, Carga y Radio.
  * Blindado contra modificaciones estructurales en el flujo de navegación.
@@ -709,8 +709,7 @@ fun RadioPanel(
                                     color = statusColor,
                                     fontSize = 8.sp,
                                     fontWeight = FontWeight.Black,
-                                    letterSpacing = 2.sp,
-                                    modifier = Modifier.clickable { onPendingDialogChange(RadioDialogType.SETTINGS) }
+                                    letterSpacing = 2.sp
                                 )
                                 
                                 Spacer(Modifier.height(8.dp))
@@ -720,8 +719,7 @@ fun RadioPanel(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(20.dp)
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .clickable { onPendingDialogChange(RadioDialogType.SETTINGS) },
+                                        .clip(RoundedCornerShape(4.dp)),
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     val activeLevel = if(isTransmitting || rx) mic else qrmIntensity
@@ -746,9 +744,10 @@ fun RadioPanel(
 
                                 Spacer(Modifier.height(8.dp))
                                 
-                                val displayChannel = if (state.channel == "GENERAL") "CREAR O ENTRAR BARRIO" else state.channel
+                                val displayChannel = if (state.channel == "GENERAL") "ENTRAR EN BARRIO, PUEBLO O ACTIVIDAD" else state.channel
+                                // 🔒 NEXUS SWAP: Ciudad (Canal) arriba, Sala (Barrio) debajo
                                 Text(
-                                    text = if(rx) (transmitterNick ?: "ANÓNIMO") else displayChannel,
+                                    text = state.city,
                                     color = if(rx) Color(0xFF22D3EE) else Color.White,
                                     fontSize = 28.sp,
                                     fontWeight = FontWeight.Black,
@@ -759,11 +758,7 @@ fun RadioPanel(
                                         .fillMaxWidth()
                                         .basicMarquee()
                                         .clickable { 
-                                            if (!state.isInterfaceLocked) { 
-                                                if (!state.hasAcceptedMicExplain) onPendingDialogChange(RadioDialogType.MIC_REQUEST) 
-                                                else if (state.channel == "GENERAL") onPendingDialogChange(RadioDialogType.CREATE_CHANNEL)
-                                                else onPendingDialogChange(RadioDialogType.SELECT_CITY) 
-                                            } 
+                                            if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY) 
                                         },
                                     style = TextStyle(shadow = Shadow(color = statusColor.copy(0.3f), blurRadius = 10f))
                                 )
@@ -771,7 +766,12 @@ fun RadioPanel(
                                 Spacer(Modifier.height(8.dp))
 
                                 Surface(
-                                    onClick = { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY) },
+                                    onClick = { 
+                                        if (!state.isInterfaceLocked) { 
+                                            if (!state.hasAcceptedMicExplain) onPendingDialogChange(RadioDialogType.MIC_REQUEST) 
+                                            else onPendingDialogChange(RadioDialogType.CREATE_CHANNEL)
+                                        } 
+                                    },
                                     color = Color.White.copy(0.08f),
                                     shape = RoundedCornerShape(6.dp),
                                     border = BorderStroke(1.dp, Color.White.copy(0.1f))
@@ -781,14 +781,14 @@ fun RadioPanel(
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                     ) {
                                         Icon(
-                                            Icons.Rounded.LocationOn, 
+                                            if(rx) Icons.Rounded.Person else Icons.Rounded.Home, 
                                             null, 
                                             tint = LuxeColors.Gold, 
                                             modifier = Modifier.size(12.dp)
                                         )
                                         Spacer(Modifier.width(6.dp))
                                         Text(
-                                            text = state.city,
+                                            text = if(rx) (transmitterNick ?: "ANÓNIMO") else displayChannel,
                                             color = LuxeColors.Gold,
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Black,

@@ -24,6 +24,8 @@ val SPAIN_CITIES = listOf(
 
 enum class Screen { Welcome, RadioCB }
 
+data class QuadItem<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+
 enum class ActivityProfile {
     NORMAL, MOTO, CICLISMO, SENDERISMO, PASEO, MONTANA, SOCORRISTAS, CAMIONEROS, CARAVANAS, OFFROAD, TACTICO, RUNNING,
     ESQUI, VELA, PARAPENTE, CAZA, PESCA, KAYAK

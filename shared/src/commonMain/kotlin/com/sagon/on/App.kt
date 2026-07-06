@@ -484,6 +484,12 @@ fun App(
                     
                     // --- 🔔 AVISO VISUAL Y SONORO ---
                     triggerUiSound("click")
+                    
+                    if (latest.text.startsWith("ANUNCIO:")) {
+                        val textToRead = latest.text.removePrefix("ANUNCIO: ")
+                        onExecuteEngineeringAction("SPEAK|Mensaje de ${latest.senderNick}. $textToRead")
+                    }
+
                     localNotification = AppNotification(
                         title = "MENSAJE DE ${latest.senderNick}",
                         message = if (latest.text.startsWith("ANUNCIO:")) latest.text.removePrefix("ANUNCIO: ") else latest.text,
@@ -494,6 +500,10 @@ fun App(
                             localNotification = null
                         }
                     )
+                } else if (latest.text.startsWith("ANUNCIO:")) {
+                    // Si el chat está abierto pero es un ANUNCIO, también lo leemos
+                    val textToRead = latest.text.removePrefix("ANUNCIO: ")
+                    onExecuteEngineeringAction("SPEAK|Mensaje de ${latest.senderNick}. $textToRead")
                 }
             }
         }

@@ -836,18 +836,28 @@ fun RadioPanel(
                                 )
 
                                 Surface(
-                                    onClick = { 
-                                        if (state.activeProfile == ActivityProfile.NORMAL) {
-                                            onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR)
-                                        } else {
-                                            onActivityPanelRequest()
-                                        }
-                                        triggerUiSound("click") 
-                                    },
                                     color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.08f),
                                     shape = CircleShape,
                                     border = BorderStroke(2.dp, if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else LuxeColors.Gold.copy(0.3f)),
-                                    modifier = Modifier.size(56.dp) // --- 💎 MANTENEMOS TAMAÑO PERO SIN GLOW EXTRA ---
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(CircleShape)
+                                        .combinedClickable(
+                                            onClick = {
+                                                if (state.activeProfile == ActivityProfile.NORMAL) {
+                                                    onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR)
+                                                } else {
+                                                    onPendingDialogChange(RadioDialogType.FINISH_ACTIVITY_CONFIRM)
+                                                }
+                                                triggerUiSound("click")
+                                            },
+                                            onLongClick = {
+                                                if (state.activeProfile != ActivityProfile.NORMAL) {
+                                                    onActivityPanelRequest()
+                                                    triggerUiSound("click")
+                                                }
+                                            }
+                                        )
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         val icon = if (state.activeProfile == ActivityProfile.NORMAL) {
@@ -960,23 +970,24 @@ fun RadioPanel(
                                             tint = if(isTransmitting) Color.Red else if(state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color(0xFF4ADE80).copy(0.6f), 
                                             modifier = Modifier.size(12.dp)
                                         )
-                                        Spacer(Modifier.width(8.dp))
+                                        Spacer(Modifier.width(6.dp))
                                         Text(
                                             text = text, 
                                             color = if(isTransmitting) Color.Red else if(state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.6f), 
                                             fontSize = 9.sp, 
                                             fontWeight = FontWeight.Black,
                                             letterSpacing = 1.sp,
-                                            maxLines = 1
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
                                     }
                                 }
                             }
 
-                            // --- 🔐 DUAL DOCK: MODO DISCRETO & COMPARTIR (REUBICADO PARA VISIBILIDAD) ---
+                            // --- 🔐 DUAL DOCK: MODO DISCRETO & COMPARTIR (BLOQUEADO CONTRA DESPLAZAMIENTO) ---
                             Row(
-                                modifier = Modifier.wrapContentWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp), 
+                                modifier = Modifier.width(70.dp), // ANCHO FIJO PARA EVITAR SOLAPAMIENTO
+                                horizontalArrangement = Arrangement.End, 
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Surface(
@@ -998,6 +1009,8 @@ fun RadioPanel(
                                         )
                                     }
                                 }
+
+                                Spacer(Modifier.width(8.dp))
 
                                 Surface(
                                     onClick = { onShare(state.channel, state.subtone, state.myProRole, null); triggerUiSound("click") },
@@ -1517,7 +1530,7 @@ fun EliteChatOverlay(
                         Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.Campaign, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("LEER POR VOZ", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                            Text("ENVIAR AVISO VOZ", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
                         }
                     }
                     
@@ -1546,7 +1559,7 @@ fun EliteChatOverlay(
 
             if (currentText.text.contains("ANUNCIO:")) {
                 Text(
-                    "📢 Los mensajes con 'ANUNCIO:' serán leídos por voz a todos los operadores aunque tengan el móvil guardado.",
+                    "📢 ¡ATENCIÓN! Este mensaje será leído en voz alta por el altavoz de todos los compañeros que estén en este canal. Úsalo para avisos importantes.",
                     color = LuxeColors.Gold,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
@@ -1573,7 +1586,7 @@ fun EliteChatOverlay(
                             modifier = Modifier.size(44.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(emoji, fontSize = 20.sp, color = Color.White)
+                                Text(emoji, fontSize = 20.sp)
                             }
                         }
                     }

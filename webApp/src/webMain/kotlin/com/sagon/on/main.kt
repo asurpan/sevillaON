@@ -3499,6 +3499,11 @@ fun main() {
                     val parts = action.split("|")
                     val cmd = parts[0]
                     when (cmd) {
+                        "SPEAK" -> {
+                            if (parts.size >= 2) {
+                                win.AndroidApp.speak(parts[1], 1.0f, 1.0f)
+                            }
+                        }
                         "RUN_INDUCTIVE_TEST" -> win.AndroidApp.runInductiveResponseTest()
                         "EXECUTE_AGGRESSIVE_IOT" -> win.AndroidApp.executeAggressiveIoTJammer()
                         "PERFORM_RF_STRESS" -> win.AndroidApp.performRFStressDiagnostics()

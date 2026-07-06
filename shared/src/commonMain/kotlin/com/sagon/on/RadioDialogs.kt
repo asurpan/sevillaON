@@ -34,7 +34,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 
 enum class RadioDialogType {
-    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, PRO, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK, MASTER_HELP, HELP_SQUELCH, HELP_GAIN
+    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, PRO, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK, MASTER_HELP, HELP_SQUELCH, HELP_GAIN, FINISH_ACTIVITY_CONFIRM
 }
 
 @Composable
@@ -815,7 +815,8 @@ fun RadioDialogs(
                 .groupBy { it.channel }
                 .map { (name, uInRoom) ->
                     val activity = uInRoom.map { it.activity }.find { it != ActivityProfile.NORMAL } ?: ActivityProfile.NORMAL
-                    Triple(name, uInRoom.size, activity)
+                    val subtone = uInRoom.firstOrNull()?.subtone ?: "0000"
+                    QuadItem(name, uInRoom.size, activity, subtone)
                 }.sortedByDescending { it.second }
 
             AlertDialog(
@@ -898,25 +899,40 @@ fun RadioDialogs(
                             Text("CANALES Y RUTAS ACTIVAS:", fontSize = 9.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
                             Spacer(Modifier.height(8.dp))
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(activeRooms) { (room, count, activity) ->
+                                items(activeRooms) { (room, count, activity, subtone) ->
                                     val isFav = state.favoriteChannels.contains(room)
                                     val isActivity = activity != ActivityProfile.NORMAL
+                                    val isPrivate = subtone != "0000"
                                     
                                     Surface(
                                         onClick = { 
-                                            onStateChange(state.copy(
-                                                channel = room,
-                                                activeProfile = activity,
-                                                isMotoModeEnabled = isActivity
-                                            ))
-                                            onDismiss() 
-                                            if (isActivity) onActivityPanelRequest()
+                                            if (isPrivate) {
+                                                // Si es privado, cargamos los datos en el form para que el usuario ponga el código
+                                                newChannelName = room
+                                                isPrivateSelection = true
+                                                // tempSubtone = "" // Opcional: limpiar código anterior
+                                                onNotification(AppNotification("SALA PRIVADA", "Introduce el código para entrar en $room", NotificationType.Info))
+                                            } else {
+                                                // Si es público, entramos directo
+                                                onStateChange(state.copy(
+                                                    channel = room,
+                                                    activeProfile = activity,
+                                                    subtone = "0000",
+                                                    isMotoModeEnabled = isActivity
+                                                ))
+                                                onDismiss() 
+                                                if (isActivity) onActivityPanelRequest()
+                                            }
                                         },
                                         color = if(isActivity) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),
                                         shape = RoundedCornerShape(12.dp),
                                         border = BorderStroke(1.dp, if (isActivity) LuxeColors.Gold.copy(0.5f) else if (isFav) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.1f))
                                     ) {
                                         Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            if (isPrivate) {
+                                                Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold, modifier = Modifier.size(12.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                            }
                                             if (isActivity) {
                                                 val icon = when(activity) {
                                                     ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
@@ -1635,6 +1651,29 @@ fun RadioDialogs(
             },
             confirmButton = {
                 LuxeButton("AJUSTAR EN CONSOLA", { onDismiss(); onPendingDialogChange(RadioDialogType.SETTINGS) }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+            }
+        )
+        RadioDialogType.FINISH_ACTIVITY_CONFIRM -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.Slate900,
+            icon = { Icon(Icons.Rounded.Warning, null, tint = LuxeColors.Gold) },
+            title = { Text("¿FINALIZAR RUTA?", color = Color.White, fontWeight = FontWeight.Black) },
+            text = { Text("¿Estás seguro de que quieres cerrar el modo ruta? Volverás al canal público general.", color = Color.White.copy(0.7f), fontSize = 14.sp) },
+            confirmButton = {
+                LuxeButton("SÍ, FINALIZAR", { 
+                    onStateChange(state.copy(
+                        activeProfile = ActivityProfile.NORMAL,
+                        isMotoModeEnabled = false,
+                        channel = "GENERAL",
+                        subtone = "0000"
+                    ))
+                    onDismiss()
+                }, true, Modifier.fillMaxWidth().height(44.dp), Color.Red, Color.White)
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("CONTINUAR RUTA", color = LuxeColors.Gold, fontWeight = FontWeight.Bold)
+                }
             }
         )
         else -> {}

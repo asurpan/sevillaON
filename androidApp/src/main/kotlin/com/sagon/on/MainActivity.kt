@@ -557,7 +557,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         super.onNewIntent(intent)
         setIntent(intent)
         intent.data?.toString()?.let { url ->
-            webViewInstance?.loadUrl(url)
+            val finalUrl = if (url.startsWith("onairspain://")) {
+                val params = url.substringAfter("?", "")
+                "https://asurpan.github.io/sevillaON/" + (if (params.isNotEmpty()) "?$params" else "")
+            } else url
+            webViewInstance?.loadUrl(finalUrl)
         }
         handleIntent(intent)
     }
@@ -1973,7 +1977,15 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         // --- 🚀 MODO PRODUCCIÓN (GITHUB) ---
                         postDelayed({
                             val githubUrl = "https://asurpan.github.io/sevillaON/"
-                            val startUrl = intent.data?.toString() ?: githubUrl
+                            val incomingUrl = intent.data?.toString()
+                            val startUrl = if (incomingUrl != null && incomingUrl.startsWith("onairspain://")) {
+                                val params = incomingUrl.substringAfter("?", "")
+                                githubUrl + (if (params.isNotEmpty()) "?$params" else "")
+                            } else if (incomingUrl != null) {
+                                incomingUrl
+                            } else {
+                                githubUrl
+                            }
                             loadUrl(startUrl)
                         }, 100)
                     }

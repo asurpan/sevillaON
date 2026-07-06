@@ -84,6 +84,14 @@
                 <data android:scheme="https" android:host="asurpan.github.io" />
                 <data android:scheme="http" android:host="asurpan.github.io" />
             </intent-filter>
+
+            <!-- 🚀 CUSTOM SCHEME: Salto forzado desde Web -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="onairspain" />
+            </intent-filter>
         </activity>
     </application>
 

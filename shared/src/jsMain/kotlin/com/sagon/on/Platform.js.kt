@@ -138,8 +138,10 @@ actual fun tryOpenNativeApp() {
             try {
                 if (sessionStorage != null) sessionStorage.setItem("native_jump_attempted", "true")
                 
-                // Usamos el Intent scheme de Android para un salto directo y fiable
-                win.location.href = "intent://open#Intent;scheme=onairspain;package=com.sagon.on;S.browser_fallback_url=https://asurpan.github.io/sevillaON/?forceWeb=true;end"
+                // Usamos el Intent scheme de Android para un salto directo y fiable con persistencia de parámetros
+                val search = win.location.search.toString()
+                val fallbackUrl = currentUrl + (if (currentUrl.contains("?")) "&" else "?") + "forceWeb=true"
+                win.location.href = "intent://open" + search + "#Intent;scheme=onairspain;package=com.sagon.on;S.browser_fallback_url=" + win.encodeURIComponent(fallbackUrl) + ";end"
             } catch(e: dynamic) {
                 // Si el método falla, dejamos que siga en la web
             }

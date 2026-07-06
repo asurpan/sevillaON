@@ -654,7 +654,7 @@ fun RadioDialogs(
                     Button(onClick = {
                         val newState = state.copy(favoriteChannels = state.favoriteChannels - channelToDelete)
                         onStateChange(if (state.channel == channelToDelete) newState.copy(channel = "GENERAL") else newState)
-                        onNotification(AppNotification("SALA ELIMINADA", "Has vuelto a GENERAL", NotificationType.Info))
+                        onNotification(AppNotification("SALA ELIMINADA", "Has vuelto al Canal Público", NotificationType.Info))
                         onDismiss()
                     }, colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Red)) { Text("ELIMINAR") }
                 }
@@ -731,8 +731,11 @@ fun RadioDialogs(
         )
         RadioDialogType.CREATE_CHANNEL -> {
             val activeRooms = users.filter { it.city == state.city && it.channel != "GENERAL" }
-                .groupBy { it.channel }.mapValues { it.value.size }
-                .keys.toList().sorted()
+                .groupBy { it.channel }
+                .map { (name, uInRoom) ->
+                    val activity = uInRoom.map { it.activity }.find { it != ActivityProfile.NORMAL } ?: ActivityProfile.NORMAL
+                    Triple(name, uInRoom.size, activity)
+                }.sortedByDescending { it.second }
 
             AlertDialog(
                 onDismissRequest = onDismiss, 
@@ -811,21 +814,57 @@ fun RadioDialogs(
                         
                         if (activeRooms.isNotEmpty()) {
                             Spacer(Modifier.height(20.dp))
-                            Text("CANALES DISPONIBLES:", fontSize = 9.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
+                            Text("CANALES Y RUTAS ACTIVAS:", fontSize = 9.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
                             Spacer(Modifier.height(8.dp))
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(activeRooms) { room ->
+                                items(activeRooms) { (room, count, activity) ->
                                     val isFav = state.favoriteChannels.contains(room)
+                                    val isActivity = activity != ActivityProfile.NORMAL
+                                    
                                     Surface(
                                         onClick = { 
-                                            onStateChange(state.copy(channel = room))
+                                            onStateChange(state.copy(
+                                                channel = room,
+                                                activeProfile = activity,
+                                                isMotoModeEnabled = isActivity
+                                            ))
                                             onDismiss() 
+                                            if (isActivity) onActivityPanelRequest()
                                         },
-                                        color = Color.White.copy(0.05f),
+                                        color = if(isActivity) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),
                                         shape = RoundedCornerShape(12.dp),
-                                        border = BorderStroke(1.dp, if (isFav) LuxeColors.Gold.copy(0.4f) else Color.White.copy(0.1f))
+                                        border = BorderStroke(1.dp, if (isActivity) LuxeColors.Gold.copy(0.5f) else if (isFav) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.1f))
                                     ) {
-                                        Text(room, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                                        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            if (isActivity) {
+                                                val icon = when(activity) {
+                                                    ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
+                                                    ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
+                                                    ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
+                                                    ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
+                                                    ActivityProfile.MONTANA -> Icons.Rounded.Landscape
+                                                    ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
+                                                    ActivityProfile.CAMIONEROS -> Icons.Rounded.LocalShipping
+                                                    ActivityProfile.CARAVANAS -> Icons.Rounded.AirportShuttle
+                                                    ActivityProfile.OFFROAD -> Icons.Rounded.Agriculture
+                                                    ActivityProfile.TACTICO -> Icons.Rounded.Security
+                                                    ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
+                                                    ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
+                                                    ActivityProfile.VELA -> Icons.Rounded.Sailing
+                                                    ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
+                                                    ActivityProfile.CAZA -> Icons.Rounded.Radar
+                                                    ActivityProfile.PESCA -> Icons.Rounded.Phishing
+                                                    ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
+                                                    else -> Icons.Rounded.Person
+                                                }
+                                                Icon(icon, null, tint = LuxeColors.Gold, modifier = Modifier.size(14.dp))
+                                                Spacer(Modifier.width(6.dp))
+                                            }
+                                            Text(room, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            if (count > 1) {
+                                                Text(" ($count)", color = Color.White.copy(0.4f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
                                     }
                                 }
                                 item { Spacer(Modifier.width(180.dp)) }

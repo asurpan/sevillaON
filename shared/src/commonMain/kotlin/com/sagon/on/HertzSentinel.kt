@@ -547,7 +547,7 @@ fun HertzSentinelScreen(
                         modoDireccional -> "MODO DIRECCIONAL"
                         else -> "RADAR DE ACTIVIDAD v1.1"
                     }
-                    Text("RADAR DE RUTAS", color = LuxeColors.ElectricBlue, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                    Text("RADAR DE PRESENCIA", color = LuxeColors.ElectricBlue, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
                     Text(activeModeLabel, color = Color.White.copy(0.3f), fontSize = 8.sp, fontWeight = FontWeight.Bold)
                 }
                 IconButton(onClick = { mostrarAyuda = true }) {

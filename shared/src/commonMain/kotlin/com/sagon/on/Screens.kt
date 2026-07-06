@@ -657,14 +657,7 @@ fun RadioPanel(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(215.dp)
-                    .clip(RoundedCornerShape(32.dp))
-                    .clickable { 
-                        if (!state.isInterfaceLocked) { 
-                            if (!state.hasAcceptedMicExplain) onPendingDialogChange(RadioDialogType.MIC_REQUEST) 
-                            else if (state.channel == "GENERAL") onPendingDialogChange(RadioDialogType.CREATE_CHANNEL)
-                            else onPendingDialogChange(RadioDialogType.SELECT_CITY) 
-                        } 
-                    },
+                    .clip(RoundedCornerShape(32.dp)),
                 color = Color.Black.copy(0.6f),
                 border = BorderStroke(2.dp, Brush.verticalGradient(listOf(Color.White.copy(0.2f), Color.Transparent)))
             ) {
@@ -716,14 +709,19 @@ fun RadioPanel(
                                     color = statusColor,
                                     fontSize = 8.sp,
                                     fontWeight = FontWeight.Black,
-                                    letterSpacing = 2.sp
+                                    letterSpacing = 2.sp,
+                                    modifier = Modifier.clickable { onPendingDialogChange(RadioDialogType.SETTINGS) }
                                 )
                                 
                                 Spacer(Modifier.height(8.dp))
 
                                 // --- 🚥 VÚMETRO DE LEDS CENTRADO (Luxe Edition) ---
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().height(20.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(20.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .clickable { onPendingDialogChange(RadioDialogType.SETTINGS) },
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     val activeLevel = if(isTransmitting || rx) mic else qrmIntensity
@@ -748,15 +746,25 @@ fun RadioPanel(
 
                                 Spacer(Modifier.height(8.dp))
                                 
+                                val displayChannel = if (state.channel == "GENERAL") "CREAR O ENTRAR BARRIO" else state.channel
                                 Text(
-                                    text = if(rx) (transmitterNick ?: "ANÓNIMO") else state.channel,
+                                    text = if(rx) (transmitterNick ?: "ANÓNIMO") else displayChannel,
                                     color = if(rx) Color(0xFF22D3EE) else Color.White,
                                     fontSize = 28.sp,
                                     fontWeight = FontWeight.Black,
                                     letterSpacing = (-1).sp,
                                     textAlign = TextAlign.Center,
                                     maxLines = 1,
-                                    modifier = Modifier.fillMaxWidth().basicMarquee(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .basicMarquee()
+                                        .clickable { 
+                                            if (!state.isInterfaceLocked) { 
+                                                if (!state.hasAcceptedMicExplain) onPendingDialogChange(RadioDialogType.MIC_REQUEST) 
+                                                else if (state.channel == "GENERAL") onPendingDialogChange(RadioDialogType.CREATE_CHANNEL)
+                                                else onPendingDialogChange(RadioDialogType.SELECT_CITY) 
+                                            } 
+                                        },
                                     style = TextStyle(shadow = Shadow(color = statusColor.copy(0.3f), blurRadius = 10f))
                                 )
                                 
@@ -794,7 +802,13 @@ fun RadioPanel(
                             }
 
                             // Panel Lateral Derecho (Power/Watts)
-                            Column(Modifier.width(70.dp), horizontalAlignment = Alignment.End) {
+                            Column(
+                                modifier = Modifier
+                                    .width(70.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { onPendingDialogChange(RadioDialogType.SETTINGS) },
+                                horizontalAlignment = Alignment.End
+                            ) {
                                 Text("POTENCIA", color = Color.White.copy(0.3f), fontSize = 7.sp, fontWeight = FontWeight.Black)
                                 val wText = if (isTransmitting) "${(myDynamicPower * 15f).toInt()} W" else if(rx) "9.2 W" else "0.0 W"
                                 Text(
@@ -1214,7 +1228,7 @@ fun RadioPanel(
                                     if (isGeneral) Spacer(Modifier.width(8.dp))
                                     
                                     Text(
-                                        text = if (isGeneral) "VOLVER A GENERAL" else room, 
+                                        text = if (isGeneral) "SALIR AL CANAL PÚBLICO" else room, 
                                         color = if (isGeneral) LuxeColors.ElectricBlue else Color.White, 
                                         fontSize = 11.sp, 
                                         fontWeight = FontWeight.Black
@@ -1243,7 +1257,7 @@ fun RadioPanel(
             Spacer(Modifier.height(16.dp))
 
             // --- 👥 ESTACIONES EN ESTE CANAL ---
-            Text(if (state.channel == "GENERAL") "OPERADORES EN ${state.city}" else "OPERADORES EN BARRIO ${state.channel}", color = Color.White.copy(0.3f), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.fillMaxWidth())
+            Text(if (state.channel == "GENERAL") "CANAL PÚBLICO EN ${state.city}" else "OPERADORES EN BARRIO ${state.channel}", color = Color.White.copy(0.3f), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.fillMaxWidth())
             
             val allToShow = remember(nick, isTransmitting, state.city, state.channel, state.subtone, mappedUsers) {
                 (listOf(
@@ -1597,7 +1611,8 @@ fun ActivityPanel(
     onGpsRequest: (callback: (String?) -> Unit) -> Unit,
     onShare: (String, String, String?, String?) -> Unit,
     onPendingDialogChange: (RadioDialogType?) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onFinish: () -> Unit
 ) {
     val profile = state.activeProfile
     val interactionSource = remember { MutableInteractionSource() }
@@ -1809,7 +1824,7 @@ fun ActivityPanel(
                         Image(
                             painter = painterResource(backgroundRes),
                             contentDescription = null,
-                            modifier = Modifier.fillMaxSize().alpha(0.65f),
+                            modifier = Modifier.fillMaxSize().alpha(0.35f),
                             contentScale = ContentScale.Crop,
                             colorFilter = ColorFilter.tint(LuxeColors.ElectricBlue.copy(0.2f), BlendMode.Screen)
                         )
@@ -2361,7 +2376,7 @@ fun ActivityPanel(
                     LuxeButton("SÍ, CERRAR", { 
                         showCloseConfirm = false
                         onExecuteEngineeringAction("HIDE_BANNER") // 💰 OCULTAR PUBLICIDAD AL SALIR
-                        onClose() 
+                        onFinish()
                     }, true, Modifier.fillMaxWidth().height(44.dp), Color.Red, Color.White)
                 },
                 dismissButton = {

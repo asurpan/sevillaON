@@ -35,7 +35,7 @@ En un mundo saturado de textos, **ON AIR** apuesta por el directo. Escuchar a al
 - **Red de Supervivencia WiFi Malla**: Sistema híbrido que activa comunicaciones WiFi Direct (P2P) automáticamente si falla la cobertura 4G/5G. Los móviles actúan como puentes repetidores.
 - **Perfiles Especializados**: Configuraciones preestablecidas para Socorristas, Montañismo y Grupos Ciclistas.
 
-### 📡 Radar de Rutas y Actividad (WiFi Sensing)
+### 📡 Radar de Presencia y Actividad (WiFi Sensing)
 - **Motor de Sensibilidad 80X**: Control de precisión exponencial desde filtrado de ruido máximo hasta escucha absoluta (0.05f).
 - **Detección de Presencia Pro**: Localización de actividad física y movimiento tras muros o en ruta mediante fluctuaciones WiFi con discriminación inteligente.
 - **Modo Ruta & Grupo**: Visualiza la actividad de compañeros cercanos para salidas en moto, ciclismo o rutas 4x4.

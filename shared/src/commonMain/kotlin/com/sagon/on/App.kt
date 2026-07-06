@@ -136,7 +136,7 @@ fun App(
     var radioState by remember { mutableStateOf(initialState) }
     var localNotification by remember { mutableStateOf<AppNotification?>(null) }
     var showActivityRadar by remember { mutableStateOf(false) } // 🛡️ Pantalla de Radar de Presencia / Actividad
-    var showActivityMap by remember { mutableStateOf(false) } // 🛡️ Nueva pantalla de Deporte/Ruta
+    var showActivityMap by remember { mutableStateOf(initialState.activeProfile != ActivityProfile.NORMAL) } // 🛡️ Nueva pantalla de Deporte/Ruta
     var engineeringPanelVisible by remember { mutableStateOf(false) } // 🛡️ Levantado para control quirúrgico de Back
     var engineeringResetTrigger by remember { mutableStateOf(0) }
     var wifiVerificationResult by remember { mutableStateOf<String?>(null) }
@@ -1118,9 +1118,10 @@ fun App(
                         onGpsRequest = onGpsRequest,
                         onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g) },
                         onPendingDialogChange = { pendingDialog = it },
-                        onClose = { 
+                        onClose = { showActivityMap = false },
+                        onFinish = { 
                             showActivityMap = false 
-                            // --- 🛡️ LIMPIEZA DE RUTA AL CERRAR ---
+                            // --- 🛡️ LIMPIEZA DE RUTA AL FINALIZAR ---
                             radioState = radioState.copy(
                                 activeProfile = ActivityProfile.NORMAL,
                                 isMotoModeEnabled = false,

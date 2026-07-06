@@ -1403,64 +1403,101 @@ fun EliteChatOverlay(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(Color.Black.copy(0.95f)).clickable(enabled = false) { }.padding(24.dp)) {
-        Column(Modifier.fillMaxSize()) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    Text(
-                        text = if (target != null) "TERMINAL PRIVADA" else "SALA GENERAL", 
-                        color = LuxeColors.Gold, 
-                        fontSize = 10.sp, 
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 2.sp
-                    )
-                    Text(
-                        text = target ?: "TODOS LOS OPERADORES", 
-                        color = Color.White, 
-                        fontSize = 16.sp, 
-                        fontWeight = FontWeight.Bold
-                    )
+    Box(Modifier.fillMaxSize().background(EliteTheme.DeepGradient).clickable(enabled = false) { }) {
+        StarryBackground(activity = 0.2f)
+        
+        Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 24.dp)) {
+            // --- 🏷️ HEADER TÁCTICO ---
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(40.dp).background(LuxeColors.Gold.copy(0.1f), CircleShape).border(1.dp, LuxeColors.Gold.copy(0.3f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(if (target != null) Icons.Rounded.VpnKey else Icons.Rounded.Groups, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = if (target != null) "TERMINAL PRIVADA" else "SALA GENERAL", 
+                            color = LuxeColors.Gold, 
+                            fontSize = 10.sp, 
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 2.sp
+                        )
+                        Text(
+                            text = target ?: "TODOS LOS OPERADORES", 
+                            color = Color.White, 
+                            fontSize = 18.sp, 
+                            fontWeight = FontWeight.Black
+                        )
+                    }
                 }
-                IconButton(onClick = onClose) { 
-                    Icon(Icons.Rounded.Close, null, tint = Color.White.copy(0.4f)) 
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier.background(Color.White.copy(0.05f), CircleShape)
+                ) { 
+                    Icon(Icons.Rounded.Close, null, tint = Color.White.copy(0.6f)) 
                 }
             }
             
-            Spacer(Modifier.height(24.dp))
-            
-            // --- 📜 LISTA DE MENSAJES ELITE ---
+            // --- 📜 LISTA DE MENSAJES (STYLE CARDS) ---
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 if (messages.isEmpty()) {
-                    Text(
-                        "ESPERANDO ACTIVIDAD EN LA TERMINAL...", 
-                        color = Color.White.copy(0.1f), 
-                        fontSize = 11.sp, 
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.AutoMirrored.Rounded.Chat, null, tint = Color.White.copy(0.05f), modifier = Modifier.size(80.dp))
+                        Text(
+                            "ESPERANDO ACTIVIDAD EN LA TERMINAL...", 
+                            color = Color.White.copy(0.1f), 
+                            fontSize = 11.sp, 
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 1.sp
+                        )
+                    }
                 }
                 
                 androidx.compose.foundation.lazy.LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     state = listState,
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 30.dp)
                 ) {
                     items(messages) { msg ->
-                        Column(Modifier.padding(vertical = 8.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                        val isAnuncio = msg.text.startsWith("ANUNCIO:")
+                        
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = if (isAnuncio) LuxeColors.Gold.copy(0.12f) else Color.White.copy(0.04f),
+                            shape = RoundedCornerShape(20.dp),
+                            border = BorderStroke(1.dp, if (isAnuncio) LuxeColors.Gold.copy(0.4f) else Color.White.copy(0.08f))
+                        ) {
+                            Column(Modifier.padding(20.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        msg.senderNick, 
+                                        color = if (isAnuncio) LuxeColors.Gold else Color(0xFF22D3EE), 
+                                        fontSize = 13.sp, 
+                                        fontWeight = FontWeight.Black,
+                                        letterSpacing = 1.5.sp
+                                    )
+                                    if (isAnuncio) {
+                                        Spacer(Modifier.width(10.dp))
+                                        Icon(Icons.Rounded.Campaign, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
+                                    }
+                                }
                                 Text(
-                                    msg.senderNick, 
-                                    color = LuxeColors.Gold, 
-                                    fontSize = 11.sp, 
-                                    fontWeight = FontWeight.Black
+                                    msg.text.replace("ANUNCIO: ", ""), 
+                                    color = Color.White, 
+                                    fontSize = 17.sp, 
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                    lineHeight = 24.sp
                                 )
                             }
-                            Text(
-                                msg.text, 
-                                color = Color.White, 
-                                fontSize = 14.sp, 
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
                         }
                     }
                 }
@@ -1468,56 +1505,42 @@ fun EliteChatOverlay(
             
             Spacer(Modifier.height(16.dp))
 
-            // --- 📢 BOTÓN DE ANUNCIO RÁPIDO ---
+            // --- 📢 ACCIONES RÁPIDAS ---
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Pon un anuncio y el locutor lo pondrá en la radio:", 
-                    color = LuxeColors.Gold.copy(0.6f), 
-                    fontSize = 10.sp, 
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.padding(bottom = 8.dp, start = 8.dp)
-                )
-                if (currentText.text.isNotBlank()) {
-                    Text(
-                        "BORRAR TODO",
-                        color = Color.Red.copy(0.8f),
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier
-                            .padding(bottom = 8.dp, end = 8.dp)
-                            .clickable { onTextChange(androidx.compose.ui.text.input.TextFieldValue("")) }
-                    )
-                }
-            }
-
-            Surface(
-                onClick = { 
-                    if (!currentText.text.contains("ANUNCIO:")) {
-                        onTextChange(androidx.compose.ui.text.input.TextFieldValue("ANUNCIO: " + currentText.text))
+                Surface(
+                    onClick = { 
+                        if (!currentText.text.contains("ANUNCIO:")) {
+                            onTextChange(androidx.compose.ui.text.input.TextFieldValue("ANUNCIO: " + currentText.text))
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    color = LuxeColors.Gold.copy(0.15f),
+                    border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f))
+                ) {
+                    Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Campaign, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("LEER POR VOZ", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
                     }
-                },
-                modifier = Modifier.fillMaxWidth().height(44.dp).padding(bottom = 12.dp),
-                shape = RoundedCornerShape(14.dp),
-                color = LuxeColors.Gold.copy(0.1f),
-                border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f))
-            ) {
-                Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Campaign, null, tint = LuxeColors.Gold, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text("PUBLICAR ANUNCIO (LECTURA POR VOZ)", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                }
+
+                if (currentText.text.isNotBlank()) {
+                    TextButton(onClick = { onTextChange(androidx.compose.ui.text.input.TextFieldValue("")) }) {
+                        Text("BORRAR TODO", color = Color.Red.copy(0.7f), fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    }
                 }
             }
             
             // --- ⌨️ INPUT GLASSMORPHISM ---
             Surface(
                 modifier = Modifier.fillMaxWidth().height(64.dp),
-                shape = RoundedCornerShape(20.dp),
-                color = Color.White.copy(0.05f),
-                border = BorderStroke(1.dp, Color.White.copy(0.1f))
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White.copy(0.07f),
+                border = BorderStroke(1.dp, Color.White.copy(0.12f))
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
@@ -1527,45 +1550,48 @@ fun EliteChatOverlay(
                         if (currentText.text.isEmpty()) {
                             Text(
                                 "ESCRIBE TU MENSAJE AQUÍ...", 
-                                color = Color.White.copy(0.2f),
-                                fontSize = 14.sp
+                                color = Color.White.copy(0.25f),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                         BasicTextField(
                             value = currentText,
                             onValueChange = onTextChange,
-                            textStyle = TextStyle(color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                            textStyle = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold),
                             cursorBrush = SolidColor(LuxeColors.Gold),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .onKeyEvent {
-                                    if (it.key == Key.Enter && it.type == KeyEventType.KeyUp) {
-                                        onSend()
-                                        true
-                                    } else false
-                                },
+                            modifier = Modifier.fillMaxWidth().onKeyEvent {
+                                if (it.key == Key.Enter && it.type == KeyEventType.KeyUp) {
+                                    onSend()
+                                    true
+                                } else false
+                            },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                             keyboardActions = KeyboardActions(onSend = { onSend() })
                         )
                     }
                     
-                    IconButton(onClick = onSend) {
-                        Icon(Icons.AutoMirrored.Rounded.Send, null, tint = LuxeColors.Gold)
+                    Surface(
+                        onClick = onSend,
+                        color = LuxeColors.Gold,
+                        shape = CircleShape,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.AutoMirrored.Rounded.Send, null, tint = Color.Black, modifier = Modifier.size(20.dp))
+                        }
                     }
                 }
             }
             
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
+            TextButton(
+                onClick = onClose,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 12.dp)
             ) {
-                TextButton(onClick = onClose) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.KeyboardArrowDown, null, tint = LuxeColors.Gold.copy(0.5f), modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("CERRAR TERMINAL", color = LuxeColors.Gold.copy(0.7f), fontSize = 10.sp, fontWeight = FontWeight.Black)
-                    }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.KeyboardArrowDown, null, tint = Color.White.copy(0.3f), modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("CERRAR TERMINAL", color = Color.White.copy(0.4f), fontSize = 10.sp, fontWeight = FontWeight.Black)
                 }
             }
         }

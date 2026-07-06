@@ -996,7 +996,7 @@ fun PrivacyConsentDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "• RGPD: Tus datos (nick/ciudad/rol) se procesan solo para la conexión técnica y visibilidad en la red. No se ceden a terceros.\n• GPS: Se utiliza para sintonizar automáticamente tu ciudad local y en caso de alerta SOS voluntaria.\n• Información Real: Conectamos con APIs públicas para ofrecer noticias y tráfico. Estos servicios no reciben tu identidad.\n• Responsabilidad: El desarrollador no gestiona servicios públicos ni se hace responsable del uso de la red por particulares.\n• Micrófono: Solo se utiliza mientras usas la app para comunicarte con otros operadores (PTT/VOX).\n• Derecho al Olvido: Puedes borrar todos tus datos en cualquier momento desde Ajustes > Olvido.",
+                    "• RGPD: Tus datos se procesan solo para la conexión técnica. No se ceden a terceros.\n• Publicidad y Cookies: Utilizamos identificadores de Google para mostrar anuncios y mantener el servicio gratuito.\n• GPS: Se utiliza para sintonizar tu ciudad y en alertas SOS voluntarias.\n• Información Real: Conectamos con APIs públicas (DGT/NASA) para ofrecer noticias en directo.\n• Responsabilidad: El desarrollador no se hace responsable del uso de la red por particulares.\n• Micrófono: Solo se utiliza bajo demanda (PTT/VOX) para comunicarte con el grupo.\n• Derecho al Olvido: Puedes borrar tus datos en cualquier momento desde Ajustes > Olvido.",
                     fontSize = 12.sp,
                     lineHeight = 18.sp,
                     color = Color.White.copy(0.9f)

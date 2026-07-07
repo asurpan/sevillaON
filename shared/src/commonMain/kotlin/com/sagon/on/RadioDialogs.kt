@@ -545,13 +545,40 @@ fun RadioDialogs(
                             Icon(Icons.Rounded.Route, null, tint = LuxeColors.Gold, modifier = Modifier.size(32.dp))
                         }
                         Spacer(Modifier.height(16.dp))
-                        Text("EQUIPO DE RUTA", fontWeight = FontWeight.Black, fontSize = 20.sp, letterSpacing = 1.sp)
-                        Text("Canal de coordinación y radar GPS", fontSize = 10.sp, color = LuxeColors.Gold.copy(0.6f), fontWeight = FontWeight.Bold)
+                        Text("CENTRO DE COORDINACIÓN", fontWeight = FontWeight.Black, fontSize = 20.sp, letterSpacing = 1.sp)
+                        Text("Voz profesional con Radar GPS", fontSize = 10.sp, color = LuxeColors.Gold.copy(0.6f), fontWeight = FontWeight.Bold)
                     }
                 },
                 text = {
                     Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                        // --- 📝 DATOS DEL EQUIPO ---
+                        // --- ⚡ GUÍA TÁCTICA DE INICIO RÁPIDO ---
+                        Surface(
+                            color = LuxeColors.Gold.copy(0.05f),
+                            shape = RoundedCornerShape(20.dp),
+                            border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.2f)),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Rounded.Bolt, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("CONECTA A TU EQUIPO EN 5 SEGUNDOS", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                }
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    "1. Elige un nombre y entra en frecuencia.\n" +
+                                    "2. Pulsa 'COMPARTIR' y envíalo por WhatsApp a tu grupo.\n" +
+                                    "3. Tus compañeros aparecerán en el Radar GPS al hacer clic.\n\n" +
+                                    "¡Sin registros ni esperas! Rápido, táctico y 100% GRATIS.",
+                                    color = Color.White.copy(0.9f),
+                                    fontSize = 10.sp,
+                                    lineHeight = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        // --- 📝 DATOS DEL SERVICIO / EQUIPO ---
                         Surface(
                             color = Color.White.copy(0.03f),
                             shape = RoundedCornerShape(20.dp),
@@ -567,7 +594,7 @@ fun RadioDialogs(
                                     modifier = Modifier.fillMaxWidth(),
                                     decorationBox = { innerTextField ->
                                         Box(contentAlignment = Alignment.Center) {
-                                            if (tempRouteName.isEmpty()) Text("NOMBRE DEL EQUIPO / RUTA", color = Color.White.copy(0.2f), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                            if (tempRouteName.isEmpty()) Text("IDENTIFICATIVO DEL EQUIPO", color = Color.White.copy(0.2f), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                             innerTextField()
                                         }
                                     }

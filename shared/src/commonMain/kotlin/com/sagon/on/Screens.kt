@@ -602,16 +602,34 @@ fun RadioPanel(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // 🔄 REPLAY 15s (Compacto en Header)
+                    Surface(
+                        onClick = { if (!state.isInterfaceLocked && isReplayReady) onReplay(); triggerUiSound("click") },
+                        color = if (isReplayReady) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),
+                        shape = CircleShape,
+                        border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.1f)),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            if (replayProgress > 0f) {
+                                CircularProgressIndicator(progress = { replayProgress }, modifier = Modifier.fillMaxSize(), color = LuxeColors.Gold, strokeWidth = 2.dp, trackColor = Color.Transparent)
+                            }
+                            Icon(Icons.Rounded.History, null, tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(16.dp))
+                        }
+                    }
+                    
+                    Spacer(Modifier.width(12.dp))
+
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
                             .background(Color.White.copy(0.05f))
                             .border(1.dp, Color.White.copy(0.1f), CircleShape)
                             .clickable { onPendingDialogChange(RadioDialogType.SETTINGS) },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Rounded.Tune, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Rounded.Tune, null, tint = Color.White, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -784,79 +802,8 @@ fun RadioPanel(
                                     fontWeight = FontWeight.Black
                                 )
                                 
-                                Spacer(Modifier.height(4.dp)) // --- 🔼 POSICIÓN MÁS ALTA ---
-
-                                // 🏃 MODO ACTIVIDAD (Deportes) - NEXUS CLEAN EDITION
-                                
-                                // --- 🔄 LÓGICA DE ICONO DINÁMICO (ALTERNANTE) ---
-                                val alternatingIcons = listOf(
-                                    Icons.Rounded.TwoWheeler, Icons.Rounded.PedalBike, Icons.Rounded.Terrain,
-                                    Icons.Rounded.Phishing, Icons.Rounded.DirectionsRun, Icons.Rounded.Landscape,
-                                    Icons.Rounded.Sailing, Icons.Rounded.Kayaking, Icons.Rounded.AirplanemodeActive
-                                )
-                                val iconIndex by infiniteTransition.animateValue(
-                                    initialValue = 0,
-                                    targetValue = alternatingIcons.size,
-                                    typeConverter = Int.VectorConverter,
-                                    animationSpec = infiniteRepeatable(tween(alternatingIcons.size * 1000, easing = LinearEasing))
-                                )
-
-                                Surface(
-
-                                    color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.08f),
-                                    shape = CircleShape,
-                                    border = BorderStroke(2.dp, if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else LuxeColors.Gold.copy(0.3f)),
-                                    modifier = Modifier
-                                        .size(56.dp)
-                                        .clip(CircleShape)
-                                        .combinedClickable(
-                                            onClick = {
-                                                if (state.activeProfile == ActivityProfile.NORMAL) {
-                                                    onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR)
-                                                } else {
-                                                    onPendingDialogChange(RadioDialogType.FINISH_ACTIVITY_CONFIRM)
-                                                }
-                                                triggerUiSound("click")
-                                            },
-                                            onLongClick = {
-                                                if (state.activeProfile != ActivityProfile.NORMAL) {
-                                                    onActivityPanelRequest()
-                                                    triggerUiSound("click")
-                                                }
-                                            }
-                                        )
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        val icon = if (state.activeProfile == ActivityProfile.NORMAL) {
-                                            alternatingIcons[iconIndex % alternatingIcons.size]
-                                        } else {
-                                            when(state.activeProfile) {
-                                                ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
-                                                ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
-                                                ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
-                                                ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
-                                                ActivityProfile.MONTANA -> Icons.Rounded.Landscape
-                                                ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
-                                                ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
-                                                ActivityProfile.VELA -> Icons.Rounded.Sailing
-                                                ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
-                                                ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
-                                                ActivityProfile.CAZA -> Icons.Rounded.Radar
-                                                ActivityProfile.PESCA -> Icons.Rounded.Phishing
-                                                ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
-                                                else -> Icons.Rounded.DirectionsRun
-                                            }
-                                        }
-                                        Icon(
-                                            icon, 
-                                            null, 
-                                            tint = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White, 
-                                            modifier = Modifier.size(28.dp)
-                                        )
-                                    }
-                                }
-
-                                Spacer(Modifier.height(14.dp)) // --- 🔼 ELEVACIÓN QUIRÚRGICA PARA VISIBILIDAD ---
+                                Spacer(Modifier.height(20.dp))
+                                // Nexus Side Panel now focused purely on Power and Status
                             }
                         }
 
@@ -1014,17 +961,27 @@ fun RadioPanel(
                 )
 
                 EliteControlTile(
-                    modifier = Modifier.weight(1f).clickable { 
-                        if (!state.isInterfaceLocked && isReplayReady) {
-                            onReplay()
+                    modifier = Modifier.weight(1f).combinedClickable(
+                        onClick = {
+                            if (state.activeProfile == ActivityProfile.NORMAL) {
+                                onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR)
+                            } else {
+                                onActivityPanelRequest()
+                            }
                             triggerUiSound("click")
+                        },
+                        onLongClick = {
+                            if (state.activeProfile != ActivityProfile.NORMAL) {
+                                onPendingDialogChange(RadioDialogType.FINISH_ACTIVITY_CONFIRM)
+                                triggerUiSound("click")
+                            }
                         }
-                    }, 
-                    icon = Icons.Rounded.History, 
-                    label = "REPLAY 15s", 
-                    status = if(isReplayReady) "LISTO" else "VACÍO",
-                    isActive = isReplayReady,
-                    progress = replayProgress
+                    ), 
+                    icon = if(state.activeProfile != ActivityProfile.NORMAL) Icons.Rounded.Route else Icons.Rounded.Groups, 
+                    label = "EQUIPO RUTA", 
+                    status = if(state.activeProfile != ActivityProfile.NORMAL) state.activeProfile.name else "INICIAR",
+                    isActive = state.activeProfile != ActivityProfile.NORMAL,
+                    progress = if(state.activeProfile != ActivityProfile.NORMAL) 1f else 0f
                 )
 
                 EliteControlTile(

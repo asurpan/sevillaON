@@ -37,6 +37,12 @@ enum class RadioDialogType {
     ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, PRO, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK, MASTER_HELP, HELP_SQUELCH, HELP_GAIN, FINISH_ACTIVITY_CONFIRM
 }
 
+/**
+ * 🔒 HARD-LOCK: SISTEMA DE DIÁLOGOS Y VENTANAS CRÍTICAS
+ * ADVERTENCIA: Este componente gestiona la capa superior de la UI. 
+ * Cualquier modificación en el Modifier de los Diálogos puede causar 
+ * que los clics atraviesen la ventana (Click-through bug).
+ */
 @Composable
 fun RadioDialogs(
     type: RadioDialogType?,

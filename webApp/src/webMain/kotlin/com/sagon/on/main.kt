@@ -1332,10 +1332,14 @@ object RadioCore {
                                 }
                                 
                                 // 🔒 HARD-LOCK: PROHIBIDO TOCAR - BLINDAJE DE RECEPCIÓN
-                                // Controlamos el volumen de recepción para evitar acoples (Feedback Guard)
+                                // Controlamos el volumen respetando el MODO DISCRETO
                                 if (window.app.masterRxGain) {
-                                    var rxVol = (localStorage.getItem("dspEnabled") === "false") ? 1.5 : 2.5;
-                                    window.app.masterRxGain.gain.setTargetAtTime(rxVol, window.app.ctx.currentTime, 0.01);
+                                    if (typeof window.updateDiscreteMode === 'function') {
+                                        window.updateDiscreteMode(); 
+                                    } else {
+                                        var rxVol = (localStorage.getItem("dspEnabled") === "false") ? 1.5 : 2.5;
+                                        window.app.masterRxGain.gain.setTargetAtTime(rxVol, window.app.ctx.currentTime, 0.01);
+                                    }
                                 }
                                 
                                 // BLINDAJE: Muchos navegadores requieren que el audio esté en el DOM para procesarlo
@@ -2592,14 +2596,14 @@ fun main() {
                         // --- 🛡️ SINCRONIZACIÓN SCANNER (DUCKING) ---
                         js("if(window.updateBgDucking) window.updateBgDucking();")
 
-                        // --- 🔔 BEEP DE ENTRADA (MODO FONDO) ---
-                        // Si la app está en segundo plano y entra voz, avisamos con un pitido doble
+                        // --- 🔔 BEEP DE ENTRADA (MODO DISCRETO / FONDO) ---
                         if (!wasRx && isAnyRemoteTx) {
                             js("""
-                                if (document.hidden && window.playUiSound) {
-                                    window.playUiSound('click');
-                                    setTimeout(function() { window.playUiSound('click'); }, 150);
-                                    if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+                                var isDis = (window.app && window.app.isDiscreteModeEnabled === true);
+                                if ((document.hidden || isDis) && window.playUiSound) {
+                                    // Pitido doble más contundente para aviso discreto
+                                    window.playUiSound('message'); 
+                                    if (navigator.vibrate) navigator.vibrate([100, 100, 100]);
                                 }
                             """)
                         }

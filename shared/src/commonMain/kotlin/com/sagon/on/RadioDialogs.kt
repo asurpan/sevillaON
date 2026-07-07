@@ -535,182 +535,141 @@ fun RadioDialogs(
                 onDismissRequest = onDismiss,
                 containerColor = LuxeColors.DeepSea,
                 titleContentColor = LuxeColors.Gold,
-                modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+                modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(32.dp)),
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Route, null, tint = LuxeColors.Gold)
-                        Spacer(Modifier.width(12.dp))
-                        Text("CREAR NUEVA RUTA", fontWeight = FontWeight.Black, fontSize = 18.sp)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier.size(56.dp).background(LuxeColors.Gold.copy(0.1f), CircleShape).border(1.dp, LuxeColors.Gold.copy(0.3f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Rounded.Route, null, tint = LuxeColors.Gold, modifier = Modifier.size(32.dp))
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        Text("EQUIPO DE RUTA", fontWeight = FontWeight.Black, fontSize = 20.sp, letterSpacing = 1.sp)
+                        Text("Canal de coordinación y radar GPS", fontSize = 10.sp, color = LuxeColors.Gold.copy(0.6f), fontWeight = FontWeight.Bold)
                     }
                 },
                 text = {
-                    Column {
-                        Text("Pon un nombre a tu ruta y selecciona tu perfil para empezar a coordinar al grupo.", fontSize = 13.sp, color = Color.White.copy(0.6f))
-                        
-                        Spacer(Modifier.height(20.dp))
-                        
-                        OutlinedTextField(
-                            value = tempRouteName,
-                            onValueChange = { if (it.length <= 15) tempRouteName = it.uppercase() },
-                            label = { Text("NOMBRE DE LA RUTA (Ej: RUTA66)", fontSize = 10.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = LuxeColors.Gold,
-                                focusedLabelColor = LuxeColors.Gold,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                unfocusedBorderColor = Color.White.copy(0.1f)
-                            )
-                        )
-
-                        Spacer(Modifier.height(12.dp))
-
-                        OutlinedTextField(
-                            value = tempRouteRules,
-                            onValueChange = { if (it.length <= 100) tempRouteRules = it },
-                            label = { Text("REGLAS O INFO (Ej: Punto de encuentro...)", fontSize = 10.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 3,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = LuxeColors.Gold,
-                                focusedLabelColor = LuxeColors.Gold,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                unfocusedBorderColor = Color.White.copy(0.1f)
-                            )
-                        )
-
-                        Spacer(Modifier.height(16.dp))
-
-                        // --- 🛰️ AVISO DE RED DE SUPERVIVENCIA (MESH) ---
+                    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                        // --- 📝 DATOS DEL EQUIPO ---
                         Surface(
-                            color = LuxeColors.ElectricBlue.copy(0.1f),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, LuxeColors.ElectricBlue.copy(0.4f)),
+                            color = Color.White.copy(0.03f),
+                            shape = RoundedCornerShape(20.dp),
+                            border = BorderStroke(1.dp, Color.White.copy(0.08f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.WifiTethering, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Column {
-                                    Text("RED DE SUPERVIVENCIA ACTIVA", color = LuxeColors.ElectricBlue, fontSize = 9.sp, fontWeight = FontWeight.Black)
-                                    Text(
-                                        "Si falla el 4G/5G o hay una catástrofe, la radio conecta con tus compañeros vía WiFi Direct (alcance 100-300m) automáticamente y sin internet.",
-                                        color = Color.White.copy(0.7f),
-                                        fontSize = 8.sp,
-                                        lineHeight = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
+                            Column(Modifier.padding(16.dp)) {
+                                androidx.compose.foundation.text.BasicTextField(
+                                    value = tempRouteName,
+                                    onValueChange = { if (it.length <= 15) tempRouteName = it.uppercase() },
+                                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center),
+                                    cursorBrush = androidx.compose.ui.graphics.SolidColor(LuxeColors.Gold),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    decorationBox = { innerTextField ->
+                                        Box(contentAlignment = Alignment.Center) {
+                                            if (tempRouteName.isEmpty()) Text("NOMBRE DEL EQUIPO / RUTA", color = Color.White.copy(0.2f), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                            innerTextField()
+                                        }
+                                    }
+                                )
+                                Spacer(Modifier.height(12.dp).background(Color.White.copy(0.05f)).fillMaxWidth().height(1.dp))
+                                Spacer(Modifier.height(12.dp))
+                                androidx.compose.foundation.text.BasicTextField(
+                                    value = tempRouteRules,
+                                    onValueChange = { if (it.length <= 100) tempRouteRules = it },
+                                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White.copy(0.7f), fontSize = 12.sp, fontWeight = FontWeight.Medium),
+                                    cursorBrush = androidx.compose.ui.graphics.SolidColor(LuxeColors.Gold),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    decorationBox = { innerTextField ->
+                                        if (tempRouteRules.isEmpty()) Text("Punto de encuentro o reglas (Opcional)", color = Color.White.copy(0.2f), fontSize = 11.sp)
+                                        innerTextField()
+                                    }
+                                )
                             }
                         }
 
-                        Spacer(Modifier.height(24.dp))
-                        Text("SELECCIONA TU ACTIVIDAD:", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold)
+                        Spacer(Modifier.height(20.dp))
+
+                        // --- 🏃 SELECTOR DE ACTIVIDAD (GRID) ---
+                        Text("MODO DE COORDINACIÓN:", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 2.sp)
                         Spacer(Modifier.height(12.dp))
                         
                         val activities = ActivityProfile.entries.filter { it != ActivityProfile.NORMAL }
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.heightIn(max = 240.dp)) {
-                            items(activities) { act ->
-                                val isSelected = state.activeProfile == act
-                                val isEnabled = tempRouteName.isNotBlank()
-                                
-                                Surface(
-                                    onClick = { 
-                                        if (isEnabled) {
-                                            val finalChannel = if (tempRouteName.isNotBlank()) tempRouteName else state.channel
-                                            onStateChange(state.copy(
-                                                activeProfile = act, 
-                                                isMotoModeEnabled = act != ActivityProfile.NORMAL,
-                                                channel = finalChannel,
-                                                routeRules = tempRouteRules.ifBlank { null }
-                                            ))
-                                            onDismiss()
-                                            if (act != ActivityProfile.NORMAL) {
+                        
+                        activities.chunked(2).forEach { row ->
+                            Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                row.forEach { act ->
+                                    val isSelected = state.activeProfile == act
+                                    val isEnabled = tempRouteName.isNotBlank()
+                                    
+                                    Surface(
+                                        onClick = { 
+                                            if (isEnabled) {
+                                                val finalChannel = if (tempRouteName.isNotBlank()) tempRouteName else state.channel
+                                                onStateChange(state.copy(
+                                                    activeProfile = act, 
+                                                    isMotoModeEnabled = true,
+                                                    channel = finalChannel,
+                                                    routeRules = tempRouteRules.ifBlank { null }
+                                                ))
+                                                onDismiss()
                                                 onActivityPanelRequest()
                                             }
-                                        }
-                                    },
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = if (isSelected) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
-                                    border = BorderStroke(1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(0.1f)),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    val contentAlpha = if (isEnabled) 1f else 0.3f
-                                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        val icon = when(act) {
-                                            ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
-                                            ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
-                                            ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
-                                            ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
-                                            ActivityProfile.MONTANA -> Icons.Rounded.Landscape
-                                            ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
-                                            ActivityProfile.CAMIONEROS -> Icons.Rounded.LocalShipping
-                                            ActivityProfile.CARAVANAS -> Icons.Rounded.AirportShuttle
-                                            ActivityProfile.OFFROAD -> Icons.Rounded.Agriculture
-                                            ActivityProfile.TACTICO -> Icons.Rounded.Security
-                                            ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
-                                            ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
-                                            ActivityProfile.VELA -> Icons.Rounded.Sailing
-                                            ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
-                                            ActivityProfile.CAZA -> Icons.Rounded.Radar
-                                            ActivityProfile.PESCA -> Icons.Rounded.Phishing
-                                            ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
-                                            else -> Icons.Rounded.Person
-                                        }
-                                        Icon(icon, null, tint = (if (isSelected) LuxeColors.Gold else Color.White.copy(0.4f)).copy(alpha = contentAlpha))
-                                        Spacer(Modifier.width(16.dp))
-                                        Column {
-                                            val label = when(act) {
-                                                ActivityProfile.MOTO -> "MODO MOTO"
-                                                ActivityProfile.CICLISMO -> "MODO CICLISMO"
-                                                ActivityProfile.SENDERISMO -> "SENDERISMO"
-                                                ActivityProfile.PASEO -> "CAMINAR / PASEO"
-                                                ActivityProfile.MONTANA -> "MONTAÑA"
-                                                ActivityProfile.SOCORRISTAS -> "SOCORRISTAS"
-                                                ActivityProfile.CAMIONEROS -> "CAMIONEROS"
-                                                ActivityProfile.CARAVANAS -> "CARAVANAS"
-                                                ActivityProfile.OFFROAD -> "OFFROAD / 4X4"
-                                                ActivityProfile.TACTICO -> "CANAL TÁCTICO"
-                                                ActivityProfile.RUNNING -> "RUNNING"
-                                                ActivityProfile.ESQUI -> "ESQUÍ / NIEVE"
-                                                ActivityProfile.VELA -> "NAVEGACIÓN VELA"
-                                                ActivityProfile.PARAPENTE -> "PARAPENTE / AIRE"
-                                                ActivityProfile.CAZA -> "MODO CAZA"
-                                                ActivityProfile.PESCA -> "MODO PESCA"
-                                                ActivityProfile.KAYAK -> "KAYAK / REMO"
-                                                else -> "ESTÁNDAR"
+                                        },
+                                        modifier = Modifier.weight(1f).height(70.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = if (isSelected) LuxeColors.Gold.copy(0.2f) else if(isEnabled) Color.White.copy(0.05f) else Color.White.copy(0.02f),
+                                        border = BorderStroke(1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(0.1f))
+                                    ) {
+                                        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                                            val icon = when(act) {
+                                                ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
+                                                ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
+                                                ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
+                                                ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
+                                                ActivityProfile.MONTANA -> Icons.Rounded.Landscape
+                                                ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
+                                                ActivityProfile.CAMIONEROS -> Icons.Rounded.LocalShipping
+                                                ActivityProfile.CARAVANAS -> Icons.Rounded.AirportShuttle
+                                                ActivityProfile.OFFROAD -> Icons.Rounded.Agriculture
+                                                ActivityProfile.TACTICO -> Icons.Rounded.Security
+                                                ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
+                                                ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
+                                                ActivityProfile.VELA -> Icons.Rounded.Sailing
+                                                ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
+                                                ActivityProfile.CAZA -> Icons.Rounded.Radar
+                                                ActivityProfile.PESCA -> Icons.Rounded.Phishing
+                                                ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
+                                                else -> Icons.Rounded.Person
                                             }
-                                            Text(label, color = Color.White.copy(alpha = contentAlpha), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                            val desc = when(act) {
-                                                ActivityProfile.MOTO -> "Filtro Viento/Motor + G-Force"
-                                                ActivityProfile.CICLISMO -> "Filtro Viento + G-Force"
-                                                ActivityProfile.SENDERISMO -> "Filtro Voz + Radar GPS"
-                                                ActivityProfile.PASEO -> "Ahorro Batería + Compañía"
-                                                ActivityProfile.MONTANA -> "Radar GPS + Emergencia"
-                                                ActivityProfile.SOCORRISTAS -> "Prioridad SOS + Voz Nítida"
-                                                ActivityProfile.CAMIONEROS -> "Canal de Ruta + Tráfico"
-                                                ActivityProfile.CARAVANAS -> "Viaje en Grupo + Chat"
-                                                ActivityProfile.OFFROAD -> "Radar de Polvo + GPS Táctico"
-                                                ActivityProfile.TACTICO -> "Malla WiFi + Encriptación"
-                                                ActivityProfile.RUNNING -> "Manos Libres + Ritmo"
-                                                ActivityProfile.ESQUI -> "Filtro Frío + Radar Nieve"
-                                                ActivityProfile.VELA -> "Filtro Mar + GPS Náutico"
-                                                ActivityProfile.PARAPENTE -> "Voz Térmica + Altímetro"
-                                                ActivityProfile.CAZA -> "Modo Silencioso + Radar"
-                                                ActivityProfile.PESCA -> "Bajo Consumo + Posición"
-                                                ActivityProfile.KAYAK -> "Filtro Agua + Estanqueidad"
-                                                else -> "Modo Estándar"
-                                            }
-                                            Text(desc, color = Color.White.copy(alpha = contentAlpha * 0.4f), fontSize = 10.sp)
+                                            Icon(icon, null, tint = if (isSelected) LuxeColors.Gold else Color.White.copy(if(isEnabled) 0.6f else 0.1f), modifier = Modifier.size(24.dp))
+                                            Text(act.name, color = if(isEnabled) Color.White else Color.White.copy(0.1f), fontSize = 8.sp, fontWeight = FontWeight.Black)
                                         }
                                     }
                                 }
                             }
                         }
+
+                        Spacer(Modifier.height(16.dp))
+                        
+                        // --- 🛰️ AVISO MESH ---
+                        Surface(
+                            color = LuxeColors.ElectricBlue.copy(0.05f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, LuxeColors.ElectricBlue.copy(0.2f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.WifiTethering, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(10.dp))
+                                Text("Red P2P Activa: Conexión directa sin internet.", color = LuxeColors.ElectricBlue.copy(0.8f), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        
+                        Spacer(Modifier.height(120.dp)) // Margen para el teclado
                     }
                 },
+
                 confirmButton = { TextButton(onClick = onDismiss) { Text("CANCELAR", color = Color.White.copy(0.4f)) } }
             )
         }

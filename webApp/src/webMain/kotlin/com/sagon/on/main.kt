@@ -3590,11 +3590,6 @@ fun main() {
                                 """)
                             }
                         }
-                        notificationState.value = AppNotification(
-                            title = "SIMULACIÓN ACTIVA",
-                            message = "Ejecutando " + action + ". En el móvil esto activaría el hardware inductivo.",
-                            type = NotificationType.Info
-                        )
                     }
                 }
             },

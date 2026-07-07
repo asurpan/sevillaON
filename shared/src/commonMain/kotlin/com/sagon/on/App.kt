@@ -394,7 +394,7 @@ fun App(
                 showWebHelpDialog -> showWebHelpDialog = false
                 engineeringPanelVisible -> engineeringPanelVisible = false // 🛡️ Cierre quirúrgico de Consola de Ingeniería
                 showActivityRadar -> showActivityRadar = false // 🛡️ Cierre quirúrgico de Radar de Presencia
-                showActivityMap -> showActivityMap = false // 🛡️ Cierre quirúrgico de Mapa de Ruta
+                showActivityMap -> pendingDialog = RadioDialogType.FINISH_ACTIVITY_CONFIRM // 🛡️ ATRÁS = ¿SALIR DE RUTA?
                 pendingDialog != null -> pendingDialog = null
                 showOnboarding -> showOnboarding = false
                 showPrivacy -> showPrivacy = false
@@ -1094,7 +1094,7 @@ fun App(
                         onGpsRequest = onGpsRequest,
                         onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g) },
                         onPendingDialogChange = { pendingDialog = it },
-                        onClose = { showActivityMap = false },
+                        onClose = { pendingDialog = RadioDialogType.FINISH_ACTIVITY_CONFIRM },
                         onFinish = { 
                             showActivityMap = false 
                             // --- 🛡️ LIMPIEZA DE RUTA AL FINALIZAR ---

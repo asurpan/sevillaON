@@ -602,47 +602,13 @@ fun RadioPanel(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // 🔄 REPLAY 15s (Reubicado arriba)
-                    Surface(
-                        onClick = { if (!state.isInterfaceLocked) onReplay(); triggerUiSound("click") },
-                        color = if (isReplayReady) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
-                        shape = CircleShape,
-                        border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.1f)),
-                        modifier = Modifier.size(38.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            if (replayProgress > 0f) {
-                                CircularProgressIndicator(
-                                    progress = { replayProgress },
-                                    modifier = Modifier.fillMaxSize(),
-                                    color = LuxeColors.Gold,
-                                    strokeWidth = 2.dp,
-                                    trackColor = Color.Transparent
-                                )
-                            }
-                            Icon(
-                                Icons.Rounded.History, 
-                                null, 
-                                tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.3f), 
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.width(12.dp))
                     Box(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
                             .background(Color.White.copy(0.05f))
                             .border(1.dp, Color.White.copy(0.1f), CircleShape)
-                            .combinedClickable(
-                                onClick = { onPendingDialogChange(RadioDialogType.SETTINGS) },
-                                onLongClick = {
-                                    triggerUiSound("click")
-                                    onHertzSentinelRequest()
-                                }
-                            ),
+                            .clickable { onPendingDialogChange(RadioDialogType.SETTINGS) },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Rounded.Tune, null, tint = Color.White, modifier = Modifier.size(20.dp))
@@ -1048,11 +1014,17 @@ fun RadioPanel(
                 )
 
                 EliteControlTile(
-                    modifier = Modifier.weight(1f).clickable { onHertzSentinelRequest() }, 
-                    icon = Icons.Rounded.Radar, 
-                    label = "RADAR HERTZ", 
-                    status = if(radarActivo) "SENSING" else "IDLE",
-                    isActive = radarActivo
+                    modifier = Modifier.weight(1f).clickable { 
+                        if (!state.isInterfaceLocked && isReplayReady) {
+                            onReplay()
+                            triggerUiSound("click")
+                        }
+                    }, 
+                    icon = Icons.Rounded.History, 
+                    label = "REPLAY 15s", 
+                    status = if(isReplayReady) "LISTO" else "VACÍO",
+                    isActive = isReplayReady,
+                    progress = replayProgress
                 )
 
                 EliteControlTile(

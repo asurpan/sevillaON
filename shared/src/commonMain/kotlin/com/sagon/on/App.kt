@@ -704,58 +704,7 @@ fun App(
                     )
                 }
 
-                RadioDialogs(
-                    type = pendingDialog,
-                    onDismiss = { pendingDialog = null },
-                    state = radioState,
-                    onStateChange = { radioState = it },
-                    onAntennaTest = onAntennaTest,
-                    onReplay = onReplayRequest,
-                    onPublicChat = onPublicChatRequest,
-                    onBgRadioScan = onBgRadioScan,
-                    onBgRadioStop = onBgRadioStop,
-                    onShare = { c, s, u, g -> onShareRequest(c, s, nick, u, g) },
-                    onNotification = { localNotification = it },
-                    onPlaySound = onPlaySound,
-                    onLogoutConfirm = onLogout,
-                    onPermissionRequest = onPermissionRequest,
-                    onMic = { a, p -> onMicEnable(a, radioState.isRogerBeepEnabled, p) },
-                    onGpsRequestPro = onGpsRequest,
-                    onGpsCityRequestPro = onGpsCityRequest,
-                    onPendingDialogChange = { pendingDialog = it },
-                    onGetWifiVariance = onGetWifiVariance,
-                    onGetHeading = onGetHeading,
-                    onGetTilt = onGetTilt,
-                    onNickChange = { 
-                        nick = it
-                        if (showActivityMap) screenState = Screen.RadioCB
-                    },
-                    onEstadoCambio = { activo, nivel, modo ->
-                        radarActivo = activo
-                        nivelPerturbacion = nivel
-                        radarModoRango = modo
-                    },
-                    onExecuteEngineeringAction = { action ->
-                        if (action == "INSTALL_APP") {
-                            onInstallRequest()
-                        } else {
-                            onExecuteEngineeringAction(action)
-                        }
-                    },
-                    onRequestLocationPermission = onRequestLocationPermission,
-                    onOpenSettings = onOpenSettings,
-                    users = remoteUsers,
-                    nick = nick,
-                    onPrivateChat = onPrivateChatRequest,
-                    onShowHelp = { 
-                        showWebHelpDialog = true 
-                        radioState = radioState.copy(hasSeenWattsIntro = true)
-                    },
-                    onHertzSentinelRequest = { showActivityRadar = true },
-                    onActivityPanelRequest = { showActivityMap = true },
-                    engineeringPanelVisible = engineeringPanelVisible,
-                    onEngineeringPanelChange = { engineeringPanelVisible = it }
-                )
+
 
                 Crossfade(
                     targetState = if (!isAppReady) null else screenState,

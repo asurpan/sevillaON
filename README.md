@@ -11,6 +11,38 @@ Esta es la infraestructura central de **ON AIR SPAIN**, la red social de voz rea
 
 ---
 
+## 📢 DESCRIPCIÓN OFICIAL (PLAY STORE / ASO)
+*Copia este texto para la ficha de la tienda:*
+
+Red de voz en tiempo real diseñada para conectar personas, grupos de deporte y profesionales con una experiencia de audio premium. 
+ON AIR SPAIN es la plataforma de comunicación que une la mística de la radio banda ciudadana (CB) con la tecnología del futuro.
+
+🚀 **FUNCIONES DESTACADAS:**
+• **RADIO CB DIGITAL (VoIP):** Comunicación por voz real en canales temáticos o por ciudades. Procesamiento DSP para una voz clara y potente, ideal para usar en exteriores o vehículos. 
+
+• **RED DE SUPERVIVENCIA (WiFi Auto):** ¿Sin cobertura en la montaña o un túnel? ON AIR activa automáticamente la conexión vía **WiFi Direct**. Sigue hablando con tu equipo a corta distancia (100-300m) **sin necesidad de internet ni datos**.
+
+• **MODO RUTA Y DEPORTE:** Visualiza la actividad de otros usuarios en tu zona. Perfecto para salidas en grupo, rutas en moto, ciclismo o senderismo, permitiendo saber quién está "en antena" cerca de ti a través del Radar GPS. 
+
+• **RADAR DE ACTIVIDAD (WiFi Sensing):** Tecnología experimental que detecta la presencia de dispositivos y actividad a tu alrededor analizando la estabilidad de las señales WiFi y campos electromagnéticos. 
+
+• **LOCUTOR VIRTUAL E INFORMACIÓN:** Mantente informado sin soltar el manillar o el volante. Boletines horarios, tráfico DGT en tiempo real y curiosidades de la NASA con imágenes diarias.
+
+• **RADIO FM INTEGRADA:** Escucha una selección de las mejores emisoras españolas mientras permaneces a la escucha de la frecuencia CB.
+
+• **COMUNIDAD Y SEGURIDAD:** Crea tu red de amigos, gestiona canales privados y participa en reportes ciudadanos de forma totalmente anónima.
+
+🛠️ **UTILIDAD REAL:** Una herramienta indispensable para motoristas en ruta, deportistas en grupo, transportistas y cualquier aficionado que busque comunicación directa y datos técnicos en tiempo real sobre su entorno.
+
+🔒 **PRIVACIDAD Y LEGALIDAD:** 
+• **Detección Pasiva:** El radar analiza variaciones de señal existentes; no hackea ni accede a datos privados de redes externas. 
+• **Sin Registros Pesados:** Entra en antena solo con tu indicativo (nick).
+• **Procesamiento Local:** Los datos de los sensores se procesan en tu dispositivo para tu seguridad.
+
+**NOTA TÉCNICA:** Esta aplicación utiliza conexión a Internet (Datos/WiFi). Las funciones de radar y detección de actividad se basan en la varianza de señal (WiFi Sensing) y magnetometría; su precisión depende del hardware del dispositivo y las condiciones del entorno.
+
+---
+
 ## 🌟 La Visión: "La Compañía de la Voz"
 En un mundo saturado de textos, **ON AIR** apuesta por el directo. Escuchar a alguien modulando en tiempo real reduce la sensación de soledad de forma mucho más efectiva que cualquier red social tradicional. No buscamos "contenido", buscamos **presencia**.
 

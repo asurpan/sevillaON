@@ -21,6 +21,8 @@ import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -1104,6 +1106,73 @@ fun App(
                             )
                         }
                     )
+                }
+
+                // =======================================================
+                // 🔒 HARD-LOCK: CAPA MAESTRA DE DIÁLOGOS (Z-INDEX MÁXIMO)
+                // PROHIBIDO MOVER: Esta pieza debe ser la ÚLTIMA del Box principal.
+                // =======================================================
+                if (pendingDialog != null) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectTapGestures { }
+                            }
+                    ) {
+                        RadioDialogs(
+                            type = pendingDialog,
+                            onDismiss = { pendingDialog = null },
+                            state = radioState,
+                            onStateChange = { radioState = it },
+                            onAntennaTest = onAntennaTest,
+                            onReplay = onReplayRequest,
+                            onPublicChat = onPublicChatRequest,
+                            onBgRadioScan = onBgRadioScan,
+                            onBgRadioStop = onBgRadioStop,
+                            onShare = { c, s, u, g -> onShareRequest(c, s, nick, u, g) },
+                            onNotification = { localNotification = it },
+                            onPlaySound = onPlaySound,
+                            onLogoutConfirm = onLogout,
+                            onPermissionRequest = onPermissionRequest,
+                            onMic = { a, p -> onMicEnable(a, radioState.isRogerBeepEnabled, p) },
+                            onGpsRequestPro = onGpsRequest,
+                            onGpsCityRequestPro = onGpsCityRequest,
+                            onPendingDialogChange = { pendingDialog = it },
+                            onGetWifiVariance = onGetWifiVariance,
+                            onGetHeading = onGetHeading,
+                            onGetTilt = onGetTilt,
+                            onNickChange = { 
+                                nick = it
+                                if (showActivityMap) screenState = Screen.RadioCB
+                            },
+                            onEstadoCambio = { activo, nivel, modo ->
+                                radarActivo = activo
+                                nivelPerturbacion = nivel
+                                radarModoRango = modo
+                            },
+                            onExecuteEngineeringAction = { action ->
+                                if (action == "INSTALL_APP") {
+                                    onInstallRequest()
+                                } else {
+                                    onExecuteEngineeringAction(action)
+                                }
+                            },
+                            onRequestLocationPermission = onRequestLocationPermission,
+                            onOpenSettings = onOpenSettings,
+                            users = remoteUsers,
+                            nick = nick,
+                            onPrivateChat = onPrivateChatRequest,
+                            onShowHelp = { 
+                                showWebHelpDialog = true 
+                                radioState = radioState.copy(hasSeenWattsIntro = true)
+                            },
+                            onHertzSentinelRequest = { showActivityRadar = true },
+                            onActivityPanelRequest = { showActivityMap = true },
+                            engineeringPanelVisible = engineeringPanelVisible,
+                            onEngineeringPanelChange = { engineeringPanelVisible = it }
+                        )
+                    }
                 }
             }
         }

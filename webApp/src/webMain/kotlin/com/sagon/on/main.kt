@@ -1580,6 +1580,12 @@ object RadioSignaling {
 
                 // --- 🛡️ SINCRONIZACIÓN ATÓMICA DE ESTADOS ---
                 if (active) {
+                    // 🛡️ FAILOVER P2P: Si no hay internet, activamos el Walkie-Talkie nativo
+                    if (window.AndroidApp && typeof window.AndroidApp.checkNetworkCritical === 'function') {
+                        if (window.AndroidApp.checkNetworkCritical()) {
+                            window.AndroidApp.setNativePtt(true);
+                        }
+                    }
                     window.app.isBeeping = false;
                     if(window.dispatch_beeping) window.dispatch_beeping(false);
                     
@@ -1672,6 +1678,11 @@ object RadioSignaling {
                         }
                         
                         window.app.isTransmittingInternal = false;
+                        
+                        // 🛡️ FAILOVER P2P: Asegurar cierre de transmisión nativa
+                        if (window.AndroidApp && typeof window.AndroidApp.setNativePtt === 'function') {
+                            window.AndroidApp.setNativePtt(false);
+                        }
                         
                         // --- 🛡️ MANTENIMIENTO DE MICRO (MODO SIEMPRE ACTIVO) ---
                         // El micro se mantiene abierto para permitir VOX y PTT instantáneo en segundo plano.
@@ -3528,6 +3539,11 @@ fun main() {
                             }
                         }
                         "GET_WIFI_SCAN" -> win.AndroidApp.startWifiSecurityScan()
+                        "CHECK_NETWORK_CRITICAL" -> {
+                            val isCritical = win.AndroidApp.checkNetworkCritical() as Boolean
+                            // Notificar a Compose para cambiar el icono a MODO P2P
+                            js("if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(isCritical);")
+                        }
                         "TRY_WIFI_CONNECT" -> {
                             if (parts.size >= 3) {
                                 win.AndroidApp.tryWifiAuditConnect(parts[1], parts[2])

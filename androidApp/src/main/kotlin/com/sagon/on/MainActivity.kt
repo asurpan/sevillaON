@@ -27,6 +27,13 @@ import android.webkit.*
 import android.view.KeyEvent
 import android.net.wifi.WifiManager
 import android.net.wifi.ScanResult
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetAddress
+import android.media.AudioRecord
+import android.media.AudioTrack
+import android.media.AudioFormat
+import android.media.MediaRecorder
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -59,11 +66,16 @@ import androidx.core.content.ContextCompat
 import android.speech.tts.TextToSpeech
 import java.util.Locale
 
-data class QuadItem<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var isTtsReady = false
+
+    // --- 🛡️ MOTOR DE SUPERVIVENCIA P2P (OFFLINE AUDIO) ---
+    private var meshReceiverThread: Thread? = null
+    private var audioRecord: android.media.AudioRecord? = null
+    private var isMeshRecording = false
+    private val MESH_PORT = 50005
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
@@ -524,6 +536,71 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun startMeshReceiver() {
+        if (meshReceiverThread != null) return
+        meshReceiverThread = Thread {
+            try {
+                val socket = DatagramSocket(MESH_PORT)
+                val buffer = ByteArray(1024)
+                val track = AudioTrack(
+                    AudioManager.STREAM_MUSIC, 8000,
+                    AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT,
+                    2048, AudioTrack.MODE_STREAM
+                )
+                track.play()
+                while (!Thread.currentThread().isInterrupted) {
+                    val packet = DatagramPacket(buffer, buffer.size)
+                    socket.receive(packet)
+                    track.write(packet.data, 0, packet.length)
+                }
+            } catch (e: Exception) { }
+        }
+        meshReceiverThread?.start()
+    }
+
+    private fun broadcastMeshAudio(data: ByteArray, len: Int) {
+        Thread {
+            try {
+                val socket = DatagramSocket()
+                val address = InetAddress.getByName("255.255.255.255")
+                val packet = DatagramPacket(data, len, address, MESH_PORT)
+                socket.broadcast = true
+                socket.send(packet)
+                socket.close()
+            } catch (e: Exception) {}
+        }.start()
+    }
+
+    private fun startMeshTransmission() {
+        if (isMeshRecording) return
+        val sampleRate = 8000
+        val bufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return
+        
+        try {
+            audioRecord = AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize)
+            audioRecord?.startRecording()
+            isMeshRecording = true
+            
+            Thread {
+                val buffer = ByteArray(1024)
+                while (isMeshRecording) {
+                    val read = audioRecord?.read(buffer, 0, buffer.size) ?: 0
+                    if (read > 0) broadcastMeshAudio(buffer, read)
+                }
+            }.start()
+        } catch (e: Exception) { }
+    }
+
+    private fun stopMeshTransmission() {
+        isMeshRecording = false
+        try {
+            audioRecord?.stop()
+            audioRecord?.release()
+        } catch (e: Exception) { }
+        audioRecord = null
+    }
+
     private fun setupAudioManager() {
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         
@@ -811,6 +888,18 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
 
                             @JavascriptInterface
+                            fun checkNetworkCritical(): Boolean {
+                                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+                                val activeNetwork = cm.activeNetwork ?: return true
+                                val caps = cm.getNetworkCapabilities(activeNetwork) ?: return true
+                                val hasInternet = caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                                
+                                if (!hasInternet) this@MainActivity.startMeshReceiver()
+                                
+                                return !hasInternet
+                            }
+
+                            @JavascriptInterface
                             fun getAndroidId(): String {
                                 return android.provider.Settings.Secure.getString(
                                     context.contentResolver, 
@@ -907,6 +996,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                         .build()
 
                                     notificationManager.notify(303, notification)
+                                }
+                            }
+
+                            @JavascriptInterface
+                            fun setNativePtt(active: Boolean) {
+                                runOnUiThread {
+                                    if (active) this@MainActivity.startMeshTransmission() else this@MainActivity.stopMeshTransmission()
                                 }
                             }
 

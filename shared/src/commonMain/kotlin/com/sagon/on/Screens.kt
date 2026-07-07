@@ -836,6 +836,7 @@ fun RadioPanel(
                                 )
 
                                 Surface(
+
                                     color = if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.08f),
                                     shape = CircleShape,
                                     border = BorderStroke(2.dp, if (state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else LuxeColors.Gold.copy(0.3f)),

@@ -543,87 +543,78 @@ fun RadioDialogs(
                 titleContentColor = LuxeColors.Gold,
                 modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(32.dp)),
                 title = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Box(
-                            modifier = Modifier.size(56.dp).background(LuxeColors.Gold.copy(0.1f), CircleShape).border(1.dp, LuxeColors.Gold.copy(0.3f), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Rounded.Route, null, tint = LuxeColors.Gold, modifier = Modifier.size(32.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Rounded.Route, null, tint = LuxeColors.Gold, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("CENTRO DE COORDINACIÓN", fontWeight = FontWeight.Black, fontSize = 16.sp)
+                            Text("Voz profesional con Radar GPS", fontSize = 9.sp, color = LuxeColors.Gold.copy(0.6f))
                         }
-                        Spacer(Modifier.height(16.dp))
-                        Text("CENTRO DE COORDINACIÓN", fontWeight = FontWeight.Black, fontSize = 20.sp, letterSpacing = 1.sp)
-                        Text("Voz profesional con Radar GPS", fontSize = 10.sp, color = LuxeColors.Gold.copy(0.6f), fontWeight = FontWeight.Bold)
                     }
                 },
                 text = {
                     Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                        // --- ⚡ GUÍA TÁCTICA DE INICIO RÁPIDO ---
+                        
+                        // --- ⚡ INFO COMPACTA ---
                         Surface(
                             color = LuxeColors.Gold.copy(0.05f),
-                            shape = RoundedCornerShape(20.dp),
-                            border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.2f)),
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.1f)),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                         ) {
-                            Column(Modifier.padding(16.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Rounded.Bolt, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("CONECTA A TU EQUIPO EN 5 SEGUNDOS", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black)
-                                }
-                                Spacer(Modifier.height(12.dp))
-                                Text(
-                                    "1. Elige un nombre y entra en frecuencia.\n" +
-                                    "2. Pulsa 'COMPARTIR' y envíalo por WhatsApp a tu grupo.\n" +
-                                    "3. Tus compañeros aparecerán en el Radar GPS al hacer clic.\n\n" +
-                                    "¡Sin registros ni esperas! Rápido, táctico y 100% GRATIS.",
-                                    color = Color.White.copy(0.9f),
-                                    fontSize = 10.sp,
-                                    lineHeight = 14.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            Text(
+                                "Sin registros. Crea el equipo, comparte el enlace por WhatsApp y aparecerán en tu Radar GPS al instante.",
+                                color = Color.White.copy(0.7f),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(12.dp)
+                            )
                         }
 
-                        // --- 📝 DATOS DEL SERVICIO / EQUIPO ---
-                        Surface(
-                            color = Color.White.copy(0.03f),
-                            shape = RoundedCornerShape(20.dp),
-                            border = BorderStroke(1.dp, Color.White.copy(0.08f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(Modifier.padding(16.dp)) {
-                                androidx.compose.foundation.text.BasicTextField(
-                                    value = tempRouteName,
-                                    onValueChange = { if (it.length <= 15) tempRouteName = it.uppercase() },
-                                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center),
-                                    cursorBrush = androidx.compose.ui.graphics.SolidColor(LuxeColors.Gold),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    decorationBox = { innerTextField ->
-                                        Box(contentAlignment = Alignment.Center) {
-                                            if (tempRouteName.isEmpty()) Text("IDENTIFICATIVO DEL EQUIPO", color = Color.White.copy(0.2f), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                            innerTextField()
-                                        }
-                                    }
-                                )
-                                Spacer(Modifier.height(12.dp).background(Color.White.copy(0.05f)).fillMaxWidth().height(1.dp))
-                                Spacer(Modifier.height(12.dp))
-                                androidx.compose.foundation.text.BasicTextField(
-                                    value = tempRouteRules,
-                                    onValueChange = { if (it.length <= 100) tempRouteRules = it },
-                                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.White.copy(0.7f), fontSize = 12.sp, fontWeight = FontWeight.Medium),
-                                    cursorBrush = androidx.compose.ui.graphics.SolidColor(LuxeColors.Gold),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    decorationBox = { innerTextField ->
-                                        if (tempRouteRules.isEmpty()) Text("Punto de encuentro o reglas (Opcional)", color = Color.White.copy(0.2f), fontSize = 11.sp)
-                                        innerTextField()
-                                    }
-                                )
-                            }
-                        }
+                        // --- 📝 DATOS DEL EQUIPO (INPUTS INTUITIVOS) ---
+                        OutlinedTextField(
+                            value = tempRouteName,
+                            onValueChange = { if (it.length <= 15) tempRouteName = it.uppercase() },
+                            label = { Text("IDENTIFICATIVO DEL EQUIPO", fontSize = 11.sp, fontWeight = FontWeight.Black) },
+                            placeholder = { Text("Ej: RUTA66", color = Color.White.copy(0.2f)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = LuxeColors.Gold,
+                                unfocusedBorderColor = Color.White.copy(0.1f),
+                                focusedLabelColor = LuxeColors.Gold,
+                                cursorColor = LuxeColors.Gold
+                            ),
+                            leadingIcon = { Icon(Icons.Rounded.Label, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp)) }
+                        )
+
+                        Spacer(Modifier.height(12.dp))
+
+                        OutlinedTextField(
+                            value = tempRouteRules,
+                            onValueChange = { if (it.length <= 100) tempRouteRules = it },
+                            label = { Text("PUNTO DE ENCUENTRO / REGLAS", fontSize = 11.sp, fontWeight = FontWeight.Black) },
+                            placeholder = { Text("Opcional...", color = Color.White.copy(0.2f)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 2,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color.White.copy(0.3f),
+                                unfocusedBorderColor = Color.White.copy(0.1f),
+                                focusedLabelColor = Color.White.copy(0.5f),
+                                cursorColor = LuxeColors.Gold
+                            ),
+                            leadingIcon = { Icon(Icons.Rounded.Info, null, tint = Color.White.copy(0.3f), modifier = Modifier.size(20.dp)) }
+                        )
 
                         Spacer(Modifier.height(20.dp))
 
-                        // --- 🏃 SELECTOR DE ACTIVIDAD (GRID) ---
+                        // --- 🏃 SELECTOR DE ACTIVIDAD ---
                         Text("MODO DE COORDINACIÓN:", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 2.sp)
                         Spacer(Modifier.height(12.dp))
                         
@@ -639,22 +630,24 @@ fun RadioDialogs(
                                         onClick = { 
                                             if (isEnabled) {
                                                 val finalChannel = if (tempRouteName.isNotBlank()) tempRouteName else state.channel
+                                                val autoCode = (1000..9999).random().toString()
                                                 onStateChange(state.copy(
                                                     activeProfile = act, 
                                                     isMotoModeEnabled = true,
                                                     channel = finalChannel,
+                                                    subtone = autoCode,
                                                     routeRules = tempRouteRules.ifBlank { null }
                                                 ))
                                                 onDismiss()
                                                 onActivityPanelRequest()
                                             }
                                         },
-                                        modifier = Modifier.weight(1f).height(70.dp),
-                                        shape = RoundedCornerShape(16.dp),
+                                        modifier = Modifier.weight(1f).height(64.dp),
+                                        shape = RoundedCornerShape(14.dp),
                                         color = if (isSelected) LuxeColors.Gold.copy(0.2f) else if(isEnabled) Color.White.copy(0.05f) else Color.White.copy(0.02f),
                                         border = BorderStroke(1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(0.1f))
                                     ) {
-                                        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                                        Column(Modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                             val icon = when(act) {
                                                 ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
                                                 ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
@@ -675,7 +668,7 @@ fun RadioDialogs(
                                                 ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
                                                 else -> Icons.Rounded.Person
                                             }
-                                            Icon(icon, null, tint = if (isSelected) LuxeColors.Gold else Color.White.copy(if(isEnabled) 0.6f else 0.1f), modifier = Modifier.size(24.dp))
+                                            Icon(icon, null, tint = if (isSelected) LuxeColors.Gold else Color.White.copy(if(isEnabled) 0.6f else 0.1f), modifier = Modifier.size(20.dp))
                                             Text(act.name, color = if(isEnabled) Color.White else Color.White.copy(0.1f), fontSize = 8.sp, fontWeight = FontWeight.Black)
                                         }
                                     }
@@ -699,7 +692,7 @@ fun RadioDialogs(
                             }
                         }
                         
-                        Spacer(Modifier.height(120.dp)) // Margen para el teclado
+                        Spacer(Modifier.height(100.dp)) // Margen para el teclado
                     }
                 },
 

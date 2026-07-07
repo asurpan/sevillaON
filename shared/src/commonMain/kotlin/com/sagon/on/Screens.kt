@@ -290,26 +290,28 @@ fun WelcomeScreen(
                     }
                 }
                 
-                Spacer(Modifier.width(12.dp))
+                if (totalUsers > 0) {
+                    Spacer(Modifier.width(12.dp))
 
-                Surface(
-                    color = Color.White.copy(0.05f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, Color.White.copy(0.05f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        color = Color.White.copy(0.05f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(0.05f))
                     ) {
-                        Box(Modifier.size(6.dp).background(LuxeColors.Gold, CircleShape))
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "$totalUsers ONLINE", 
-                            color = Color.White.copy(0.6f),
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(Modifier.size(6.dp).background(LuxeColors.Gold, CircleShape))
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "$totalUsers ONLINE", 
+                                color = Color.White.copy(0.6f),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.sp
+                            )
+                        }
                     }
                 }
             }

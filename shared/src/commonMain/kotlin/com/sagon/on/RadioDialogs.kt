@@ -1302,12 +1302,6 @@ fun RadioDialogs(
                         Spacer(Modifier.height(32.dp))
                         
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            EliteSwitch(Modifier.weight(1f), "R. BEEP", state.isRogerBeepEnabled) { onStateChange(state.copy(isRogerBeepEnabled = it)) }
-                            EliteSwitch(Modifier.weight(1f), "VOX AUTO", state.isVoxEnabled) { onStateChange(state.copy(isVoxEnabled = it)) }
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            EliteSwitch(Modifier.weight(1f), "MONITOR", state.isMonitorEnabled) { onStateChange(state.copy(isMonitorEnabled = it)) }
                             EliteSwitch(Modifier.weight(1f), "ECHO DSP", state.isEchoEnabled) { onStateChange(state.copy(isEchoEnabled = it)) }
                         }
                         

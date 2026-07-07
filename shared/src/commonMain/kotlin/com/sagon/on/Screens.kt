@@ -833,110 +833,66 @@ fun RadioPanel(
                                 }
                             }
 
-                            // Actividades / Estado Red (Centro)
-                            val statusContent = remember(state.activeProfile, audioIntegrity, isTransmitting, state.isMeshActive) {
-                                when {
-                                    state.isMeshActive -> "RED P2P"
-                                    state.activeProfile != ActivityProfile.NORMAL -> state.activeProfile.name
-                                    else -> if(audioIntegrity) "NET" else "SYNC ERROR"
-                                }
-                            }
-                            
-                            val statusIcon = when {
-                                state.isMeshActive -> Icons.Rounded.WifiTethering
-                                state.activeProfile == ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
-                                state.activeProfile == ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
-                                state.activeProfile == ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
-                                state.activeProfile == ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
-                                state.activeProfile == ActivityProfile.MONTANA -> Icons.Rounded.Landscape
-                                state.activeProfile == ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
-                                state.activeProfile == ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
-                                state.activeProfile == ActivityProfile.VELA -> Icons.Rounded.Sailing
-                                state.activeProfile == ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
-                                state.activeProfile == ActivityProfile.CAZA -> Icons.Rounded.Radar
-                                state.activeProfile == ActivityProfile.PESCA -> Icons.Rounded.Phishing
-                                state.activeProfile == ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
-                                state.activeProfile == ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
-                                else -> Icons.Rounded.Wifi
-                            }
-
-                            Surface(
-                                color = if(state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold.copy(0.15f) else Color.Transparent,
-                                shape = RoundedCornerShape(8.dp),
-                                border = if(state.activeProfile != ActivityProfile.NORMAL) BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)) else null,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                AnimatedContent(
-                                    targetState = statusContent,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    transitionSpec = {
-                                        (slideInVertically { it } + fadeIn()).togetherWith(slideOutVertically { -it } + fadeOut())
-                                    }
-                                ) { text ->
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp).fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        Icon(
-                                            statusIcon, 
-                                            null, 
-                                            tint = if(isTransmitting) Color.Red else if(state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color(0xFF4ADE80).copy(0.6f), 
-                                            modifier = Modifier.size(12.dp)
-                                        )
-                                        Spacer(Modifier.width(6.dp))
-                                        Text(
-                                            text = text, 
-                                            color = if(isTransmitting) Color.Red else if(state.activeProfile != ActivityProfile.NORMAL) LuxeColors.Gold else Color.White.copy(0.6f), 
-                                            fontSize = 9.sp, 
-                                            fontWeight = FontWeight.Black,
-                                            letterSpacing = 1.sp,
-                                            maxLines = 1,
-                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                        )
-                                    }
-                                }
-                            }
-
-                            // --- 🔐 DUAL DOCK: MODO DISCRETO & COMPARTIR (BLOQUEADO CONTRA DESPLAZAMIENTO) ---
+                            // --- 🔐 TACTICAL DOCK: CONTROLES RÁPIDOS (VOX, BEEP, MONI, DISCRETO, SHARE) ---
                             Row(
-                                modifier = Modifier.width(70.dp), // ANCHO FIJO PARA EVITAR SOLAPAMIENTO
+                                modifier = Modifier.weight(1f),
                                 horizontalArrangement = Arrangement.End, 
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Surface(
+                                // 🎤 VOX
+                                TacticalDockIcon(
+                                    icon = Icons.Rounded.Mic,
+                                    isActive = state.isVoxEnabled,
+                                    onClick = { 
+                                        onStateChange(state.copy(isVoxEnabled = !state.isVoxEnabled))
+                                        triggerUiSound("switch")
+                                    }
+                                )
+
+                                Spacer(Modifier.width(6.dp))
+
+                                // 🔔 ROGER BEEP
+                                TacticalDockIcon(
+                                    icon = Icons.Rounded.MusicNote,
+                                    isActive = state.isRogerBeepEnabled,
+                                    onClick = { 
+                                        onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled))
+                                        triggerUiSound("switch")
+                                    }
+                                )
+
+                                Spacer(Modifier.width(6.dp))
+
+                                // 🎧 MONITOR
+                                TacticalDockIcon(
+                                    icon = Icons.Rounded.Headset,
+                                    isActive = state.isMonitorEnabled,
+                                    onClick = { 
+                                        onStateChange(state.copy(isMonitorEnabled = !state.isMonitorEnabled))
+                                        triggerUiSound("switch")
+                                    }
+                                )
+
+                                Spacer(Modifier.width(6.dp))
+
+                                // 👂 DISCRETO
+                                TacticalDockIcon(
+                                    icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing,
+                                    isActive = state.isDiscreteModeEnabled,
                                     onClick = { 
                                         onPendingDialogChange(RadioDialogType.DISCRETE)
                                         triggerUiSound("click")
-                                    },
-                                    color = if (state.isDiscreteModeEnabled) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
-                                    shape = CircleShape,
-                                    border = BorderStroke(1.dp, if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.1f)),
-                                    modifier = Modifier.requiredSize(28.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing,
-                                            null, 
-                                            tint = if (state.isDiscreteModeEnabled) LuxeColors.Gold else Color.White.copy(0.4f), 
-                                            modifier = Modifier.size(14.dp)
-                                        )
                                     }
-                                }
+                                )
 
-                                Spacer(Modifier.width(8.dp))
+                                Spacer(Modifier.width(6.dp))
 
-                                Surface(
-                                    onClick = { onShare(state.channel, state.subtone, state.myProRole, null); triggerUiSound("click") },
-                                    shape = CircleShape,
-                                    color = Color.White.copy(0.05f),
-                                    border = BorderStroke(1.dp, Color.White.copy(0.1f)),
-                                    modifier = Modifier.requiredSize(28.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Rounded.Share, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(14.dp))
-                                    }
-                                }
+                                // 📢 COMPARTIR
+                                TacticalDockIcon(
+                                    icon = Icons.Rounded.Share,
+                                    isActive = false,
+                                    onClick = { onShare(state.channel, state.subtone, state.myProRole, null); triggerUiSound("click") }
+                                )
                             }
                         }
                     }
@@ -2413,3 +2369,28 @@ fun ActivityPanel(
         }
     }
 }
+
+@Composable
+fun TacticalDockIcon(
+    icon: ImageVector,
+    isActive: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        color = if (isActive) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
+        shape = CircleShape,
+        border = BorderStroke(1.dp, if (isActive) LuxeColors.Gold else Color.White.copy(0.1f)),
+        modifier = Modifier.requiredSize(28.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                icon, 
+                null, 
+                tint = if (isActive) LuxeColors.Gold else Color.White.copy(0.4f), 
+                modifier = Modifier.size(14.dp)
+            )
+        }
+    }
+}
+

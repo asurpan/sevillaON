@@ -1134,7 +1134,7 @@ object RadioCore {
                                         "<h2 style='color:white;font-weight:900;letter-spacing:1px;margin-bottom:20px;font-size:22px;'>SESIÓN DUPLICADA</h2>" +
                                         "<p style='color:rgba(255,255,255,0.6);line-height:1.6;font-size:14px;margin-bottom:32px;font-weight:500;padding:0 15px;'>Para proteger tu señal, esta terminal ha pasado a <b>Modo Escucha</b> porque has abierto la radio en otro dispositivo.</p>" +
                                         "<button onclick='location.reload()' style='background:#D4AF37;border:none;padding:18px 24px;border-radius:24px;font-weight:900;cursor:pointer;color:black;width:calc(100% - 20px);margin:0 10px;box-shadow:0 15px 40px rgba(212,175,55,0.3);letter-spacing:1px;font-size:13px;text-transform:uppercase;transition:all 0.3s;'>Recuperar el Control</button>" +
-                                        "<p style='margin-top:35px;color:rgba(212,175,55,0.3);font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;'>Elite Engineering Platform</p></div>";
+                                        "<p style='margin-top:35px;color:rgba(212,175,55,0.3);font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;'>Red de Radio Profesional</p></div>";
                                     document.body.appendChild(div);
                                     document.body.appendChild(div);
                                 }

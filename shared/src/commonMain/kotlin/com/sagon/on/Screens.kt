@@ -844,6 +844,7 @@ fun RadioPanel(
                                 // 🎤 VOX
                                 TacticalDockIcon(
                                     icon = Icons.Rounded.Mic,
+                                    label = "VOX",
                                     isActive = state.isVoxEnabled,
                                     onClick = { 
                                         onStateChange(state.copy(isVoxEnabled = !state.isVoxEnabled))
@@ -856,6 +857,7 @@ fun RadioPanel(
                                 // 🔔 ROGER BEEP
                                 TacticalDockIcon(
                                     icon = Icons.Rounded.MusicNote,
+                                    label = "BEEP",
                                     isActive = state.isRogerBeepEnabled,
                                     onClick = { 
                                         onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled))
@@ -868,6 +870,7 @@ fun RadioPanel(
                                 // 🎧 MONITOR
                                 TacticalDockIcon(
                                     icon = Icons.Rounded.Headset,
+                                    label = "MONI",
                                     isActive = state.isMonitorEnabled,
                                     onClick = { 
                                         onStateChange(state.copy(isMonitorEnabled = !state.isMonitorEnabled))
@@ -880,6 +883,7 @@ fun RadioPanel(
                                 // 👂 DISCRETO
                                 TacticalDockIcon(
                                     icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing,
+                                    label = "DISC",
                                     isActive = state.isDiscreteModeEnabled,
                                     onClick = { 
                                         onPendingDialogChange(RadioDialogType.DISCRETE)
@@ -892,6 +896,7 @@ fun RadioPanel(
                                 // 📢 COMPARTIR
                                 TacticalDockIcon(
                                     icon = Icons.Rounded.Share,
+                                    label = "SHARE",
                                     isActive = false,
                                     onClick = { onShare(state.channel, state.subtone, state.myProRole, null); triggerUiSound("click") }
                                 )
@@ -2375,24 +2380,35 @@ fun ActivityPanel(
 @Composable
 fun TacticalDockIcon(
     icon: ImageVector,
+    label: String,
     isActive: Boolean,
     onClick: () -> Unit
 ) {
-    Surface(
-        onClick = onClick,
-        color = if (isActive) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
-        shape = CircleShape,
-        border = BorderStroke(1.dp, if (isActive) LuxeColors.Gold else Color.White.copy(0.1f)),
-        modifier = Modifier.requiredSize(28.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                icon, 
-                null, 
-                tint = if (isActive) LuxeColors.Gold else Color.White.copy(0.4f), 
-                modifier = Modifier.size(14.dp)
-            )
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Surface(
+            onClick = onClick,
+            color = if (isActive) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
+            shape = CircleShape,
+            border = BorderStroke(1.dp, if (isActive) LuxeColors.Gold else Color.White.copy(0.1f)),
+            modifier = Modifier.requiredSize(28.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    icon, 
+                    null, 
+                    tint = if (isActive) LuxeColors.Gold else Color.White.copy(0.4f), 
+                    modifier = Modifier.size(14.dp)
+                )
+            }
         }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label,
+            color = if (isActive) LuxeColors.Gold else Color.White.copy(0.3f),
+            fontSize = 7.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 0.5.sp
+        )
     }
 }
 

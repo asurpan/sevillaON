@@ -833,118 +833,106 @@ fun RadioPanel(
                                 }
                             }
 
-                            // --- 🔐 TACTICAL DOCK: CONTROLES RÁPIDOS (VOX, BEEP, ECO, MONI, DISCRETO, SHARE) ---
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                horizontalArrangement = Arrangement.End, 
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // 🎤 VOX
-                                TacticalDockIcon(
-                                    icon = Icons.Rounded.Mic,
-                                    label = "VOX",
-                                    isActive = state.isVoxEnabled,
-                                    onClick = { 
-                                        if (state.isVoxEnabled) {
-                                            onStateChange(state.copy(isVoxEnabled = false))
+                                // --- 🔐 TACTICAL DOCK: CONTROLES RÁPIDOS (VOX, BEEP, ECO, MONI, DISCRETO, SHARE) ---
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End), 
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // 🎤 VOX
+                                    TacticalDockIcon(
+                                        icon = Icons.Rounded.Mic,
+                                        label = "VOX",
+                                        isActive = state.isVoxEnabled,
+                                        onClick = { 
+                                            if (state.isVoxEnabled) {
+                                                onStateChange(state.copy(isVoxEnabled = false))
+                                                triggerUiSound("switch")
+                                            } else {
+                                                onPendingDialogChange(RadioDialogType.VOX)
+                                                triggerUiSound("click")
+                                            }
+                                        }
+                                    )
+
+                                    // 🔔 ROGER BEEP
+                                    TacticalDockIcon(
+                                        icon = Icons.Rounded.MusicNote,
+                                        label = "BEEP",
+                                        isActive = state.isRogerBeepEnabled,
+                                        onClick = { 
+                                            onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled))
                                             triggerUiSound("switch")
-                                        } else {
-                                            onPendingDialogChange(RadioDialogType.VOX)
+                                        }
+                                    )
+
+                                    // 🌀 ECO
+                                    TacticalDockIcon(
+                                        icon = Icons.Rounded.SettingsInputAntenna,
+                                        label = "ECO",
+                                        isActive = state.isReverbEnabled,
+                                        onClick = { 
+                                            if (state.isReverbEnabled) {
+                                                onStateChange(state.copy(isReverbEnabled = false))
+                                                triggerUiSound("switch")
+                                            } else {
+                                                onPendingDialogChange(RadioDialogType.REVERB)
+                                                triggerUiSound("click")
+                                            }
+                                        }
+                                    )
+
+                                    // 🎚️ DSP
+                                    TacticalDockIcon(
+                                        icon = Icons.Rounded.GraphicEq,
+                                        label = "DSP",
+                                        isActive = state.isDspEnabled,
+                                        onClick = { 
+                                            if (state.isDspEnabled) {
+                                                onStateChange(state.copy(isDspEnabled = false))
+                                                triggerUiSound("switch")
+                                            } else {
+                                                onPendingDialogChange(RadioDialogType.DSP)
+                                                triggerUiSound("click")
+                                            }
+                                        }
+                                    )
+
+                                    // 🎧 MONITOR
+                                    TacticalDockIcon(
+                                        icon = Icons.Rounded.Headset,
+                                        label = "MONI",
+                                        isActive = state.isMonitorEnabled,
+                                        onClick = { 
+                                            if (state.isMonitorEnabled) {
+                                                onStateChange(state.copy(isMonitorEnabled = false))
+                                                triggerUiSound("switch")
+                                            } else {
+                                                onPendingDialogChange(RadioDialogType.MONI)
+                                                triggerUiSound("click")
+                                            }
+                                        }
+                                    )
+
+                                    // 👂 DISCRETO
+                                    TacticalDockIcon(
+                                        icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing,
+                                        label = "DISC",
+                                        isActive = state.isDiscreteModeEnabled,
+                                        onClick = { 
+                                            onPendingDialogChange(RadioDialogType.DISCRETE)
                                             triggerUiSound("click")
                                         }
-                                    }
-                                )
+                                    )
 
-                                Spacer(Modifier.width(6.dp))
-
-                                // 🔔 ROGER BEEP
-                                TacticalDockIcon(
-                                    icon = Icons.Rounded.MusicNote,
-                                    label = "BEEP",
-                                    isActive = state.isRogerBeepEnabled,
-                                    onClick = { 
-                                        onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled))
-                                        triggerUiSound("switch")
-                                    }
-                                )
-
-                                Spacer(Modifier.width(6.dp))
-
-                                // 🌀 ECO
-                                TacticalDockIcon(
-                                    icon = Icons.Rounded.SettingsInputAntenna,
-                                    label = "ECO",
-                                    isActive = state.isReverbEnabled,
-                                    onClick = { 
-                                        if (state.isReverbEnabled) {
-                                            onStateChange(state.copy(isReverbEnabled = false))
-                                            triggerUiSound("switch")
-                                        } else {
-                                            onPendingDialogChange(RadioDialogType.REVERB)
-                                            triggerUiSound("click")
-                                        }
-                                    }
-                                )
-
-                                Spacer(Modifier.width(6.dp))
-
-                                // 🎚️ DSP
-                                TacticalDockIcon(
-                                    icon = Icons.Rounded.GraphicEq,
-                                    label = "DSP",
-                                    isActive = state.isDspEnabled,
-                                    onClick = { 
-                                        if (state.isDspEnabled) {
-                                            onStateChange(state.copy(isDspEnabled = false))
-                                            triggerUiSound("switch")
-                                        } else {
-                                            onPendingDialogChange(RadioDialogType.DSP)
-                                            triggerUiSound("click")
-                                        }
-                                    }
-                                )
-
-                                Spacer(Modifier.width(6.dp))
-
-                                // 🎧 MONITOR
-                                TacticalDockIcon(
-                                    icon = Icons.Rounded.Headset,
-                                    label = "MONI",
-                                    isActive = state.isMonitorEnabled,
-                                    onClick = { 
-                                        if (state.isMonitorEnabled) {
-                                            onStateChange(state.copy(isMonitorEnabled = false))
-                                            triggerUiSound("switch")
-                                        } else {
-                                            onPendingDialogChange(RadioDialogType.MONI)
-                                            triggerUiSound("click")
-                                        }
-                                    }
-                                )
-
-                                Spacer(Modifier.width(6.dp))
-
-                                // 👂 DISCRETO
-                                TacticalDockIcon(
-                                    icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing,
-                                    label = "DISC",
-                                    isActive = state.isDiscreteModeEnabled,
-                                    onClick = { 
-                                        onPendingDialogChange(RadioDialogType.DISCRETE)
-                                        triggerUiSound("click")
-                                    }
-                                )
-
-                                Spacer(Modifier.width(6.dp))
-
-                                // 📢 COMPARTIR
-                                TacticalDockIcon(
-                                    icon = Icons.Rounded.Share,
-                                    label = "SHARE",
-                                    isActive = false,
-                                    onClick = { onShare(state.channel, state.subtone, state.myProRole, null); triggerUiSound("click") }
-                                )
-                            }
+                                    // 📢 COMPARTIR
+                                    TacticalDockIcon(
+                                        icon = Icons.Rounded.Share,
+                                        label = "SHARE",
+                                        isActive = false,
+                                        onClick = { onShare(state.channel, state.subtone, state.myProRole, null); triggerUiSound("click") }
+                                    )
+                                }
                         }
                     }
                 }
@@ -2439,14 +2427,14 @@ fun TacticalDockIcon(
             color = if (isActive) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
             shape = CircleShape,
             border = BorderStroke(1.dp, if (isActive) LuxeColors.Gold else Color.White.copy(0.1f)),
-            modifier = Modifier.requiredSize(28.dp)
+            modifier = Modifier.requiredSize(24.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     icon, 
                     null, 
                     tint = if (isActive) LuxeColors.Gold else Color.White.copy(0.4f), 
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(12.dp)
                 )
             }
         }

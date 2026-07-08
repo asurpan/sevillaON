@@ -828,8 +828,10 @@ fun RadioPanel(
                             ) {
                                 Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Icon(if(state.subtone == "0000") Icons.Rounded.LockOpen else Icons.Rounded.Lock, null, tint = if(state.subtone != "0000") LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(12.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text(if(state.subtone == "0000") "CÓD. PRIVADO: OFF" else "CÓDIGO: ${state.subtone}", color = Color.White.copy(0.6f), fontSize = 9.sp, fontWeight = FontWeight.Black)
+                                    if (state.subtone != "0000") {
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("CÓDIGO: ${state.subtone}", color = Color.White.copy(0.6f), fontSize = 9.sp, fontWeight = FontWeight.Black)
+                                    }
                                 }
                             }
 

@@ -2,9 +2,10 @@ package com.sagon.on
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - LÓGICA DE APLICACIÓN Y PERSISTENCIA
- * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 1.1 (NOTIFICACIONES FIX)
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 1.2 (AUDIO & ROUTE FIX)
  * 
  * Este archivo gestiona el estado global de la emisora, persistencia y navegación global.
+ * Sincronización maestra de Audio Core e Interfaz de Usuario.
  * Blindado contra modificaciones en la gestión de flujos de estado y seguridad.
  */
 
@@ -128,11 +129,7 @@ fun App(
     }
 
     // --- ⏳ GESTIÓN DE CARGA INICIAL ---
-    var isAppReady by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        delay(800) // Permitir que Compose monte el primer frame
-        isAppReady = true
-    }
+    var isAppReady by remember { mutableStateOf(true) }
 
     var nick by remember { mutableStateOf(savedNick) }
     var radioState by remember { mutableStateOf(initialState) }
@@ -394,7 +391,10 @@ fun App(
                 showWebHelpDialog -> showWebHelpDialog = false
                 engineeringPanelVisible -> engineeringPanelVisible = false // 🛡️ Cierre quirúrgico de Consola de Ingeniería
                 showActivityRadar -> showActivityRadar = false // 🛡️ Cierre quirúrgico de Radar de Presencia
-                showActivityMap -> pendingDialog = RadioDialogType.FINISH_ACTIVITY_CONFIRM // 🛡️ ATRÁS = ¿SALIR DE RUTA?
+                showActivityMap -> {
+                    // --- 🛡️ FIX: ABRIR DIÁLOGO DE CIERRE DE RUTA ---
+                    pendingDialog = RadioDialogType.FINISH_ACTIVITY_CONFIRM
+                }
                 pendingDialog != null -> pendingDialog = null
                 showOnboarding -> showOnboarding = false
                 showPrivacy -> showPrivacy = false
@@ -456,15 +456,6 @@ fun App(
     // --- 🛡️ SISTEMA DE REDIRECCIÓN NATIVA (ANTI-DUPLICADO WEB) ---
     LaunchedEffect(Unit) {
         tryOpenNativeApp()
-    }
-
-
-    // Auto-conectar si ya tenemos indicativo y hemos aceptado el micro
-    LaunchedEffect(Unit) {
-        if (savedNick.isNotEmpty() && radioState.hasAcceptedMicExplain) {
-            // --- 🛡️ MEJORA DE FRICCIÓN CERO (VIRAL) ---
-            screenState = Screen.RadioCB
-        }
     }
 
     LaunchedEffect(forceBgGenre) {
@@ -1084,10 +1075,11 @@ fun App(
                         users = remoteUsers,
                         voxActive = voxActive,
                         rx = remoteTransmitterName != null,
-                        onStateChange = { 
-                            radioState = it
+                        onStateChange = { newState -> 
+                            radioState = newState
                             // Si el usuario cambia el VOX manualmente, lo propagamos al core
-                            onMicEnable(voxActive, radioState.isRogerBeepEnabled, it.veteranPower)
+                            onMicEnable(voxActive, radioState.isRogerBeepEnabled, newState.veteranPower)
+                            onEchoChange(radioState.isReverbEnabled, radioState.reverbLevel)
                         },
                         onMic = { a, p -> onMicEnable(a, radioState.isRogerBeepEnabled, p) },
                         onExecuteEngineeringAction = onExecuteEngineeringAction,
@@ -1124,7 +1116,22 @@ fun App(
                             type = pendingDialog,
                             onDismiss = { pendingDialog = null },
                             state = radioState,
-                            onStateChange = { radioState = it },
+                            onStateChange = { newState ->
+                                // 🛡️ SINCRONIZACIÓN MAESTRA: Propagar cambios a radioState y al motor de audio
+                                val oldProfile = radioState.activeProfile
+                                radioState = newState
+                                
+                                // 1. Propagar cambios de micrófono (VOX, Roger, Potencia)
+                                onMicEnable(voxActive, radioState.isRogerBeepEnabled, radioState.veteranPower)
+                                
+                                // 2. Propagar cambios de Eco/Reverb
+                                onEchoChange(radioState.isReverbEnabled, radioState.reverbLevel)
+                                
+                                // 3. Propagar cierre de actividad si el perfil vuelve a ser NORMAL
+                                if (oldProfile != ActivityProfile.NORMAL && newState.activeProfile == ActivityProfile.NORMAL) {
+                                    showActivityMap = false
+                                }
+                            },
                             onAntennaTest = onAntennaTest,
                             onReplay = onReplayRequest,
                             onPublicChat = onPublicChatRequest,

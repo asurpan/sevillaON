@@ -126,6 +126,9 @@ data class RadioState(
     val hasMicPermission: Boolean = false,
     val isSystemVoiceEnabled: Boolean = false, // Control de Red (Apagado por defecto)
     val isDspEnabled: Boolean = true,
+    val dspLevel: Float = 0.5f,
+    val isReverbEnabled: Boolean = false,
+    val reverbLevel: Float = 0.5f,
     val radarRfSensitivity: Float = 1.0f, // Máxima sensibilidad por defecto
     val radarMagSensitivity: Float = 0.7f,  // Calibrada para muros estándar
     val isNightMode: Boolean = false, // Modo nocturno automático

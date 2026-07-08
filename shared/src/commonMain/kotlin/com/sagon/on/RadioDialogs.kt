@@ -152,15 +152,34 @@ fun RadioDialogs(
                 onStateChange(state.copy(hasSeenFriendsIntro = true))
             }
         )
-        RadioDialogType.DSP -> FeatureHelpDialog(
-            title = "Sonido Profesional (DSP)",
-            icon = Icons.Rounded.SettingsVoice,
-            iconColor = LuxeColors.ElectricBlue,
-            description = "Activa el procesador DSP para aplicar compresión y filtros reales.",
-            onDismiss = { 
-                onDismiss()
-                onStateChange(state.copy(hasSeenDspIntro = true, isDspEnabled = true))
-                triggerUiSound("switch")
+        RadioDialogType.DSP -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = { 
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.GraphicEq, null, tint = LuxeColors.Gold)
+                    Spacer(Modifier.width(12.dp))
+                    Text("PROCESADOR DSP", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold)
+                }
+            },
+            text = {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Activar limpieza de voz", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Switch(checked = state.isDspEnabled, onCheckedChange = { onStateChange(state.copy(isDspEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
+                    }
+                    if (state.isDspEnabled) {
+                        Spacer(Modifier.height(24.dp))
+                        EliteSlider(
+                            label = "INTENSIDAD DEL FILTRO",
+                            value = state.dspLevel
+                        ) { onStateChange(state.copy(dspLevel = it)) }
+                    }
+                }
+            },
+            confirmButton = {
+                LuxeButton("CERRAR", onDismiss, true, Modifier.fillMaxWidth().height(44.dp), LuxeColors.Gold, Color.Black)
             }
         )
         RadioDialogType.RADAR -> FeatureHelpDialog(
@@ -211,24 +230,86 @@ fun RadioDialogs(
                 onStateChange(state.copy(hasSeenProIntro = true, isWorkModeActive = true))
             }
         )
-        RadioDialogType.VOX -> FeatureHelpDialog(
-            title = "Manos Libres (VOX)",
-            icon = Icons.Rounded.Mic,
-            description = "Activa el micrófono automáticamente al detectar tu voz.",
-            onDismiss = { 
-                onDismiss()
-                onStateChange(state.copy(hasSeenVoxIntro = true, isVoxEnabled = true))
-                triggerUiSound("switch")
+        RadioDialogType.VOX -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = { 
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Mic, null, tint = LuxeColors.Gold)
+                    Spacer(Modifier.width(12.dp))
+                    Text("CONTROL MANOS LIBRES (VOX)", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold)
+                }
+            },
+            text = {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Activar transmisión por voz", color = Color.White, fontSize = 13.sp)
+                        Switch(
+                            checked = state.isVoxEnabled, 
+                            onCheckedChange = { onStateChange(state.copy(isVoxEnabled = it)) },
+                            colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold)
+                        )
+                    }
+                    
+                    if (state.isVoxEnabled) {
+                        Spacer(Modifier.height(12.dp))
+                        EliteSlider(
+                            label = "SENSIBILIDAD",
+                            value = state.voxSensitivity
+                        ) { onStateChange(state.copy(voxSensitivity = it)) }
+                        Text(
+                            if(state.voxSensitivity > 0.8f) "MODO RUIDOSO: Ignora el ruido ambiental." else if(state.voxSensitivity < 0.3f) "MODO SENSIBLE: Capta susurros." else "MODO ESTÁNDAR.",
+                            fontSize = 9.sp, color = LuxeColors.Gold.copy(0.7f), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                LuxeButton("CERRAR", onDismiss, true, Modifier.fillMaxWidth().height(44.dp), LuxeColors.Gold, Color.Black)
             }
         )
-        RadioDialogType.MONI -> FeatureHelpDialog(
-            title = "Monitor de Voz",
-            icon = Icons.Rounded.Headset,
-            description = "Escucha tu propia voz mientras hablas. Se recomienda usar AURICULARES.",
-            onDismiss = { 
-                onDismiss()
-                onStateChange(state.copy(hasSeenMoniIntro = true, isMonitorEnabled = true))
-                triggerUiSound("switch")
+        RadioDialogType.MONI -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = { 
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Headset, null, tint = LuxeColors.Gold)
+                    Spacer(Modifier.width(12.dp))
+                    Text("MONITOR DE RETORNO", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold)
+                }
+            },
+            text = {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Escuchar mi propia voz", color = Color.White, fontSize = 13.sp)
+                        Switch(
+                            checked = state.isMonitorEnabled, 
+                            onCheckedChange = { onStateChange(state.copy(isMonitorEnabled = it)) },
+                            colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold)
+                        )
+                    }
+                    
+                    if (state.isMonitorEnabled) {
+                        Spacer(Modifier.height(12.dp))
+                        EliteSlider(
+                            label = "VOLUMEN MONITOR",
+                            value = state.monitorVolume
+                        ) { onStateChange(state.copy(monitorVolume = it)) }
+                    }
+                }
+            },
+            confirmButton = {
+                LuxeButton("CERRAR", onDismiss, true, Modifier.fillMaxWidth().height(44.dp), LuxeColors.Gold, Color.Black)
             }
         )
         RadioDialogType.ROGER -> FeatureHelpDialog(
@@ -241,14 +322,34 @@ fun RadioDialogs(
                 triggerUiSound("switch")
             }
         )
-        RadioDialogType.REVERB -> FeatureHelpDialog(
-            title = "Efectos de Audio",
-            icon = Icons.Rounded.GraphicEq,
-            description = "Añade Reverb o Eco a tu transmisión.",
-            onDismiss = { 
-                onDismiss()
-                onStateChange(state.copy(hasSeenReverbIntro = true, isEchoEnabled = true))
-                triggerUiSound("switch")
+        RadioDialogType.REVERB -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = { 
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.SettingsInputAntenna, null, tint = LuxeColors.Gold)
+                    Spacer(Modifier.width(12.dp))
+                    Text("EFECTO DE ECO", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold)
+                }
+            },
+            text = {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Activar procesador de Eco", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Switch(checked = state.isReverbEnabled, onCheckedChange = { onStateChange(state.copy(isReverbEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
+                    }
+                    if (state.isReverbEnabled) {
+                        Spacer(Modifier.height(24.dp))
+                        EliteSlider(
+                            label = "INTENSIDAD DEL ECO",
+                            value = state.reverbLevel
+                        ) { onStateChange(state.copy(reverbLevel = it)) }
+                    }
+                }
+            },
+            confirmButton = {
+                LuxeButton("CERRAR", onDismiss, true, Modifier.fillMaxWidth().height(44.dp), LuxeColors.Gold, Color.Black)
             }
         )
         RadioDialogType.CHAT -> FeatureHelpDialog(
@@ -1062,6 +1163,78 @@ fun RadioDialogs(
             title = { Text("PORTADORA") },
             text = { Text("No envíe portadora sin voz.") },
             confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } }
+        )
+        RadioDialogType.VOX -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = { 
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Mic, null, tint = LuxeColors.Gold)
+                    Spacer(Modifier.width(12.dp))
+                    Text("SENSIBILIDAD VOX", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold)
+                }
+            },
+            text = {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Activar transmisión por voz", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Switch(
+                            checked = state.isVoxEnabled, 
+                            onCheckedChange = { onStateChange(state.copy(isVoxEnabled = it)) }, 
+                            colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold)
+                        )
+                    }
+                    if (state.isVoxEnabled) {
+                        Spacer(Modifier.height(20.dp))
+                        EliteSlider(
+                            label = "SENSIBILIDAD",
+                            value = state.voxSensitivity
+                        ) { onStateChange(state.copy(voxSensitivity = it)) }
+                        Text(
+                            if(state.voxSensitivity > 0.8f) "MODO RUIDOSO: Para entornos con motor." else if(state.voxSensitivity < 0.3f) "MODO SENSIBLE: Susurros." else "MODO ESTÁNDAR.",
+                            fontSize = 9.sp, color = LuxeColors.Gold.copy(0.7f), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                LuxeButton("ENTENDIDO", onDismiss, true, Modifier.fillMaxWidth().height(44.dp), LuxeColors.Gold, Color.Black)
+            }
+        )
+        RadioDialogType.MONI -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = { 
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Headset, null, tint = LuxeColors.Gold)
+                    Spacer(Modifier.width(12.dp))
+                    Text("MONITOR DE AUDIO", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold)
+                }
+            },
+            text = {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Escuchar mi propia voz", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Switch(
+                            checked = state.isMonitorEnabled, 
+                            onCheckedChange = { onStateChange(state.copy(isMonitorEnabled = it)) }, 
+                            colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold)
+                        )
+                    }
+                    if (state.isMonitorEnabled) {
+                        Spacer(Modifier.height(20.dp))
+                        EliteSlider(
+                            label = "VOLUMEN RETORNO",
+                            value = state.monitorVolume
+                        ) { onStateChange(state.copy(monitorVolume = it)) }
+                    }
+                }
+            },
+            confirmButton = {
+                LuxeButton("CERRAR", onDismiss, true, Modifier.fillMaxWidth().height(44.dp), LuxeColors.Gold, Color.Black)
+            }
         )
         RadioDialogType.BLACKLIST -> BlacklistDialog(
             blockedUsers = state.blockedUsers,

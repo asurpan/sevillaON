@@ -2,10 +2,11 @@ package com.sagon.on
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - PANTALLAS DE NAVEGACIÓN
- * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 1.6 (NEXUS ELITE SWAP)
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 1.7 (TACTICAL DOCK FIX)
  * 
  * Gestiona el renderizado de la pantalla de Bienvenida, Carga y Radio.
  * Blindado contra modificaciones estructurales en el flujo de navegación.
+ * PROHIBIDO ALTERAR BOTONES, ICONOS O LÓGICA DE DOCK SIN NIVEL 0.
  */
 
 import androidx.compose.animation.*
@@ -245,11 +246,9 @@ fun WelcomeScreen(
             Button(
                 onClick = { 
                     if (nick.isNotBlank()) {
-                        if (!hasAcceptedMic) {
-                            onMicAccept()
-                        } else {
-                            onConnect(startGenre)
-                        }
+                        // 🛡️ ACCIÓN QUIRÚRGICA: Aceptamos micro y conectamos en un solo paso
+                        if (!hasAcceptedMic) onMicAccept()
+                        onConnect(startGenre)
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(64.dp),
@@ -258,7 +257,7 @@ fun WelcomeScreen(
                 enabled = nick.isNotBlank()
             ) {
                 Text(
-                    if (!hasAcceptedMic) "AUTORIZAR MICRÓFONO" else "ACCEDER A LA RED",
+                    "ENTRAR EN LA RADIO",
                     fontWeight = FontWeight.Black, 
                     letterSpacing = 1.sp,
                     color = Color.Black
@@ -642,7 +641,7 @@ fun RadioPanel(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(215.dp)
+                    .height(260.dp) // 🛡️ FIX: AUMENTADA ALTURA PARA QUE QUEPA EL SELECTOR DE BARRIOS
                     .clip(RoundedCornerShape(32.dp)),
                 color = Color.Black.copy(0.6f),
                 border = BorderStroke(2.dp, Brush.verticalGradient(listOf(Color.White.copy(0.2f), Color.Transparent)))
@@ -676,10 +675,7 @@ fun RadioPanel(
                                 TechLabel("GANANCIA", "${(state.rfGain * 100).toInt()}%") {
                                     onPendingDialogChange(RadioDialogType.HELP_GAIN)
                                 }
-                                Spacer(Modifier.height(16.dp))
-                                TechLabel("VOX", if(state.isVoxEnabled) "ACTIVO" else "OFF", if(state.isVoxEnabled) LuxeColors.Gold else Color.White.copy(0.3f)) {
-                                    onPendingDialogChange(RadioDialogType.SETTINGS)
-                                }
+                                // 🛡️ ETIQUETA VOX ELIMINADA (REDUNDANTE)
                             }
 
                             // Pantalla Central (Identidad)
@@ -751,6 +747,7 @@ fun RadioPanel(
                                 
                                 Spacer(Modifier.height(8.dp))
 
+                                // --- 🏷️ SELECTOR DE BARRIO / SALA (Rediseñado para que quepa todo) ---
                                 Surface(
                                     onClick = { 
                                         if (!state.isInterfaceLocked) { 
@@ -758,30 +755,31 @@ fun RadioPanel(
                                             else onPendingDialogChange(RadioDialogType.CREATE_CHANNEL)
                                         } 
                                     },
-                                    color = Color.White.copy(0.08f),
-                                    shape = RoundedCornerShape(6.dp),
-                                    border = BorderStroke(1.dp, Color.White.copy(0.1f))
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), // 🛡️ Menos padding lateral para ganar espacio
+                                    color = LuxeColors.Gold.copy(0.1f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f))
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                        horizontalArrangement = Arrangement.Center,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp) // 🛡️ Padding interno reducido
                                     ) {
                                         Icon(
                                             if(rx) Icons.Rounded.Person else Icons.Rounded.Home, 
                                             null, 
                                             tint = LuxeColors.Gold, 
-                                            modifier = Modifier.size(12.dp)
+                                            modifier = Modifier.size(16.dp)
                                         )
-                                        Spacer(Modifier.width(6.dp))
+                                        Spacer(Modifier.width(8.dp))
                                         Text(
                                             text = if(rx) (transmitterNick ?: "ANÓNIMO") else displayChannel,
-                                            color = LuxeColors.Gold,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Black,
-                                            letterSpacing = 0.5.sp,
+                                            color = Color.White,
+                                            fontSize = 11.sp, // 🛡️ Un punto menos para asegurar que cabe "PUEBLO"
+                                            fontWeight = FontWeight.ExtraBold,
+                                            letterSpacing = 0.sp, // 🛡️ Sin espaciado extra para ganar píxeles
                                             maxLines = 1,
-                                            modifier = Modifier.basicMarquee(),
-                                            style = TextStyle(lineHeight = 10.sp)
+                                            modifier = Modifier.basicMarquee()
                                         )
                                     }
                                 }
@@ -835,7 +833,7 @@ fun RadioPanel(
                                 }
                             }
 
-                            // --- 🔐 TACTICAL DOCK: CONTROLES RÁPIDOS (VOX, BEEP, MONI, DISCRETO, SHARE) ---
+                            // --- 🔐 TACTICAL DOCK: CONTROLES RÁPIDOS (VOX, BEEP, ECO, MONI, DISCRETO, SHARE) ---
                             Row(
                                 modifier = Modifier.weight(1f),
                                 horizontalArrangement = Arrangement.End, 
@@ -847,8 +845,13 @@ fun RadioPanel(
                                     label = "VOX",
                                     isActive = state.isVoxEnabled,
                                     onClick = { 
-                                        onStateChange(state.copy(isVoxEnabled = !state.isVoxEnabled))
-                                        triggerUiSound("switch")
+                                        if (state.isVoxEnabled) {
+                                            onStateChange(state.copy(isVoxEnabled = false))
+                                            triggerUiSound("switch")
+                                        } else {
+                                            onPendingDialogChange(RadioDialogType.VOX)
+                                            triggerUiSound("click")
+                                        }
                                     }
                                 )
 
@@ -867,14 +870,55 @@ fun RadioPanel(
 
                                 Spacer(Modifier.width(6.dp))
 
+                                // 🌀 ECO
+                                TacticalDockIcon(
+                                    icon = Icons.Rounded.SettingsInputAntenna,
+                                    label = "ECO",
+                                    isActive = state.isReverbEnabled,
+                                    onClick = { 
+                                        if (state.isReverbEnabled) {
+                                            onStateChange(state.copy(isReverbEnabled = false))
+                                            triggerUiSound("switch")
+                                        } else {
+                                            onPendingDialogChange(RadioDialogType.REVERB)
+                                            triggerUiSound("click")
+                                        }
+                                    }
+                                )
+
+                                Spacer(Modifier.width(6.dp))
+
+                                // 🎚️ DSP
+                                TacticalDockIcon(
+                                    icon = Icons.Rounded.GraphicEq,
+                                    label = "DSP",
+                                    isActive = state.isDspEnabled,
+                                    onClick = { 
+                                        if (state.isDspEnabled) {
+                                            onStateChange(state.copy(isDspEnabled = false))
+                                            triggerUiSound("switch")
+                                        } else {
+                                            onPendingDialogChange(RadioDialogType.DSP)
+                                            triggerUiSound("click")
+                                        }
+                                    }
+                                )
+
+                                Spacer(Modifier.width(6.dp))
+
                                 // 🎧 MONITOR
                                 TacticalDockIcon(
                                     icon = Icons.Rounded.Headset,
                                     label = "MONI",
                                     isActive = state.isMonitorEnabled,
                                     onClick = { 
-                                        onStateChange(state.copy(isMonitorEnabled = !state.isMonitorEnabled))
-                                        triggerUiSound("switch")
+                                        if (state.isMonitorEnabled) {
+                                            onStateChange(state.copy(isMonitorEnabled = false))
+                                            triggerUiSound("switch")
+                                        } else {
+                                            onPendingDialogChange(RadioDialogType.MONI)
+                                            triggerUiSound("click")
+                                        }
                                     }
                                 )
 
@@ -1578,7 +1622,7 @@ private fun TechLabel(label: String, value: String, valueColor: Color = Color.Wh
             .padding(horizontal = 2.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        Text(label, color = Color.White.copy(0.3f), fontSize = 8.sp, fontWeight = FontWeight.Black)
+        Text(label, color = Color.White.copy(0.6f), fontSize = 9.sp, fontWeight = FontWeight.Black) // 🛡️ Más opacidad (0.6f) y tamaño (9.sp)
         Text(value, color = valueColor, fontSize = 16.sp, fontWeight = FontWeight.Black)
     }
 }
@@ -2364,6 +2408,11 @@ fun ActivityPanel(
                     LuxeButton("SÍ, CERRAR", { 
                         showCloseConfirm = false
                         onExecuteEngineeringAction("HIDE_BANNER") // 💰 OCULTAR PUBLICIDAD AL SALIR
+                        
+                        // --- 🛡️ FIX: LIMPIEZA TOTAL DE INTERFAZ ANTES DE CERRAR ---
+                        // Esto asegura que al volver a la radio el scroll esté libre
+                        onStateChange(state.copy(isInterfaceLocked = false))
+
                         onFinish()
                     }, true, Modifier.fillMaxWidth().height(44.dp), Color.Red, Color.White)
                 },

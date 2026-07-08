@@ -622,8 +622,8 @@ fun App(
         onMoniVolumeChange(if (radioState.isMonitorEnabled) radioState.monitorVolume else 0f)
     }
 
-    LaunchedEffect(radioState.isEchoEnabled, radioState.echoDelay) {
-        onEchoChange(radioState.isEchoEnabled, radioState.echoDelay)
+    LaunchedEffect(radioState.isReverbEnabled, radioState.reverbLevel) {
+        onEchoChange(radioState.isReverbEnabled, radioState.reverbLevel)
     }
 
     LaunchedEffect(audioIntegrity) {

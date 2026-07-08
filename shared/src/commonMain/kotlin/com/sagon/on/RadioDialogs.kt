@@ -1475,14 +1475,13 @@ fun RadioDialogs(
                         Spacer(Modifier.height(32.dp))
                         
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            EliteSwitch(Modifier.weight(1f), "ECHO DSP", state.isEchoEnabled) { onStateChange(state.copy(isEchoEnabled = it)) }
+                            // 🛡️ LIMPIEZA: Interruptores y Sliders redundantes eliminados (Ahora en Dock Táctico)
+                            Text("AJUSTES ADICIONALES", color = Color.White.copy(0.3f), fontSize = 9.sp, fontWeight = FontWeight.Black)
                         }
                         
-                        AnimatedVisibility(visible = state.isVoxEnabled || state.isMonitorEnabled || state.isEchoEnabled) {
+                        AnimatedVisibility(visible = state.isMonitorEnabled) {
                             Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(top = 20.dp)) {
-                                if (state.isVoxEnabled) EliteSlider("SENSIBILIDAD VOX", state.voxSensitivity) { onStateChange(state.copy(voxSensitivity = it)) }
                                 if (state.isMonitorEnabled) EliteSlider("VOLUMEN MONITOR", state.monitorVolume) { onStateChange(state.copy(monitorVolume = it)) }
-                                if (state.isEchoEnabled) EliteSlider("REVERB / ECO", state.echoDelay) { onStateChange(state.copy(echoDelay = it)) }
                             }
                         }
 

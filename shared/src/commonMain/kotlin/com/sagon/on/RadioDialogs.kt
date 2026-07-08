@@ -2,10 +2,11 @@ package com.sagon.on
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - GESTIÓN DE DIÁLOGOS Y CONFIGURACIÓN
- * ESTADO: SELLADO TOTAL - VERSIÓN 1.8 (FM & SETTINGS FIX)
+ * ESTADO: SELLADO TOTAL - VERSIÓN 1.9 (NIVEL 0 - AUDIO MASTER SEAL)
  * 
  * Este archivo gestiona todas las ventanas emergentes, configuración de FM y 
- * ajustes de precisión. Blindado tras la estabilización de los filtros de radio.
+ * ajustes de precisión. NIVEL DE PROTECCIÓN 0: PROHIBIDO TOCAR SWITCHES/SLIDERS.
+ * Blindado tras la estabilización de los filtros de radio y controles tácticos.
  */
 
 import androidx.compose.animation.*

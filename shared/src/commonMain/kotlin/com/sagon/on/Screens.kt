@@ -2,11 +2,12 @@ package com.sagon.on
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - PANTALLAS DE NAVEGACIÓN
- * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 1.7 (TACTICAL DOCK FIX)
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 1.9 (ULTIMATE DOCK SEAL)
  * 
  * Gestiona el renderizado de la pantalla de Bienvenida, Carga y Radio.
- * Blindado contra modificaciones estructurales en el flujo de navegación.
- * PROHIBIDO ALTERAR BOTONES, ICONOS O LÓGICA DE DOCK SIN NIVEL 0.
+ * NIVEL DE PROTECCIÓN 0: PROHIBIDO ALTERAR BOTONES, ICONOS O LÓGICA DE DOCK.
+ * Cualquier modificación requiere AUTORIZACIÓN EXPLICITA NIVEL 0.
+ * Bloqueado contra: Refactorización, Cambios Estéticos o Rediseño de Controles.
  */
 
 import androidx.compose.animation.*

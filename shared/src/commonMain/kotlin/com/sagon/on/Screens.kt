@@ -694,13 +694,13 @@ fun RadioPanel(
                                     letterSpacing = 2.sp
                                 )
                                 
-                                Spacer(Modifier.height(8.dp))
+                                Spacer(Modifier.height(4.dp)) // 🛡️ Reducido para dar espacio
 
                                 // --- 🚥 VÚMETRO DE LEDS CENTRADO (Luxe Edition) ---
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(20.dp)
+                                        .height(16.dp) // 🛡️ Un poco más bajo para ganar espacio
                                         .clip(RoundedCornerShape(4.dp)),
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
@@ -724,14 +724,14 @@ fun RadioPanel(
                                     }
                                 }
 
-                                Spacer(Modifier.height(8.dp))
+                                Spacer(Modifier.height(4.dp)) // 🛡️ Reducido
                                 
                                 val displayChannel = if (state.channel == "GENERAL") "ENTRAR EN BARRIO, PUEBLO O ACTIVIDAD" else state.channel
                                 // 🔒 NEXUS SWAP: Ciudad (Canal) arriba, Sala (Barrio) debajo
                                 Text(
                                     text = state.city,
                                     color = if(rx) Color(0xFF22D3EE) else Color.White,
-                                    fontSize = 28.sp,
+                                    fontSize = 32.sp, // 🛡️ Aumentado para que destaque más
                                     fontWeight = FontWeight.Black,
                                     letterSpacing = (-1).sp,
                                     textAlign = TextAlign.Center,
@@ -745,7 +745,7 @@ fun RadioPanel(
                                     style = TextStyle(shadow = Shadow(color = statusColor.copy(0.3f), blurRadius = 10f))
                                 )
                                 
-                                Spacer(Modifier.height(8.dp))
+                                Spacer(Modifier.height(4.dp)) // 🛡️ Reducido
 
                                 // --- 🏷️ SELECTOR DE BARRIO / SALA (Rediseñado para que quepa todo) ---
                                 Surface(
@@ -755,15 +755,15 @@ fun RadioPanel(
                                             else onPendingDialogChange(RadioDialogType.CREATE_CHANNEL)
                                         } 
                                     },
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), // 🛡️ Menos padding lateral para ganar espacio
-                                    color = LuxeColors.Gold.copy(0.1f),
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp), // 🛡️ Menos padding para no empujar hacia abajo
+                                    color = LuxeColors.Gold.copy(0.15f), // 🛡️ Un poco más de brillo
                                     shape = RoundedCornerShape(12.dp),
-                                    border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f))
+                                    border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f))
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.Center,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp) // 🛡️ Padding interno reducido
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp) // 🛡️ Compactado
                                     ) {
                                         Icon(
                                             if(rx) Icons.Rounded.Person else Icons.Rounded.Home, 
@@ -775,9 +775,9 @@ fun RadioPanel(
                                         Text(
                                             text = if(rx) (transmitterNick ?: "ANÓNIMO") else displayChannel,
                                             color = Color.White,
-                                            fontSize = 11.sp, // 🛡️ Un punto menos para asegurar que cabe "PUEBLO"
+                                            fontSize = 11.sp, 
                                             fontWeight = FontWeight.ExtraBold,
-                                            letterSpacing = 0.sp, // 🛡️ Sin espaciado extra para ganar píxeles
+                                            letterSpacing = 0.sp,
                                             maxLines = 1,
                                             modifier = Modifier.basicMarquee()
                                         )

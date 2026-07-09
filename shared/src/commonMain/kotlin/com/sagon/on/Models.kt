@@ -48,6 +48,7 @@ data class RemoteUser(
     val isWorkAvailable: Boolean = false, // Verde si está activo en el panel
     val isSOS: Boolean = false, // Prioridad absoluta si es una emergencia
     val isMoto: Boolean = false, // Indica si el compañero va en moto
+    val bgGenre: String? = null, // Género o emisora que está escuchando (DJ de Ruta)
     val activity: ActivityProfile = ActivityProfile.NORMAL,
     val lat: Double? = null, // Latitud en tiempo real (Modo Moto)
     val lon: Double? = null, // Longitud en tiempo real (Modo Moto)

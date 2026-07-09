@@ -1087,7 +1087,12 @@ fun App(
                         onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g) },
                         onPendingDialogChange = { pendingDialog = it },
                         bgStationName = bgStationName,
+                        onBgRadioScan = onBgRadioScan,
                         onBgVolumeChange = onBgVolumeChange,
+                        onBgGenreChange = { genre -> 
+                            radioState = radioState.copy(bgRadioGenre = genre)
+                            onBgGenreChangeExternal(genre)
+                        },
                         onClose = { pendingDialog = RadioDialogType.FINISH_ACTIVITY_CONFIRM },
                         onFinish = { 
                             showActivityMap = false 

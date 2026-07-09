@@ -1636,7 +1636,9 @@ fun ActivityPanel(
     onShare: (String, String, String?, String?) -> Unit,
     onPendingDialogChange: (RadioDialogType?) -> Unit,
     bgStationName: String?,
+    onBgRadioScan: (String, String) -> Unit,
     onBgVolumeChange: (Float) -> Unit = {},
+    onBgGenreChange: (String) -> Unit = {},
     onClose: () -> Unit,
     onFinish: () -> Unit
 ) {
@@ -1657,6 +1659,16 @@ fun ActivityPanel(
 
     val announcedSites = remember { mutableStateOf(setOf<String>()) }
     var showShareHighlight by remember { mutableStateOf(true) }
+
+    // --- 🎧 SINCRONIZACIÓN DE DJ DE RUTA (FM AUTO-TUNE) ---
+    LaunchedEffect(users, state.channel) {
+        // Buscamos si hay un "DJ" (alguien con música en nuestro canal)
+        val dj = users.find { it.channel == state.channel && it.nick != nick && it.bgGenre != null }
+        if (dj != null && bgStationName == null) {
+            // Si el DJ tiene música y nosotros no, sintonizamos la suya automáticamente
+            onBgRadioScan(state.city, dj.bgGenre!!)
+        }
+    }
 
     // --- 🪄 EFECTO RECLAMO: PARPADEO COMPARTIR ---
     LaunchedEffect(Unit) {

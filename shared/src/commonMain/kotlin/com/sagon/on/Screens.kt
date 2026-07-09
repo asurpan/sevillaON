@@ -1635,6 +1635,8 @@ fun ActivityPanel(
     onGpsRequest: (callback: (String?) -> Unit) -> Unit,
     onShare: (String, String, String?, String?) -> Unit,
     onPendingDialogChange: (RadioDialogType?) -> Unit,
+    bgStationName: String?,
+    onBgVolumeChange: (Float) -> Unit = {},
     onClose: () -> Unit,
     onFinish: () -> Unit
 ) {
@@ -1654,6 +1656,19 @@ fun ActivityPanel(
     var lastLon by remember { mutableStateOf<Double?>(null) }
 
     val announcedSites = remember { mutableStateOf(setOf<String>()) }
+    var showShareHighlight by remember { mutableStateOf(true) }
+
+    // --- 🪄 EFECTO RECLAMO: PARPADEO COMPARTIR ---
+    LaunchedEffect(Unit) {
+        delay(8000) // Parpadear durante 8 segundos
+        showShareHighlight = false
+    }
+
+    val highlightAlpha by animateFloatAsState(
+        targetValue = if (showShareHighlight) 1f else 0f,
+        animationSpec = infiniteRepeatable(tween(800, easing = LinearEasing), RepeatMode.Reverse),
+        label = "ShareHighlight"
+    )
 
     // --- 🏛️ PUNTOS DE INTERÉS HISTÓRICO (PRO) ---
     val historicalSites = remember {
@@ -1738,8 +1753,17 @@ fun ActivityPanel(
         delay(1000) // Breve pausa tras la animación de entrada
         onExecuteEngineeringAction("SPEAK|$welcomeMsg")
     }
-    
     val isTransmitting = isPressed || voxActive
+    val shouldDuckMusic = isTransmitting || rx
+
+    // --- 🔊 AUTO-DUCKING FM: Bajar volumen al hablar o recibir ---
+    LaunchedEffect(shouldDuckMusic) {
+        if (shouldDuckMusic) {
+            onBgVolumeChange(0.05f) // Atenuar al 5%
+        } else {
+            onBgVolumeChange(state.bgRadioVolume) // Restaurar volumen original
+        }
+    }
 
     LaunchedEffect(isPressed) {
         onMic(isPressed, state.veteranPower)
@@ -2113,16 +2137,30 @@ fun ActivityPanel(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(Color.Black.copy(0.6f))
-                            .border(1.dp, LuxeColors.Gold.copy(0.4f), CircleShape)
+                            .background(
+                                if (showShareHighlight) LuxeColors.Gold.copy(0.2f * highlightAlpha) 
+                                else Color.Black.copy(0.6f)
+                            )
+                            .border(
+                                1.dp, 
+                                if (showShareHighlight) LuxeColors.Gold.copy(0.4f + 0.6f * highlightAlpha) 
+                                else LuxeColors.Gold.copy(0.4f), 
+                                CircleShape
+                            )
                             .clickable { 
+                                showShareHighlight = false // Detener efecto al pulsar
                                 val profileId = state.activeProfile.name
                                 onShare(state.channel, state.subtone, "ACTIVITY", profileId)
                                 triggerUiSound("click")
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Rounded.Share, 
+                            null, 
+                            tint = if (showShareHighlight) Color.White else LuxeColors.Gold, 
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }
@@ -2181,6 +2219,35 @@ fun ActivityPanel(
                 }
             }
 
+            Spacer(Modifier.height(8.dp))
+
+            // --- 🎵 CONTROL DE MÚSICA FM (NUEVO) ---
+            Surface(
+                onClick = { onPendingDialogChange(RadioDialogType.FMSCAN) },
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = if (bgStationName != null) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),
+                border = BorderStroke(1.dp, if (bgStationName != null) LuxeColors.Gold else Color.White.copy(0.1f))
+            ) {
+                Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    Icon(
+                        Icons.Rounded.MusicNote, 
+                        null, 
+                        tint = if (bgStationName != null) LuxeColors.Gold else Color.White.copy(0.3f), 
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = if(bgStationName != null) "MÚSICA ACTIVA: $bgStationName" else "RADIO FM / MÚSICA DESACTIVADA", 
+                        color = Color.White, 
+                        fontSize = 9.sp, 
+                        fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                        modifier = Modifier.basicMarquee()
+                    )
+                }
+            }
+
             if (state.isVoxEnabled) {
                 Spacer(Modifier.height(8.dp))
                 EliteSlider(
@@ -2231,15 +2298,6 @@ fun ActivityPanel(
 
             Spacer(Modifier.height(8.dp))
             
-            LuxeButton(
-                text = "CERRAR MODO RUTA",
-                onClick = { showCloseConfirm = true },
-                enabled = true,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                containerColor = Color.White.copy(0.1f),
-                contentColor = Color.White
-            )
-
             // --- 💰 ESPACIO PUBLICITARIO ADMOB (GENERACIÓN DE INGRESOS) ---
             Spacer(Modifier.height(16.dp))
             Surface(

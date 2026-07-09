@@ -714,6 +714,39 @@ fun RadioDialogs(
                             leadingIcon = { Icon(Icons.Rounded.Info, null, tint = Color.White.copy(0.3f), modifier = Modifier.size(20.dp)) }
                         )
 
+                        Spacer(Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (isPrivateSelection) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f))
+                                .clickable { isPrivateSelection = !isPrivateSelection }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                if (isPrivateSelection) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                                null,
+                                tint = if (isPrivateSelection) LuxeColors.Gold else Color.White.copy(0.3f),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    if (isPrivateSelection) "CANAL PRIVADO (CÓDIGO AUTO)" else "CANAL PÚBLICO (ABIERTO)",
+                                    color = if (isPrivateSelection) LuxeColors.Gold else Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Black
+                                )
+                                Text(
+                                    if (isPrivateSelection) "Solo entran quienes tengan el enlace o código." else "Cualquiera podrá verlo y entrar desde el selector.",
+                                    color = Color.White.copy(0.4f),
+                                    fontSize = 9.sp
+                                )
+                            }
+                        }
+
                         Spacer(Modifier.height(20.dp))
 
                         // --- 🏃 SELECTOR DE ACTIVIDAD ---
@@ -732,7 +765,7 @@ fun RadioDialogs(
                                         onClick = { 
                                             if (isEnabled) {
                                                 val finalChannel = if (tempRouteName.isNotBlank()) tempRouteName else state.channel
-                                                val autoCode = (1000..9999).random().toString()
+                                                val autoCode = if (isPrivateSelection) (1000..9999).random().toString() else "0000"
                                                 onStateChange(state.copy(
                                                     activeProfile = act, 
                                                     isMotoModeEnabled = true,

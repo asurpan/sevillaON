@@ -702,6 +702,14 @@ object RadioCore {
                         if (mute) {
                             // Silencio absoluto inmediato
                             window.app.masterOut.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.02);
+                            
+                            // 🛡️ REPARACIÓN QUIRÚRGICA: LIBERAR MICROFONO PARA OTRAS APPS (WHATSAPP/GEMINI)
+                            // Si otra app pide el foco, soltamos el hardware para evitar bloqueos
+                            if (window.app.rawStream) {
+                                window.app.rawStream.getTracks().forEach(function(t) { t.stop(); });
+                                window.app.rawStream = null;
+                            }
+
                             // Cortar PTT si estaba activo para liberar el micro
                             if (window.app.isTransmittingInternal) {
                                 window.broadcastPTT(false, true);
@@ -711,6 +719,13 @@ object RadioCore {
                             // Restaurar volumen progresivamente según el slider de la radio
                             var currentGain = (window.app.rfGain || 0.5) * 4.0;
                             window.app.masterOut.gain.setTargetAtTime(currentGain, window.app.ctx.currentTime, 0.1);
+
+                            // 🛡️ REPARACIÓN QUIRÚRGICA: RECUPERAR MICROFONO SI ES NECESARIO (VOX)
+                            if (window.app.voxActive && !window.app.rawStream) {
+                                if (typeof window.requestMicPermission === 'function') {
+                                    window.requestMicPermission();
+                                }
+                            }
                         }
                     };
                 };
@@ -830,6 +845,17 @@ object RadioCore {
                     setInterval(function() {
                         if (window.app.ctx) {
                             if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                            
+                            // 🛡️ HEARTBEAT: Oscilador de silencio para evitar que Android duerma la app sin micro
+                            if (!window.app.heartbeat) {
+                                window.app.heartbeat = window.app.ctx.createOscillator();
+                                var gain = window.app.ctx.createGain();
+                                gain.gain.value = 0.000001; // Silencio absoluto pero activo
+                                window.app.heartbeat.connect(gain);
+                                gain.connect(window.app.ctx.destination);
+                                window.app.heartbeat.start();
+                            }
+
                             if (window.app.outputAudio && window.app.outputAudio.paused) {
                                 window.app.outputAudio.play().catch(function(e){});
                             }
@@ -1689,8 +1715,13 @@ object RadioSignaling {
                             window.AndroidApp.setNativePtt(false);
                         }
                         
-                        // --- 🛡️ MANTENIMIENTO DE MICRO (MODO SIEMPRE ACTIVO) ---
-                        // El micro se mantiene abierto para permitir VOX y PTT instantáneo en segundo plano.
+                        // --- 🛡️ MANTENIMIENTO DE MICRO INTELIGENTE ---
+                        // Si el VOX está apagado, soltamos el micro para permitir a otras apps (Gemini/WhatsApp) usarlo.
+                        // Gracias al Heartbeat de AudioContext añadido arriba, la app no se dormirá.
+                        if (!window.app.voxActive && window.app.rawStream) {
+                            window.app.rawStream.getTracks().forEach(function(t) { t.stop(); });
+                            window.app.rawStream = null;
+                        }
 
                         if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.02);
                         if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.02);

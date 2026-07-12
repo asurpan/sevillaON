@@ -515,20 +515,22 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
         when (focusChange) {
             AudioManager.AUDIOFOCUS_LOSS -> {
-                // Pérdida total (ej: llamada entrante larga): Cortamos todo
+                // Pérdida total (ej: llamada entrante): Cortamos todo y liberamos micro
+                stopMeshTransmission()
                 webViewInstance?.post {
                     webViewInstance?.evaluateJavascript("if(window.set_external_mute) window.set_external_mute(true);", null)
                 }
             }
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                // Silencio absoluto: Otra app (WhatsApp, Grabadora, etc.) necesita el audio/micro
+                // Silencio temporal: Otra app (WhatsApp, Gemini) necesita el micro YA
+                stopMeshTransmission()
                 webViewInstance?.post {
                     webViewInstance?.evaluateJavascript("if(window.set_external_mute) window.set_external_mute(true);", null)
                 }
             }
             AudioManager.AUDIOFOCUS_GAIN -> {
-                // Recuperamos el audio: La otra app ha terminado
+                // Recuperamos el audio: La otra app ha terminado, podemos reanudar VOX si estaba activo
                 webViewInstance?.post {
                     webViewInstance?.evaluateJavascript("if(window.set_external_mute) window.set_external_mute(false);", null)
                 }
@@ -578,7 +580,8 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return
         
         try {
-            audioRecord = AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize)
+            // USAR VOICE_COMMUNICATION para permitir que el sistema gestione mejor la compartición
+            audioRecord = AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize)
             audioRecord?.startRecording()
             isMeshRecording = true
             

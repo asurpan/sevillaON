@@ -1781,7 +1781,7 @@ fun ActivityPanel(
         onMic(isPressed, state.veteranPower)
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black).clickable(enabled = false) { }) {
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { /* Bloqueo de clics hacia la capa inferior */ }) {
         StarryBackground(activity = 0.4f)
         
         Column(

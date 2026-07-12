@@ -380,6 +380,11 @@ fun RadioDialogs(
                 onDismissRequest = onDismiss,
                 containerColor = LuxeColors.DeepSea,
                 titleContentColor = LuxeColors.Gold,
+                properties = androidx.compose.ui.window.DialogProperties(
+                    usePlatformDefaultWidth = true,
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = true
+                ),
                 modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -417,8 +422,8 @@ fun RadioDialogs(
                             text = "SINTONIZAR SIGUIENTE",
                             onClick = {
                                 onStateChange(state.copy(bgRadioGenre = selectedGenre, hasSeenFmScanIntro = true))
-                                onBgRadioScan(state.city, selectedGenre)
                                 onDismiss()
+                                onBgRadioScan(state.city, selectedGenre)
                             },
                             enabled = true,
                             modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -427,7 +432,7 @@ fun RadioDialogs(
                         )
                         
                         TextButton(
-                            onClick = { onBgRadioStop(); onDismiss() },
+                            onClick = { onDismiss(); onBgRadioStop() },
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
@@ -543,8 +548,8 @@ fun RadioDialogs(
                     LuxeButton(
                         text = "ESCUCHAR BOLETÍN POR VOZ",
                         onClick = {
-                            onBgRadioScan(state.city, "ANUNCIOS")
                             onDismiss()
+                            onBgRadioScan(state.city, "ANUNCIOS")
                         },
                         enabled = true,
                         modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -643,6 +648,11 @@ fun RadioDialogs(
                 onDismissRequest = onDismiss,
                 containerColor = LuxeColors.DeepSea,
                 titleContentColor = LuxeColors.Gold,
+                properties = androidx.compose.ui.window.DialogProperties(
+                    usePlatformDefaultWidth = true,
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = true
+                ),
                 modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(32.dp)),
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -1841,6 +1851,11 @@ fun RadioDialogs(
         RadioDialogType.FINISH_ACTIVITY_CONFIRM -> AlertDialog(
             onDismissRequest = onDismiss,
             containerColor = LuxeColors.Slate900,
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = true,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            ),
             icon = { Icon(Icons.Rounded.Warning, null, tint = LuxeColors.Gold) },
             title = { Text("¿FINALIZAR RUTA?", color = Color.White, fontWeight = FontWeight.Black) },
             text = { Text("¿Estás seguro de que quieres cerrar el modo ruta? Volverás al canal público general.", color = Color.White.copy(0.7f), fontSize = 14.sp) },

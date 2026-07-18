@@ -44,3 +44,7 @@ object LuxeColors {
         onSurface = Color.White
     )
 }
+
+object EliteTheme {
+    val DeepGradient = Brush.verticalGradient(listOf(Color(0xFF0F172A), Color(0xFF020617)))
+}

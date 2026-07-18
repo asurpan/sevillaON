@@ -323,7 +323,6 @@ fun WelcomeScreen(
                     }
                 }
             }
-            }
             
             // --- 🛡️ ESPACIO DE SEGURIDAD PARA EL TECLADO ---
             Spacer(Modifier.height(100.dp))

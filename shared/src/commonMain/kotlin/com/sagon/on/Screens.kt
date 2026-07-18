@@ -645,7 +645,7 @@ fun RadioPanel(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(320.dp) // Aumentado para legibilidad total
+                    .height(260.dp) // Reducido para ganar espacio vertical
                     .clip(RoundedCornerShape(32.dp)),
                 color = Color.Black.copy(0.6f),
                 border = BorderStroke(2.dp, Brush.verticalGradient(listOf(Color.White.copy(0.2f), Color.Transparent)))
@@ -729,14 +729,14 @@ fun RadioPanel(
                                 Text(
                                     text = state.city,
                                     color = if(rx) Color(0xFF22D3EE) else Color.White,
-                                    fontSize = 42.sp,
+                                    fontSize = 32.sp, // Reducido para optimizar espacio
                                     fontWeight = FontWeight.Black,
                                     letterSpacing = (-1).sp,
                                     textAlign = TextAlign.Center,
                                     maxLines = 1,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .basicMarquee()
+                                        .basicMarquee(iterations = Int.MAX_VALUE)
                                         .clickable { 
                                             if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY) 
                                         },
@@ -844,11 +844,61 @@ fun RadioPanel(
                 letterSpacing = 2.sp,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
             )
+            
+            val tacticalScrollState = androidx.compose.foundation.lazy.rememberLazyListState()
+            LaunchedEffect(tacticalScrollState) {
+                snapshotFlow { tacticalScrollState.firstVisibleItemIndex }
+                    .collect {
+                        if (tacticalScrollState.isScrollInProgress) {
+                            triggerUiSound("click")
+                        }
+                    }
+            }
+
             LazyRow(
+                state = tacticalScrollState,
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(bottom = 8.dp)
             ) {
+                // --- BOTONES DINÁMICOS (CONSOLIDADOS) ---
+                item { 
+                    TacticalDockIcon(
+                        icon = Icons.Rounded.Radio, 
+                        label = "RADIO FM", 
+                        isActive = bgStationName != null, 
+                        onClick = { onPendingDialogChange(RadioDialogType.FMSCAN); triggerUiSound("click") },
+                        onLongClick = { if (bgStationName != null) onBgRadioStop() else onBgRadioScan(state.city, state.bgRadioGenre); triggerUiSound("switch") }
+                    ) 
+                }
+                item { 
+                    TacticalDockIcon(
+                        icon = if(state.activeProfile != ActivityProfile.NORMAL) Icons.Rounded.Route else Icons.Rounded.Groups, 
+                        label = "RUTA", 
+                        isActive = state.activeProfile != ActivityProfile.NORMAL, 
+                        onClick = { 
+                            if (state.activeProfile == ActivityProfile.NORMAL) onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR) 
+                            else onActivityPanelRequest()
+                            triggerUiSound("click")
+                        },
+                        onLongClick = {
+                            if (state.activeProfile != ActivityProfile.NORMAL) {
+                                onPendingDialogChange(RadioDialogType.FINISH_ACTIVITY_CONFIRM)
+                                triggerUiSound("click")
+                            }
+                        }
+                    ) 
+                }
+                item { 
+                    TacticalDockIcon(
+                        icon = Icons.AutoMirrored.Rounded.Chat, 
+                        label = "CHAT", 
+                        isActive = state.unreadCount > 0, 
+                        onClick = { onStateChange(state.copy(isChatVisible = !state.isChatVisible)); if(!state.isChatVisible) onPublicChat(); triggerUiSound("click") }
+                    ) 
+                }
+                
+                // --- AJUSTES TÉCNICOS ---
                 item { TacticalDockIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) { onStateChange(state.copy(isVoxEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.VOX); triggerUiSound("click") } }) }
                 item { TacticalDockIcon(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)); triggerUiSound("switch") }) }
                 item { TacticalDockIcon(icon = Icons.Rounded.SettingsInputAntenna, label = "ECO", isActive = state.isReverbEnabled, onClick = { if (state.isReverbEnabled) { onStateChange(state.copy(isReverbEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.REVERB); triggerUiSound("click") } }) }
@@ -859,54 +909,6 @@ fun RadioPanel(
             }
 
             Spacer(Modifier.height(24.dp))
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                EliteControlTile(
-                    modifier = Modifier.weight(1f).pointerInput(bgStationName) {
-                        detectTapGestures(
-                            onTap = { onPendingDialogChange(RadioDialogType.FMSCAN) },
-                            onLongPress = { if (bgStationName != null) onBgRadioStop() else onBgRadioScan(state.city, state.bgRadioGenre) }
-                        )
-                    },
-                    icon = Icons.Rounded.Radio,
-                    label = "RADIO FM",
-                    status = bgStationName ?: "OFF",
-                    isActive = bgStationName != null
-                )
-
-                EliteControlTile(
-                    modifier = Modifier.weight(1f).combinedClickable(
-                        onClick = {
-                            if (state.activeProfile == ActivityProfile.NORMAL) {
-                                onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR)
-                            } else {
-                                onActivityPanelRequest()
-                            }
-                            triggerUiSound("click")
-                        },
-                        onLongClick = {
-                            if (state.activeProfile != ActivityProfile.NORMAL) {
-                                onPendingDialogChange(RadioDialogType.FINISH_ACTIVITY_CONFIRM)
-                                triggerUiSound("click")
-                            }
-                        }
-                    ), 
-                    icon = if(state.activeProfile != ActivityProfile.NORMAL) Icons.Rounded.Route else Icons.Rounded.Groups, 
-                    label = "EQUIPO RUTA", 
-                    status = if(state.activeProfile != ActivityProfile.NORMAL) state.activeProfile.name else "INICIAR",
-                    isActive = state.activeProfile != ActivityProfile.NORMAL,
-                    progress = if(state.activeProfile != ActivityProfile.NORMAL) 1f else 0f
-                )
-
-                EliteControlTile(
-                    modifier = Modifier.weight(1f).clickable { onStateChange(state.copy(isChatVisible = !state.isChatVisible)); if(!state.isChatVisible) onPublicChat() }, 
-                    icon = Icons.AutoMirrored.Rounded.Chat, 
-                    label = "CHAT VOZ", 
-                    status = if(state.unreadCount > 0) "${state.unreadCount} NUEVOS" else "${chatMessages.size} MSGS",
-                    isActive = state.unreadCount > 0 || chatMessages.isNotEmpty(),
-                    progress = if(state.unreadCount > 0) 1f else 0f
-                )
-            }
 
             Spacer(Modifier.height(16.dp))
 
@@ -1150,50 +1152,6 @@ fun RadioPanel(
                     onDeleteMessage = onDeleteMessage,
                     myNick = nick
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun EliteControlTile(
-    modifier: Modifier,
-    icon: ImageVector,
-    label: String,
-    status: String,
-    isActive: Boolean = false,
-    progress: Float = 0f
-) {
-    Surface(
-        modifier = modifier.height(100.dp), // Aumentado de 80 a 100
-        shape = RoundedCornerShape(24.dp),
-        color = if (isActive || progress > 0f) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.03f),
-        border = BorderStroke(1.5.dp, if (isActive || progress > 0f) LuxeColors.Gold.copy(0.4f) else Color.White.copy(0.08f))
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (progress > 0f) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(progress)
-                        .fillMaxHeight()
-                        .background(LuxeColors.Gold.copy(0.15f))
-                )
-            }
-            
-            Column(
-                modifier = Modifier.fillMaxSize().padding(8.dp), 
-                horizontalAlignment = Alignment.CenterHorizontally, 
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    icon, 
-                    null, 
-                    tint = if (isActive || progress > 0f) LuxeColors.Gold else Color.White.copy(0.4f), 
-                    modifier = Modifier.size(24.dp) // Aumentado de 18 a 24
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(label, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center, maxLines = 1)
-                Text(status, color = if (isActive || progress > 0f) LuxeColors.Gold else Color.White.copy(0.3f), fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 1)
             }
         }
     }
@@ -1471,25 +1429,32 @@ fun ActivityPanel(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TacticalDockIcon(
     icon: ImageVector,
     label: String,
     isActive: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
-            onClick = onClick,
+            modifier = Modifier
+                .requiredSize(72.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick
+                ),
             color = if (isActive) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
             shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(2.dp, if (isActive) LuxeColors.Gold else Color.White.copy(0.1f)),
-            modifier = Modifier.requiredSize(72.dp)
+            border = BorderStroke(2.dp, if (isActive) LuxeColors.Gold else Color.White.copy(0.1f))
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
-                    icon, 
-                    null, 
+                    imageVector = icon, 
+                    contentDescription = null, 
                     tint = if (isActive) LuxeColors.Gold else Color.White, 
                     modifier = Modifier.size(34.dp)
                 )

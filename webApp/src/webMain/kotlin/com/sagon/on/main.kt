@@ -61,8 +61,8 @@ object MoniGuard {
                             target = has === true ? 0.7 : 0.12; 
                         } else if (isTx && isMoni) {
                             // En modo Monitor, lo mismo
-                            // 🛡️ REPARACIÓN QUIRÚRGICA: Reducimos de 0.2 a 0.08 para eliminar retroalimentación por altavoz
-                            target = has === true ? window.app.moniVolume : (window.app.moniVolume * 0.08);
+                            // 🛡️ REPARACIÓN QUIRÚRGICA: Reducimos de 0.08 a 0.02 para eliminar retroalimentación por altavoz y cortes de PTT
+                            target = has === true ? window.app.moniVolume : (window.app.moniVolume * 0.02);
                         }
                         
                         if (target > 0) {
@@ -536,8 +536,8 @@ object RadioCore {
                                     } else {
                                         window.app.replayChunks.push(e.data);
                                         if (window.dispatch_replay_available) window.dispatch_replay_available(true);
-                                        // Mantenemos unos 15-18 segundos (5 bloques de 3s)
-                                        if (window.app.replayChunks.length > 5) window.app.replayChunks.shift();
+                                        // Mantenemos unos 30 segundos (10 bloques de 3s) para un historial completo
+                                        if (window.app.replayChunks.length > 10) window.app.replayChunks.shift();
                                     }
                                 }
                             };
@@ -645,7 +645,7 @@ object RadioCore {
                                 });
                             }).catch(function(e) { console.error("Buffer error:", e); });
                         } catch(e) { console.error("Error Replay:", e); }
-                    }, 200);
+                    }, 500);
                 };
 
             window.setupBluetoothPTT = function() {
@@ -874,7 +874,7 @@ object RadioCore {
                     window.app.moniGain.gain.value = 0;
                     
                     window.app.masterRxGain = window.app.ctx.createGain();
-                    window.app.masterRxGain.gain.value = 5.0; // Subimos base de 3.0 a 5.0
+                    window.app.masterRxGain.gain.value = 2.0; // Reducido de 5.0 a 2.0 para evitar distorsión en mezcla
 
                     window.app.compressor = window.app.ctx.createDynamicsCompressor();
                     window.app.compressor.threshold.setValueAtTime(-24, window.app.ctx.currentTime);
@@ -1277,7 +1277,7 @@ object RadioCore {
                                 txCompressor.connect(window.app.micAnalyser);
 
                                 var makeupGain = window.app.ctx.createGain();
-                                makeupGain.gain.value = 1.2; // 🛡️ NIVEL LIMPIO: Evita el clipping digital en Replay
+                                makeupGain.gain.value = 2.5; // Incrementado de 1.2 a 2.5 para mayor presencia en red
                                 txCompressor.connect(makeupGain);
 
                                 // --- 🛡️ TRANSMISOR DE RED (LIMPIEZA Y CONEXIÓN ABSOLUTA) ---

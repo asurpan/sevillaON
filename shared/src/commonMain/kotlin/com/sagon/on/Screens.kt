@@ -265,7 +265,7 @@ fun WelcomeScreen(
                     fontWeight = FontWeight.Black, 
                     letterSpacing = 2.sp,
                     fontSize = 18.sp,
-                    color = Color.Black
+                    color = Color.White
                 )
             }
             

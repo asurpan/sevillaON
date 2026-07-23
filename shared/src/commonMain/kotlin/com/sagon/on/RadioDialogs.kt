@@ -776,6 +776,39 @@ fun RadioDialogs(
                             }
                         }
 
+                        Spacer(Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (state.isGpsPrivacyEnabled) LuxeColors.ElectricBlue.copy(0.1f) else Color.White.copy(0.05f))
+                                .clickable { onStateChange(state.copy(isGpsPrivacyEnabled = !state.isGpsPrivacyEnabled)) }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                if (state.isGpsPrivacyEnabled) Icons.Rounded.Security else Icons.Rounded.LocationOff,
+                                null,
+                                tint = if (state.isGpsPrivacyEnabled) LuxeColors.ElectricBlue else Color.White.copy(0.3f),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    "ZONA PRIVADA (OCULTAR MI CASA)",
+                                    color = if (state.isGpsPrivacyEnabled) LuxeColors.ElectricBlue else Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Black
+                                )
+                                Text(
+                                    "Añade un error de ~200m para proteger tu ubicación exacta.",
+                                    color = Color.White.copy(0.4f),
+                                    fontSize = 9.sp
+                                )
+                            }
+                        }
+
                         Spacer(Modifier.height(20.dp))
 
                         // --- 🏃 SELECTOR DE ACTIVIDAD ---

@@ -1449,13 +1449,28 @@ fun ActivityPanel(
                 }
 
                 Spacer(Modifier.width(8.dp))
-                IconButton(onClick = { onShare(state.channel, state.subtone, "ACTIVITY", state.activeProfile.name) }) {
+                
+                // --- 🛡️ BOTÓN WHATSAPP DIRECTO ---
+                IconButton(onClick = { onShare(state.channel, state.subtone, "ACTIVITY", "WhatsApp") }) {
                     Icon(Icons.AutoMirrored.Rounded.Chat, null, tint = LuxeColors.Green, modifier = Modifier.size(32.dp))
+                }
+
+                Spacer(Modifier.width(4.dp))
+                
+                // --- 📤 BOTÓN COMPARTIR GENERAL ---
+                IconButton(onClick = { onShare(state.channel, state.subtone, "ACTIVITY", state.activeProfile.name) }) {
+                    Icon(Icons.Rounded.Share, null, tint = Color.White.copy(0.6f), modifier = Modifier.size(24.dp))
                 }
 
                 Spacer(Modifier.width(8.dp))
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("KMS", color = LuxeColors.Gold.copy(0.6f), fontSize = 9.sp, fontWeight = FontWeight.Black)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (state.isGpsPrivacyEnabled) {
+                            Icon(Icons.Rounded.Security, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(10.dp))
+                            Spacer(Modifier.width(4.dp))
+                        }
+                        Text("KMS", color = LuxeColors.Gold.copy(0.6f), fontSize = 9.sp, fontWeight = FontWeight.Black)
+                    }
                     Text(text = "${(routeKms * 10).toInt() / 10.0}", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, style = TextStyle(shadow = Shadow(LuxeColors.Gold.copy(0.3f), blurRadius = 8f)))
                 }
             }

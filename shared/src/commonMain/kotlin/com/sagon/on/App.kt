@@ -1101,6 +1101,7 @@ fun App(
                         onPendingDialogChange = { pendingDialog = it },
                         bgStationName = bgStationName,
                         onBgRadioScan = onBgRadioScan,
+                        onBgRadioStop = onBgRadioStop,
                         onBgVolumeChange = onBgVolumeChange,
                         onBgGenreChange = { genre -> 
                             radioState = radioState.copy(bgRadioGenre = genre)

@@ -1309,6 +1309,7 @@ fun ActivityPanel(
     onPendingDialogChange: (RadioDialogType?) -> Unit,
     bgStationName: String?,
     onBgRadioScan: (String, String) -> Unit,
+    onBgRadioStop: () -> Unit = {},
     onBgVolumeChange: (Float) -> Unit = {},
     onBgGenreChange: (String) -> Unit = {},
     onClose: () -> Unit,

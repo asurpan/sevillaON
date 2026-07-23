@@ -1330,6 +1330,11 @@ fun ActivityPanel(
     var routeKms by remember { mutableStateOf(0.0f) }
     var isPttBlockedByRx by remember { mutableStateOf(false) }
 
+    // --- 👥 GESTIÓN DE PARTICIPANTES EN RUTA ---
+    val routeParticipants = remember(users, state.channel) {
+        users.filter { it.channel == state.channel && it.nick != nick }
+    }
+
     LaunchedEffect(externalPttBlocked) {
         if (externalPttBlocked) {
             isPttBlockedByRx = true
@@ -1614,7 +1619,59 @@ fun ActivityPanel(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
+
+            // --- 👥 LISTA DE PARTICIPANTES EN RUTA ---
+            if (routeParticipants.isNotEmpty()) {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().height(60.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp)
+                ) {
+                    items(routeParticipants) { user ->
+                        val hasGps = user.lat != null && user.lon != null
+                        Surface(
+                            onClick = { 
+                                if (hasGps) {
+                                    onExecuteEngineeringAction("CENTER_MAP|${user.lat}|${user.lon}")
+                                    triggerUiSound("click")
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (user.isTransmitting) Color.Red.copy(0.2f) else Color.White.copy(0.05f),
+                            border = BorderStroke(1.5.dp, if (user.isTransmitting) Color.Red else if (hasGps) LuxeColors.Gold.copy(0.4f) else Color.White.copy(0.1f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    if (user.isTransmitting) {
+                                        val infinite = rememberInfiniteTransition()
+                                        val scale by infinite.animateFloat(1f, 1.4f, infiniteRepeatable(tween(600), RepeatMode.Reverse))
+                                        Box(Modifier.size(10.dp).scale(scale).background(Color.Red, CircleShape))
+                                    } else {
+                                        Icon(
+                                            if (hasGps) Icons.Rounded.GpsFixed else Icons.Rounded.GpsOff,
+                                            null,
+                                            tint = if (hasGps) LuxeColors.Gold else Color.White.copy(0.3f),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    user.nick,
+                                    color = if (user.isTransmitting) Color.Red else Color.White,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Black
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+            }
 
             // --- 🛠️ PTT ---
             Surface(

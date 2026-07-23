@@ -609,6 +609,37 @@ fun UserCard(
                 ),
             contentAlignment = Alignment.Center
         ) {
+            // --- 📡 ONDAS DE TRANSMISIÓN (SOLO SI EMITE) ---
+            if (user.isTransmitting) {
+                val infiniteTransition = rememberInfiniteTransition(label = "UserWave")
+                repeat(3) { i ->
+                    val scale by infiniteTransition.animateFloat(
+                        initialValue = 1f,
+                        targetValue = 2.0f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1000, delayMillis = i * 300),
+                            repeatMode = RepeatMode.Restart
+                        ),
+                        label = "WaveScale"
+                    )
+                    val alpha by infiniteTransition.animateFloat(
+                        initialValue = 0.5f,
+                        targetValue = 0f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1000, delayMillis = i * 300),
+                            repeatMode = RepeatMode.Restart
+                        ),
+                        label = "WaveAlpha"
+                    )
+                    Box(
+                        Modifier
+                            .size(56.dp)
+                            .scale(scale)
+                            .border(1.5.dp, LuxeColors.Red.copy(alpha = alpha), CircleShape)
+                    )
+                }
+            }
+
             Icon(
                 Icons.Rounded.Person, 
                 null, 

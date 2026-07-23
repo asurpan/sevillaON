@@ -38,7 +38,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 
 enum class RadioDialogType {
-    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, PRO, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK, MASTER_HELP, HELP_SQUELCH, HELP_GAIN, FINISH_ACTIVITY_CONFIRM
+    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK, MASTER_HELP, HELP_SQUELCH, HELP_GAIN, FINISH_ACTIVITY_CONFIRM
 }
 
 /**
@@ -224,16 +224,7 @@ fun RadioDialogs(
                 onReplay()
             }
         )
-        RadioDialogType.PRO -> FeatureHelpDialog(
-            title = "Módulo Profesional",
-            icon = Icons.Rounded.Handshake,
-            iconColor = LuxeColors.ElectricBlue,
-            description = "Indica los servicios que buscas u ofreces en tiempo real.",
-            onDismiss = { 
-                onDismiss()
-                onStateChange(state.copy(hasSeenProIntro = true, isWorkModeActive = true))
-            }
-        )
+
         RadioDialogType.VOX -> AlertDialog(
             onDismissRequest = onDismiss,
             containerColor = LuxeColors.DeepSea,
@@ -1567,6 +1558,13 @@ fun RadioDialogs(
                             // Ahorro de Batería (ECO)
                             EliteSwitch(Modifier.weight(1f), "MODO ECO", state.isEcoMode) { onStateChange(state.copy(isEcoMode = it)) }
                             
+                            // Privacidad GPS
+                            EliteSwitch(Modifier.weight(1f), "ZONA PRIVADA", state.isGpsPrivacyEnabled) { onStateChange(state.copy(isGpsPrivacyEnabled = it)) }
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             // Sin Restricciones (Ayuda / Guía)
                             Surface(
                                 onClick = { onDismiss(); onShowHelp() },

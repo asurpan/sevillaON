@@ -1086,7 +1086,17 @@ object RadioCore {
                     var map = window.app.map;
                     var markers = window.app.mapMarkers;
                     
-                    // Limpiar marcadores antiguos que ya no están en la lista
+                    // Obtener mi posición actual para calcular distancias
+                    var myLat = parseFloat(localStorage.getItem("last_lat") || 37.3891);
+                    var myLon = parseFloat(localStorage.getItem("last_lon") || -5.9845);
+                    
+                    // Función interna para calcular KM entre dos puntos
+                    var getDist = function(lat1, lon1, lat2, lon2) {
+                        var R = 6371; var dLat = (lat2-lat1) * Math.PI/180; var dLon = (lon2-lon1) * Math.PI/180;
+                        var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+                        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                    };
+
                     var activeNicks = users.map(u => u.nick);
                     for (var nick in markers) {
                         if (activeNicks.indexOf(nick) === -1) {
@@ -1097,21 +1107,34 @@ object RadioCore {
                     
                     users.forEach(function(user) {
                         if (user.lat && user.lon) {
+                            var dist = getDist(myLat, myLon, user.lat, user.lon);
+                            var distText = dist < 1 ? Math.round(dist*1000) + "m" : dist.toFixed(1) + "km";
+                            var labelText = user.nick + " (" + distText + ")";
                             var color = user.isTransmitting ? "#EF4444" : "#22C55E";
+                            
                             if (markers[user.nick]) {
                                 markers[user.nick].setLatLng([user.lat, user.lon]);
-                                // Actualizar color si cambia estado TX
                                 markers[user.nick].setStyle({ color: color, fillColor: color });
+                                markers[user.nick].getTooltip().setContent(labelText);
                             } else {
                                 var marker = L.circleMarker([user.lat, user.lon], {
-                                    radius: 8,
+                                    radius: 10,
                                     fillColor: color,
                                     color: "#FFFFFF",
                                     weight: 2,
                                     opacity: 1,
                                     fillOpacity: 0.8
                                 }).addTo(map);
-                                marker.bindTooltip(user.nick, { permanent: true, direction: 'bottom', className: 'tactical-label' });
+                                
+                                marker.bindTooltip(labelText, { permanent: true, direction: 'top', className: 'tactical-label' });
+                                
+                                // --- 🚀 ACCIÓN: IR HACIA ÉL ---
+                                marker.on('click', function() {
+                                    if(confirm("¿Iniciar navegación GPS hacia " + user.nick + "?")) {
+                                        window.open("https://www.google.com/maps/dir/?api=1&destination=" + user.lat + "," + user.lon, "_blank");
+                                    }
+                                });
+                                
                                 markers[user.nick] = marker;
                             }
                         }
@@ -1628,8 +1651,15 @@ object RadioSignaling {
                 window.broadcastPTT = function(active, roger, power) {
                     if(!window.app || !window.app.peer || !window.app.db || window.app.isTerminated) return;
                     
-                    // --- 🔒 BLOQUEO DE REBOTE: Solo bloquea el encendido, NUNCA el apagado ---
-                    if (active && window.app.isBeeping) return;
+                    // --- 🔒 INTERRUPCIÓN DE BEEP: Si volvemos a pulsar, matamos el pitido activo ---
+                    if (active && window.app.isBeeping) {
+                        if (window.app.activeRogerOsc) {
+                            try { window.app.activeRogerOsc.stop(); } catch(e) {}
+                            window.app.activeRogerOsc = null;
+                        }
+                        window.app.isBeeping = false;
+                        if(window.dispatch_beeping) window.dispatch_beeping(false);
+                    }
 
                     // --- 🔒 PRIORIDAD DE ESTADO: BLOQUEO DE FUGAS ---
                     window.app.isTransmittingInternal = active;
@@ -1807,6 +1837,8 @@ object RadioSignaling {
                             
                             // --- 🔒 MOTOR DE AUDIO: ROGER BEEP LABORATORIO (100% PURO) ---
                             var osc = window.app.ctx.createOscillator();
+                            window.app.activeRogerOsc = osc; // 🛡️ GUARDAR PARA POSIBLE INTERRUPCIÓN
+                            
                             var gLocal = window.app.ctx.createGain();
                             var gRemote = window.app.ctx.createGain();
                             var now = window.app.ctx.currentTime;
@@ -1820,11 +1852,11 @@ object RadioSignaling {
                             gRemote.gain.setValueAtTime(0.10, now + 0.28); 
                             gRemote.gain.exponentialRampToValueAtTime(0.0001, now + 0.3); 
                             
-                            // Envolvente Local: Volumen 4x más bajo y conexión DIRECTA
+                            // Envolvente Local: Volumen subido a 0.08 para mejor audibilidad del emisor
                             // Conectamos directamente a ctx.destination para evitar el phasing/vibración de los buses
                             gLocal.gain.setValueAtTime(0.0001, now);
-                            gLocal.gain.linearRampToValueAtTime(0.03, now + 0.002);
-                            gLocal.gain.setValueAtTime(0.03, now + 0.28);
+                            gLocal.gain.linearRampToValueAtTime(0.08, now + 0.002);
+                            gLocal.gain.setValueAtTime(0.08, now + 0.28);
                             gLocal.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
 
                             osc.connect(gRemote); 
@@ -1836,6 +1868,9 @@ object RadioSignaling {
 
                             // --- 🎯 EXACT HARDWARE SYNC ---
                             osc.onended = function() {
+                                // Limpiar referencia al terminar
+                                if (window.app.activeRogerOsc === osc) window.app.activeRogerOsc = null;
+                                
                                 // El pitido ha terminado físicamente en el motor de audio
                                 window.app.isBeeping = false;
                                 if(window.dispatch_beeping) window.dispatch_beeping(false);
@@ -1853,6 +1888,7 @@ object RadioSignaling {
                                     if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
                                 }
 
+                                window.app.voxHangTimer = 0;
                                 window.app.voxLockoutTimestamp = Date.now() + 2500;
                             };
 
@@ -3484,14 +3520,31 @@ fun main() {
                     js("if(window.updateMoniGain) window.updateMoniGain();")
                     js("if(window.updateMasterVolume) window.updateMasterVolume();")
                     
-                    // --- 🛠️ SINCRONIZACIÓN MÓDULO PROFESIONAL ---
+                    // --- 🛠️ SINCRONIZACIÓN DE ESTADO Y GPS ---
                     if (win.app.db != null && win.app.sessionID != null) {
                         val ref = win.app.db.ref("users/" + win.app.sessionID)
                         val updates: dynamic = js("{}")
-                        updates.proRole = s.myProRole
-                        updates.proSeeking = s.isProSeeking
-                        updates.workStatus = s.myWorkStatus
-                        updates.isSOS = s.myIsSOS
+                        
+                        // --- 🛡️ PROTECCIÓN DE PRIVACIDAD GPS ---
+                        if (s.motoLatitude != null && s.motoLongitude != null) {
+                            var finalLat = s.motoLatitude
+                            var finalLon = s.motoLongitude
+                            
+                            if (s.isGpsPrivacyEnabled) {
+                                // Añadir jitter aleatorio de ~200 metros para ocultar portal exacto
+                                js("finalLat += (Math.random() - 0.5) * 0.002")
+                                js("finalLon += (Math.random() - 0.5) * 0.002")
+                            }
+                            
+                            updates.lat = finalLat
+                            updates.lon = finalLon
+                            updates.isMoto = s.activeProfile != ActivityProfile.NORMAL
+                            
+                            // Guardar para cálculos locales de distancia
+                            localStorage.setItem("last_lat", s.motoLatitude.toString())
+                            localStorage.setItem("last_lon", s.motoLongitude.toString())
+                        }
+                        
                         val currentGps = s.myGpsUrl
                         if (currentGps != null) updates.gps = currentGps
                         ref.update(updates)
@@ -3674,7 +3727,10 @@ fun main() {
                                     if (!container) {
                                         var boxes = document.querySelectorAll('div');
                                         for(var i=0; i<boxes.length; i++) {
-                                            if(boxes[i].style.height === '380.0px' || boxes[i].style.height === '380px') {
+                                            var style = window.getComputedStyle(boxes[i]);
+                                            var bg = style.backgroundColor;
+                                            // 🛡️ BUSQUEDA ROBUSTA: Detectar el contenedor por color de fondo #020617 (rgb(2, 6, 23))
+                                            if(bg === 'rgb(2, 6, 23)' || bg === '#020617') {
                                                 var mapDiv = document.createElement('div');
                                                 mapDiv.id = containerId;
                                                 mapDiv.style.width = '100%';
@@ -3683,6 +3739,7 @@ fun main() {
                                                 mapDiv.style.top = '0';
                                                 mapDiv.style.left = '0';
                                                 mapDiv.style.zIndex = '0';
+                                                boxes[i].style.position = 'relative';
                                                 boxes[i].appendChild(mapDiv);
                                                 window.initRealMap(containerId, 37.3891, -5.9845);
                                                 break;

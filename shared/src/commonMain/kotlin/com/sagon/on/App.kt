@@ -241,48 +241,7 @@ fun App(
             triggerUiSound("click")
         }
 
-        // Alerta SOS en la ciudad (Lógica de Bucle Profesional)
-        val activeSosInCity = remoteUsers.filter { it.city == radioState.city && it.isSOS }
-        val newSOS = activeSosInCity.find { !lastUsers.any { lu -> lu.id == it.id && lu.isSOS } }
-        
-        if (newSOS != null) {
-            localNotification = AppNotification(
-                title = "⚠️ ALERTA SOS EN TU CIUDAD",
-                message = "${newSOS.nick} necesita ayuda en ${newSOS.city}. Abre el modo profesional para más info.",
-                type = NotificationType.Warning,
-                actionLabel = "VER",
-                onAction = {
-                    radioState = radioState.copy(isWorkModeActive = true)
-                    localNotification = null
-                }
-            )
-        }
 
-        // --- 📡 RADAR PRO: DETECTOR DE ANUNCIOS DIRIGIDOS ---
-        val activeEmployers = remoteUsers.filter { 
-            it.city == radioState.city && 
-            it.isProSeeking && 
-            it.isTransmitting &&
-            !radioState.isJustBrowsing && // No molestar si solo curiosea
-            radioState.myProRole != "CIUDADANO" && // Solo si el usuario tiene un perfil profesional activo
-            (it.proRole == radioState.myProRole || it.proRole == "GENERAL")
-        }
-        val newEmployer = activeEmployers.find { e -> !lastUsers.any { lu -> lu.id == e.id && lu.isTransmitting } }
-        
-        if (newEmployer != null && !radioState.isProSeeking) {
-            val roleName = getRoleById(newEmployer.proRole).name
-            localNotification = AppNotification(
-                title = "📢 ANUNCIO PARA: $roleName",
-                message = "${newEmployer.nick} busca un profesional como tú. ¡Abre el Radar Pro ahora!",
-                type = NotificationType.Success,
-                actionLabel = "ESCUCHAR",
-                onAction = {
-                    radioState = radioState.copy(isWorkModeActive = true)
-                    localNotification = null
-                }
-            )
-            triggerUiSound("switch")
-        }
 
         lastUsers = remoteUsers
     }
@@ -833,27 +792,7 @@ fun App(
                 }
             }
 
-            androidx.compose.animation.AnimatedVisibility(
-                visible = radioState.isWorkModeActive,
-                modifier = Modifier.fillMaxSize(),
-                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
-            ) {
-                ProfessionalTerminal(
-                    state = radioState,
-                    users = remoteUsers,
-                    onStateChange = { radioState = it },
-                    onReportPro = onReport,
-                    onNotification = { localNotification = it },
-                    onSharePro = { platform -> onShareRequest(radioState.city, radioState.channel, radioState.subtone, radioState.myProRole, platform, radioState.routeImage) },
-                    onReplayPro = onReplayRequest,
-                    onMicPro = { active, power -> onMicEnable(active, radioState.isRogerBeepEnabled, power) },
-                    myPower = micLevel, 
-                    onGpsRequest = onGpsRequest,
-                    onHertzSentinelRequest = { showActivityRadar = true },
-                    onClose = { radioState = radioState.copy(isWorkModeActive = false) }
-                )
-            }
+
 
             LuxeNotificationOverlay(
                     notification = notificationToShow,

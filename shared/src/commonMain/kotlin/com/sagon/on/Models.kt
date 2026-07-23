@@ -93,8 +93,8 @@ data class RadioState(
     val myProRole: String = "CIUDADANO",
     val isProSeeking: Boolean = false,
     val isJustBrowsing: Boolean = false,
-    val myWorkStatus: Boolean = false,
     val myIsSOS: Boolean = false,
+    val isGpsPrivacyEnabled: Boolean = true, // Protección de zona exacta activada por defecto
     val isAntennaTesting: Boolean = false, // Modo de auto-escucha (Loopback)
     val isDiscreteModeEnabled: Boolean = false, // Modo Discreto: No hablar si la app está de fondo
     val isMotoModeEnabled: Boolean = false, // Modo Moto: Filtro viento + Mapa + Malla WiFi

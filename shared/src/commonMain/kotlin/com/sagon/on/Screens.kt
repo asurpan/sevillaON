@@ -589,8 +589,8 @@ fun RadioPanel(
         StarryBackground(activity = if (isTransmitting || rx) 0.6f else 0.15f, isEcoMode = state.isEcoMode)
 
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(mainScrollState).padding(24.dp),
+    Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(mainScrollState).padding(24.dp).padding(bottom = 100.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
             // --- 🏷️ HEADER ELITE ---
@@ -1319,23 +1319,15 @@ fun ActivityPanel(
     onClose: () -> Unit,
     onFinish: () -> Unit
 ) {
-    val profile = state.activeProfile
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     var isZoomed by remember { mutableStateOf(false) }
-    var showHelpDialog by remember { mutableStateOf(false) }
-    var showRenameDialog by remember { mutableStateOf(false) }
-    var showCloseConfirm by remember { mutableStateOf(false) }
-    var newChannelName by remember { mutableStateOf(state.channel) }
-    var showRealMap by remember { mutableStateOf(false) } 
-    val scrollState = rememberScrollState()
     var routeKms by remember { mutableStateOf(0.0f) }
 
     // --- 🗺️ SINCRONIZACIÓN CON MAPA REAL (WEB) ---
     LaunchedEffect(users, state.channel, state.motoLatitude, state.motoLongitude) {
         val currentUsers = users.filter { it.channel == state.channel && it.nick != nick && it.lat != null && it.lon != null }
-        // Serializar lista de usuarios para pasarla al bridge platform
         val json = "[" + currentUsers.joinToString(",") { 
             """{"nick":"${it.nick}","lat":${it.lat},"lon":${it.lon},"isTransmitting":${it.isTransmitting}}""" 
         } + "]"
@@ -1346,9 +1338,9 @@ fun ActivityPanel(
             onExecuteEngineeringAction("CENTER_MAP|${state.motoLatitude}|${state.motoLongitude}")
         }
     }
+    
     var lastLat by remember { mutableStateOf<Double?>(null) }
     var lastLon by remember { mutableStateOf<Double?>(null) }
-    val announcedSites = remember { mutableStateOf(setOf<String>()) }
     var showShareHighlight by remember { mutableStateOf(true) }
 
     LaunchedEffect(users, state.channel) {
@@ -1362,8 +1354,6 @@ fun ActivityPanel(
         delay(8000)
         showShareHighlight = false
     }
-
-    val highlightAlpha by animateFloatAsState(targetValue = if (showShareHighlight) 1f else 0f, animationSpec = infiniteRepeatable(tween(800, easing = LinearEasing), RepeatMode.Reverse))
 
     LaunchedEffect(state.motoLatitude, state.motoLongitude) {
         val lat = state.motoLatitude
@@ -1385,282 +1375,277 @@ fun ActivityPanel(
     }
 
     val isTransmittingState = (isPressed || voxActive || isBeeping)
-
     LaunchedEffect(isTransmittingState) { onMic(isTransmittingState, state.veteranPower) }
 
     val textMeasurer = rememberTextMeasurer()
     val radarLabelStyle = remember { TextStyle(color = Color.White.copy(0.7f), fontSize = 9.sp, fontWeight = FontWeight.Black) }
 
+    // --- MI POSICIÓN (CENTRO) ANIMATIONS ---
+    val centerTransition = rememberInfiniteTransition(label = "MyWaves")
+    val waveAlpha by centerTransition.animateFloat(
+        initialValue = 0.6f, targetValue = 0f,
+        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Restart),
+        label = "WaveAlpha"
+    )
+    val waveRadiusFactor by centerTransition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Restart),
+        label = "WaveRadius"
+    )
+
     Box(modifier = Modifier.fillMaxSize().background(Color.Black).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }) {
         StarryBackground(activity = 0.4f)
         
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            // --- 📜 CONTENIDO DESPLAZABLE (MAPA + INFO) ---
-            Column(modifier = Modifier.weight(1f).verticalScroll(scrollState), horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(modifier = Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, null, tint = Color.White.copy(0.6f), modifier = Modifier.size(28.dp)) }
-                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = if (state.channel == "GENERAL") "MODO ACTIVIDAD" else "ACTIVIDAD: ${state.channel}", color = LuxeColors.Gold, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.basicMarquee())
-                        Text(if (state.subtone != "0000") "CÓDIGO PRIVADO: ${state.subtone}" else "RED P2P ACTIVA", color = if (state.subtone != "0000") LuxeColors.Gold.copy(0.7f) else LuxeColors.Green, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    }
-                    
-                    Surface(
-                        onClick = { if (isReplayReady) onReplay(); triggerUiSound("click") },
-                        color = if (isReplayReady) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),
-                        shape = CircleShape,
-                        border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.1f)),
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            if (replayProgress > 0f) {
-                                CircularProgressIndicator(progress = { replayProgress }, modifier = Modifier.fillMaxSize(), color = LuxeColors.Gold, strokeWidth = 2.dp, trackColor = Color.Transparent)
-                            }
-                            Icon(Icons.Rounded.History, null, tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(20.dp))
-                        }
-                    }
-
-                    Spacer(Modifier.width(8.dp))
-
-                    // --- 🟢 BOTÓN WHATSAPP EN CABECERA ---
-                    IconButton(onClick = { onShare(state.channel, state.subtone, "ACTIVITY", state.activeProfile.name) }) {
-                        Icon(Icons.AutoMirrored.Rounded.Chat, null, tint = LuxeColors.Green, modifier = Modifier.size(32.dp))
-                    }
-
-                    Spacer(Modifier.width(8.dp))
-
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("KMS", color = LuxeColors.Gold.copy(0.6f), fontSize = 9.sp, fontWeight = FontWeight.Black)
-                        Text(text = "${(routeKms * 10).toInt() / 10.0}", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, style = TextStyle(shadow = Shadow(LuxeColors.Gold.copy(0.3f), blurRadius = 8f)))
-                    }
+        Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(Modifier.height(16.dp))
+            
+            // --- 📜 HEADER ---
+            Row(modifier = Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, null, tint = Color.White.copy(0.6f), modifier = Modifier.size(28.dp)) }
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = if (state.channel == "GENERAL") "MODO ACTIVIDAD" else "ACTIVIDAD: ${state.channel}", color = LuxeColors.Gold, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.basicMarquee())
+                    Text(if (state.subtone != "0000") "CÓDIGO PRIVADO: ${state.subtone}" else "RED P2P ACTIVA", color = if (state.subtone != "0000") LuxeColors.Gold.copy(0.7f) else LuxeColors.Green, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                 }
-
-                Spacer(Modifier.height(12.dp))
-
-                Box(modifier = Modifier.fillMaxWidth().height(380.dp).clip(RoundedCornerShape(28.dp)).background(Color(0xFF020617)).border(2.dp, LuxeColors.Gold.copy(0.3f), RoundedCornerShape(28.dp)), contentAlignment = Alignment.Center) {
-                    // --- 🗺️ MAPA REAL / RADAR TÁCTICO ---
-                    val currentUsers = users.filter { it.channel == state.channel && it.nick != nick && it.lat != null && it.lon != null }
-                    
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        // Contenedor para el mapa real (Leaflet lo usará)
-                        Box(Modifier.fillMaxSize().alpha(0.8f)) {
-                            // Inyectamos un ID único que JS pueda encontrar
-                            Canvas(Modifier.fillMaxSize()) {
-                                // Este Canvas solo sirve para disparar la inicialización una vez
-                            }
-                            LaunchedEffect(Unit) {
-                                onExecuteEngineeringAction("INIT_REAL_MAP|activity-map-container")
-                            }
-                        }
-
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            val center = Offset(size.width / 2, size.height / 2)
-                            val radius = size.minDimension / 2.2f
-                            
-                            // --- 📏 ANILLOS DE ALCANCE ---
-                            drawCircle(Color.White.copy(0.05f), radius = radius, style = Stroke(1.dp.toPx()))
-                            drawCircle(Color.White.copy(0.03f), radius = radius * 0.66f, style = Stroke(1.dp.toPx()))
-                            drawCircle(Color.White.copy(0.01f), radius = radius * 0.33f, style = Stroke(1.dp.toPx()))
-                            
-                            val myLat = state.motoLatitude
-                            val myLon = state.motoLongitude
-                            
-                            if (myLat != null && myLon != null) {
-                                // --- 🗺️ RENDERIZADO DE COMPAÑEROS EN RUTA ---
-                                val radarRangeKm = if (isZoomed) 5.0 else 25.0
-                                
-                                currentUsers.forEach { user ->
-                                    val dist = calculateDistanceKms(myLat, myLon, user.lat!!, user.lon!!)
-                                    if (dist < radarRangeKm) {
-                                        val bearing = calculateBearing(myLat, myLon, user.lat!!, user.lon!!)
-                                        val angleRad = (bearing - 90.0) * PI / 180.0
-                                        val normalizedDist = (dist / radarRangeKm).toFloat()
-                                        
-                                        val blipX = center.x + (cos(angleRad) * radius * normalizedDist).toFloat()
-                                        val blipY = center.y + (sin(angleRad) * radius * normalizedDist).toFloat()
-                                        
-                                        val color = if (user.isTransmitting) Color.Red else LuxeColors.Gold
-                                        
-                                        // Dibujar Blip con Glow
-                                        if (user.isTransmitting) {
-                                            drawCircle(color.copy(0.3f), radius = 12.dp.toPx(), center = Offset(blipX, blipY))
-                                        }
-                                        drawCircle(color, radius = 6.dp.toPx(), center = Offset(blipX, blipY))
-                                        drawCircle(Color.White, radius = 2.dp.toPx(), center = Offset(blipX, blipY))
-                                        
-                                        // Dibujar Indicativo
-                                        val textLayout = textMeasurer.measure(user.nick, radarLabelStyle)
-                                        drawText(textLayout, topLeft = Offset(blipX - (textLayout.size.width / 2), blipY + 10.dp.toPx()))
-                                    }
-                                }
-                                
-                                // --- 📍 MI POSICIÓN (CENTRO) ---
-                                drawCircle(LuxeColors.ElectricBlue.copy(0.2f), radius = 20.dp.toPx(), center = center)
-                                drawCircle(LuxeColors.ElectricBlue.copy(0.4f), radius = 12.dp.toPx(), center = center)
-                            }
-                        }
-
-                        // --- 🏗️ ICONO DE ACTIVIDAD EN EL CENTRO ---
-                        Box(Modifier.align(Alignment.Center)) {
-                            val infiniteTransition = rememberInfiniteTransition(label = "RadarCenter")
-                            val glowScale by infiniteTransition.animateFloat(
-                                initialValue = 1f, targetValue = 1.4f,
-                                animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
-                                label = "Glow"
-                            )
-                            
-                            if (isTransmittingState || rx) {
-                                Box(
-                                    Modifier
-                                        .size(40.dp)
-                                        .scale(glowScale)
-                                        .background(
-                                            (if (isTransmittingState) Color.Red else Color.Green).copy(0.2f),
-                                            CircleShape
-                                        )
-                                        .blur(15.dp)
-                                )
-                            }
-
-                            Icon(
-                                imageVector = getActivityIcon(state.activeProfile),
-                                contentDescription = null,
-                                tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White,
-                                modifier = Modifier.size(24.dp).scale(if (isTransmittingState) 1.2f else 1f)
-                            )
-                        }
-                    }
-                    
-                    // Botón de Zoom rápido
-                    if (state.motoLatitude != null) {
-                        Box(modifier = Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.BottomEnd) {
-                            Surface(
-                                onClick = { isZoomed = !isZoomed; triggerUiSound("click") },
-                                color = Color.Black.copy(0.6f),
-                                shape = CircleShape,
-                                border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)),
-                                modifier = Modifier.size(44.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(if(isZoomed) Icons.Rounded.ZoomOutMap else Icons.Rounded.ZoomIn, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
-                                }
-                            }
-                        }
-                    }
-                    
-                            if (state.motoLatitude == null) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Black.copy(0.4f))
-                                        .clickable { 
-                                            onExecuteEngineeringAction("VIBRATE|50")
-                                            onGpsRequest { url -> }
-                                        }, 
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        val infiniteTransition = rememberInfiniteTransition()
-                                        val alpha by infiniteTransition.animateFloat(
-                                            initialValue = 0.4f,
-                                            targetValue = 1f,
-                                            animationSpec = infiniteRepeatable(
-                                                animation = tween(1000, easing = LinearEasing),
-                                                repeatMode = RepeatMode.Reverse
-                                            )
-                                        )
-                                        Icon(
-                                            Icons.Rounded.GpsFixed, 
-                                            null, 
-                                            tint = LuxeColors.Gold, 
-                                            modifier = Modifier.size(64.dp).alpha(alpha)
-                                        )
-                                        Spacer(Modifier.height(16.dp))
-                                        Text("BÚSQUEDA DE SEÑAL GPS...", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp)
-                                        Text("Toca para activar ubicación ahora", color = Color.White.copy(0.6f), fontSize = 12.sp)
-                            }
-                        }
-                    }
-                }
-
-                    Spacer(Modifier.height(16.dp))
-
-                    if (state.routeRules != null || state.routeImage != null) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                            color = Color.White.copy(0.05f),
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.1f))
-                        ) {
-                            Column(Modifier.padding(16.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Rounded.Info, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("INFORMACIÓN DE RUTA", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black)
-                                }
-                                if (state.routeRules != null) {
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(state.routeRules, color = Color.White.copy(0.8f), fontSize = 13.sp)
-                                }
-                                if (state.routeImage != null) {
-                                    Spacer(Modifier.height(12.dp))
-                                    OutlinedButton(
-                                        onClick = { try { uriHandler.openUri(state.routeImage) } catch(e: Exception) {} },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(8.dp),
-                                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)),
-                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = LuxeColors.Gold)
-                                    ) {
-                                        Icon(Icons.Rounded.Image, null, modifier = Modifier.size(16.dp))
-                                        Spacer(Modifier.width(8.dp))
-                                        Text("VER IMAGEN DE RUTA", fontSize = 11.sp, fontWeight = FontWeight.Black)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    
-                    // Espacio de seguridad para el banner
-                    Spacer(Modifier.height(180.dp))
-                }
-
-                // --- 🛡️ CONTROLES FIJOS (BOTTOM DOCK) ---
-                Spacer(Modifier.height(12.dp))
-
-                // --- 🛠️ BARRA DE HERRAMIENTAS TÁCTICA (DOCK) ---
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(horizontal = 4.dp)
+                
+                Surface(
+                    onClick = { if (isReplayReady) onReplay(); triggerUiSound("click") },
+                    color = if (isReplayReady) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),
+                    shape = CircleShape,
+                    border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.1f)),
+                    modifier = Modifier.size(44.dp)
                 ) {
-                    item { TacticalDockIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) { onStateChange(state.copy(isVoxEnabled = false)) } else { onPendingDialogChange(RadioDialogType.VOX) } }) }
-                    item { TacticalDockIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE) }) }
-                    item { TacticalDockIcon(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) }) }
-                    item { TacticalDockIcon(icon = Icons.Rounded.Map, label = "MAPA", isActive = false, onClick = { 
-                        if (state.motoLatitude != null && state.motoLongitude != null) {
-                            uriHandler.openUri("https://www.google.com/maps/search/?api=1&query=${state.motoLatitude},${state.motoLongitude}")
-                        } else {
-                            onGpsRequest { }
+                    Box(contentAlignment = Alignment.Center) {
+                        if (replayProgress > 0f) {
+                            CircularProgressIndicator(progress = { replayProgress }, modifier = Modifier.fillMaxSize(), color = LuxeColors.Gold, strokeWidth = 2.dp, trackColor = Color.Transparent)
                         }
-                    }) }
-                    item { TacticalDockIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) { onStateChange(state.copy(isDspEnabled = false)) } else { onPendingDialogChange(RadioDialogType.DSP) } }) }
-                    item { TacticalDockIcon(icon = Icons.Rounded.Radio, label = "RADIO FM", isActive = bgStationName != null, onClick = { if (bgStationName != null) onBgRadioStop() else onPendingDialogChange(RadioDialogType.FMSCAN) }) }
+                        Icon(Icons.Rounded.History, null, tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(20.dp))
+                    }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.width(8.dp))
+                IconButton(onClick = { onShare(state.channel, state.subtone, "ACTIVITY", state.activeProfile.name) }) {
+                    Icon(Icons.AutoMirrored.Rounded.Chat, null, tint = LuxeColors.Green, modifier = Modifier.size(32.dp))
+                }
 
-                Surface(modifier = Modifier.fillMaxWidth().height(120.dp).pointerInput(Unit) { detectTapGestures(onPress = { offset -> val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset); interactionSource.emit(press); tryAwaitRelease(); interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }) }, shape = RoundedCornerShape(32.dp), color = if (isTransmittingState) Color.Red.copy(0.2f) else if (rx) Color.Green.copy(0.15f) else Color.White.copy(0.08f), border = BorderStroke(3.dp, if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White.copy(0.2f))) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = if (isTransmittingState) Icons.Rounded.Mic else if (rx) Icons.Rounded.VolumeUp else Icons.Rounded.MicNone, contentDescription = null, tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, modifier = Modifier.size(44.dp))
-                            Spacer(Modifier.width(20.dp))
-                            Text(if (isTransmittingState) "HABLANDO (AIRE)" else if (rx) "AIRE: RECIBIENDO" else "PULSAR PARA HABLAR", color = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                Spacer(Modifier.width(8.dp))
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("KMS", color = LuxeColors.Gold.copy(0.6f), fontSize = 9.sp, fontWeight = FontWeight.Black)
+                    Text(text = "${(routeKms * 10).toInt() / 10.0}", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, style = TextStyle(shadow = Shadow(LuxeColors.Gold.copy(0.3f), blurRadius = 8f)))
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // --- 🗺️ ZONA CENTRAL: RADAR + BOTONES LATERALES ---
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(Color(0xFF020617))
+                    .border(2.dp, LuxeColors.Gold.copy(0.3f), RoundedCornerShape(28.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                val currentUsers = users.filter { it.channel == state.channel && it.nick != nick && it.lat != null && it.lon != null }
+                
+                // RADAR (CANVAS)
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Box(Modifier.fillMaxSize().alpha(0.8f)) {
+                        LaunchedEffect(Unit) {
+                            onExecuteEngineeringAction("INIT_REAL_MAP|activity-map-container")
+                        }
+                    }
+
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val center = Offset(size.width / 2, size.height / 2)
+                        val radius = size.minDimension / 2.2f
+                        
+                        drawCircle(Color.White.copy(0.05f), radius = radius, style = Stroke(1.dp.toPx()))
+                        drawCircle(Color.White.copy(0.03f), radius = radius * 0.66f, style = Stroke(1.dp.toPx()))
+                        drawCircle(Color.White.copy(0.01f), radius = radius * 0.33f, style = Stroke(1.dp.toPx()))
+                        
+                        val myLat = state.motoLatitude
+                        val myLon = state.motoLongitude
+                        
+                        if (myLat != null && myLon != null) {
+                            val radarRangeKm = if (isZoomed) 5.0 else 25.0
+                            
+                            currentUsers.forEach { user ->
+                                val dist = calculateDistanceKms(myLat, myLon, user.lat!!, user.lon!!)
+                                if (dist < radarRangeKm) {
+                                    val bearing = calculateBearing(myLat, myLon, user.lat!!, user.lon!!)
+                                    val angleRad = (bearing - 90.0) * PI / 180.0
+                                    val normalizedDist = (dist / radarRangeKm).toFloat()
+                                    
+                                    val blipX = center.x + (cos(angleRad) * radius * normalizedDist).toFloat()
+                                    val blipY = center.y + (sin(angleRad) * radius * normalizedDist).toFloat()
+                                    
+                                    val color = if (user.isTransmitting) Color.Red else LuxeColors.Gold
+                                    if (user.isTransmitting) {
+                                        drawCircle(color.copy(0.3f), radius = 12.dp.toPx(), center = Offset(blipX, blipY))
+                                    }
+                                    drawCircle(color, radius = 6.dp.toPx(), center = Offset(blipX, blipY))
+                                    drawCircle(Color.White, radius = 2.dp.toPx(), center = Offset(blipX, blipY))
+                                    
+                                    val distText = if (dist < 1.0) "${(dist * 1000).toInt()}m" else "${(dist * 10).toInt() / 10.0}km"
+                                    val labelText = "${user.nick} ($distText)"
+                                    val textLayout = textMeasurer.measure(labelText, radarLabelStyle)
+                                    drawText(textLayout, topLeft = Offset(blipX - (textLayout.size.width / 2), blipY + 10.dp.toPx()))
+                                }
+                            }
+                            
+                            if (isTransmittingState) {
+                                drawCircle(Color.Red.copy(alpha = waveAlpha), radius = radius * waveRadiusFactor, center = center, style = Stroke(2.dp.toPx()))
+                                drawCircle(Color.Red.copy(alpha = waveAlpha * 0.5f), radius = radius * waveRadiusFactor * 0.7f, center = center, style = Stroke(1.dp.toPx()))
+                            }
+
+                            drawCircle(LuxeColors.ElectricBlue.copy(0.2f), radius = 20.dp.toPx(), center = center)
+                            drawCircle(LuxeColors.ElectricBlue.copy(0.4f), radius = 12.dp.toPx(), center = center)
+                        }
+                    }
+
+                    // ICONO CENTRAL
+                    Box(Modifier.align(Alignment.Center)) {
+                        val innerTransition = rememberInfiniteTransition(label = "RadarCenter")
+                        val glowScale by innerTransition.animateFloat(
+                            initialValue = 1f, targetValue = 1.4f,
+                            animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
+                            label = "Glow"
+                        )
+                        
+                        if (isTransmittingState || rx) {
+                            Box(
+                                Modifier.size(40.dp).scale(glowScale).background((if (isTransmittingState) Color.Red else Color.Green).copy(0.2f), CircleShape).blur(15.dp)
+                            )
+                        }
+
+                        Icon(
+                            imageVector = getActivityIcon(state.activeProfile),
+                            contentDescription = null,
+                            tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White,
+                            modifier = Modifier.size(24.dp).scale(if (isTransmittingState) 1.2f else 1f)
+                        )
+                    }
+                }
+                
+                // BOTONES LATERALES (IZQUIERDA)
+                Column(
+                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    TacticalDockIconActivity(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX) })
+                    TacticalDockIconActivity(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE) })
+                    TacticalDockIconActivity(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) })
+                }
+
+                // BOTONES LATERALES (DERECHA)
+                Column(
+                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    TacticalDockIconActivity(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) onStateChange(state.copy(isDspEnabled = false)) else onPendingDialogChange(RadioDialogType.DSP) })
+                    TacticalDockIconActivity(icon = Icons.Rounded.Radio, label = "RADIO", isActive = bgStationName != null, onClick = { if (bgStationName != null) onBgRadioStop() else onPendingDialogChange(RadioDialogType.FMSCAN) })
+                    TacticalDockIconActivity(icon = Icons.Rounded.ZoomIn, label = "ZOOM", isActive = isZoomed, onClick = { isZoomed = !isZoomed; triggerUiSound("click") })
+                }
+
+                // GPS SEARCH OVERLAY
+                if (state.motoLatitude == null) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(Color.Black.copy(0.4f)).clickable { 
+                            onExecuteEngineeringAction("VIBRATE|50")
+                            onGpsRequest { }
+                        }, 
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val gpsTransition = rememberInfiniteTransition()
+                            val alpha by gpsTransition.animateFloat(
+                                initialValue = 0.4f, targetValue = 1f,
+                                animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing), RepeatMode.Reverse)
+                            )
+                            Icon(Icons.Rounded.GpsFixed, null, tint = LuxeColors.Gold, modifier = Modifier.size(64.dp).alpha(alpha))
+                            Spacer(Modifier.height(16.dp))
+                            Text("BÚSQUEDA DE SEÑAL GPS...", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp)
+                            Text("Toca para activar ubicación ahora", color = Color.White.copy(0.6f), fontSize = 12.sp)
                         }
                     }
                 }
             }
+
+            Spacer(Modifier.height(16.dp))
+
+            // --- 🛠️ PTT ---
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp)
+                    .pointerInput(Unit) { 
+                        detectTapGestures(onPress = { offset -> 
+                            val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset)
+                            interactionSource.emit(press)
+                            tryAwaitRelease()
+                            interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) 
+                        }) 
+                    }, 
+                shape = RoundedCornerShape(32.dp), 
+                color = if (isTransmittingState) Color.Red.copy(0.2f) else if (rx) Color.Green.copy(0.15f) else Color.White.copy(0.08f), 
+                border = BorderStroke(3.dp, if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White.copy(0.2f))
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = if (isTransmittingState) Icons.Rounded.Mic else if (rx) Icons.Rounded.VolumeUp else Icons.Rounded.MicNone, contentDescription = null, tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, modifier = Modifier.size(44.dp))
+                        Spacer(Modifier.width(20.dp))
+                        Text(if (isTransmittingState) "HABLANDO (AIRE)" else if (rx) "AIRE: RECIBIENDO" else "PULSAR PARA HABLAR", color = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
+
+            // ESPACIO PARA BANNER (ANDROID)
+            Spacer(Modifier.height(70.dp))
         }
     }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun TacticalDockIconActivity(
+    icon: ImageVector,
+    label: String,
+    isActive: Boolean,
+    onClick: () -> Unit,
+    activeColor: Color = LuxeColors.Gold
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Surface(
+            modifier = Modifier
+                .size(52.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { onClick(); triggerUiSound("click") },
+            color = if (isActive) activeColor.copy(0.2f) else Color.Black.copy(0.6f),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.5.dp, if (isActive) activeColor else Color.White.copy(0.15f))
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = icon, 
+                    contentDescription = null, 
+                    tint = if (isActive) activeColor else Color.White, 
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label,
+            color = if (isActive) LuxeColors.Gold else Color.White.copy(0.6f),
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Black
+        )
+    }
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -1706,7 +1691,7 @@ fun TacticalDockIcon(
 }
 
 @Composable
-private fun TechLabel(label: String, value: String, valueColor: Color = Color.White, onClick: () -> Unit = {}) {
+fun TechLabel(label: String, value: String, valueColor: Color = Color.White, onClick: () -> Unit = {}) {
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))

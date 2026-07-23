@@ -1584,22 +1584,19 @@ fun ActivityPanel(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(110.dp)
-                    .pointerInput(Unit) {
-                        coroutineScope {
-                            awaitPointerEventScope {
-                                while (true) {
-                                    val down = awaitFirstDown(requireUnconsumed = false)
-                                    val press = androidx.compose.foundation.interaction.PressInteraction.Press(down.position)
-                                    launch { interactionSource.emit(press) }
-                                    
-                                    val up = waitForUpOrCancellation()
-                                    if (up != null) {
-                                        launch { interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }
-                                    } else {
-                                        launch { interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Cancel(press)) }
+                    .pointerInput(state.isInterfaceLocked) {
+                        if (!state.isInterfaceLocked) {
+                            detectTapGestures(
+                                onPress = { offset ->
+                                    val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset)
+                                    interactionSource.emit(press)
+                                    try {
+                                        tryAwaitRelease()
+                                    } finally {
+                                        interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press))
                                     }
                                 }
-                            }
+                            )
                         }
                     }, 
                 shape = RoundedCornerShape(32.dp), 

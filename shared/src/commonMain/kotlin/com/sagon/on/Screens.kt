@@ -12,7 +12,7 @@ package com.sagon.on
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -61,6 +61,8 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.coroutineScope
 import kotlin.math.*
 import kotlin.random.Random
 import org.jetbrains.compose.resources.painterResource
@@ -1393,7 +1395,7 @@ fun ActivityPanel(
         label = "WaveRadius"
     )
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { }) {
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         StarryBackground(activity = 0.4f)
         
         Column(
@@ -1531,26 +1533,6 @@ fun ActivityPanel(
                     }
                 }
                 
-                // BOTONES LATERALES (IZQUIERDA)
-                Column(
-                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    TacticalDockIconActivity(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX) })
-                    TacticalDockIconActivity(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE) })
-                    TacticalDockIconActivity(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) })
-                }
-
-                // BOTONES LATERALES (DERECHA)
-                Column(
-                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    TacticalDockIconActivity(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) onStateChange(state.copy(isDspEnabled = false)) else onPendingDialogChange(RadioDialogType.DSP) })
-                    TacticalDockIconActivity(icon = Icons.Rounded.Radio, label = "RADIO", isActive = bgStationName != null, onClick = { if (bgStationName != null) onBgRadioStop() else onPendingDialogChange(RadioDialogType.FMSCAN) })
-                    TacticalDockIconActivity(icon = Icons.Rounded.ZoomIn, label = "ZOOM", isActive = isZoomed, onClick = { isZoomed = !isZoomed; triggerUiSound("click") })
-                }
-
                 // GPS SEARCH OVERLAY
                 if (state.motoLatitude == null) {
                     Box(
@@ -1573,6 +1555,26 @@ fun ActivityPanel(
                         }
                     }
                 }
+
+                // BOTONES LATERALES (IZQUIERDA) - Movidos arriba para que no los tape el GPS Overlay
+                Column(
+                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    TacticalDockIconActivity(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX) })
+                    TacticalDockIconActivity(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE) })
+                    TacticalDockIconActivity(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) })
+                }
+
+                // BOTONES LATERALES (DERECHA) - Movidos arriba
+                Column(
+                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    TacticalDockIconActivity(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) onStateChange(state.copy(isDspEnabled = false)) else onPendingDialogChange(RadioDialogType.DSP) })
+                    TacticalDockIconActivity(icon = Icons.Rounded.Radio, label = "RADIO", isActive = bgStationName != null, onClick = { if (bgStationName != null) onBgRadioStop() else onPendingDialogChange(RadioDialogType.FMSCAN) })
+                    TacticalDockIconActivity(icon = if (isZoomed) Icons.Rounded.ZoomOutMap else Icons.Rounded.ZoomIn, label = "ZOOM", isActive = isZoomed, onClick = { isZoomed = !isZoomed; triggerUiSound("click") })
+                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -1582,13 +1584,23 @@ fun ActivityPanel(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(110.dp)
-                    .pointerInput(Unit) { 
-                        detectTapGestures(onPress = { offset -> 
-                            val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset)
-                            interactionSource.emit(press)
-                            tryAwaitRelease()
-                            interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) 
-                        }) 
+                    .pointerInput(Unit) {
+                        coroutineScope {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val down = awaitFirstDown(requireUnconsumed = false)
+                                    val press = androidx.compose.foundation.interaction.PressInteraction.Press(down.position)
+                                    launch { interactionSource.emit(press) }
+                                    
+                                    val up = waitForUpOrCancellation()
+                                    if (up != null) {
+                                        launch { interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }
+                                    } else {
+                                        launch { interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Cancel(press)) }
+                                    }
+                                }
+                            }
+                        }
                     }, 
                 shape = RoundedCornerShape(32.dp), 
                 color = if (isTransmittingState) Color.Red.copy(0.2f) else if (rx) Color.Green.copy(0.15f) else Color.White.copy(0.08f), 

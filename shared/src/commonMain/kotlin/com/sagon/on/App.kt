@@ -302,9 +302,12 @@ fun App(
                         val regex = "q=([-0-9.]+),([-0-9.]+)".toRegex()
                         val match = regex.find(url)
                         if (match != null) {
-                            val lat = match.groupValues[1].toDoubleOrNull()
-                            val lon = match.groupValues[2].toDoubleOrNull()
-                            if (lat != null && lon != null) {
+                            val rawLat = match.groupValues[1].toDoubleOrNull()
+                            val rawLon = match.groupValues[2].toDoubleOrNull()
+                            if (rawLat != null && rawLon != null) {
+                                // --- 🛡️ PROTECCIÓN DE PRIVACIDAD: Redondeo a 3 decimales (~110m) ---
+                                val lat = (rawLat * 1000.0).toInt() / 1000.0
+                                val lon = (rawLon * 1000.0).toInt() / 1000.0
                                 radioState = radioState.copy(motoLatitude = lat, motoLongitude = lon, myGpsUrl = url)
                             }
                         }

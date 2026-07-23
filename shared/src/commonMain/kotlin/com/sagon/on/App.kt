@@ -1024,7 +1024,7 @@ fun App(
                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                     exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
                 ) {
-                    ActivityPanel(
+                        ActivityPanel(
                         nick = nick,
                         state = radioState,
                         users = remoteUsers,
@@ -1050,6 +1050,8 @@ fun App(
                             onBgGenreChangeExternal(genre)
                         },
                         isBeeping = isBeeping,
+                        externalPtt = externalPtt,
+                        externalPttBlocked = externalPttBlocked,
                         replayProgress = replayProgress,
                         isReplayReady = isReplayReady,
                         onReplay = onReplayRequest,

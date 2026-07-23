@@ -1315,6 +1315,8 @@ fun ActivityPanel(
     onBgVolumeChange: (Float) -> Unit = {},
     onBgGenreChange: (String) -> Unit = {},
     isBeeping: Boolean,
+    externalPtt: Boolean = false,
+    externalPttBlocked: Boolean = false,
     replayProgress: Float,
     isReplayReady: Boolean,
     onReplay: () -> Unit,
@@ -1326,6 +1328,20 @@ fun ActivityPanel(
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     var isZoomed by remember { mutableStateOf(false) }
     var routeKms by remember { mutableStateOf(0.0f) }
+    var isPttBlockedByRx by remember { mutableStateOf(false) }
+
+    LaunchedEffect(externalPttBlocked) {
+        if (externalPttBlocked) {
+            isPttBlockedByRx = true
+        }
+    }
+
+    LaunchedEffect(isPttBlockedByRx) {
+        if (isPttBlockedByRx) {
+            delay(800)
+            isPttBlockedByRx = false
+        }
+    }
 
     // --- 🗺️ SINCRONIZACIÓN CON MAPA REAL (WEB) ---
     LaunchedEffect(users, state.channel, state.motoLatitude, state.motoLongitude) {
@@ -1376,8 +1392,13 @@ fun ActivityPanel(
         onExecuteEngineeringAction("SPEAK|Modo Actividad iniciado. Optimizando audio y GPS para tu ruta.")
     }
 
-    val isTransmittingState = (isPressed || voxActive || isBeeping)
-    LaunchedEffect(isTransmittingState) { onMic(isTransmittingState, state.veteranPower) }
+    // --- 🛡️ FIX AMETRALLADORA: Separar intención de transmisión del pitido ---
+    val effectivePtt = (isPressed || voxActive || externalPtt)
+    val isTransmittingState = (effectivePtt && !isPttBlockedByRx) || isBeeping
+
+    LaunchedEffect(effectivePtt) { 
+        onMic(effectivePtt, state.veteranPower) 
+    }
 
     val textMeasurer = rememberTextMeasurer()
     val radarLabelStyle = remember { TextStyle(color = Color.White.copy(0.7f), fontSize = 9.sp, fontWeight = FontWeight.Black) }
@@ -1589,12 +1610,20 @@ fun ActivityPanel(
                             coroutineScope {
                                 detectTapGestures(
                                     onPress = { offset ->
-                                        val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset)
-                                        launch { interactionSource.emit(press) }
-                                        try {
+                                        if (isPttBlockedByRx || rx) {
+                                            triggerUiSound("static")
+                                        }
+
+                                        if (!isPttBlockedByRx && !state.isInterfaceLocked && !rx) {
+                                            val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset)
+                                            launch { interactionSource.emit(press) }
+                                            try {
+                                                tryAwaitRelease()
+                                            } finally {
+                                                launch { interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }
+                                            }
+                                        } else {
                                             tryAwaitRelease()
-                                        } finally {
-                                            launch { interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }
                                         }
                                     }
                                 )

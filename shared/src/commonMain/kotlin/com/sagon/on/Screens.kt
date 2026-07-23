@@ -1312,6 +1312,10 @@ fun ActivityPanel(
     onBgRadioStop: () -> Unit = {},
     onBgVolumeChange: (Float) -> Unit = {},
     onBgGenreChange: (String) -> Unit = {},
+    isBeeping: Boolean,
+    replayProgress: Float,
+    isReplayReady: Boolean,
+    onReplay: () -> Unit,
     onClose: () -> Unit,
     onFinish: () -> Unit
 ) {
@@ -1380,14 +1384,9 @@ fun ActivityPanel(
         onExecuteEngineeringAction("SPEAK|Modo Actividad iniciado. Optimizando audio y GPS para tu ruta.")
     }
 
-    val isTransmitting = isPressed || voxActive
-    val shouldDuckMusic = isTransmitting || rx
+    val isTransmittingState = (isPressed || voxActive || isBeeping)
 
-    LaunchedEffect(shouldDuckMusic) {
-        if (shouldDuckMusic) onBgVolumeChange(0.05f) else onBgVolumeChange(state.bgRadioVolume)
-    }
-
-    LaunchedEffect(isTransmitting) { onMic(isTransmitting, state.veteranPower) }
+    LaunchedEffect(isTransmittingState) { onMic(isTransmittingState, state.veteranPower) }
 
     val textMeasurer = rememberTextMeasurer()
     val radarLabelStyle = remember { TextStyle(color = Color.White.copy(0.7f), fontSize = 9.sp, fontWeight = FontWeight.Black) }
@@ -1405,6 +1404,23 @@ fun ActivityPanel(
                         Text(if (state.subtone != "0000") "CÓDIGO PRIVADO: ${state.subtone}" else "RED P2P ACTIVA", color = if (state.subtone != "0000") LuxeColors.Gold.copy(0.7f) else LuxeColors.Green, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                     }
                     
+                    Surface(
+                        onClick = { if (isReplayReady) onReplay(); triggerUiSound("click") },
+                        color = if (isReplayReady) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),
+                        shape = CircleShape,
+                        border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.1f)),
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            if (replayProgress > 0f) {
+                                CircularProgressIndicator(progress = { replayProgress }, modifier = Modifier.fillMaxSize(), color = LuxeColors.Gold, strokeWidth = 2.dp, trackColor = Color.Transparent)
+                            }
+                            Icon(Icons.Rounded.History, null, tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(20.dp))
+                        }
+                    }
+
+                    Spacer(Modifier.width(8.dp))
+
                     // --- 🟢 BOTÓN WHATSAPP EN CABECERA ---
                     IconButton(onClick = { onShare(state.channel, state.subtone, "ACTIVITY", state.activeProfile.name) }) {
                         Icon(Icons.AutoMirrored.Rounded.Chat, null, tint = LuxeColors.Green, modifier = Modifier.size(32.dp))
@@ -1485,11 +1501,31 @@ fun ActivityPanel(
 
                         // --- 🏗️ ICONO DE ACTIVIDAD EN EL CENTRO ---
                         Box(Modifier.align(Alignment.Center)) {
+                            val infiniteTransition = rememberInfiniteTransition(label = "RadarCenter")
+                            val glowScale by infiniteTransition.animateFloat(
+                                initialValue = 1f, targetValue = 1.4f,
+                                animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
+                                label = "Glow"
+                            )
+                            
+                            if (isTransmittingState || rx) {
+                                Box(
+                                    Modifier
+                                        .size(40.dp)
+                                        .scale(glowScale)
+                                        .background(
+                                            (if (isTransmittingState) Color.Red else Color.Green).copy(0.2f),
+                                            CircleShape
+                                        )
+                                        .blur(15.dp)
+                                )
+                            }
+
                             Icon(
                                 imageVector = getActivityIcon(state.activeProfile),
                                 contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
+                                tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White,
+                                modifier = Modifier.size(24.dp).scale(if (isTransmittingState) 1.2f else 1f)
                             )
                         }
                     }
@@ -1583,6 +1619,9 @@ fun ActivityPanel(
                         }
                     }
                     Spacer(Modifier.height(16.dp))
+                    
+                    // Espacio de seguridad para el banner
+                    Spacer(Modifier.height(180.dp))
                 }
 
                 // --- 🛡️ CONTROLES FIJOS (BOTTOM DOCK) ---
@@ -1610,18 +1649,18 @@ fun ActivityPanel(
 
                 Spacer(Modifier.height(16.dp))
 
-                Surface(modifier = Modifier.fillMaxWidth().height(120.dp).pointerInput(Unit) { detectTapGestures(onPress = { offset -> val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset); interactionSource.emit(press); tryAwaitRelease(); interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }) }, shape = RoundedCornerShape(32.dp), color = if (isTransmitting) Color.Red.copy(0.2f) else if (rx) Color.Green.copy(0.15f) else Color.White.copy(0.08f), border = BorderStroke(3.dp, if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White.copy(0.2f))) {
+                Surface(modifier = Modifier.fillMaxWidth().height(120.dp).pointerInput(Unit) { detectTapGestures(onPress = { offset -> val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset); interactionSource.emit(press); tryAwaitRelease(); interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }) }, shape = RoundedCornerShape(32.dp), color = if (isTransmittingState) Color.Red.copy(0.2f) else if (rx) Color.Green.copy(0.15f) else Color.White.copy(0.08f), border = BorderStroke(3.dp, if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White.copy(0.2f))) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = if (isTransmitting) Icons.Rounded.Mic else if (rx) Icons.Rounded.VolumeUp else Icons.Rounded.MicNone, contentDescription = null, tint = if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White, modifier = Modifier.size(44.dp))
+                            Icon(imageVector = if (isTransmittingState) Icons.Rounded.Mic else if (rx) Icons.Rounded.VolumeUp else Icons.Rounded.MicNone, contentDescription = null, tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, modifier = Modifier.size(44.dp))
                             Spacer(Modifier.width(20.dp))
-                            Text(if (isTransmitting) "HABLANDO (AIRE)" else if (rx) "AIRE: RECIBIENDO" else "PULSAR PARA HABLAR", color = if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                            Text(if (isTransmittingState) "HABLANDO (AIRE)" else if (rx) "AIRE: RECIBIENDO" else "PULSAR PARA HABLAR", color = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
                         }
+                    }
                 }
             }
         }
     }
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

@@ -1107,6 +1107,10 @@ fun App(
                             radioState = radioState.copy(bgRadioGenre = genre)
                             onBgGenreChangeExternal(genre)
                         },
+                        isBeeping = isBeeping,
+                        replayProgress = replayProgress,
+                        isReplayReady = isReplayReady,
+                        onReplay = onReplayRequest,
                         onClose = { pendingDialog = RadioDialogType.FINISH_ACTIVITY_CONFIRM },
                         onFinish = { 
                             showActivityMap = false 

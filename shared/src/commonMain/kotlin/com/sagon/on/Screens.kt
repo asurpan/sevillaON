@@ -1586,17 +1586,19 @@ fun ActivityPanel(
                     .height(110.dp)
                     .pointerInput(state.isInterfaceLocked) {
                         if (!state.isInterfaceLocked) {
-                            detectTapGestures(
-                                onPress = { offset ->
-                                    val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset)
-                                    interactionSource.emit(press)
-                                    try {
-                                        tryAwaitRelease()
-                                    } finally {
-                                        interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press))
+                            coroutineScope {
+                                detectTapGestures(
+                                    onPress = { offset ->
+                                        val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset)
+                                        launch { interactionSource.emit(press) }
+                                        try {
+                                            tryAwaitRelease()
+                                        } finally {
+                                            launch { interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }
+                                        }
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }, 
                 shape = RoundedCornerShape(32.dp), 

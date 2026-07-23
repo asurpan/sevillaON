@@ -1511,90 +1511,112 @@ fun ActivityPanel(
                         }
                     }
                     
-                    if (state.motoLatitude == null) {
-                        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(0.2f)).clickable { onGpsRequest { } }, contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Rounded.GpsFixed, null, tint = LuxeColors.Gold, modifier = Modifier.size(54.dp))
-                                Spacer(Modifier.height(16.dp))
-                                Text("BÚSQUEDA DE SEÑAL GPS...", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp)
-                                Text("Toca para activar ubicación", color = Color.White.copy(0.5f), fontSize = 12.sp)
+                            if (state.motoLatitude == null) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(0.4f))
+                                        .clickable { 
+                                            onExecuteEngineeringAction("VIBRATE|50")
+                                            onGpsRequest { url -> }
+                                        }, 
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        val infiniteTransition = rememberInfiniteTransition()
+                                        val alpha by infiniteTransition.animateFloat(
+                                            initialValue = 0.4f,
+                                            targetValue = 1f,
+                                            animationSpec = infiniteRepeatable(
+                                                animation = tween(1000, easing = LinearEasing),
+                                                repeatMode = RepeatMode.Reverse
+                                            )
+                                        )
+                                        Icon(
+                                            Icons.Rounded.GpsFixed, 
+                                            null, 
+                                            tint = LuxeColors.Gold, 
+                                            modifier = Modifier.size(64.dp).alpha(alpha)
+                                        )
+                                        Spacer(Modifier.height(16.dp))
+                                        Text("BÚSQUEDA DE SEÑAL GPS...", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp)
+                                        Text("Toca para activar ubicación ahora", color = Color.White.copy(0.6f), fontSize = 12.sp)
                             }
                         }
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(16.dp))
 
-                if (state.routeRules != null || state.routeImage != null) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        color = Color.White.copy(0.05f),
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.1f))
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Info, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("INFORMACIÓN DE RUTA", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black)
-                            }
-                            if (state.routeRules != null) {
-                                Spacer(Modifier.height(8.dp))
-                                Text(state.routeRules, color = Color.White.copy(0.8f), fontSize = 13.sp)
-                            }
-                            if (state.routeImage != null) {
-                                Spacer(Modifier.height(12.dp))
-                                OutlinedButton(
-                                    onClick = { try { uriHandler.openUri(state.routeImage) } catch(e: Exception) {} },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(8.dp),
-                                    border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)),
-                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = LuxeColors.Gold)
-                                ) {
-                                    Icon(Icons.Rounded.Image, null, modifier = Modifier.size(16.dp))
+                    if (state.routeRules != null || state.routeImage != null) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            color = Color.White.copy(0.05f),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.1f))
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Rounded.Info, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(8.dp))
-                                    Text("VER IMAGEN DE RUTA", fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                    Text("INFORMACIÓN DE RUTA", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                }
+                                if (state.routeRules != null) {
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(state.routeRules, color = Color.White.copy(0.8f), fontSize = 13.sp)
+                                }
+                                if (state.routeImage != null) {
+                                    Spacer(Modifier.height(12.dp))
+                                    OutlinedButton(
+                                        onClick = { try { uriHandler.openUri(state.routeImage) } catch(e: Exception) {} },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = LuxeColors.Gold)
+                                    ) {
+                                        Icon(Icons.Rounded.Image, null, modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("VER IMAGEN DE RUTA", fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                    }
                                 }
                             }
                         }
                     }
+                    Spacer(Modifier.height(16.dp))
                 }
+
+                // --- 🛡️ CONTROLES FIJOS (BOTTOM DOCK) ---
+                Spacer(Modifier.height(12.dp))
+
+                // --- 🛠️ BARRA DE HERRAMIENTAS TÁCTICA (DOCK) ---
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp)
+                ) {
+                    item { TacticalDockIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) { onStateChange(state.copy(isVoxEnabled = false)) } else { onPendingDialogChange(RadioDialogType.VOX) } }) }
+                    item { TacticalDockIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE) }) }
+                    item { TacticalDockIcon(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) }) }
+                    item { TacticalDockIcon(icon = Icons.Rounded.Map, label = "MAPA", isActive = false, onClick = { 
+                        if (state.motoLatitude != null && state.motoLongitude != null) {
+                            uriHandler.openUri("https://www.google.com/maps/search/?api=1&query=${state.motoLatitude},${state.motoLongitude}")
+                        } else {
+                            onGpsRequest { }
+                        }
+                    }) }
+                    item { TacticalDockIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) { onStateChange(state.copy(isDspEnabled = false)) } else { onPendingDialogChange(RadioDialogType.DSP) } }) }
+                    item { TacticalDockIcon(icon = Icons.Rounded.Radio, label = "RADIO FM", isActive = bgStationName != null, onClick = { if (bgStationName != null) onBgRadioStop() else onPendingDialogChange(RadioDialogType.FMSCAN) }) }
+                }
+
                 Spacer(Modifier.height(16.dp))
-            }
 
-            // --- 🛡️ CONTROLES FIJOS (BOTTOM DOCK) ---
-            Spacer(Modifier.height(12.dp))
-
-            // --- 🛠️ BARRA DE HERRAMIENTAS TÁCTICA (DOCK) ---
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(horizontal = 4.dp)
-            ) {
-                item { TacticalDockIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) { onStateChange(state.copy(isVoxEnabled = false)) } else { onPendingDialogChange(RadioDialogType.VOX) } }) }
-                item { TacticalDockIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE) }) }
-                item { TacticalDockIcon(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) }) }
-                item { TacticalDockIcon(icon = Icons.Rounded.Map, label = "MAPA", isActive = false, onClick = { 
-                    if (state.motoLatitude != null && state.motoLongitude != null) {
-                        uriHandler.openUri("https://www.google.com/maps/search/?api=1&query=${state.motoLatitude},${state.motoLongitude}")
-                    } else {
-                        onGpsRequest { }
-                    }
-                }) }
-                item { TacticalDockIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) { onStateChange(state.copy(isDspEnabled = false)) } else { onPendingDialogChange(RadioDialogType.DSP) } }) }
-                item { TacticalDockIcon(icon = Icons.Rounded.Radio, label = "RADIO FM", isActive = bgStationName != null, onClick = { if (bgStationName != null) onBgRadioStop() else onPendingDialogChange(RadioDialogType.FMSCAN) }) }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            Surface(modifier = Modifier.fillMaxWidth().height(120.dp).pointerInput(Unit)
- { detectTapGestures(onPress = { offset -> val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset); interactionSource.emit(press); tryAwaitRelease(); interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }) }, shape = RoundedCornerShape(32.dp), color = if (isTransmitting) Color.Red.copy(0.2f) else if (rx) Color.Green.copy(0.15f) else Color.White.copy(0.08f), border = BorderStroke(3.dp, if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White.copy(0.2f))) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = if (isTransmitting) Icons.Rounded.Mic else if (rx) Icons.Rounded.VolumeUp else Icons.Rounded.MicNone, contentDescription = null, tint = if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White, modifier = Modifier.size(44.dp))
-                        Spacer(Modifier.width(20.dp))
-                        Text(if (isTransmitting) "HABLANDO (AIRE)" else if (rx) "AIRE: RECIBIENDO" else "PULSAR PARA HABLAR", color = if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
-                    }
+                Surface(modifier = Modifier.fillMaxWidth().height(120.dp).pointerInput(Unit) { detectTapGestures(onPress = { offset -> val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset); interactionSource.emit(press); tryAwaitRelease(); interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }) }, shape = RoundedCornerShape(32.dp), color = if (isTransmitting) Color.Red.copy(0.2f) else if (rx) Color.Green.copy(0.15f) else Color.White.copy(0.08f), border = BorderStroke(3.dp, if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White.copy(0.2f))) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = if (isTransmitting) Icons.Rounded.Mic else if (rx) Icons.Rounded.VolumeUp else Icons.Rounded.MicNone, contentDescription = null, tint = if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White, modifier = Modifier.size(44.dp))
+                            Spacer(Modifier.width(20.dp))
+                            Text(if (isTransmitting) "HABLANDO (AIRE)" else if (rx) "AIRE: RECIBIENDO" else "PULSAR PARA HABLAR", color = if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                        }
                 }
             }
         }

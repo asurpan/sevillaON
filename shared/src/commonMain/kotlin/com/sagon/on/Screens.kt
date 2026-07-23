@@ -1600,6 +1600,7 @@ fun ActivityPanel(
                     TacticalDockIconActivity(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX) })
                     TacticalDockIconActivity(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE) })
                     TacticalDockIconActivity(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) })
+                    TacticalDockIconActivity(icon = if (state.isGpsPrivacyEnabled) Icons.Rounded.Security else Icons.Rounded.LocationOff, label = "ZONA", isActive = state.isGpsPrivacyEnabled, onClick = { onStateChange(state.copy(isGpsPrivacyEnabled = !state.isGpsPrivacyEnabled)) }, activeColor = LuxeColors.ElectricBlue)
                 }
 
                 // BOTONES LATERALES (DERECHA) - Movidos arriba

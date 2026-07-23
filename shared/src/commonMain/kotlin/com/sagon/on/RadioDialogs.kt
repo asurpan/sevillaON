@@ -27,12 +27,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 
 enum class RadioDialogType {
     ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, PRO, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK, MASTER_HELP, HELP_SQUELCH, HELP_GAIN, FINISH_ACTIVITY_CONFIRM
@@ -643,6 +646,7 @@ fun RadioDialogs(
         RadioDialogType.ACTIVITY_SELECTOR -> {
             var tempRouteName by remember { mutableStateOf("") }
             var tempRouteRules by remember { mutableStateOf("") }
+            var tempRouteImage by remember { mutableStateOf("") }
             
             AlertDialog(
                 onDismissRequest = onDismiss,
@@ -659,8 +663,8 @@ fun RadioDialogs(
                         Icon(Icons.Rounded.Route, null, tint = LuxeColors.Gold, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text("CENTRO DE COORDINACIÓN", fontWeight = FontWeight.Black, fontSize = 16.sp)
-                            Text("Voz profesional con Radar GPS", fontSize = 9.sp, color = LuxeColors.Gold.copy(0.6f))
+                            Text("CENTRO DE COORDINACIÓN", fontWeight = FontWeight.Black, fontSize = 20.sp)
+                            Text("Voz profesional con Radar GPS", fontSize = 12.sp, color = LuxeColors.Gold.copy(0.6f))
                         }
                     }
                 },
@@ -677,7 +681,7 @@ fun RadioDialogs(
                             Text(
                                 "Sin registros. Crea el equipo, comparte el enlace por WhatsApp y aparecerán en tu Radar GPS al instante.",
                                 color = Color.White.copy(0.7f),
-                                fontSize = 10.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(12.dp)
                             )
@@ -686,11 +690,12 @@ fun RadioDialogs(
                         // --- 📝 DATOS DEL EQUIPO (INPUTS INTUITIVOS) ---
                         OutlinedTextField(
                             value = tempRouteName,
-                            onValueChange = { if (it.length <= 15) tempRouteName = it.uppercase() },
-                            label = { Text("IDENTIFICATIVO DEL EQUIPO", fontSize = 11.sp, fontWeight = FontWeight.Black) },
-                            placeholder = { Text("Ej: RUTA66", color = Color.White.copy(0.2f)) },
+                            onValueChange = { if (it.length <= 40) tempRouteName = it.uppercase() },
+                            label = { Text("NOMBRE DE RUTA", fontSize = 14.sp, fontWeight = FontWeight.Black) },
+                            placeholder = { Text("Ej: RUTA TRANSPIRENAICA", color = Color.White.copy(0.2f)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
+                            textStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold),
                             shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = Color.White,
@@ -700,18 +705,19 @@ fun RadioDialogs(
                                 focusedLabelColor = LuxeColors.Gold,
                                 cursorColor = LuxeColors.Gold
                             ),
-                            leadingIcon = { Icon(Icons.Rounded.Label, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp)) }
+                            leadingIcon = { Icon(Icons.Rounded.Label, null, tint = LuxeColors.Gold, modifier = Modifier.size(24.dp)) }
                         )
 
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(16.dp))
 
                         OutlinedTextField(
                             value = tempRouteRules,
-                            onValueChange = { if (it.length <= 100) tempRouteRules = it },
-                            label = { Text("PUNTO DE ENCUENTRO / REGLAS", fontSize = 11.sp, fontWeight = FontWeight.Black) },
-                            placeholder = { Text("Opcional...", color = Color.White.copy(0.2f)) },
+                            onValueChange = { if (it.length <= 150) tempRouteRules = it },
+                            label = { Text("PUNTO DE ENCUENTRO / REGLAS", fontSize = 14.sp, fontWeight = FontWeight.Black) },
+                            placeholder = { Text("Opcional: Gasolinera Cepsa 10:00h...", color = Color.White.copy(0.2f)) },
                             modifier = Modifier.fillMaxWidth(),
-                            maxLines = 2,
+                            maxLines = 3,
+                            textStyle = TextStyle(fontSize = 16.sp),
                             shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = Color.White,
@@ -721,10 +727,32 @@ fun RadioDialogs(
                                 focusedLabelColor = Color.White.copy(0.5f),
                                 cursorColor = LuxeColors.Gold
                             ),
-                            leadingIcon = { Icon(Icons.Rounded.Info, null, tint = Color.White.copy(0.3f), modifier = Modifier.size(20.dp)) }
+                            leadingIcon = { Icon(Icons.Rounded.Info, null, tint = Color.White.copy(0.3f), modifier = Modifier.size(24.dp)) }
                         )
 
                         Spacer(Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = tempRouteImage,
+                            onValueChange = { tempRouteImage = it },
+                            label = { Text("IMAGEN DE LA RUTA (URL)", fontSize = 14.sp, fontWeight = FontWeight.Black) },
+                            placeholder = { Text("Opcional: Enlace de foto...", color = Color.White.copy(0.2f)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            textStyle = TextStyle(fontSize = 14.sp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color.White.copy(0.3f),
+                                unfocusedBorderColor = Color.White.copy(0.1f),
+                                focusedLabelColor = Color.White.copy(0.5f),
+                                cursorColor = LuxeColors.Gold
+                            ),
+                            leadingIcon = { Icon(Icons.Rounded.Image, null, tint = Color.White.copy(0.3f), modifier = Modifier.size(24.dp)) }
+                        )
+
+                        Spacer(Modifier.height(20.dp))
 
                         Row(
                             modifier = Modifier
@@ -760,13 +788,13 @@ fun RadioDialogs(
                         Spacer(Modifier.height(20.dp))
 
                         // --- 🏃 SELECTOR DE ACTIVIDAD ---
-                        Text("MODO DE COORDINACIÓN:", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 2.sp)
-                        Spacer(Modifier.height(12.dp))
+                        Text("MODO DE COORDINACIÓN:", fontSize = 14.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 2.sp)
+                        Spacer(Modifier.height(16.dp))
                         
                         val activities = ActivityProfile.entries.filter { it != ActivityProfile.NORMAL }
                         
                         activities.chunked(2).forEach { row ->
-                            Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 row.forEach { act ->
                                     val isSelected = state.activeProfile == act
                                     val isEnabled = tempRouteName.isNotBlank()
@@ -781,18 +809,19 @@ fun RadioDialogs(
                                                     isMotoModeEnabled = true,
                                                     channel = finalChannel,
                                                     subtone = autoCode,
-                                                    routeRules = tempRouteRules.ifBlank { null }
+                                                    routeRules = tempRouteRules.ifBlank { null },
+                                                    routeImage = tempRouteImage.ifBlank { null }
                                                 ))
                                                 onDismiss()
                                                 onActivityPanelRequest()
                                             }
                                         },
-                                        modifier = Modifier.weight(1f).height(64.dp),
-                                        shape = RoundedCornerShape(14.dp),
-                                        color = if (isSelected) LuxeColors.Gold.copy(0.2f) else if(isEnabled) Color.White.copy(0.05f) else Color.White.copy(0.02f),
-                                        border = BorderStroke(1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(0.1f))
+                                        modifier = Modifier.weight(1f).height(80.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = if (isSelected) LuxeColors.Gold.copy(0.2f) else if(isEnabled) Color.White.copy(0.08f) else Color.White.copy(0.02f),
+                                        border = BorderStroke(1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(if(isEnabled) 0.2f else 0.05f))
                                     ) {
-                                        Column(Modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                                        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                             val icon = when(act) {
                                                 ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
                                                 ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
@@ -813,15 +842,16 @@ fun RadioDialogs(
                                                 ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
                                                 else -> Icons.Rounded.Person
                                             }
-                                            Icon(icon, null, tint = if (isSelected) LuxeColors.Gold else Color.White.copy(if(isEnabled) 0.6f else 0.1f), modifier = Modifier.size(20.dp))
-                                            Text(act.name, color = if(isEnabled) Color.White else Color.White.copy(0.1f), fontSize = 8.sp, fontWeight = FontWeight.Black)
+                                            Icon(icon, null, tint = if (isSelected) LuxeColors.Gold else Color.White.copy(if(isEnabled) 0.7f else 0.1f), modifier = Modifier.size(30.dp))
+                                            Spacer(Modifier.height(4.dp))
+                                            Text(act.name, color = if(isEnabled) Color.White else Color.White.copy(0.1f), fontSize = 11.sp, fontWeight = FontWeight.Black)
                                         }
                                     }
                                 }
                             }
                         }
 
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(20.dp))
                         
                         // --- 🛰️ AVISO MESH ---
                         Surface(
@@ -830,10 +860,10 @@ fun RadioDialogs(
                             border = BorderStroke(1.dp, LuxeColors.ElectricBlue.copy(0.2f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.WifiTethering, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(10.dp))
-                                Text("Red P2P Activa: Conexión directa sin internet.", color = LuxeColors.ElectricBlue.copy(0.8f), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.WifiTethering, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Text("Red P2P Activa: Conexión directa sin internet.", color = LuxeColors.ElectricBlue.copy(0.8f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                         

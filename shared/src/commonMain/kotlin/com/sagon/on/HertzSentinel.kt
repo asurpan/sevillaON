@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -970,7 +971,7 @@ fun HertzSentinelScreen(
             Text("USO BAJO RESPONSABILIDAD DEL USUARIO. Herramienta informativa pasiva. No sustituye a sistemas de seguridad certificados ni garantiza detección absoluta.", color = Color.White.copy(0.2f), fontSize = 8.sp, textAlign = TextAlign.Center, lineHeight = 10.sp, modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 12.dp))
 
             Row(modifier = Modifier.fillMaxWidth().height(60.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = { onShare("RADAR", "HERTZ", "SENTINEL", null) }, modifier = Modifier.weight(0.3f).fillMaxHeight(), colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.ElectricBlue.copy(0.1f)), shape = RoundedCornerShape(18.dp), border = BorderStroke(1.dp, LuxeColors.ElectricBlue.copy(0.3f))) { Icon(Icons.Rounded.Share, null, tint = LuxeColors.ElectricBlue) }
+                Button(onClick = { onShare("RADAR", "HERTZ", "SENTINEL", null) }, modifier = Modifier.weight(0.3f).fillMaxHeight(), colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Green.copy(0.1f)), shape = RoundedCornerShape(18.dp), border = BorderStroke(1.dp, LuxeColors.Green.copy(0.3f))) { Icon(Icons.AutoMirrored.Rounded.Chat, null, tint = LuxeColors.Green) }
                 Button(onClick = { 
                     if(modoRango == -1) { 
                         showRangePickerForMode = "RADAR" 

@@ -1,5 +1,8 @@
 package com.sagon.on
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import kotlin.math.*
 import kotlin.math.PI
 
@@ -144,6 +147,7 @@ data class RadioState(
     val nasaImageExplanation: String? = null, // Explicación de la imagen
     val forceShowNasa: Boolean = false, // Disparador para deep-linking
     val routeRules: String? = null, // Normas o info de la ruta activa
+    val routeImage: String? = null, // Imagen opcional de la ruta
     val capturedCodes: List<CapturedCode> = emptyList(),
     val wifiNetworks: List<WifiNetwork> = emptyList()
 )
@@ -200,6 +204,29 @@ fun calculateDistanceKms(lat1: Double, lon1: Double, lat2: Double, lon2: Double)
             sin(dLon / 2) * sin(dLon / 2)
     val c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return r * c
+}
+
+fun getActivityIcon(profile: ActivityProfile): ImageVector {
+    return when(profile) {
+        ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
+        ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
+        ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
+        ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
+        ActivityProfile.MONTANA -> Icons.Rounded.Landscape
+        ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
+        ActivityProfile.CAMIONEROS -> Icons.Rounded.LocalShipping
+        ActivityProfile.CARAVANAS -> Icons.Rounded.AirportShuttle
+        ActivityProfile.OFFROAD -> Icons.Rounded.Agriculture
+        ActivityProfile.TACTICO -> Icons.Rounded.Security
+        ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
+        ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
+        ActivityProfile.VELA -> Icons.Rounded.Sailing
+        ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
+        ActivityProfile.CAZA -> Icons.Rounded.Radar
+        ActivityProfile.PESCA -> Icons.Rounded.Phishing
+        ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
+        else -> Icons.Rounded.Person
+    }
 }
 
 enum class NotificationType { Info, Warning, Success }

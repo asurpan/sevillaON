@@ -50,7 +50,7 @@ fun App(
     onInstallRequest: () -> Unit,
     externalShowExitConfirm: Boolean,
     onExternalExitRequest: (Boolean, Boolean) -> Unit,
-    onShareRequest: (String, String, String, String?, String?) -> Unit,
+    onShareRequest: (String, String, String, String?, String?, String?) -> Unit,
     onNoiseVolumeChange: (Float) -> Unit,
     onMoniVolumeChange: (Float) -> Unit,
     onEchoChange: (Boolean, Float) -> Unit,
@@ -207,6 +207,15 @@ fun App(
     var showNotificationConsent by remember { mutableStateOf(false) }
     var showBatteryWarning by remember { mutableStateOf(false) }
     var showExitDialog by remember { mutableStateOf(false) }
+    
+    // 🛡️ PROTECCIÓN DE RUTA INICIAL: Si entramos directamente por enlace
+    LaunchedEffect(showActivityMap) {
+        if (showActivityMap && !isWebPlatform) {
+            if (onBatteryCheckRequest()) {
+                showBatteryWarning = true
+            }
+        }
+    }
     var showWebHelpDialog by remember { mutableStateOf(false) }
     var nivelPerturbacion by remember { mutableStateOf(0f) }
     var radarModoRango by remember { mutableStateOf(0) }
@@ -679,19 +688,23 @@ fun App(
                 if (showBatteryWarning) {
                     AlertDialog(
                         onDismissRequest = { showBatteryWarning = false },
-                        containerColor = Color(0xFF450A0A),
-                        modifier = Modifier.padding(16.dp).border(2.dp, Color.Red.copy(0.5f), RoundedCornerShape(32.dp)),
-                        icon = { Icon(Icons.Rounded.Warning, null, tint = Color.Red, modifier = Modifier.size(40.dp)) },
-                        title = { Text("⚠️ RADIO EN PELIGRO", fontWeight = FontWeight.Black, fontSize = 20.sp, color = Color.White) },
+                        containerColor = LuxeColors.DeepSea,
+                        modifier = Modifier.padding(16.dp).border(2.dp, LuxeColors.Gold.copy(0.5f), RoundedCornerShape(32.dp)),
+                        icon = { Icon(Icons.Rounded.Warning, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
+                        title = { Text("🚀 RUTA SEGURA Y SIN CORTES", fontWeight = FontWeight.Black, fontSize = 20.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center) },
                         text = {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("Android está intentando apagar tu radio para ahorrar energía.", fontSize = 14.sp, color = Color.White, textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
+                                Text("¡Vamos a evitar que Android 'duerma' tu radio!", fontSize = 16.sp, color = Color.White, textAlign = TextAlign.Center, fontWeight = FontWeight.Black)
+                                Spacer(Modifier.height(12.dp))
+                                Text("Para que no pierdas la posición de tus compañeros en mitad de la ruta y el GPS no se pare, necesitamos que nos pongas como 'Siempre activa'.", fontSize = 13.sp, color = Color.White.copy(0.7f), textAlign = TextAlign.Center)
                                 Spacer(Modifier.height(16.dp))
-                                Text("Para escuchar sin cortes:\n1. Pulsa CONFIGURAR.\n2. Selecciona 'SIN RESTRICCIONES' en ahorro de batería.", fontSize = 12.sp, color = Color.White.copy(0.8f), textAlign = TextAlign.Center)
+                                Surface(color = LuxeColors.Gold.copy(0.1f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.2f))) {
+                                    Text("Pulsa CONFIGURAR y elige 'SIN RESTRICCIONES' (Ahorro de batería)", modifier = Modifier.padding(12.dp), fontSize = 11.sp, color = LuxeColors.Gold, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                                }
                             }
                         },
                         confirmButton = {
-                            LuxeButton("CONFIGURAR", { showBatteryWarning = false; onIgnoreBatteryOptimizations() }, true, Modifier.fillMaxWidth().height(54.dp), Color.Red, Color.White)
+                            LuxeButton("¡VALE, CONFIGURAR!", { showBatteryWarning = false; onIgnoreBatteryOptimizations() }, true, Modifier.fillMaxWidth().height(54.dp), LuxeColors.Gold, Color.Black)
                         },
                         dismissButton = { TextButton({ showBatteryWarning = false }) { Text("LUEGO", color = Color.White.copy(0.4f)) } }
                     )
@@ -749,7 +762,7 @@ fun App(
                                 onNoise = onNoiseVolumeChange, 
                                 onMic = { active, power -> onMicEnable(active, radioState.isRogerBeepEnabled, power) },
                                 onInstall = onInstallRequest,
-                                onShare = { channel, subtone, proRole, platform -> onShareRequest(radioState.city, channel, subtone, proRole, platform) },
+                                onShare = { channel, subtone, proRole, platform -> onShareRequest(radioState.city, channel, subtone, proRole, platform, radioState.routeImage) },
                                 onExit = { showExitDialog = true },
                                 onLogoutConfirm = { 
                                     // --- 🛡️ LIMPIEZA PROFUNDA (DERECHO AL OLVIDO) ---
@@ -832,7 +845,7 @@ fun App(
                     onStateChange = { radioState = it },
                     onReportPro = onReport,
                     onNotification = { localNotification = it },
-                    onSharePro = { platform -> onShareRequest(radioState.city, radioState.channel, radioState.subtone, radioState.myProRole, platform) },
+                    onSharePro = { platform -> onShareRequest(radioState.city, radioState.channel, radioState.subtone, radioState.myProRole, platform, radioState.routeImage) },
                     onReplayPro = onReplayRequest,
                     onMicPro = { active, power -> onMicEnable(active, radioState.isRogerBeepEnabled, power) },
                     myPower = micLevel, 
@@ -1043,7 +1056,7 @@ fun App(
                             nivelPerturbacion = nivel
                             radarModoRango = modo
                         },
-                        onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g) },
+                        onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g, radioState.routeImage) },
                         onNotification = { localNotification = it },
                         onPlaySound = onPlaySound,
                         onExecuteEngineeringAction = onExecuteEngineeringAction,
@@ -1084,7 +1097,7 @@ fun App(
                         onMic = { a, p -> onMicEnable(a, radioState.isRogerBeepEnabled, p) },
                         onExecuteEngineeringAction = onExecuteEngineeringAction,
                         onGpsRequest = onGpsRequest,
-                        onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g) },
+                        onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g, radioState.routeImage) },
                         onPendingDialogChange = { pendingDialog = it },
                         bgStationName = bgStationName,
                         onBgRadioScan = onBgRadioScan,
@@ -1140,13 +1153,20 @@ fun App(
                                 if (oldProfile != ActivityProfile.NORMAL && newState.activeProfile == ActivityProfile.NORMAL) {
                                     showActivityMap = false
                                 }
+                                
+                                // 4. 🛡️ PROTECCIÓN DE RUTA: Verificar batería al empezar actividad
+                                if (oldProfile == ActivityProfile.NORMAL && newState.activeProfile != ActivityProfile.NORMAL) {
+                                    if (!isWebPlatform && onBatteryCheckRequest()) {
+                                        showBatteryWarning = true
+                                    }
+                                }
                             },
                             onAntennaTest = onAntennaTest,
                             onReplay = onReplayRequest,
                             onPublicChat = onPublicChatRequest,
                             onBgRadioScan = onBgRadioScan,
                             onBgRadioStop = onBgRadioStop,
-                            onShare = { c, s, u, g -> onShareRequest(c, s, nick, u, g) },
+                            onShare = { c, s, u, g -> onShareRequest(c, s, nick, u, g, radioState.routeImage) },
                             onNotification = { localNotification = it },
                             onPlaySound = onPlaySound,
                             onLogoutConfirm = onLogout,

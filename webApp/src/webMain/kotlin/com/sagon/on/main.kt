@@ -1051,6 +1051,73 @@ object RadioCore {
                     ultrasound.start();
                 };
 
+                // --- 🗺️ MOTOR DE MAPAS REAL (LEAFLET BRIDGE) ---
+                window.initRealMap = function(containerId, lat, lon) {
+                    if (window.app.map) {
+                        try { window.app.map.remove(); } catch(e) {}
+                    }
+                    
+                    var hour = new Date().getHours();
+                    var isNight = (hour >= 20 || hour < 8);
+                    
+                    var map = L.map(containerId, {
+                        zoomControl: false,
+                        attributionControl: false
+                    }).setView([lat || 37.3891, lon || -5.9845], 13);
+                    
+                    var tileUrl = isNight 
+                        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                        : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                        
+                    L.tileLayer(tileUrl, { maxZoom: 19 }).addTo(map);
+                    
+                    window.app.map = map;
+                    window.app.mapMarkers = {};
+                    
+                    // --- 🛡️ AUTO-ZOOM A MI POSICIÓN ---
+                    if (lat && lon) {
+                        map.panTo([lat, lon]);
+                    }
+                };
+
+                window.updateMapMarkers = function(usersJson) {
+                    if (!window.app.map) return;
+                    var users = JSON.parse(usersJson);
+                    var map = window.app.map;
+                    var markers = window.app.mapMarkers;
+                    
+                    // Limpiar marcadores antiguos que ya no están en la lista
+                    var activeNicks = users.map(u => u.nick);
+                    for (var nick in markers) {
+                        if (activeNicks.indexOf(nick) === -1) {
+                            map.removeLayer(markers[nick]);
+                            delete markers[nick];
+                        }
+                    }
+                    
+                    users.forEach(function(user) {
+                        if (user.lat && user.lon) {
+                            var color = user.isTransmitting ? "#EF4444" : "#22C55E";
+                            if (markers[user.nick]) {
+                                markers[user.nick].setLatLng([user.lat, user.lon]);
+                                // Actualizar color si cambia estado TX
+                                markers[user.nick].setStyle({ color: color, fillColor: color });
+                            } else {
+                                var marker = L.circleMarker([user.lat, user.lon], {
+                                    radius: 8,
+                                    fillColor: color,
+                                    color: "#FFFFFF",
+                                    weight: 2,
+                                    opacity: 1,
+                                    fillOpacity: 0.8
+                                }).addTo(map);
+                                marker.bindTooltip(user.nick, { permanent: true, direction: 'bottom', className: 'tactical-label' });
+                                markers[user.nick] = marker;
+                            }
+                        }
+                    });
+                };
+
                 window.getStream = function() {
                     if (window.app.txBus) return window.app.txBus.stream;
                     return null;
@@ -2841,6 +2908,7 @@ fun main() {
                 val urlPro = params.get("pro")?.toString()
                 val urlNasa = params.get("nasa")?.toString()
                 val urlActivity = params.get("activity")?.toString()
+                val urlImg = params.get("img")?.toString()
 
                 RadioState(
                     city = urlCity ?: (localStorage.getItem("lastCity") ?: "SEVILLA"),
@@ -2849,6 +2917,7 @@ fun main() {
                     isWorkModeActive = urlPro == "true",
                     forceShowNasa = urlNasa == "true",
                     activeProfile = if (urlActivity == "true") ActivityProfile.MOTO else ActivityProfile.NORMAL,
+                    routeImage = urlImg,
                     voxSensitivity = localStorage.getItem("voxSens")?.toFloatOrNull() ?: 0.5f,
                     monitorVolume = localStorage.getItem("moniVol")?.toFloatOrNull() ?: 0.5f,
                     squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.6f,
@@ -3028,7 +3097,7 @@ fun main() {
                     """)
                 }
             },
-            onShareRequest = { city, channel, subtone, proRole, platform -> 
+            onShareRequest = { city, channel, subtone, proRole, platform, imageUrl -> 
                 val text = when {
                     proRole == "NASA" -> {
                         val img = nasaImageUrlState.value ?: localStorage.getItem("cache_nasa_img") ?: ""
@@ -3066,12 +3135,14 @@ fun main() {
                     proRole == "SENTINEL" -> "🛰️ Radar Hertz activado. Vigilando perturbaciones biológicas en el área."
                     proRole == "ACTIVITY" -> {
                         val activityName = platform ?: "Ruta"
-                        "🏍️ ¡VAMOS DE RUTA! ($activityName)\n\nHe activado mi Radio en Modo Actividad para compartir mi posición en tiempo real con el grupo.\n\nÚnete a la ruta y sígueme en el mapa aquí: https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&activity=true&type=$activityName"
+                        val imgParam = if (imageUrl != null) "&img=${js("encodeURIComponent")(imageUrl)}" else ""
+                        "🏍️ ¡VAMOS DE RUTA! ($activityName)\n\nHe activado mi Radio en Modo Actividad para compartir mi posición en tiempo real con el grupo.\n\nÚnete a la ruta y sígueme en el mapa aquí: https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&activity=true&type=$activityName$imgParam"
                     }
                     else -> {
                         val salaText = if (channel == "GENERAL") "SALA GENERAL" else "CANAL PRIVADO: $channel"
                         val extraSub = if (subtone != "0000") "\n\n🔑 CÓDIGO DE ACCESO: $subtone" else ""
-                        "📻 ¡BREICO, BREICO!\n\nTe invito a mi canal en la Radio ON.\n\n📍 CIUDAD: $city\n💬 CANAL: $channel$extraSub\n\nEntra directo aquí: https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone"
+                        val imgParam = if (imageUrl != null) "&img=${js("encodeURIComponent")(imageUrl)}" else ""
+                        "📻 ¡BREICO, BREICO!\n\nTe invito a mi canal en la Radio ON.\n\n📍 CIUDAD: $city\n💬 CANAL: $channel$extraSub\n\nEntra directo aquí: https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone$imgParam"
                     }
                 }
                 
@@ -3595,6 +3666,47 @@ fun main() {
                                 }
                             }
                         }
+                        "INIT_REAL_MAP" -> {
+                            val containerId = if (parts.size >= 2) parts[1] else "activity-map-container"
+                            js("""
+                                setTimeout(function() {
+                                    var container = document.getElementById(containerId);
+                                    if (!container) {
+                                        var boxes = document.querySelectorAll('div');
+                                        for(var i=0; i<boxes.length; i++) {
+                                            if(boxes[i].style.height === '380.0px' || boxes[i].style.height === '380px') {
+                                                var mapDiv = document.createElement('div');
+                                                mapDiv.id = containerId;
+                                                mapDiv.style.width = '100%';
+                                                mapDiv.style.height = '100%';
+                                                mapDiv.style.position = 'absolute';
+                                                mapDiv.style.top = '0';
+                                                mapDiv.style.left = '0';
+                                                mapDiv.style.zIndex = '0';
+                                                boxes[i].appendChild(mapDiv);
+                                                window.initRealMap(containerId, 37.3891, -5.9845);
+                                                break;
+                                            }
+                                        }
+                                    } else {
+                                        window.initRealMap(containerId, 37.3891, -5.9845);
+                                    }
+                                }, 500);
+                            """)
+                        }
+                        "UPDATE_MAP_MARKERS" -> {
+                            if (parts.size >= 2) {
+                                val json = parts[1]
+                                js("if(window.updateMapMarkers) window.updateMapMarkers(json);")
+                            }
+                        }
+                        "CENTER_MAP" -> {
+                            if (parts.size >= 3) {
+                                val lat = parts[1]
+                                val lon = parts[2]
+                                js("if(window.app && window.app.map) window.app.map.panTo([lat, lon]);")
+                            }
+                        }
                         "TERMINATE_DIAGNOSTICS" -> win.AndroidApp.terminateDiagnosticSequence()
                         "SHOW_BANNER" -> win.AndroidApp.showBanner(true)
                         "HIDE_BANNER" -> win.AndroidApp.showBanner(false)
@@ -3605,6 +3717,45 @@ fun main() {
                         }
                     }
                 } else {
+                    val parts = action.split("|")
+                    when (parts[0]) {
+                        "INIT_REAL_MAP" -> {
+                            val containerId = if (parts.size >= 2) parts[1] else "activity-map-container"
+                            js("""
+                                setTimeout(function() {
+                                    var boxes = document.querySelectorAll('div');
+                                    for(var i=0; i<boxes.length; i++) {
+                                        if(boxes[i].style.height === '380.0px' || boxes[i].style.height === '380px') {
+                                            var mapDiv = document.createElement('div');
+                                            mapDiv.id = containerId;
+                                            mapDiv.style.width = '100%';
+                                            mapDiv.style.height = '100%';
+                                            mapDiv.style.position = 'absolute';
+                                            mapDiv.style.top = '0';
+                                            mapDiv.style.left = '0';
+                                            mapDiv.style.zIndex = '0';
+                                            boxes[i].appendChild(mapDiv);
+                                            window.initRealMap(containerId, 37.3891, -5.9845);
+                                            break;
+                                        }
+                                    }
+                                }, 500);
+                            """)
+                        }
+                        "UPDATE_MAP_MARKERS" -> {
+                            if (parts.size >= 2) {
+                                val json = parts[1]
+                                js("if(window.updateMapMarkers) window.updateMapMarkers(json);")
+                            }
+                        }
+                        "CENTER_MAP" -> {
+                            if (parts.size >= 3) {
+                                val lat = parts[1]
+                                val lon = parts[2]
+                                js("if(window.app && window.app.map) window.app.map.panTo([lat, lon]);")
+                            }
+                        }
+                    }
                     console.log("🛠️ COMANDO DE INGENIERÍA ENVIADO: " + action + " (Requiere hardware Android)");
                     // Feedback visual en el navegador
                     if (action != "TERMINATE_DIAGNOSTICS") {

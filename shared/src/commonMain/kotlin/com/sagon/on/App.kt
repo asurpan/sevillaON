@@ -1071,6 +1071,7 @@ fun App(
                             onBgGenreChangeExternal(genre)
                         },
                         onNotification = { localNotification = it },
+                        onGetHeading = onGetHeading,
                         isBeeping = isBeeping,
                         externalPtt = externalPtt,
                         externalPttBlocked = externalPttBlocked,

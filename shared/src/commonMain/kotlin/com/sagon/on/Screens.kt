@@ -1317,6 +1317,7 @@ fun ActivityPanel(
     onBgVolumeChange: (Float) -> Unit = {},
     onBgGenreChange: (String) -> Unit = {},
     onNotification: (AppNotification) -> Unit = {},
+    onGetHeading: () -> Float = { 0f },
     isBeeping: Boolean,
     externalPtt: Boolean = false,
     externalPttBlocked: Boolean = false,
@@ -1330,6 +1331,8 @@ fun ActivityPanel(
     val isPressed by interactionSource.collectIsPressedAsState()
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     var isZoomed by remember { mutableStateOf(false) }
+    var isMapVisible by remember { mutableStateOf(true) }
+    var isHeadingUpEnabled by remember { mutableStateOf(false) }
     var routeKms by remember { mutableStateOf(0.0f) }
     var isPttBlockedByRx by remember { mutableStateOf(false) }
 
@@ -1356,7 +1359,12 @@ fun ActivityPanel(
     }
 
     // --- 🗺️ SINCRONIZACIÓN CON MAPA REAL (WEB) ---
-    LaunchedEffect(users, state.channel, state.motoLatitude, state.motoLongitude) {
+    LaunchedEffect(users, state.channel, state.motoLatitude, state.motoLongitude, isMapVisible) {
+        if (!isMapVisible) {
+            onExecuteEngineeringAction("HIDE_MAP_OVERLAY")
+            return@LaunchedEffect
+        }
+
         // Incluimos a todos los de la ruta Y a nosotros mismos si tenemos GPS
         val participants = users.filter { it.channel == state.channel && it.nick != nick && it.lat != null && it.lon != null }
         val me = if (state.motoLatitude != null && state.motoLongitude != null) {
@@ -1371,6 +1379,19 @@ fun ActivityPanel(
         
         if (state.motoLatitude != null && state.motoLongitude != null) {
             onExecuteEngineeringAction("CENTER_MAP|${state.motoLatitude}|${state.motoLongitude}")
+        }
+    }
+
+    // --- 🧭 MODO NAVEGACIÓN (RUMBO ARRIBA) ---
+    LaunchedEffect(isHeadingUpEnabled, isMapVisible) {
+        if (isHeadingUpEnabled && isMapVisible) {
+            while(isHeadingUpEnabled && isMapVisible) {
+                val h = onGetHeading()
+                onExecuteEngineeringAction("ROTATE_MAP|$h")
+                delay(150)
+            }
+        } else {
+            onExecuteEngineeringAction("ROTATE_MAP|0")
         }
     }
     
@@ -1681,6 +1702,31 @@ fun ActivityPanel(
                         }
                     )
                     
+                    // --- 🔋 BOTÓN MAPA (AHORRO BATERÍA) ---
+                    TacticalDockIconActivity(
+                        icon = if (isMapVisible) Icons.Rounded.Map else Icons.Rounded.LayersClear, 
+                        label = "MAPA", 
+                        isActive = isMapVisible, 
+                        onClick = { isMapVisible = !isMapVisible; triggerUiSound("switch") },
+                        activeColor = if (isMapVisible) LuxeColors.Gold else Color.Gray
+                    )
+
+                    // --- 🧭 BOTÓN RUMBO (NAVEGACIÓN) ---
+                    TacticalDockIconActivity(
+                        icon = if (isHeadingUpEnabled) Icons.Rounded.Explore else Icons.Rounded.CompassCalibration, 
+                        label = "RUMBO", 
+                        isActive = isHeadingUpEnabled, 
+                        onClick = { 
+                            if (isMapVisible) {
+                                isHeadingUpEnabled = !isHeadingUpEnabled
+                                triggerUiSound("switch") 
+                            } else {
+                                onNotification(AppNotification("MAPA APAGADO", "Activa el mapa para usar el modo Rumbo.", NotificationType.Info))
+                            }
+                        },
+                        activeColor = LuxeColors.ElectricBlue
+                    )
+
                     TacticalDockIconActivity(icon = if (isZoomed) Icons.Rounded.ZoomOutMap else Icons.Rounded.ZoomIn, label = "ZOOM", isActive = isZoomed, onClick = { isZoomed = !isZoomed; triggerUiSound("click") })
                     
                     // --- 🗺️ BOTÓN GOOGLE MAPS EXTERNO ---

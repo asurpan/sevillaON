@@ -3742,6 +3742,21 @@ fun main() {
                                 }
                             }
                         }
+                        "ROTATE_MAP" -> {
+                            if (parts.size >= 2) {
+                                val angle = parts[1]
+                                js("""
+                                    var container = document.getElementById('activity-map-container');
+                                    if (container) {
+                                        container.style.transition = 'transform 0.2s ease-out';
+                                        container.style.transform = 'rotate(' + (-angle) + 'deg)';
+                                    }
+                                """)
+                            }
+                        }
+                        "HIDE_MAP_OVERLAY" -> {
+                            js("var c = document.getElementById('activity-map-container'); if(c) c.style.display = 'none';")
+                        }
                         "INIT_REAL_MAP" -> {
                             val containerId = if (parts.size >= 2) parts[1] else "activity-map-container"
                             js("""
@@ -3799,6 +3814,21 @@ fun main() {
                 } else {
                     val parts = action.split("|")
                     when (parts[0]) {
+                        "ROTATE_MAP" -> {
+                            if (parts.size >= 2) {
+                                val angle = parts[1]
+                                js("""
+                                    var container = document.getElementById('activity-map-container');
+                                    if (container) {
+                                        container.style.transition = 'transform 0.2s ease-out';
+                                        container.style.transform = 'rotate(' + (-angle) + 'deg)';
+                                    }
+                                """)
+                            }
+                        }
+                        "HIDE_MAP_OVERLAY" -> {
+                            js("var c = document.getElementById('activity-map-container'); if(c) c.style.display = 'none';")
+                        }
                         "INIT_REAL_MAP" -> {
                             val containerId = if (parts.size >= 2) parts[1] else "activity-map-container"
                             js("""

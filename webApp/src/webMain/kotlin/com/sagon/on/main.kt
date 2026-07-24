@@ -119,7 +119,7 @@ object RadioCore {
     fun install() {
         js("""
             (function() {
-                window.APP_VERSION = 1715600000040; // Referencia interna para Auto-Update
+                window.APP_VERSION = 1715600000040; /* Referencia interna para Auto-Update */
 
                 window.sanitizePath = function(s) {
                     if (!s) return "unknown";
@@ -233,7 +233,7 @@ object RadioCore {
                     
                     var now = window.app.ctx.currentTime;
                     window.app.bgRadioGain.gain.cancelScheduledValues(now);
-                    window.app.bgRadioGain.gain.setTargetAtTime(target, now, 0.3); // Fundido suave vía WebAudio
+                    window.app.bgRadioGain.gain.setTargetAtTime(target, now, 0.3); /* Fundido suave vía WebAudio */
                     
                     if (window.fmEngine && window.fmEngine.audio) {
                         var audio = window.fmEngine.audio;
@@ -241,7 +241,7 @@ object RadioCore {
                         if (window.app._duckInterval) clearInterval(window.app._duckInterval);
                         
                         var steps = 15;
-                        var stepTime = 20; // 300ms total de fundido
+                        var stepTime = 20; /* 300ms total de fundido */
                         var current = audio.volume;
                         var diff = (target - current) / steps;
                         var count = 0;
@@ -332,7 +332,7 @@ object RadioCore {
                         if ((isTx || isTest) && !window.app.isBeeping) {
                             var micEnergy = 0;
                             if (window.app.micAnalyser) {
-                                var d = new Uint8Array(128); // Aumentado de 32 a 128 para mayor precisión
+                                var d = new Uint8Array(128); /* Aumentado de 32 a 128 para mayor precisión */
                                 window.app.micAnalyser.getByteTimeDomainData(d);
                                 for(var i=0; i<d.length; i++) micEnergy += Math.abs(d[i] - 128);
                             }
@@ -448,8 +448,8 @@ object RadioCore {
                     
                     // --- LÓGICA ESTACIONAL (PROPAGACIÓN DE VERANO) ---
                     var month = new Date().getMonth();
-                    var isSummer = (month >= 5 && month <= 8); // Junio a Septiembre
-                    var propMultiplier = isSummer ? 2.5 : 1.0; // En verano, los eventos son más probables y "brillantes"
+                    var isSummer = (month >= 5 && month <= 8); /* Junio a Septiembre */
+                    var propMultiplier = isSummer ? 2.5 : 1.0; /* En verano, los eventos son más probables y "brillantes" */
                     
                     // Decidir qué evento disparar de forma aleatoria
                     var dice = Math.random();
@@ -480,7 +480,7 @@ object RadioCore {
                         
                         f.type = 'bandpass';
                         f.frequency.value = 1600; 
-                        f.Q.value = 3.0; // Resonancia suavizada (antes 10.0) para evitar acoples metálicos
+                        f.Q.value = 3.0; /* Resonancia suavizada (antes 10.0) para evitar acoples metálicos */
                         
                         g.gain.setValueAtTime(0, now);
                         g.gain.linearRampToValueAtTime(0.002 * propMultiplier, now + 1.0);
@@ -502,7 +502,7 @@ object RadioCore {
                                 if (window.app.isTransmittingInternal || window.app.isBeeping || window.app.isVoxTransmitting || window.app.rxActiveInternal) return;
                                 
                                 var baseNoise = window.app.lastNoiseLevel || 0;
-                                var drift = 0.9 + (Math.random() * 0.2); // Rango más estrecho (90% a 110%) para evitar picos
+                                var drift = 0.9 + (Math.random() * 0.2); /* Rango más estrecho (90% a 110%) para evitar picos */
                                 window.app.noise.gain.setTargetAtTime(baseNoise * drift, ctx.currentTime, 5.0);
                             }
                         }, 8000);
@@ -582,7 +582,7 @@ object RadioCore {
 
                                             // --- 🧠 MOTOR DE REPLAY INTELIGENTE (ANTI-SILENCIO) ---
                                             var data = audioBuffer.getChannelData(0);
-                                            var threshold = 0.005; // Umbral de detección de voz ultrasensible
+                                            var threshold = 0.005; /* Umbral de detección de voz ultrasensible */
                                             var firstVoiceIndex = -1;
                                             
                                             // Escaneamos el buffer buscando el primer pico de señal real
@@ -850,7 +850,7 @@ object RadioCore {
                             if (!window.app.heartbeat) {
                                 window.app.heartbeat = window.app.ctx.createOscillator();
                                 var gain = window.app.ctx.createGain();
-                                gain.gain.value = 0.000001; // Silencio absoluto pero activo
+                                gain.gain.value = 0.000001; /* Silencio absoluto pero activo */
                                 window.app.heartbeat.connect(gain);
                                 gain.connect(window.app.ctx.destination);
                                 window.app.heartbeat.start();
@@ -874,7 +874,7 @@ object RadioCore {
                     window.app.moniGain.gain.value = 0;
                     
                     window.app.masterRxGain = window.app.ctx.createGain();
-                    window.app.masterRxGain.gain.value = 2.0; // Reducido de 5.0 a 2.0 para evitar distorsión en mezcla
+                    window.app.masterRxGain.gain.value = 2.0; /* Reducido de 5.0 a 2.0 para evitar distorsión en mezcla */
 
                     window.app.compressor = window.app.ctx.createDynamicsCompressor();
                     window.app.compressor.threshold.setValueAtTime(-24, window.app.ctx.currentTime);
@@ -928,7 +928,7 @@ object RadioCore {
                     // Sincronizado con la precarga de la UI para una entrada instantánea
                     var initialRfGain = parseFloat(localStorage.getItem("rfGain")) || 0.5;
                     var initialSquelch = parseFloat(localStorage.getItem("squelch")) || 0.2;
-                    var targetVol = initialRfGain * 6.0; // Sincronizado con el boost de masterOut
+                    var targetVol = initialRfGain * 6.0; /* Sincronizado con el boost de masterOut */
                     
                     // Pre-calcular ruido inicial (QRM) por si la UI tarda en sincronizar
                     var initialNoise = 0;
@@ -965,7 +965,7 @@ object RadioCore {
                             window.app.compressor.attack.setTargetAtTime(0.003, now, 0.1);
                             window.app.compressor.release.setTargetAtTime(0.150, now, 0.1);
                             
-                            window.app.masterRxGain.gain.setTargetAtTime(2.2, now, 0.1); // Nivel de escucha pro
+                            window.app.masterRxGain.gain.setTargetAtTime(2.2, now, 0.1); /* Nivel de escucha pro */
                         } else {
                             // MODO ESTÁNDAR: Sonido natural
                             window.app.filter.frequency.setTargetAtTime(1200, now, 0.1);
@@ -1262,7 +1262,7 @@ object RadioCore {
                     }
 
                     window.app.peer = new Peer(sessionID, { 
-                        debug: 1, // Solo errores en producción
+                        debug: 1, /* Solo errores en producción */
                         secure: true,
                         config: {
                             'iceServers': [
@@ -1303,7 +1303,7 @@ object RadioCore {
                         }
                     });
 
-                    // --- 🎙️ GESTIÓN DE MICRO INTELIGENTE (PRIVACIDAD & RENDIMIENTO) ---
+                    /* --- 🎙️ GESTIÓN DE MICRO INTELIGENTE (PRIVACIDAD & RENDIMIENTO) --- */
                     window.requestMicPermission = function() {
                         if (!window.app || window.app.rawStream || window.app.isRequestingMic) return;
                         
@@ -1325,35 +1325,35 @@ object RadioCore {
                                 
                                 var micSrc = window.app.ctx.createMediaStreamSource(s);
                                 
-                                // --- 🎙️ TX DSP: PROCESADOR DE VOZ PROFESIONAL (PUNCH) ---
-                                // 1. Filtro de Corte (Elimina ruidos sordos de fondo)
+                                /* --- 🎙️ TX DSP: PROCESADOR DE VOZ PROFESIONAL (PUNCH) --- */
+                                /* 1. Filtro de Corte (Elimina ruidos sordos de fondo) */
                                 var txFilter = window.app.ctx.createBiquadFilter();
                                 txFilter.type = "highpass";
                                 
-                                // --- 🏍️ MODO MOTO: FILTRO DE VIENTO AGRESIVO ---
-                                // Si está en modo moto, subimos el corte a 300Hz para matar el ruido de motor/viento
+                                /* --- 🏍️ MODO MOTO: FILTRO DE VIENTO AGRESIVO --- */
+                                /* Si está en modo moto, subimos el corte a 300Hz para matar el ruido de motor/viento */
                                 var cutoff = window.app.motoActive ? 300 : 80;
                                 txFilter.frequency.value = cutoff;
-                                window.app.txFilter = txFilter; // Guardar referencia para cambios en caliente
+                                window.app.txFilter = txFilter; /* Guardar referencia para cambios en caliente */
 
-                                // 2. Filtro de Cuerpo (Calidez de locutor)
+                                /* 2. Filtro de Cuerpo (Calidez de locutor) */
                                 var txBody = window.app.ctx.createBiquadFilter();
                                 txBody.type = "peaking";
                                 txBody.frequency.value = 250;
                                 txBody.Q.value = 0.8;
-                                txBody.gain.value = 2.0; // Calidez natural de locutor
+                                txBody.gain.value = 2.0; /* Calidez natural de locutor */
                                 
-                                // 3. Enhancer de Presencia (Claridad y Brillo)
+                                /* 3. Enhancer de Presencia (Claridad y Brillo) */
                                 var txEnhancer = window.app.ctx.createBiquadFilter();
                                 txEnhancer.type = "peaking";
-                                txEnhancer.frequency.value = 3200; // Subimos frecuencia para brillo cristalino
+                                txEnhancer.frequency.value = 3200; /* Subimos frecuencia para brillo cristalino */
                                 txEnhancer.Q.value = 1.0;          
                                 txEnhancer.gain.value = 2.5;       // Brillo elegante
 
-                                // 4. Compresor de Emisora (Voz constante y potente)
-                                // --- 🚀 AJUSTE BROADCAST PROFESIONAL ---
+                                /* 4. Compresor de Emisora (Voz constante y potente) */
+                                /* --- 🚀 AJUSTE BROADCAST PROFESIONAL --- */
                                 var txCompressor = window.app.ctx.createDynamicsCompressor();
-                                txCompressor.threshold.value = -24; // Umbral pro: menos ruido de fondo, más dinámica
+                                txCompressor.threshold.value = -24; /* Umbral pro: menos ruido de fondo, más dinámica */
                                 txCompressor.knee.value = 30;       
                                 txCompressor.ratio.value = 6;       // Ratio pro: voz firme pero sin distorsión
                                 txCompressor.attack.value = 0.005;  // Ataque suave para transitorios naturales
@@ -1369,10 +1369,10 @@ object RadioCore {
                                 txCompressor.connect(window.app.micAnalyser);
 
                                 var makeupGain = window.app.ctx.createGain();
-                                makeupGain.gain.value = 2.5; // Incrementado de 1.2 a 2.5 para mayor presencia en red
+                                makeupGain.gain.value = 2.5; /* Incrementado de 1.2 a 2.5 para mayor presencia en red */
                                 txCompressor.connect(makeupGain);
 
-                                // --- 🛡️ TRANSMISOR DE RED (LIMPIEZA Y CONEXIÓN ABSOLUTA) ---
+                                /* --- 🛡️ TRANSMISOR DE RED (LIMPIEZA Y CONEXIÓN ABSOLUTA) --- */
                                 if (window.app.txGate) {
                                     try { makeupGain.disconnect(window.app.txGate); } catch(e) {}
                                     makeupGain.connect(window.app.txGate);
@@ -1464,8 +1464,8 @@ object RadioCore {
                                 var audioTag = document.createElement('audio');
                                 audioTag.style.display = "none";
                                 audioTag.srcObject = remoteStream;
-                                // audioTag.muted = true; // ELIMINADO: Algunos dispositivos necesitan que no esté muteado si es el único tag
-                                audioTag.volume = 0.001; // Volumen casi cero para no duplicar pero activar el stream
+                                /* audioTag.muted = true; */ /* ELIMINADO: Algunos dispositivos necesitan que no esté muteado si es el único tag */
+                                audioTag.volume = 0.001; /* Volumen casi cero para no duplicar pero activar el stream */
                                 audioTag.setAttribute('playsinline', 'true');
                                 document.body.appendChild(audioTag);
                                 audioTag.play().catch(function(e){}); 
@@ -1554,7 +1554,7 @@ object RadioCore {
                                 if (val && val.from && val.timestamp > (Date.now() - 10000)) {
                                     // Si recibimos un aviso fresco (últimos 10s)
                                     if (window.app.ctx) {
-                                        window.playUiSound('click'); // Sonido de aviso
+                                        window.playUiSound('click'); /* Sonido de aviso */
                                         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                                     }
                                     
@@ -1758,7 +1758,7 @@ object RadioSignaling {
                     // Si soltamos con Roger Beep, NO quitamos la portadora (tx) de Firebase aún.
                     // Esto mantiene la aguja arriba en los receptores hasta que termine el pitido.
                     if (!active && roger) {
-                        delete updates.tx; // Retrasamos el fin de TX
+                        delete updates.tx; /* Retrasamos el fin de TX */
                         window.app.db.ref("users/" + window.app.sessionID).update(updates);
                     } else {
                         window.app.db.ref("users/" + window.app.sessionID).update(updates);
@@ -1849,13 +1849,13 @@ object RadioSignaling {
                             
                             // --- 🔒 MOTOR DE AUDIO: ROGER BEEP LABORATORIO (100% PURO) ---
                             var osc = window.app.ctx.createOscillator();
-                            window.app.activeRogerOsc = osc; // 🛡️ GUARDAR PARA POSIBLE INTERRUPCIÓN
+                            window.app.activeRogerOsc = osc; /* 🛡️ GUARDAR PARA POSIBLE INTERRUPCIÓN */
                             
                             var gLocal = window.app.ctx.createGain();
                             var gRemote = window.app.ctx.createGain();
                             var now = window.app.ctx.currentTime;
                             
-                            osc.type = 'sine'; // Pureza senoidal absoluta
+                            osc.type = 'sine'; /* Pureza senoidal absoluta */
                             osc.frequency.setValueAtTime(1955, now); 
                             
                             // Envolvente Remota: Potencia constante para la red
@@ -1906,7 +1906,7 @@ object RadioSignaling {
 
                             osc.start(now); 
                             osc.stop(now + 0.3);
-// Margen de seguridad para la caída exponencial
+                            /* Margen de seguridad para la caída exponencial */
                         }
 else {
                             // Cierre sin Roger Beep: Sincronización directa
@@ -1959,7 +1959,7 @@ object VOXEngine {
                         var v = Math.abs(d[i] - 128);
                         if (v > max) max = v;
                     }
-                    var instantLevel = Math.min(1.0, (max / 128) * 6.5); // Calibración: 6.5 para que la voz mueva la aguja con elegancia
+                    var instantLevel = Math.min(1.0, (max / 128) * 6.5); /* Calibración: 6.5 para que la voz mueva la aguja con elegancia */
                     this.localLevel = instantLevel;
 
                     // 1. APRENDIZAJE CONTINUO DEL RUIDO (Noise Floor)
@@ -2017,24 +2017,24 @@ object VOXEngine {
                                      var rv = Math.abs(rd[j] - 128);
                                      if (rv > rMax) rMax = rv;
                                  }
-                                 voiceLevel = Math.min(1.0, (rMax / 128) * 1.5); // Modulación sutil (factor 1.5)
+                                 voiceLevel = Math.min(1.0, (rMax / 128) * 1.5); /* Modulación sutil (factor 1.5) */
                                  carrierPower = (window.app.remotePower && window.app.remotePower[peerID]) ? window.app.remotePower[peerID] : 0.7;
-                                 break; // Solo seguimos al primer transmisor activo
+                                 break; /* Solo seguimos al primer transmisor activo */
                              }
                         }
                         // La aguja se sitúa en la potencia de portadora + un pequeño baile de voz
                         displayLevel = carrierPower + (voiceLevel * 0.15);
                     } else {
-                        displayLevel = remoteLevel; // Ruido de fondo/QRM
+                        displayLevel = remoteLevel; /* Ruido de fondo/QRM */
                     }
 
                     if (window.app.isBeeping) displayLevel = 0.98; 
                     if(window.dispatch_mic) window.dispatch_mic(displayLevel);
 
-                    // 4. Lógica VOX Adaptativa
+                    /* 4. Lógica VOX Adaptativa */
                     if (window.app.voxActive) {
-                        // --- 🛡️ BLINDAJE ANTI-RECOIL (OBLIGATORIO) ---
-                        // Bloqueamos VOX si: hay alguien hablando (RX), estamos pitando (Beep) o estamos en periodo de guarda (Lockout)
+                        /* --- 🛡️ BLINDAJE ANTI-RECOIL (OBLIGATORIO) --- */
+                        /* Bloqueamos VOX si: hay alguien hablando (RX), estamos pitando (Beep) o estamos en periodo de guarda (Lockout) */
                         var isLocked = window.app.isBeeping || 
                                      (window.app.voxLockoutTimestamp && now < window.app.voxLockoutTimestamp) || 
                                      (window.app.rxActiveInternal && !window.app.isVoxTransmitting);
@@ -2059,7 +2059,7 @@ object VOXEngine {
                                 window.app.isVoxTransmitting = true;
                                 if(window.dispatch_vox_sync) window.dispatch_vox_sync(true);
                             }
-                            window.app.voxHangTimer = 60; // ~1.0 segundo de cola (Hang Time) para cierre más ágil
+                            window.app.voxHangTimer = 60; /* ~1.0 segundo de cola (Hang Time) para cierre más ágil */
                         } else if (window.app.isVoxTransmitting) {
                             if (window.app.voxHangTimer > 0) {
                                 window.app.voxHangTimer--;
@@ -2105,7 +2105,7 @@ object RadioBridge {
                 // --- 🔒 HARD-LOCK: MOTOR DE COMPARTIR SOCIAL (PROTEGIDO) ---
                 // Gestión inteligente de plataformas y copia al portapapeles
                 var cities = ["ESPAÑA (NACIONAL)", "SEVILLA", "MADRID", "BARCELONA", "VALENCIA", "ALICANTE", "MÁLAGA", "MURCIA", "CÁDIZ", "BIZKAIA", "A CORUÑA", "ISLAS BALEARES", "LAS PALMAS", "STA. CRUZ TENERIFE", "ASTURIAS", "ZARAGOZA", "PONTEVEDRA", "GRANADA", "TARRAGONA", "CÓRDOBA", "GIPUZKOA", "GIRONA", "ALMERÍA", "TOLEDO", "BADAJOZ", "NAVARRA", "JAÉN", "CASTELLÓN", "CANTABRIA", "HUELVA", "VALLADOLID", "CIUDAD REAL", "LEÓN", "LLEIDA", "ALBACETE", "BURGOS / SORIA", "SALAMANCA / ÁVILA", "LOGROÑO / ÁLAVA", "CÁCERES / SEGOVIA", "LUGO / OURENSE / PALENCIA / ZAMORA", "CUENCA / TERUEL / GUADALAJARA / CEUTA / MELILLA"];
-                var canalIdx = cities.indexOf(city); // Ajustado para que España sea el 0 o 1 según prefieras
+                var canalIdx = cities.indexOf(city); /* Ajustado para que España sea el 0 o 1 según prefieras */
                 var baseUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
                 var shareUrl = baseUrl + "?city=" + encodeURIComponent(city) + "&channel=" + encodeURIComponent(channel) + "&subtone=" + encodeURIComponent(subtone);
                 
@@ -2205,9 +2205,9 @@ object RadioBridge {
                 if (window.BroadcastChannel) {
                     window.app.bc = new BroadcastChannel('on_air_spain_sync');
                     window.app.bc.onmessage = function(e) {
-                if (!window.app) return; // Protección contra inicialización temprana
+                if (!window.app) return; /* Protección contra inicialización temprana */
                 if (e.data.type === 'QUERY_ACTIVE') {
-                    // SÓLO RESPONDER SI NO ESTAMOS EN MODO REDIRECCIÓN/SINCRONIZACIÓN
+                    /* SÓLO RESPONDER SI NO ESTAMOS EN MODO REDIRECCIÓN/SINCRONIZACIÓN */
                     if (document.getElementById('redir-ui')) return;
                     if (window.app.bc) window.app.bc.postMessage({ type: 'I_AM_ACTIVE', instanceID: window.app.instanceID });
                 } else if (e.data.type === 'REMOTE_NAVIGATE') {
@@ -2318,7 +2318,7 @@ object RadioBridge {
 
             window.vibratePtt = function() {
                 if (navigator.vibrate) {
-                    // navigator.vibrate(35); // ELIMINADO: Chasquido molesto
+                    /* navigator.vibrate(35); */ /* ELIMINADO: Chasquido molesto */
                 }
             };
 
@@ -3514,8 +3514,8 @@ fun main() {
                     win.app.moniActive = s.isMonitorEnabled;
                     win.app.moniVolume = s.monitorVolume;
                     win.app.rfGain = s.rfGain;
-                    win.app.isAntennaTesting = s.isAntennaTesting; // --- 🛡️ SINCRONIZACIÓN TEST ---
-                    win.app.isNightMode = s.isNightMode; // --- 🛡️ SINCRONIZACIÓN NOCHE ---
+                    win.app.isAntennaTesting = s.isAntennaTesting; /* --- 🛡️ SINCRONIZACIÓN TEST --- */
+                    win.app.isNightMode = s.isNightMode; /* --- 🛡️ SINCRONIZACIÓN NOCHE --- */
                     
                     // --- 🛡️ GESTIÓN DE MICRO (MODO SIEMPRE ACTIVO) ---
                     if (win.app.rawStream == null && win.app.nick != "") {

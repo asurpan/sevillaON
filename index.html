@@ -299,6 +299,15 @@
                     document.body.appendChild(script);
                 });
         })();
+
+        // --- 🛰️ REGISTRO DE SUPER-CACHÉ (SERVICE WORKER) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('🚀 Super-Caché Táctico Activado'))
+                    .catch(err => console.warn('⚠️ Fallo al activar caché:', err));
+            });
+        }
     </script>
 </body>
 </html>

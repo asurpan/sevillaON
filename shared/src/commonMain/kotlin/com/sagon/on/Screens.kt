@@ -1424,14 +1424,21 @@ fun ActivityPanel(
         label = "WaveRadius"
     )
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black).clickable(enabled = false) { }) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .pointerInput(Unit) {
+                detectTapGestures { /* Bloqueo absoluto de clics al fondo */ }
+            }
+    ) {
         StarryBackground(activity = 0.4f)
         
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(24.dp)) // Aumentado de 16 a 24 para dar aire arriba
+            Spacer(Modifier.height(32.dp)) // Más margen superior
             
             // --- 📜 HEADER ---
             Row(modifier = Modifier.fillMaxWidth().height(64.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1607,9 +1614,11 @@ fun ActivityPanel(
                     }
                 }
 
-                // 5. BOTONES LATERALES
+                // 5. BOTONES LATERALES (REPOSICIONADOS PARA EVITAR BORDES)
                 Column(
-                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 12.dp),
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 22.dp).padding(vertical = 24.dp), 
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     TacticalDockIconActivity(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX) })
@@ -1620,15 +1629,18 @@ fun ActivityPanel(
                         label = "ZONA", 
                         isActive = state.isGpsPrivacyEnabled, 
                         onClick = { 
-                            onStateChange(state.copy(isGpsPrivacyEnabled = !state.isGpsPrivacyEnabled)) 
-                            if (state.isGpsPrivacyEnabled == false) onPendingDialogChange(RadioDialogType.HELP_PRIVACY)
+                            val newState = !state.isGpsPrivacyEnabled
+                            onStateChange(state.copy(isGpsPrivacyEnabled = newState)) 
+                            if (newState) onPendingDialogChange(RadioDialogType.HELP_PRIVACY)
                         }, 
                         activeColor = LuxeColors.ElectricBlue
                     )
                 }
 
                 Column(
-                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp),
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 22.dp).padding(vertical = 24.dp), 
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     TacticalDockIconActivity(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) onStateChange(state.copy(isDspEnabled = false)) else onPendingDialogChange(RadioDialogType.DSP) })

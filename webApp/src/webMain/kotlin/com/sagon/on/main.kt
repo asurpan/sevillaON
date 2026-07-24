@@ -1108,9 +1108,11 @@ object RadioCore {
                     users.forEach(function(user) {
                         if (user.lat && user.lon) {
                             var dist = getDist(myLat, myLon, user.lat, user.lon);
-                            var distText = dist < 1 ? Math.round(dist*1000) + "m" : dist.toFixed(1) + "km";
+                            var distText = dist < 0.05 ? "AQUÍ" : (dist < 1 ? Math.round(dist*1000) + "m" : dist.toFixed(1) + "km");
                             var labelText = user.nick + " (" + distText + ")";
-                            var color = user.isTransmitting ? "#EF4444" : "#22C55E";
+                            
+                            // --- 🎨 LÓGICA DE COLORES TÁCTICOS ---
+                            var color = user.isMe ? "#06B6D4" : (user.isTransmitting ? "#EF4444" : "#22C55E");
                             
                             if (markers[user.nick]) {
                                 markers[user.nick].setLatLng([user.lat, user.lon]);

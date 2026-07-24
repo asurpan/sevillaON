@@ -1353,10 +1353,15 @@ fun ActivityPanel(
 
     // --- 🗺️ SINCRONIZACIÓN CON MAPA REAL (WEB) ---
     LaunchedEffect(users, state.channel, state.motoLatitude, state.motoLongitude) {
-        val currentUsers = users.filter { it.channel == state.channel && it.nick != nick && it.lat != null && it.lon != null }
-        val json = "[" + currentUsers.joinToString(",") { 
-            """{"nick":"${it.nick}","lat":${it.lat},"lon":${it.lon},"isTransmitting":${it.isTransmitting}}""" 
-        } + "]"
+        // Incluimos a todos los de la ruta Y a nosotros mismos si tenemos GPS
+        val participants = users.filter { it.channel == state.channel && it.nick != nick && it.lat != null && it.lon != null }
+        val me = if (state.motoLatitude != null && state.motoLongitude != null) {
+            """{"nick":"${nick} (YO)","lat":${state.motoLatitude},"lon":${state.motoLongitude},"isTransmitting":${(isPressed || voxActive || externalPtt)},"isMe":true}"""
+        } else null
+
+        val json = "[" + (listOfNotNull(me) + participants.map { 
+            """{"nick":"${it.nick}","lat":${it.lat},"lon":${it.lon},"isTransmitting":${it.isTransmitting},"isMe":false}""" 
+        }).joinToString(",") + "]"
         
         onExecuteEngineeringAction("UPDATE_MAP_MARKERS|$json")
         

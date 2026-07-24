@@ -3725,11 +3725,12 @@ fun main() {
                                 setTimeout(function() {
                                     var container = document.getElementById(containerId);
                                     if (!container) {
-                                        var boxes = document.querySelectorAll('div');
-                                        for(var i=0; i<boxes.length; i++) {
-                                            var style = window.getComputedStyle(boxes[i]);
+                                        // 🛡️ REPARACIÓN QUIRÚRGICA: Búsqueda exhaustiva del contenedor de ruta
+                                        var divs = document.querySelectorAll('div');
+                                        for(var i=0; i<divs.length; i++) {
+                                            var style = window.getComputedStyle(divs[i]);
                                             var bg = style.backgroundColor;
-                                            // 🛡️ BUSQUEDA ROBUSTA: Detectar el contenedor por color de fondo #020617 (rgb(2, 6, 23))
+                                            // Buscar el azul marino profundo de la caja de radar
                                             if(bg === 'rgb(2, 6, 23)' || bg === '#020617') {
                                                 var mapDiv = document.createElement('div');
                                                 mapDiv.id = containerId;
@@ -3739,16 +3740,16 @@ fun main() {
                                                 mapDiv.style.top = '0';
                                                 mapDiv.style.left = '0';
                                                 mapDiv.style.zIndex = '0';
-                                                boxes[i].style.position = 'relative';
-                                                boxes[i].appendChild(mapDiv);
+                                                divs[i].style.position = 'relative';
+                                                divs[i].appendChild(mapDiv);
                                                 window.initRealMap(containerId, 37.3891, -5.9845);
-                                                break;
+                                                return;
                                             }
                                         }
                                     } else {
                                         window.initRealMap(containerId, 37.3891, -5.9845);
                                     }
-                                }, 500);
+                                }, 800);
                             """)
                         }
                         "UPDATE_MAP_MARKERS" -> {

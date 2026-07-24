@@ -1929,7 +1929,7 @@ fun RadioDialogs(
                         subtone = "0000"
                     ))
                     onDismiss()
-                }, true, Modifier.fillMaxWidth().height(44.dp), Color.Red, Color.White)
+                }, true, Modifier.fillMaxWidth().height(56.dp), Color.Red, Color.White)
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {

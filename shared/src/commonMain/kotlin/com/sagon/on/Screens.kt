@@ -1492,89 +1492,96 @@ fun ActivityPanel(
                     .border(2.dp, LuxeColors.Gold.copy(0.3f), RoundedCornerShape(28.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                val currentUsers = users.filter { it.channel == state.channel && it.nick != nick && it.lat != null && it.lon != null }
-                
-                // RADAR (CANVAS)
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Box(Modifier.fillMaxSize().alpha(0.8f)) {
-                        LaunchedEffect(Unit) {
-                            onExecuteEngineeringAction("INIT_REAL_MAP|activity-map-container")
-                        }
-                    }
-
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        val center = Offset(size.width / 2, size.height / 2)
-                        val radius = size.minDimension / 2.2f
-                        
-                        drawCircle(Color.White.copy(0.05f), radius = radius, style = Stroke(1.dp.toPx()))
-                        drawCircle(Color.White.copy(0.03f), radius = radius * 0.66f, style = Stroke(1.dp.toPx()))
-                        drawCircle(Color.White.copy(0.01f), radius = radius * 0.33f, style = Stroke(1.dp.toPx()))
-                        
-                        val myLat = state.motoLatitude
-                        val myLon = state.motoLongitude
-                        
-                        if (myLat != null && myLon != null) {
-                            val radarRangeKm = if (isZoomed) 5.0 else 25.0
-                            
-                            currentUsers.forEach { user ->
-                                val dist = calculateDistanceKms(myLat, myLon, user.lat!!, user.lon!!)
-                                if (dist < radarRangeKm) {
-                                    val bearing = calculateBearing(myLat, myLon, user.lat!!, user.lon!!)
-                                    val angleRad = (bearing - 90.0) * PI / 180.0
-                                    val normalizedDist = (dist / radarRangeKm).toFloat()
-                                    
-                                    val blipX = center.x + (cos(angleRad) * radius * normalizedDist).toFloat()
-                                    val blipY = center.y + (sin(angleRad) * radius * normalizedDist).toFloat()
-                                    
-                                    val color = if (user.isTransmitting) Color.Red else LuxeColors.Gold
-                                    if (user.isTransmitting) {
-                                        drawCircle(color.copy(0.3f), radius = 12.dp.toPx(), center = Offset(blipX, blipY))
-                                    }
-                                    drawCircle(color, radius = 6.dp.toPx(), center = Offset(blipX, blipY))
-                                    drawCircle(Color.White, radius = 2.dp.toPx(), center = Offset(blipX, blipY))
-                                    
-                                    val distText = if (dist < 1.0) "${(dist * 1000).toInt()}m" else "${(dist * 10).toInt() / 10.0}km"
-                                    val labelText = "${user.nick} ($distText)"
-                                    val textLayout = textMeasurer.measure(labelText, radarLabelStyle)
-                                    drawText(textLayout, topLeft = Offset(blipX - (textLayout.size.width / 2), blipY + 10.dp.toPx()))
-                                }
-                            }
-                            
-                            if (isTransmittingState) {
-                                drawCircle(Color.Red.copy(alpha = waveAlpha), radius = radius * waveRadiusFactor, center = center, style = Stroke(2.dp.toPx()))
-                                drawCircle(Color.Red.copy(alpha = waveAlpha * 0.5f), radius = radius * waveRadiusFactor * 0.7f, center = center, style = Stroke(1.dp.toPx()))
-                            }
-
-                            drawCircle(LuxeColors.ElectricBlue.copy(0.2f), radius = 20.dp.toPx(), center = center)
-                            drawCircle(LuxeColors.ElectricBlue.copy(0.4f), radius = 12.dp.toPx(), center = center)
-                        }
-                    }
-
-                    // ICONO CENTRAL
-                    Box(Modifier.align(Alignment.Center)) {
-                        val innerTransition = rememberInfiniteTransition(label = "RadarCenter")
-                        val glowScale by innerTransition.animateFloat(
-                            initialValue = 1f, targetValue = 1.4f,
-                            animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
-                            label = "Glow"
-                        )
-                        
-                        if (isTransmittingState || rx) {
-                            Box(
-                                Modifier.size(40.dp).scale(glowScale).background((if (isTransmittingState) Color.Red else Color.Green).copy(0.2f), CircleShape).blur(15.dp)
-                            )
-                        }
-
-                        Icon(
-                            imageVector = getActivityIcon(state.activeProfile),
-                            contentDescription = null,
-                            tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White,
-                            modifier = Modifier.size(24.dp).scale(if (isTransmittingState) 1.2f else 1f)
-                        )
+                // 1. CAPA DE MAPA REAL (Fondo absoluto)
+                Box(Modifier.fillMaxSize()) {
+                    LaunchedEffect(Unit) {
+                        delay(1000)
+                        onExecuteEngineeringAction("INIT_REAL_MAP|activity-map-container")
                     }
                 }
+
+                val currentUsers = users.filter { it.channel == state.channel && it.nick != nick && it.lat != null && it.lon != null }
                 
-                // GPS SEARCH OVERLAY
+                // 2. CAPA DE RADAR (CANVAS TRANSPARENTE)
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val center = Offset(size.width / 2, size.height / 2)
+                    val radius = size.minDimension / 2.2f
+                    
+                    drawCircle(Color.White.copy(0.05f), radius = radius, style = Stroke(1.dp.toPx()))
+                    drawCircle(Color.White.copy(0.03f), radius = radius * 0.66f, style = Stroke(1.dp.toPx()))
+                    drawCircle(Color.White.copy(0.01f), radius = radius * 0.33f, style = Stroke(1.dp.toPx()))
+                    
+                    val myLat = state.motoLatitude
+                    val myLon = state.motoLongitude
+                    
+                    if (myLat != null && myLon != null) {
+                        val radarRangeKm = if (isZoomed) 5.0 else 25.0
+                        
+                        currentUsers.forEach { user ->
+                            val dist = calculateDistanceKms(myLat, myLon, user.lat!!, user.lon!!)
+                            if (dist < radarRangeKm) {
+                                val bearing = calculateBearing(myLat, myLon, user.lat!!, user.lon!!)
+                                val angleRad = (bearing - 90.0) * PI / 180.0
+                                val normalizedDist = (dist / radarRangeKm).toFloat()
+                                
+                                val blipX = center.x + (cos(angleRad) * radius * normalizedDist).toFloat()
+                                val blipY = center.y + (sin(angleRad) * radius * normalizedDist).toFloat()
+                                
+                                val color = if (user.isTransmitting) Color.Red else LuxeColors.Gold
+                                if (user.isTransmitting) {
+                                    drawCircle(color.copy(0.3f), radius = 12.dp.toPx(), center = Offset(blipX, blipY))
+                                }
+                                drawCircle(color, radius = 6.dp.toPx(), center = Offset(blipX, blipY))
+                                drawCircle(Color.White, radius = 2.dp.toPx(), center = Offset(blipX, blipY))
+                                
+                                val distText = if (dist < 1.0) "${(dist * 1000).toInt()}m" else "${(dist * 10).toInt() / 10.0}km"
+                                val labelText = "${user.nick} ($distText)"
+                                val textLayout = textMeasurer.measure(labelText, radarLabelStyle)
+                                drawText(textLayout, topLeft = Offset(blipX - (textLayout.size.width / 2), blipY + 10.dp.toPx()))
+                            }
+                        }
+                        
+                        if (isTransmittingState) {
+                            drawCircle(Color.Red.copy(alpha = waveAlpha), radius = radius * waveRadiusFactor, center = center, style = Stroke(2.dp.toPx()))
+                            drawCircle(Color.Red.copy(alpha = waveAlpha * 0.5f), radius = radius * waveRadiusFactor * 0.7f, center = center, style = Stroke(1.dp.toPx()))
+                        }
+
+                        drawCircle(LuxeColors.ElectricBlue.copy(0.2f), radius = 20.dp.toPx(), center = center)
+                        drawCircle(LuxeColors.ElectricBlue.copy(0.4f), radius = 12.dp.toPx(), center = center)
+                    }
+                }
+
+                // 3. ICONO CENTRAL (FIJO PARA EVITAR SALTOS)
+                Box(
+                    modifier = Modifier.size(80.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val innerTransition = rememberInfiniteTransition(label = "RadarCenter")
+                    val glowScale by innerTransition.animateFloat(
+                        initialValue = 1f, targetValue = 1.4f,
+                        animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
+                        label = "Glow"
+                    )
+                    
+                    if (isTransmittingState || rx) {
+                        Box(
+                            Modifier
+                                .size(40.dp)
+                                .scale(glowScale)
+                                .background((if (isTransmittingState) Color.Red else Color.Green).copy(0.2f), CircleShape)
+                                .blur(15.dp)
+                        )
+                    }
+
+                    Icon(
+                        imageVector = getActivityIcon(state.activeProfile),
+                        contentDescription = null,
+                        tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White,
+                        modifier = Modifier.size(24.dp).scale(if (isTransmittingState) 1.2f else 1f)
+                    )
+                }
+                
+                // 4. GPS SEARCH OVERLAY
                 if (state.motoLatitude == null) {
                     Box(
                         modifier = Modifier.fillMaxSize().background(Color.Black.copy(0.4f)).clickable { 
@@ -1597,7 +1604,7 @@ fun ActivityPanel(
                     }
                 }
 
-                // BOTONES LATERALES (IZQUIERDA) - Movidos arriba para que no los tape el GPS Overlay
+                // 5. BOTONES LATERALES
                 Column(
                     modifier = Modifier.align(Alignment.CenterStart).padding(start = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -1608,7 +1615,6 @@ fun ActivityPanel(
                     TacticalDockIconActivity(icon = if (state.isGpsPrivacyEnabled) Icons.Rounded.Security else Icons.Rounded.LocationOff, label = "ZONA", isActive = state.isGpsPrivacyEnabled, onClick = { onStateChange(state.copy(isGpsPrivacyEnabled = !state.isGpsPrivacyEnabled)) }, activeColor = LuxeColors.ElectricBlue)
                 }
 
-                // BOTONES LATERALES (DERECHA) - Movidos arriba
                 Column(
                     modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)

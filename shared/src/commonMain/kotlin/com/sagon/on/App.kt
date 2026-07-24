@@ -1077,11 +1077,9 @@ fun App(
                     Box(
                         Modifier
                             .fillMaxSize()
-                            .clickable(
-                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                                indication = null,
-                                onClick = { /* Mantiene el bloqueo del fondo pero permite interactuar con el diálogo */ }
-                            )
+                            .pointerInput(Unit) {
+                                detectTapGestures { /* Bloqueo de clics al fondo */ }
+                            }
                     ) {
                         RadioDialogs(
                             type = pendingDialog,

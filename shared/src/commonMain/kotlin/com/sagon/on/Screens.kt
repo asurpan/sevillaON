@@ -1563,7 +1563,7 @@ fun ActivityPanel(
 
                 // 3. ICONO CENTRAL (FIJO PARA EVITAR SALTOS)
                 Box(
-                    modifier = Modifier.size(80.dp),
+                    modifier = Modifier.size(100.dp), // Aumentado para el nombre
                     contentAlignment = Alignment.Center
                 ) {
                     val innerTransition = rememberInfiniteTransition(label = "RadarCenter")
@@ -1573,22 +1573,35 @@ fun ActivityPanel(
                         label = "Glow"
                     )
                     
-                    if (isTransmittingState || rx) {
-                        Box(
-                            Modifier
-                                .size(40.dp)
-                                .scale(glowScale)
-                                .background((if (isTransmittingState) Color.Red else Color.Green).copy(0.2f), CircleShape)
-                                .blur(15.dp)
+                    // --- 🏷️ TU NOMBRE SOBRE TU ICONO ---
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = nick,
+                            color = LuxeColors.Gold,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.padding(bottom = 4.dp)
                         )
-                    }
+                        
+                        Box(contentAlignment = Alignment.Center) {
+                            if (isTransmittingState || rx) {
+                                Box(
+                                    Modifier
+                                        .size(40.dp)
+                                        .scale(glowScale)
+                                        .background((if (isTransmittingState) Color.Red else Color.Green).copy(0.2f), CircleShape)
+                                        .blur(15.dp)
+                                )
+                            }
 
-                    Icon(
-                        imageVector = getActivityIcon(state.activeProfile),
-                        contentDescription = null,
-                        tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White,
-                        modifier = Modifier.size(24.dp).scale(if (isTransmittingState) 1.2f else 1f)
-                    )
+                            Icon(
+                                imageVector = getActivityIcon(state.activeProfile),
+                                contentDescription = null,
+                                tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White,
+                                modifier = Modifier.size(24.dp).scale(if (isTransmittingState) 1.2f else 1f)
+                            )
+                        }
+                    }
                 }
                 
                 // 4. GPS SEARCH OVERLAY

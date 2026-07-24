@@ -1517,12 +1517,22 @@ object RadioCore {
                         if (window.app.db && window.app.sessionID) {
                             var currentCity = "ESPAÑA (NACIONAL)";
                             var currentCh = "GENERAL";
+                            var currentGenre = null;
                             try { 
                                 currentCity = localStorage.getItem("lastCity") || "ESPAÑA (NACIONAL)";
                                 currentCh = localStorage.getItem("lastChannel") || "GENERAL"; 
+                                // --- 📻 INFORMAR DEL GÉNERO SI LA RADIO ESTÁ ON ---
+                                if (window.fmEngine && window.fmEngine.currentStation) {
+                                    currentGenre = window.app.bgGenre || "MIX";
+                                }
                             } catch(e) {}
+                            
                             window.app.db.ref("users/" + window.app.sessionID).update({
-                                lastSeen: Date.now(), nick: window.app.nick, city: currentCity, channel: currentCh
+                                lastSeen: Date.now(), 
+                                nick: window.app.nick, 
+                                city: currentCity, 
+                                channel: currentCh,
+                                bgGenre: currentGenre // Informamos a los demás
                             });
                         }
                     }, 10000);
@@ -2641,6 +2651,7 @@ fun main() {
                                 val isMotoUser = u.isMoto == true
                                 val userLat = try { u.lat as? Double } catch(e: Exception) { null }
                                 val userLon = try { u.lon as? Double } catch(e: Exception) { null }
+                                val userBgGenre = u.bgGenre as? String // --- 📻 MAPEADO DE GÉNERO MUSICAL ---
                                 
                                 // --- 🛡️ AUTO-BLOQUEO DEL MAL ACTOR ---
                                 if (k == mySessionID && banned) {

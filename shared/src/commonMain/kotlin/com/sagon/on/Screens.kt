@@ -1337,6 +1337,10 @@ fun ActivityPanel(
     val routeParticipants = remember(users, state.channel) {
         users.filter { it.channel == state.channel && it.nick != nick }
     }
+    
+    // --- 📻 DETECTAR SI HAY MÚSICA EN EL GRUPO (DJ) ---
+    val isMusicInGroup = routeParticipants.any { it.bgGenre != null }
+    val routeDj = routeParticipants.find { it.bgGenre != null }
 
     LaunchedEffect(externalPttBlocked) {
         if (externalPttBlocked) {
@@ -1374,12 +1378,7 @@ fun ActivityPanel(
     var lastLon by remember { mutableStateOf<Double?>(null) }
     var showShareHighlight by remember { mutableStateOf(true) }
 
-    LaunchedEffect(users, state.channel) {
-        val dj = users.find { it.channel == state.channel && it.nick != nick && it.bgGenre != null }
-        if (dj != null && bgStationName == null) {
-            onBgRadioScan(state.city, dj.bgGenre!!)
-        }
-    }
+    // ELIMINADO: Sincronización forzada de música. Ahora cada uno elige.
 
     LaunchedEffect(Unit) {
         delay(8000)
@@ -1662,7 +1661,26 @@ fun ActivityPanel(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     TacticalDockIconActivity(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) onStateChange(state.copy(isDspEnabled = false)) else onPendingDialogChange(RadioDialogType.DSP) })
-                    TacticalDockIconActivity(icon = Icons.Rounded.Radio, label = "RADIO", isActive = bgStationName != null, onClick = { if (bgStationName != null) onBgRadioStop() else onPendingDialogChange(RadioDialogType.FMSCAN) })
+                    
+                    // --- 📻 BOTÓN RADIO: Parpadea si hay música en el grupo ---
+                    TacticalDockIconActivity(
+                        icon = Icons.Rounded.Radio, 
+                        label = "RADIO", 
+                        isActive = bgStationName != null, 
+                        isBlinking = bgStationName == null && isMusicInGroup,
+                        onClick = { 
+                            if (bgStationName != null) {
+                                onBgRadioStop() 
+                            } else {
+                                // Si hay música en el grupo, sugerimos ese género al abrir
+                                if (routeDj?.bgGenre != null) {
+                                    onStateChange(state.copy(bgRadioGenre = routeDj.bgGenre))
+                                }
+                                onPendingDialogChange(RadioDialogType.FMSCAN) 
+                            }
+                        }
+                    )
+                    
                     TacticalDockIconActivity(icon = if (isZoomed) Icons.Rounded.ZoomOutMap else Icons.Rounded.ZoomIn, label = "ZOOM", isActive = isZoomed, onClick = { isZoomed = !isZoomed; triggerUiSound("click") })
                     
                     // --- 🗺️ BOTÓN GOOGLE MAPS EXTERNO ---
@@ -1731,6 +1749,11 @@ fun ActivityPanel(
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Black
                                 )
+                                // --- 🎵 ICONO DJ ---
+                                if (user.bgGenre != null) {
+                                    Spacer(Modifier.width(6.dp))
+                                    Icon(Icons.Rounded.MusicNote, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(12.dp))
+                                }
                             }
                         }
                     }
@@ -1793,18 +1816,27 @@ fun TacticalDockIconActivity(
     icon: ImageVector,
     label: String,
     isActive: Boolean,
+    isBlinking: Boolean = false,
     onClick: () -> Unit,
     activeColor: Color = LuxeColors.Gold
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    val infiniteTransition = rememberInfiniteTransition(label = "BlinkAnim")
+    val alpha by if (isBlinking) {
+        infiniteTransition.animateFloat(
+            initialValue = 0.3f, targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "Alpha"
+        )
+    } else remember { mutableStateOf(1f) }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.graphicsLayer(alpha = alpha)) {
         Surface(
             modifier = Modifier
                 .size(52.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .clickable { onClick(); triggerUiSound("click") },
-            color = if (isActive) activeColor.copy(0.2f) else Color.Black.copy(0.6f),
+            color = if (isActive) activeColor.copy(0.2f) else if (isBlinking) LuxeColors.ElectricBlue.copy(0.15f) else Color.Black.copy(0.6f),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.5.dp, if (isActive) activeColor else Color.White.copy(0.15f))
+            border = BorderStroke(1.5.dp, if (isActive) activeColor else if (isBlinking) LuxeColors.ElectricBlue else Color.White.copy(0.15f))
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(

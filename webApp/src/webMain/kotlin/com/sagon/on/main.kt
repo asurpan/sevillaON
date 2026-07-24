@@ -2356,17 +2356,27 @@ object RadioBridge {
                     navigator.geolocation.getCurrentPosition(function(pos) {
                         var lat = pos.coords.latitude;
                         var lon = pos.coords.longitude;
-                        // Usamos el servicio Nominatim de OSM para geocodificación inversa
-                        // Se incluye un User-Agent según políticas de OSM
-                        fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat=" + lat + "&lon=" + lon + "&zoom=10", {
+                        // --- 🗺️ ZOOM 14: Para detectar barrios, calles y puntos de interés ---
+                        fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat=" + lat + "&lon=" + lon + "&zoom=14", {
                             headers: { "Accept-Language": "es" }
                         })
                             .then(function(r) { return r.json(); })
                             .then(function(data) {
                                 if (data && data.address) {
-                                    var city = data.address.city || data.address.town || data.address.village || data.address.county || data.address.state;
-                                    console.log("📍 Ciudad detectada por GPS:", city);
-                                    resolve(city);
+                                    var addr = data.address;
+                                    // Priorizar Barrio o Calle si estamos en Modo Paseo
+                                    var detail = addr.suburb || addr.neighbourhood || addr.road || addr.pedestrian;
+                                    var city = addr.city || addr.town || addr.village || addr.county;
+                                    
+                                    var finalName = "";
+                                    if (detail && detail.length > 3) {
+                                        finalName = detail.toUpperCase();
+                                    } else {
+                                        finalName = city ? city.toUpperCase() : null;
+                                    }
+                                    
+                                    console.log("📍 Lugar detectado:", finalName);
+                                    resolve(finalName);
                                 } else {
                                     resolve(null);
                                 }
@@ -2381,7 +2391,7 @@ object RadioBridge {
                     }, { 
                         timeout: 10000, 
                         enableHighAccuracy: true,
-                        maximumAge: 300000
+                        maximumAge: 120000 // Aumentamos frescura a 2 min
                     });
                 });
             };

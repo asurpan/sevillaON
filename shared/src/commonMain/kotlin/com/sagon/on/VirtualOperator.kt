@@ -8,6 +8,7 @@ import kotlinx.coroutines.*
  */
 object VirtualOperator {
     private var job: Job? = null
+    private var lastLocationInformed: String? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     private const val BULLETIN_INTERVAL = 480000L // 8 minutos
@@ -41,6 +42,32 @@ object VirtualOperator {
     fun stop() {
         job?.cancel()
         job = null
+    }
+
+    /**
+     * 🛰️ SEGUIMIENTO INTELIGENTE: El locutor detecta que hemos cambiado de zona
+     */
+    fun onZoneChange(newZone: String, nick: String, onAnnounce: (String) -> Unit) {
+        // Evitar redundancia (no informar de lo mismo en menos de 5 min)
+        if (newZone == lastLocationInformed) return
+        lastLocationInformed = newZone
+
+        scope.launch {
+            val hour = getCurrentHour()
+            val saludo = when (hour) {
+                in 6..12 -> "Atención equipo."
+                in 13..20 -> "Buenas tardes."
+                else -> "Buenas noches."
+            }
+            
+            // Boletín inmediato sobre la nueva zona
+            val info = fetchFreshBulletin(newZone)
+            val text = "$saludo Estación $nick, acabas de entrar en $newZone. Te cuento algo sobre este lugar. $info"
+            
+            withContext(Dispatchers.Main) { 
+                onAnnounce(text.replace("TURISMO: ", "")) 
+            }
+        }
     }
 
     fun triggerBulletin(city: String, onAnnounce: (String) -> Unit) {

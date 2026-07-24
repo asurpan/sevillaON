@@ -293,19 +293,19 @@ fun App(
     var hasAutoTunedInSession by remember { mutableStateOf(!isFirstTime) }
 
     // --- 🌍 GPS TRACKING PARA MODO RUTA (REAL) ---
+    var lastKnownGpsLocation by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(radioState.activeProfile) {
         if (radioState.activeProfile != ActivityProfile.NORMAL) {
             while(true) {
+                // 1. Obtener coordenadas exactas para el radar
                 onGpsRequest { url ->
                     if (url != null) {
-                        // Extraer lat/lon del enlace de google maps (formato q=lat,lon)
                         val regex = "q=([-0-9.]+),([-0-9.]+)".toRegex()
                         val match = regex.find(url)
                         if (match != null) {
                             val rawLat = match.groupValues[1].toDoubleOrNull()
                             val rawLon = match.groupValues[2].toDoubleOrNull()
                             if (rawLat != null && rawLon != null) {
-                                // --- 🛡️ PROTECCIÓN DE PRIVACIDAD: Redondeo a 3 decimales (~110m) ---
                                 val lat = (rawLat * 1000.0).toInt() / 1000.0
                                 val lon = (rawLon * 1000.0).toInt() / 1000.0
                                 radioState = radioState.copy(motoLatitude = lat, motoLongitude = lon, myGpsUrl = url)
@@ -313,7 +313,28 @@ fun App(
                         }
                     }
                 }
-                delay(15000) // Actualizar cada 15 segundos para no drenar batería
+
+                // 2. 🤖 SEGUIMIENTO INTELIGENTE: Detectar por dónde vamos (Barrio/Calle/Pueblo)
+                delay(5000)
+                onGpsCityRequest { detectedPlace ->
+                    if (detectedPlace != null && detectedPlace != lastKnownGpsLocation) {
+                        lastKnownGpsLocation = detectedPlace
+                        
+                        // Si es un pueblo nuevo (está en nuestra lista oficial), cambiamos la radio
+                        if (SPAIN_CITIES.contains(detectedPlace.uppercase())) {
+                            radioState = radioState.copy(city = detectedPlace.uppercase())
+                        }
+
+                        // El locutor informa sobre el cambio (sea barrio o pueblo)
+                        VirtualOperator.onZoneChange(detectedPlace, nick) { text ->
+                            setVirtualOperatorText(text)
+                            // Disparamos el motor FM para que lea el boletín
+                            onBgRadioScan(radioState.city, "ANUNCIOS")
+                        }
+                    }
+                }
+                
+                delay(120000) // Actualizar cada 2 minutos para no drenar batería
             }
         }
     }

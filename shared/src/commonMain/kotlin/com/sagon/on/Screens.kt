@@ -547,8 +547,16 @@ fun RadioPanel(
     val currentOnMic by rememberUpdatedState(onMic)
     val currentOnNoise by rememberUpdatedState(onNoise)
     
-    LaunchedEffect(effectivePtt, myDynamicPower) { 
+    /* --- 🛡️ FIX: No reiniciar el PTT cada segundo al subir la potencia --- */
+    LaunchedEffect(effectivePtt) { 
         currentOnMic(effectivePtt, myDynamicPower)
+    }
+
+    /* --- 🛡️ FIX: Actualizar potencia en Firebase de forma independiente sin cortar el audio --- */
+    LaunchedEffect(myDynamicPower) {
+        if (effectivePtt) {
+            currentOnMic(true, myDynamicPower)
+        }
     }
     
     LaunchedEffect(state.squelch, state.rfGain, rx, isTransmitting) { 

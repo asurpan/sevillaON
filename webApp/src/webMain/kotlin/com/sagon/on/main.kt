@@ -1663,7 +1663,11 @@ object RadioSignaling {
                 window.broadcastPTT = function(active, roger, power) {
                     if(!window.app || !window.app.peer || !window.app.db || window.app.isTerminated) return;
                     
-                    // --- 🔒 INTERRUPCIÓN DE BEEP: Si volvemos a pulsar, matamos el pitido activo ---
+                    /* --- 🔒 PROTECCIÓN TÁCTICA: Ignorar si no hay cambio de estado real --- */
+                    /* Excepto si es una actualización de potencia mientras transmitimos */
+                    if (window.app.lastPttState === active && (power === undefined || !active)) return;
+
+                    /* --- 🔒 INTERRUPCIÓN DE BEEP --- */
                     if (active && window.app.isBeeping) {
                         if (window.app.activeRogerOsc) {
                             try { window.app.activeRogerOsc.stop(); } catch(e) {}
@@ -1673,18 +1677,11 @@ object RadioSignaling {
                         if(window.dispatch_beeping) window.dispatch_beeping(false);
                     }
 
-                    // --- 🔒 PRIORIDAD DE ESTADO: BLOQUEO DE FUGAS ---
                     window.app.isTransmittingInternal = active;
 
-                    // --- 🛡️ SILENCIAR LOCUTOR AL TRANSMITIR (PRIORIDAD HUMANA) ---
                     if (active && window.speechSynthesis) window.speechSynthesis.cancel();
-
-                    // --- 🛡️ ACTUALIZAR MÚSICA DE FONDO ---
                     setTimeout(function() { if(window.updateBgDucking) window.updateBgDucking(); }, 50);
-                    // 🔒 HARD-LOCK: PROHIBIDO TOCAR - MOTOR DE AUDIO TX/RX
-                    // Asegura que la voz entre y salga sin cortes.
 
-                    // --- 🛡️ ACTIVACIÓN DE MICRO INTELIGENTE (PRIVACIDAD) ---
                     if (active && !window.app.rawStream) {
                         if (sessionStorage.getItem("mic_denied") === "true") {
                             if (window.dispatch_mic_failure) window.dispatch_mic_failure();
@@ -1695,32 +1692,18 @@ object RadioSignaling {
                         }
                     }
 
-                // --- 🛡️ ANTI-COLLISION SYSTEM (REALISTIC RADIO LOCK) ---
+                /* --- 🛡️ ANTI-COLLISION SYSTEM --- */
                 if (active && window.app.rxActiveInternal && !window.app.lastPttState) {
                     if (typeof window.playBusyTone === 'function') window.playBusyTone();
                     if (window.dispatch_ptt_blocked) window.dispatch_ptt_blocked();
+                    window.app.isTransmittingInternal = false;
                     return;
                 }
 
-                if (window.app.lastPttState === active) {
-                    // Si ya estábamos transmitiendo y solo cambia la potencia, no disparamos sonidos
-                    if (active) {
-                        if (power !== undefined) window.app.db.ref("users/" + window.app.sessionID).update({ pwr: power });
-                    }
-                    return;
-                }
-                
-                var isNewTx = active && !window.app.lastPttState;
                 window.app.lastPttState = active;
 
-                // --- 📳 HAPTIC FEEDBACK (PTT FEEL) ---
-                if (active && navigator.vibrate) {
-                    // navigator.vibrate(40); 
-                }
-
-                // --- 🛡️ SINCRONIZACIÓN ATÓMICA DE ESTADOS ---
+                /* --- 🛡️ SINCRONIZACIÓN ATÓMICA DE ESTADOS --- */
                 if (active) {
-                    // 🛡️ FAILOVER P2P: Si no hay internet, activamos el Walkie-Talkie nativo
                     if (window.AndroidApp && typeof window.AndroidApp.checkNetworkCritical === 'function') {
                         if (window.AndroidApp.checkNetworkCritical()) {
                             window.AndroidApp.setNativePtt(true);
@@ -1728,25 +1711,6 @@ object RadioSignaling {
                     }
                     window.app.isBeeping = false;
                     if(window.dispatch_beeping) window.dispatch_beeping(false);
-                    
-                    // --- 🚀 DESPERTADOR PUSH (TRIGER GRATUITO) ---
-                    // Registramos que hay alguien hablando para que el servidor avise a los que están "dormidos"
-                    try {
-                        var myCity = localStorage.getItem("lastCity") || "SEVILLA";
-                        var myNick = localStorage.getItem("indicativo") || "Estación";
-                        var lastPush = localStorage.getItem("last_tx_push") || 0;
-                        var now = Date.now();
-                        
-                        // Solo mandamos un "toque" de red cada 2 minutos para no saturar
-                        if (now - lastPush > 120000) {
-                            window.app.db.ref("tx_active_notifications").set({
-                                city: myCity,
-                                nick: myNick,
-                                timestamp: now
-                            });
-                            localStorage.setItem("last_tx_push", now);
-                        }
-                    } catch(e) {}
                 }
 
                 try {
@@ -1754,11 +1718,9 @@ object RadioSignaling {
                     var updates = { tx: active, subtone: currentSub };
                     if (active && power !== undefined) updates.pwr = power;
                     
-                    // --- 🛡️ SINCRONIZACIÓN ROGER BEEP (AGUJA) ---
-                    // Si soltamos con Roger Beep, NO quitamos la portadora (tx) de Firebase aún.
-                    // Esto mantiene la aguja arriba en los receptores hasta que termine el pitido.
+                    /* --- 🛡️ DETERMINISTIC SYNC: Solo retrasar si hay Roger Beep --- */
                     if (!active && roger) {
-                        delete updates.tx; /* Retrasamos el fin de TX */
+                        delete updates.tx;
                         window.app.db.ref("users/" + window.app.sessionID).update(updates);
                     } else {
                         window.app.db.ref("users/" + window.app.sessionID).update(updates);
@@ -1767,11 +1729,11 @@ object RadioSignaling {
 
                 if (window.app.ctx) {
                     if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                    
                     if (active) {
-                        // --- 🛡️ FEEDBACK INSTANTÁNEO AL PULSAR ---
+                        /* --- 🔊 FEEDBACK TÁCTICO DE ENTRADA --- */
                         if (typeof window.playUiSound === 'function') window.playUiSound('ptt_on');
 
-                        window.app.isTransmittingInternal = true;
                         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                         if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.02);
                         if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.02);
@@ -1782,9 +1744,7 @@ object RadioSignaling {
                         }
                         if (typeof window.updateMoniGain === 'function') window.updateMoniGain();
                         
-                        // ELIMINADO: Pitido de inicio de PTT (ahora es entrada silenciosa)
-
-                        // --- 🛡️ OPTIMIZACIÓN DE BATERÍA: CONEXIÓN BAJO DEMANDA ---
+                        /* Conectar con otros bajo demanda */
                         window.app.db.ref("users").once('value', function(snap) {
                             var users = snap.val();
                             var myCity = localStorage.getItem("lastCity") || "SEVILLA";
@@ -1792,41 +1752,25 @@ object RadioSignaling {
                             var mySubtone = localStorage.getItem("lastSubtone") || "0000";
                             var now = Date.now();
                             var connectedCount = 0;
-
                             for(var id in users) { 
                                 if(id !== window.app.sessionID && users[id].city === myCity && users[id].channel === myChannel && users[id].subtone === mySubtone) {
-                                    // --- 🛡️ ESCALABILIDAD: No intentar conectar con más de 25 a la vez ---
                                     if (connectedCount >= 25) break;
-
                                     var lastSeen = users[id].lastSeen || 0;
                                     if (now - lastSeen < 300000) { 
                                         if (!window.app.activeCalls[id] || !window.app.activeCalls[id].open) {
                                             window.app.activeCalls[id] = window.app.peer.call(id, window.getStream());
                                             connectedCount++;
-                                        } else {
-                                            connectedCount++;
-                                        }
+                                        } else { connectedCount++; }
                                     }
                                 }
                             }
                         });
                     } else {
-                        // --- 🛡️ SINCRONIZACIÓN ATÓMICA TX -> BEEP ---
-                        if (roger) {
-                            window.app.isBeeping = true;
-                            if(window.dispatch_beeping) window.dispatch_beeping(true);
-                        }
-                        
-                        window.app.isTransmittingInternal = false;
-                        
-                        // 🛡️ FAILOVER P2P: Asegurar cierre de transmisión nativa
+                        /* --- SOLTANDO PTT --- */
                         if (window.AndroidApp && typeof window.AndroidApp.setNativePtt === 'function') {
                             window.AndroidApp.setNativePtt(false);
                         }
                         
-                        // --- 🛡️ MANTENIMIENTO DE MICRO INTELIGENTE ---
-                        // Si el VOX está apagado, soltamos el micro para permitir a otras apps (Gemini/WhatsApp) usarlo.
-                        // Gracias al Heartbeat de AudioContext añadido arriba, la app no se dormirá.
                         if (!window.app.voxActive && window.app.rawStream) {
                             window.app.rawStream.getTracks().forEach(function(t) { t.stop(); });
                             window.app.rawStream = null;
@@ -1836,93 +1780,64 @@ object RadioSignaling {
                         if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.02);
                         if (typeof window.updateMoniGain === 'function') window.updateMoniGain();
                         
-                        /* --- 🛡️ PRIORIDAD DE SONIDO: El relé mecánico solo suena si no hay Roger Beep --- */
                         if (!roger) {
                             if (typeof window.playUiSound === 'function') window.playUiSound('ptt_off');
                         }
                         
                         if (roger) {
-                            /* --- 🛡️ RESUME CORE: Asegurar que el audio está despierto para el pitido --- */
+                            /* --- 🛡️ RESUME CORE PARA EL BEEP --- */
                             if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                            if (window.app.isBeeping) return;
 
-                            /* --- 🛡️ RESUME CORE: Asegurar que el audio está despierto para el pitido --- */
-                            if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
-
-                            /* --- 🛡️ ANTI-SPAM BEEP: Si ya estamos pitando, ignoramos este cierre --- */
-                            if (window.app.isBeeping) {
-                                console.log("⚠️ Ya hay un pitido activo, ignorando...");
-                                return;
-                            }
-
-                            /* --- 🛡️ BLINDAJE DE SEGURIDAD PTT (CONTUNDENCIA) --- */
-                            /* Al soltar el PTT, silenciamos el micro inmediatamente para que el Roger Beep sea puro. */
                             if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
-                            
                             window.app.isBeeping = true;
                             if(window.dispatch_beeping) window.dispatch_beeping(true);
                             
-                            /* --- 🔒 MOTOR DE AUDIO: ROGER BEEP LABORATORIO (100% PURO) --- */
                             var osc = window.app.ctx.createOscillator();
-                            window.app.activeRogerOsc = osc; /* 🛡️ GUARDAR PARA POSIBLE INTERRUPCIÓN */
-                            
+                            window.app.activeRogerOsc = osc;
                             var gLocal = window.app.ctx.createGain();
                             var gRemote = window.app.ctx.createGain();
                             var now = window.app.ctx.currentTime;
                             
-                            osc.type = 'sine'; /* Pureza senoidal absoluta */
+                            osc.type = 'sine';
                             osc.frequency.setValueAtTime(1955, now); 
                             
-                            /* Envolvente Remota: Potencia constante para la red */
+                            /* Normalización de volumen: Proporcional al RF GAIN */
+                            var volFactor = (window.app.rfGain || 0.5) * 0.2;
                             gRemote.gain.setValueAtTime(0.0001, now);
-                            gRemote.gain.linearRampToValueAtTime(0.10, now + 0.005); 
-                            gRemote.gain.setValueAtTime(0.10, now + 0.28); 
+                            gRemote.gain.linearRampToValueAtTime(volFactor, now + 0.005); 
+                            gRemote.gain.setValueAtTime(volFactor, now + 0.28); 
                             gRemote.gain.exponentialRampToValueAtTime(0.0001, now + 0.3); 
                             
-                            /* Envolvente Local: Volumen subido a 0.08 para mejor audibilidad del emisor */
                             gLocal.gain.setValueAtTime(0.0001, now);
-                            gLocal.gain.linearRampToValueAtTime(0.08, now + 0.005);
-                            gLocal.gain.setValueAtTime(0.08, now + 0.28);
+                            gLocal.gain.linearRampToValueAtTime(volFactor * 0.8, now + 0.005);
+                            gLocal.gain.setValueAtTime(volFactor * 0.8, now + 0.28);
                             gLocal.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
 
                             osc.connect(gRemote); 
                             if (window.app.txBus) gRemote.connect(window.app.txBus); 
-                            
                             osc.connect(gLocal); 
-                            /* --- 🛡️ FIX CRÍTICO: Bypass de masterOut para eliminar interferencia de fase --- */
                             gLocal.connect(window.app.ctx.destination);
 
-                            /* --- 🎯 EXACT HARDWARE SYNC --- */
                             osc.onended = function() {
-                                /* Limpiar referencia al terminar */
                                 if (window.app.activeRogerOsc === osc) window.app.activeRogerOsc = null;
-                                
-                                /* El pitido ha terminado físicamente en el motor de audio */
                                 window.app.isBeeping = false;
                                 if(window.dispatch_beeping) window.dispatch_beeping(false);
-                                
-                                /* Restauramos ambiente */
                                 if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.0, window.app.ctx.currentTime, 0.05);
                                 if (window.app.noise) {
                                     window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
                                     window.app.noise.gain.setTargetAtTime(Math.max(0.0001, window.app.lastNoiseLevel), window.app.ctx.currentTime, 0.05);
                                 }
-                                
-                                /* 📡 DETERMINISTIC TAIL: La aguja baja SOLO cuando el sonido termina físicamente. */
                                 if (!window.app.isTransmittingInternal) {
                                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
                                     if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
                                 }
-
                                 window.app.voxHangTimer = 0;
-                                window.app.voxLockoutTimestamp = Date.now() + 1200; /* Reducido para mayor agilidad */
+                                window.app.voxLockoutTimestamp = Date.now() + 1200;
                             };
-
                             osc.start(now); 
                             osc.stop(now + 0.3);
-                            /* Margen de seguridad para la caída exponencial */
-                        }
-else {
-                            // Cierre sin Roger Beep: Sincronización directa
+                        } else {
                             if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.0, window.app.ctx.currentTime, 0.05);
                             if (window.app.noise) {
                                 window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
@@ -2251,8 +2166,16 @@ object RadioBridge {
                 var now = ctx.currentTime;
                 
                 if (type === 'ptt_on') {
-                    // --- 🛡️ RELÉ MECÁNICO ELIMINADO ---
-                    // Entrada silenciosa requerida por el usuario
+                    /* --- 🔔 FEEDBACK TÁCTICO: Bip electrónico muy corto (15ms) --- */
+                    var o = ctx.createOscillator();
+                    var g = ctx.createGain();
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(880, now);
+                    g.gain.setValueAtTime(0, now);
+                    g.gain.linearRampToValueAtTime(0.04, now + 0.002);
+                    g.gain.linearRampToValueAtTime(0, now + 0.015);
+                    o.connect(g); g.connect(window.app.masterOut);
+                    o.start(now); o.stop(now + 0.015);
                 } else if (type === 'ptt_off') {
                     // --- 🛡️ RELÉ DE DESENCLAVAMIENTO SUTIL ---
                     var o = ctx.createOscillator();

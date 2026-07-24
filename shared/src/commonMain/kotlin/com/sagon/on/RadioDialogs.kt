@@ -38,7 +38,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 
 enum class RadioDialogType {
-    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK, MASTER_HELP, HELP_SQUELCH, HELP_GAIN, FINISH_ACTIVITY_CONFIRM
+    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS,    INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK,    MASTER_HELP, HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, FINISH_ACTIVITY_CONFIRM
 }
 
 /**
@@ -1907,6 +1907,36 @@ fun RadioDialogs(
             },
             confirmButton = {
                 LuxeButton("AJUSTAR EN CONSOLA", { onDismiss(); onPendingDialogChange(RadioDialogType.SETTINGS) }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+            }
+        )
+        RadioDialogType.HELP_PRIVACY -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            titleContentColor = LuxeColors.ElectricBlue,
+            modifier = Modifier.border(1.dp, LuxeColors.ElectricBlue.copy(0.3f), RoundedCornerShape(24.dp)),
+            icon = { Icon(Icons.Rounded.Security, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(40.dp)) },
+            title = { Text("ZONA PRIVADA (Ocultar mi casa)", fontWeight = FontWeight.Black, textAlign = TextAlign.Center) },
+            text = {
+                Column {
+                    Text(
+                        "Este escudo añade un error aleatorio de ~200 metros a tu posición real antes de subirla a la red.",
+                        fontSize = 13.sp,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "De esta forma, tus compañeros sabrán que estás en la zona de la ruta pero nadie podrá localizar tu portal exacto. Ideal para cuando salgas o llegues a casa.",
+                        fontSize = 12.sp,
+                        color = Color.White.copy(0.7f),
+                        textAlign = TextAlign.Center,
+                        lineHeight = 18.sp
+                    )
+                }
+            },
+            confirmButton = {
+                LuxeButton("ENTENDIDO", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.ElectricBlue, Color.White)
             }
         )
         RadioDialogType.FINISH_ACTIVITY_CONFIRM -> AlertDialog(

@@ -1375,13 +1375,11 @@ fun ActivityPanel(
             onExecuteEngineeringAction("SHOW_MAP_OVERLAY")
         }
 
-        // Incluimos a todos los de la ruta Y a nosotros mismos si tenemos GPS
+        // Incluimos a todos los de la ruta Y a nosotros mismos (SIEMPRE, con o sin GPS)
         val participants = users.filter { it.channel == state.channel && it.nick != nick && it.lat != null && it.lon != null }
-        val me = if (state.motoLatitude != null && state.motoLongitude != null) {
-            """{"nick":"${nick} (YO)","lat":${state.motoLatitude},"lon":${state.motoLongitude},"isTransmitting":${(isPressed || voxActive || externalPtt)},"isMe":true}"""
-        } else null
+        val me = """{"nick":"${nick} (YO)","lat":${state.motoLatitude ?: "null"},"lon":${state.motoLongitude ?: "null"},"isTransmitting":${(isPressed || voxActive || externalPtt)},"isMe":true}"""
 
-        val json = "[" + (listOfNotNull(me) + participants.map { 
+        val json = "[" + (listOf(me) + participants.map { 
             """{"nick":"${it.nick}","lat":${it.lat},"lon":${it.lon},"isTransmitting":${it.isTransmitting},"isMe":false}""" 
         }).joinToString(",") + "]"
         
@@ -1532,16 +1530,24 @@ fun ActivityPanel(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .padding(horizontal = if (isMapVisible) 80.dp else 0.dp) // --- 🛡️ FIX: Evitar que el mapa tape los docks ---
                     .clip(RoundedCornerShape(28.dp))
-                    .background(Color(0xFF020619)) /* Color único para que JS encuentre el mapa */
-                    .border(2.dp, LuxeColors.Gold.copy(0.3f), RoundedCornerShape(28.dp)),
+                    .background(if (isMapVisible) Color.Transparent else Color(0xFF020619).copy(alpha = 0.8f))
+                    .border(2.dp, if (isMapVisible) LuxeColors.Green.copy(0.5f) else LuxeColors.Gold.copy(0.3f), RoundedCornerShape(28.dp))
+                    .onGloballyPositioned { layoutCoordinates ->
+                        if (isMapVisible) {
+                            val position = layoutCoordinates.positionInWindow()
+                            val size = layoutCoordinates.size
+                            onExecuteEngineeringAction("UPDATE_MAP_GEOMETRY|${position.x}|${position.y}|${size.width}|${size.height}")
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 /* CAPA DE MAPA REAL (Fondo absoluto) */
-                Box(Modifier.fillMaxSize().background(if (isMapVisible) Color.Transparent else Color(0xFF020619))) {
+                Box(Modifier.fillMaxSize().background(Color.Transparent)) {
                     LaunchedEffect(Unit) {
                         delay(500)
-                        onExecuteEngineeringAction("INIT_REAL_MAP|activity-map-container")
+                        onExecuteEngineeringAction("INIT_REAL_MAP")
                     }
                 }
 
@@ -1662,12 +1668,12 @@ fun ActivityPanel(
                     }
                 }
 
-                // 5. BOTONES LATERALES (REPOSICIONADOS PARA EVITAR BORDES)
                 Column(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .padding(start = 22.dp).padding(vertical = 24.dp), 
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(start = 16.dp).padding(vertical = 16.dp)
+                        .verticalScroll(rememberScrollState()), 
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     TacticalDockIconActivity(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX) })
                     TacticalDockIconActivity(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE) })
@@ -1688,8 +1694,9 @@ fun ActivityPanel(
                 Column(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .padding(end = 22.dp).padding(vertical = 24.dp), 
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(end = 16.dp).padding(vertical = 16.dp)
+                        .verticalScroll(rememberScrollState()), 
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     TacticalDockIconActivity(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) onStateChange(state.copy(isDspEnabled = false)) else onPendingDialogChange(RadioDialogType.DSP) })
                     
@@ -1712,13 +1719,30 @@ fun ActivityPanel(
                         }
                     )
                     
-                    // --- 🔋 BOTÓN MAPA (AHORRO BATERÍA) ---
                     TacticalDockIconActivity(
                         icon = if (isMapVisible) Icons.Rounded.Map else Icons.Rounded.LayersClear, 
                         label = "MAPA", 
                         isActive = isMapVisible, 
                         onClick = { isMapVisible = !isMapVisible; triggerUiSound("switch") },
                         activeColor = if (isMapVisible) LuxeColors.Gold else Color.Gray
+                    )
+
+                    // --- 🛡️ BOTÓN PRIVACIDAD ---
+                    TacticalDockIconActivity(
+                        icon = if (state.isGpsPrivacyEnabled) Icons.Rounded.PrivacyTip else Icons.Rounded.LocationSearching, 
+                        label = "PRIV", 
+                        isActive = state.isGpsPrivacyEnabled, 
+                        onClick = { onStateChange(state.copy(isGpsPrivacyEnabled = !state.isGpsPrivacyEnabled)); triggerUiSound("switch") },
+                        activeColor = LuxeColors.ElectricBlue
+                    )
+
+                    // --- 🛣️ BOTÓN RUTA (PLANIFICADOR) ---
+                    TacticalDockIconActivity(
+                        icon = Icons.Rounded.AddLocationAlt, 
+                        label = "RUTA", 
+                        isActive = false, 
+                        onClick = { onPendingDialogChange(RadioDialogType.ROUTE_PLANNER) },
+                        activeColor = LuxeColors.Gold
                     )
 
                     // --- 🧭 BOTÓN RUMBO (NAVEGACIÓN) ---
@@ -1887,12 +1911,12 @@ fun TacticalDockIconActivity(
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.graphicsLayer(alpha = alpha)) {
         Surface(
             modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(48.dp)
+                .clip(RoundedCornerShape(10.dp))
                 .clickable { onClick(); triggerUiSound("click") },
             color = if (isActive) activeColor.copy(0.2f) else if (isBlinking) LuxeColors.ElectricBlue.copy(0.15f) else Color.Black.copy(0.6f),
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.5.dp, if (isActive) activeColor else if (isBlinking) LuxeColors.ElectricBlue else Color.White.copy(0.15f))
+            shape = RoundedCornerShape(10.dp),
+            border = BorderStroke(1.2.dp, if (isActive) activeColor else if (isBlinking) LuxeColors.ElectricBlue else Color.White.copy(0.15f))
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(

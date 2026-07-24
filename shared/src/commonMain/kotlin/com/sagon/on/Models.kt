@@ -30,8 +30,7 @@ enum class Screen { Welcome, RadioCB }
 data class QuadItem<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 enum class ActivityProfile {
-    NORMAL, MOTO, CICLISMO, SENDERISMO, PASEO, MONTANA, SOCORRISTAS, CAMIONEROS, CARAVANAS, OFFROAD, TACTICO, RUNNING,
-    ESQUI, VELA, PARAPENTE, CAZA, PESCA, KAYAK
+    NORMAL, MOTO, CICLISMO, SENDERISMO, PASEO, SOCORRISTAS, CARAVANAS
 }
 
 data class RemoteUser(
@@ -58,6 +57,14 @@ data class RemoteUser(
     val proReputation: Float = 1.0f, // 0.0 a 1.0
     val isBanned: Boolean = false, // Si es true, el equipo se bloquea permanentemente
     val gpsUrl: String? = null // Enlace a Google Maps en caso de SOS
+)
+
+data class TacticalPOI(
+    val id: String,
+    val name: String,
+    val lat: Double,
+    val lon: Double,
+    val type: String // CASTLE, MONUMENT, VIEWPOINT
 )
 
 data class RadioState(
@@ -98,6 +105,8 @@ data class RadioState(
     val isAntennaTesting: Boolean = false, // Modo de auto-escucha (Loopback)
     val isDiscreteModeEnabled: Boolean = false, // Modo Discreto: No hablar si la app está de fondo
     val isMotoModeEnabled: Boolean = false, // Modo Moto: Filtro viento + Mapa + Malla WiFi
+    val isAvoidingHighways: Boolean = false, // --- 🏍️ MODO AVENTURA: Evitar autopistas ---
+    val discoveredPOIs: List<TacticalPOI> = emptyList(),
     val activeProfile: ActivityProfile = ActivityProfile.NORMAL,
     val motoLatitude: Double? = null,
     val motoLongitude: Double? = null,
@@ -210,21 +219,10 @@ fun getActivityIcon(profile: ActivityProfile): ImageVector {
     return when(profile) {
         ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
         ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
-        ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
         ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
-        ActivityProfile.MONTANA -> Icons.Rounded.Landscape
+        ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
         ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
-        ActivityProfile.CAMIONEROS -> Icons.Rounded.LocalShipping
         ActivityProfile.CARAVANAS -> Icons.Rounded.AirportShuttle
-        ActivityProfile.OFFROAD -> Icons.Rounded.Agriculture
-        ActivityProfile.TACTICO -> Icons.Rounded.Security
-        ActivityProfile.RUNNING -> Icons.Rounded.DirectionsRun
-        ActivityProfile.ESQUI -> Icons.Rounded.DownhillSkiing
-        ActivityProfile.VELA -> Icons.Rounded.Sailing
-        ActivityProfile.PARAPENTE -> Icons.Rounded.AirplanemodeActive
-        ActivityProfile.CAZA -> Icons.Rounded.Radar
-        ActivityProfile.PESCA -> Icons.Rounded.Phishing
-        ActivityProfile.KAYAK -> Icons.Rounded.Kayaking
         else -> Icons.Rounded.Person
     }
 }

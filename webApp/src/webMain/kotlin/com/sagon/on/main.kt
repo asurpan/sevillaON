@@ -1074,10 +1074,97 @@ object RadioCore {
                     window.app.map = map;
                     window.app.mapMarkers = {};
                     
+                    // --- 🧭 MOTOR DE RUTAS GPS ---
+                    window.app.routingControl = null;
+                    
+                    map.on('contextmenu', function(e) {
+                        if (confirm("¿Trazar ruta hasta esta ubicación?")) {
+                            window.setMapDestination(e.latlng.lat, e.latlng.lng);
+                        }
+                    });
+
                     // --- 🛡️ AUTO-ZOOM A MI POSICIÓN ---
                     if (lat && lon) {
                         map.panTo([lat, lon]);
                     }
+                };
+
+                window.setMapDestination = function(destLat, destLon) {
+                    if (!window.app.map) return;
+                    
+                    var myLat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
+                    var myLon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
+                    
+                    if (window.app.routingControl) {
+                        try { window.app.map.removeControl(window.app.routingControl); } catch(e) {}
+                    }
+                    
+                    // --- 🧠 SELECCIÓN DE PERFIL INTELIGENTE ---
+                    var activeProfile = localStorage.getItem("activeProfile") || "NORMAL";
+                    var isAvoidingHighways = localStorage.getItem("avoid_highways") === "true";
+                    var routerUrl = 'https://router.project-osrm.org/route/v1';
+                    
+                    var profile = 'driving'; 
+                    if (activeProfile === 'CICLISMO') {
+                        profile = 'bicycle';
+                    } else if (['PASEO', 'SENDERISMO'].indexOf(activeProfile) !== -1) {
+                        profile = 'foot';
+                    } else if (activeProfile === 'MOTO' && isAvoidingHighways) {
+                        // Para moto "Modo Curvas", usamos perfil de bici (que evita autopistas) 
+                        // pero sobre la red de carreteras (si el router lo permite)
+                        profile = 'bicycle'; 
+                    }
+                    
+                    var control = L.Routing.control({
+                        waypoints: [
+                            L.latLng(myLat, myLon),
+                            L.latLng(destLat, destLon)
+                        ],
+                        router: L.Routing.osrmv1({
+                            serviceUrl: routerUrl,
+                            profile: profile
+                        }),
+                        lineOptions: {
+                            styles: [{ color: '#06B6D4', weight: 6, opacity: 0.8 }]
+                        },
+                        createMarker: function() { return null; },
+                        addWaypoints: false,
+                        routeWhileDragging: false,
+                        draggableWaypoints: false,
+                        fitSelectedRoutes: true,
+                        show: false
+                    });
+                    
+                    control.addTo(window.app.map);
+                    window.app.routingControl = control;
+                    console.log("🛣️ Misión táctica lanzada (" + profile + ") hasta: " + destLat + "," + destLon);
+                };
+
+                window.fetchTacticalPOIs = function(lat, lon) {
+                    if (!window.app.map) return;
+                    var radius = 50000;
+                    var query = '[out:json][timeout:25];(node["historic"="castle"](around:' + radius + ',' + lat + ',' + lon + ');node["historic"="monument"](around:' + radius + ',' + lat + ',' + lon + ');node["tourism"="viewpoint"](around:' + radius + ',' + lat + ',' + lon + '););out body;';
+                    fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query))
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            if (data && data.elements) {
+                                data.elements.forEach(function(poi) {
+                                    var icon = L.divIcon({
+                                        className: 'tactical-poi',
+                                        html: '<div style="background:#D4AF37;border:2px solid white;border-radius:50%;width:12px;height:12px;box-shadow:0 0 10px gold;"></div>',
+                                        iconSize: [12, 12]
+                                    });
+                                    var marker = L.marker([poi.lat, poi.lon], { icon: icon }).addTo(window.app.map);
+                                    var name = poi.tags.name || "Punto de Interés";
+                                    marker.bindTooltip(name, { permanent: false, direction: 'top' });
+                                    marker.on('click', function() {
+                                        if (confirm("¿Ir hasta " + name + "?")) {
+                                            window.setMapDestination(poi.lat, poi.lon);
+                                        }
+                                    });
+                                });
+                            }
+                        }).catch(function(err) { console.error("Error POI:", err); });
                 };
 
                 window.updateMapMarkers = function(usersJson) {
@@ -1106,8 +1193,18 @@ object RadioCore {
                     }
                     
                     users.forEach(function(user) {
-                        if (user.lat && user.lon) {
-                            var dist = getDist(myLat, myLon, user.lat, user.lon);
+                        var lat = user.lat;
+                        var lon = user.lon;
+                        
+                        // --- 🛡️ PROTOCOLO SIN GPS: Si soy YO y no tengo coordenadas, me quedo en el centro ---
+                        if (user.isMe && (!lat || !lon)) {
+                            var center = map.getCenter();
+                            lat = center.lat;
+                            lon = center.lng;
+                        }
+
+                        if (lat && lon) {
+                            var dist = getDist(myLat, myLon, lat, lon);
                             var distText = dist < 0.05 ? "AQUÍ" : (dist < 1 ? Math.round(dist*1000) + "m" : dist.toFixed(1) + "km");
                             var labelText = user.nick + " (" + distText + ")";
                             
@@ -1660,12 +1757,23 @@ object RadioSignaling {
                 if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
             };
 
-                window.broadcastPTT = function(active, roger, power) {
+            window.broadcastPTT = function(active, roger, power) {
                     if(!window.app || !window.app.peer || !window.app.db || window.app.isTerminated) return;
                     
-                    /* --- 🔒 PROTECCIÓN TÁCTICA: Ignorar si no hay cambio de estado real --- */
-                    /* Excepto si es una actualización de potencia mientras transmitimos */
-                    if (window.app.lastPttState === active && (power === undefined || !active)) return;
+                    /* --- 🔒 DETECCIÓN DE CAMBIO REAL: Blindaje contra bucles de sonido --- */
+                    var isNewPress = (active === true) && (window.app.pttStateInternal !== true);
+                    var isRelease = (active === false) && (window.app.pttStateInternal === true);
+                    
+                    /* Si no hay cambio de estado físico, solo actualizamos potencia en red y salimos */
+                    if (window.app.pttStateInternal === active) {
+                        if (active && power !== undefined) {
+                            window.app.db.ref("users/" + window.app.sessionID).update({ pwr: power });
+                        }
+                        return;
+                    }
+                    
+                    /* Guardamos el nuevo estado físico */
+                    window.app.pttStateInternal = active;
 
                     /* --- 🔒 INTERRUPCIÓN DE BEEP --- */
                     if (active && window.app.isBeeping) {
@@ -1680,7 +1788,7 @@ object RadioSignaling {
                     window.app.isTransmittingInternal = active;
 
                     if (active && window.speechSynthesis) window.speechSynthesis.cancel();
-                    setTimeout(function() { if(window.updateBgDucking) window.updateBgDucking(); }, 50);
+                    if(window.updateBgDucking) window.updateBgDucking();
 
                     if (active && !window.app.rawStream) {
                         if (sessionStorage.getItem("mic_denied") === "true") {
@@ -1693,14 +1801,17 @@ object RadioSignaling {
                     }
 
                 /* --- 🛡️ ANTI-COLLISION SYSTEM --- */
-                if (active && window.app.rxActiveInternal && !window.app.lastPttState) {
+                if (active && window.app.rxActiveInternal && !isNewPress) {
+                     /* Ya gestionado por Compose o bloqueo previo */
+                }
+
+                if (active && window.app.rxActiveInternal && isNewPress) {
                     if (typeof window.playBusyTone === 'function') window.playBusyTone();
                     if (window.dispatch_ptt_blocked) window.dispatch_ptt_blocked();
                     window.app.isTransmittingInternal = false;
+                    window.app.pttStateInternal = false;
                     return;
                 }
-
-                window.app.lastPttState = active;
 
                 /* --- 🛡️ SINCRONIZACIÓN ATÓMICA DE ESTADOS --- */
                 if (active) {
@@ -1718,7 +1829,6 @@ object RadioSignaling {
                     var updates = { tx: active, subtone: currentSub };
                     if (active && power !== undefined) updates.pwr = power;
                     
-                    /* --- 🛡️ DETERMINISTIC SYNC: Solo retrasar si hay Roger Beep --- */
                     if (!active && roger) {
                         delete updates.tx;
                         window.app.db.ref("users/" + window.app.sessionID).update(updates);
@@ -1731,8 +1841,10 @@ object RadioSignaling {
                     if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
                     
                     if (active) {
-                        /* --- 🔊 FEEDBACK TÁCTICO DE ENTRADA --- */
-                        if (typeof window.playUiSound === 'function') window.playUiSound('ptt_on');
+                        /* --- 🔊 FEEDBACK TÁCTICO: SOLO EN EL MOMENTO DEL CLIC --- */
+                        if (isNewPress && typeof window.playUiSound === 'function') {
+                            window.playUiSound('ptt_on');
+                        }
 
                         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                         if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.02);
@@ -1785,7 +1897,6 @@ object RadioSignaling {
                         }
                         
                         if (roger) {
-                            /* --- 🛡️ RESUME CORE PARA EL BEEP --- */
                             if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
                             if (window.app.isBeeping) return;
 
@@ -1793,34 +1904,38 @@ object RadioSignaling {
                             window.app.isBeeping = true;
                             if(window.dispatch_beeping) window.dispatch_beeping(true);
                             
-                            var osc = window.app.ctx.createOscillator();
-                            window.app.activeRogerOsc = osc;
-                            var gLocal = window.app.ctx.createGain();
-                            var gRemote = window.app.ctx.createGain();
                             var now = window.app.ctx.currentTime;
-                            
-                            osc.type = 'sine';
-                            osc.frequency.setValueAtTime(1955, now); 
-                            
-                            /* Normalización de volumen: Proporcional al RF GAIN */
-                            var volFactor = (window.app.rfGain || 0.5) * 0.2;
-                            gRemote.gain.setValueAtTime(0.0001, now);
-                            gRemote.gain.linearRampToValueAtTime(volFactor, now + 0.005); 
-                            gRemote.gain.setValueAtTime(volFactor, now + 0.28); 
-                            gRemote.gain.exponentialRampToValueAtTime(0.0001, now + 0.3); 
-                            
-                            gLocal.gain.setValueAtTime(0.0001, now);
-                            gLocal.gain.linearRampToValueAtTime(volFactor * 0.8, now + 0.005);
-                            gLocal.gain.setValueAtTime(volFactor * 0.8, now + 0.28);
-                            gLocal.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
 
-                            osc.connect(gRemote); 
-                            if (window.app.txBus) gRemote.connect(window.app.txBus); 
-                            osc.connect(gLocal); 
+                            /* --- 🔒 ROGER BEEP: EMISIÓN A RED (NORMALIZADA) --- */
+                            var oscRemote = window.app.ctx.createOscillator();
+                            var gRemote = window.app.ctx.createGain();
+                            oscRemote.type = 'sine';
+                            oscRemote.frequency.setValueAtTime(1955, now);
+                            var remoteVol = (window.app.rfGain || 0.5) * 0.15;
+                            gRemote.gain.setValueAtTime(0.0001, now);
+                            gRemote.gain.linearRampToValueAtTime(remoteVol, now + 0.005);
+                            gRemote.gain.setValueAtTime(remoteVol, now + 0.28);
+                            gRemote.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+                            oscRemote.connect(gRemote);
+                            if (window.app.txBus) gRemote.connect(window.app.txBus);
+
+                            /* --- 🎙️ ROGER BEEP: FEEDBACK LOCAL (PURO Y LIMPIO) --- */
+                            /* Este tono suena directamente al altavoz del emisor, siempre igual */
+                            var oscLocal = window.app.ctx.createOscillator();
+                            window.app.activeRogerOsc = oscLocal;
+                            var gLocal = window.app.ctx.createGain();
+                            oscLocal.type = 'sine';
+                            oscLocal.frequency.setValueAtTime(1955, now);
+                            /* Volumen medio constante (0.18) para feedback profesional */
+                            gLocal.gain.setValueAtTime(0.0001, now);
+                            gLocal.gain.linearRampToValueAtTime(0.18, now + 0.005);
+                            gLocal.gain.setValueAtTime(0.18, now + 0.28);
+                            gLocal.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+                            oscLocal.connect(gLocal);
                             gLocal.connect(window.app.ctx.destination);
 
-                            osc.onended = function() {
-                                if (window.app.activeRogerOsc === osc) window.app.activeRogerOsc = null;
+                            oscLocal.onended = function() {
+                                if (window.app.activeRogerOsc === oscLocal) window.app.activeRogerOsc = null;
                                 window.app.isBeeping = false;
                                 if(window.dispatch_beeping) window.dispatch_beeping(false);
                                 if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.0, window.app.ctx.currentTime, 0.05);
@@ -1833,10 +1948,11 @@ object RadioSignaling {
                                     if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
                                 }
                                 window.app.voxHangTimer = 0;
-                                window.app.voxLockoutTimestamp = Date.now() + 1200;
+                                window.app.voxLockoutTimestamp = Date.now() + 1000;
+                                if(window.updateBgDucking) window.updateBgDucking();
                             };
-                            osc.start(now); 
-                            osc.stop(now + 0.3);
+                            oscRemote.start(now); oscRemote.stop(now + 0.3);
+                            oscLocal.start(now); oscLocal.stop(now + 0.3);
                         } else {
                             if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.0, window.app.ctx.currentTime, 0.05);
                             if (window.app.noise) {
@@ -1844,6 +1960,7 @@ object RadioSignaling {
                                 window.app.noise.gain.setTargetAtTime(Math.max(0.0001, window.app.lastNoiseLevel), window.app.ctx.currentTime, 0.05);
                             }
                             window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
+                            if(window.updateBgDucking) window.updateBgDucking();
                         }
                     }
                 }
@@ -2281,27 +2398,44 @@ object RadioBridge {
 
             window.getGpsLink = function() {
                 return new Promise(function(resolve) {
-                    if (!navigator.geolocation) return resolve(null);
+                    var fallbackToIp = function() {
+                        console.log("🌐 Intentando geolocalización por IP (PC/Sin GPS)...");
+                        fetch('https://ipapi.co/json/')
+                            .then(function(r) { return r.json(); })
+                            .then(function(data) {
+                                if (data && data.latitude && data.longitude) {
+                                    localStorage.setItem("last_lat", data.latitude);
+                                    localStorage.setItem("last_lon", data.longitude);
+                                    var url = "https://www.google.com/maps?q=" + data.latitude + "," + data.longitude;
+                                    resolve(url);
+                                } else { resolve(null); }
+                            })
+                            .catch(function() { resolve(null); });
+                    };
+
+                    if (!navigator.geolocation) return fallbackToIp();
+                    
                     navigator.geolocation.getCurrentPosition(function(pos) {
+                        localStorage.setItem("last_lat", pos.coords.latitude);
+                        localStorage.setItem("last_lon", pos.coords.longitude);
                         var url = "https://www.google.com/maps?q=" + pos.coords.latitude + "," + pos.coords.longitude;
                         resolve(url);
                     }, function(err) { 
-                        console.warn("GPS Error:", err);
-                        resolve(null); 
+                        console.warn("GPS Físico no disponible:", err.message);
+                        fallbackToIp();
                     }, { 
-                        timeout: 10000, 
+                        timeout: 5000, 
                         enableHighAccuracy: true,
-                        maximumAge: 0
+                        maximumAge: 60000
                     });
                 });
             };
 
             window.detectCityByGps = function() {
                 return new Promise(function(resolve) {
-                    if (!navigator.geolocation) return resolve(null);
-                    navigator.geolocation.getCurrentPosition(function(pos) {
-                        var lat = pos.coords.latitude;
-                        var lon = pos.coords.longitude;
+                    var processCoords = function(lat, lon) {
+                        localStorage.setItem("last_lat", lat);
+                        localStorage.setItem("last_lon", lon);
                         // --- 🗺️ ZOOM 14: Para detectar barrios, calles y puntos de interés ---
                         fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat=" + lat + "&lon=" + lon + "&zoom=14", {
                             headers: { "Accept-Language": "es" }
@@ -2310,34 +2444,38 @@ object RadioBridge {
                             .then(function(data) {
                                 if (data && data.address) {
                                     var addr = data.address;
-                                    // Priorizar Barrio o Calle si estamos en Modo Paseo
                                     var detail = addr.suburb || addr.neighbourhood || addr.road || addr.pedestrian;
                                     var city = addr.city || addr.town || addr.village || addr.county;
-                                    
-                                    var finalName = "";
-                                    if (detail && detail.length > 3) {
-                                        finalName = detail.toUpperCase();
-                                    } else {
-                                        finalName = city ? city.toUpperCase() : null;
-                                    }
-                                    
+                                    var finalName = detail && detail.length > 3 ? detail.toUpperCase() : (city ? city.toUpperCase() : null);
                                     console.log("📍 Lugar detectado:", finalName);
                                     resolve(finalName);
-                                } else {
-                                    resolve(null);
-                                }
+                                } else { resolve(null); }
                             })
-                            .catch(function(e) { 
-                                console.error("Error Nominatim:", e);
-                                resolve(null); 
-                            });
+                            .catch(function() { resolve(null); });
+                    };
+
+                    var fallbackToIp = function() {
+                        fetch('https://ipapi.co/json/')
+                            .then(function(r) { return r.json(); })
+                            .then(function(data) {
+                                if (data && data.latitude && data.longitude) {
+                                    processCoords(data.latitude, data.longitude);
+                                } else { resolve(null); }
+                            })
+                            .catch(function() { resolve(null); });
+                    };
+
+                    if (!navigator.geolocation) return fallbackToIp();
+
+                    navigator.geolocation.getCurrentPosition(function(pos) {
+                        processCoords(pos.coords.latitude, pos.coords.longitude);
                     }, function(err) { 
-                        console.warn("GPS Error City:", err);
-                        resolve(null); 
+                        console.warn("GPS Error City:", err.message);
+                        fallbackToIp();
                     }, { 
-                        timeout: 10000, 
+                        timeout: 5000, 
                         enableHighAccuracy: true,
-                        maximumAge: 120000 /* Aumentamos frescura a 2 min */
+                        maximumAge: 120000
                     });
                 });
             };
@@ -2444,10 +2582,7 @@ fun main() {
     }
 
     println("🚀 ON AIR SPAIN: Iniciando motor de radio...")
-    val root = document.body ?: run {
-        println("❌ Error: No se encontró document.body")
-        return
-    }
+    val root = document.getElementById("radio-root") ?: document.body!!
     
     // 🛡️ Activar Infraestructura Blindada
     RadioCore.install()
@@ -2887,15 +3022,14 @@ fun main() {
                 localStorage.getItem("indicativo") ?: localStorage.getItem("last_indicativo") ?: "" 
             } catch(e: Exception) { "" } 
         }
+
         val initialState = remember {
             try {
-                // --- 🧹 MIGRACIÓN AUTOMÁTICA A ON AIR SPAIN (LIMPIEZA TOTAL) ---
-                // --- 🧹 MIGRACIÓN AUTOMÁTICA (ETIQUETA DE VERSIÓN) ---
+                /* --- 🧹 MIGRACIÓN AUTOMÁTICA (ETIQUETA DE VERSIÓN) --- */
                 if (localStorage.getItem("v3_nacional") == null) {
                     localStorage.setItem("v3_nacional", "true")
                 }
 
-                // --- 🛡️ SISTEMA DE DEEP LINKING (VIRAL) ---
                 val params = js("new URLSearchParams(window.location.search)")
                 val urlCity = params.get("city")?.toString()
                 val urlChannel = params.get("channel")?.toString()
@@ -2925,47 +3059,12 @@ fun main() {
                     isAntennaTesting = localStorage.getItem("antTest")?.toBoolean() ?: false,
                     isSystemVoiceEnabled = localStorage.getItem("systemVoice")?.toBoolean() ?: false,
                     veteranPower = localStorage.getItem("vetPwr")?.toFloatOrNull() ?: 0.7f,
-                    installTimestamp = localStorage.getItem("install_ts")?.toLongOrNull() ?: run {
-                        val now = Date.now().toLong()
-                        localStorage.setItem("install_ts", now.toString())
-                        now
-                    },
+                    isAvoidingHighways = localStorage.getItem("avoid_highways")?.toBoolean() ?: false,
                     favoriteChannels = (localStorage.getItem("favoriteChannels") ?: "").split(",").filter { it.isNotEmpty() }.toSet(),
-                    favoriteCities = (localStorage.getItem("favoriteCities") ?: "").split(",").filter { it.isNotEmpty() }.toSet(),
                     friends = (localStorage.getItem("friends") ?: "").split(",").filter { it.isNotEmpty() }.toSet(),
                     blockedUsers = (localStorage.getItem("blockedUsers") ?: "").split(",").filter { it.isNotEmpty() }.toSet(),
                     isDspEnabled = localStorage.getItem("dspEnabled")?.toBoolean() ?: true,
                     bgRadioGenre = localStorage.getItem("bgGenre") ?: "MIX",
-                    favoriteFmStations = try {
-                        val json = localStorage.getItem("favFm")
-                        if (json != null && json != "undefined" && json != "null") {
-                            val obj = js("JSON.parse(json)")
-                            val map = mutableMapOf<String, String>()
-                            if (obj != null && obj != undefined) {
-                                val keys = js("Object").keys(obj)
-                                if (keys != null && keys != undefined) {
-                                    val len = keys.length as Int
-                                    for (i in 0 until len) {
-                                        val k = keys[i] as String
-                                        val v = obj[k]
-                                        if (v != null && v != undefined) {
-                                            map[k] = v.toString()
-                                        }
-                                    }
-                                }
-                            }
-                            map
-                        } else {
-                            emptyMap()
-                        }
-                    } catch(e: Exception) { 
-                        emptyMap() 
-                    },
-                    hasSeenFmScanIntro = localStorage.getItem("hasSeenFmScan") == "true",
-                    hasSeenAdsIntro = localStorage.getItem("hasSeenAds") == "true",
-                    hasSeenSquelchWarning = localStorage.getItem("hasSeenSquelch") == "true",
-                    hasSeenDiscreteIntro = localStorage.getItem("hasSeenDis") == "true",
-                    hasAcceptedMicExplain = localStorage.getItem("mic_accepted") == "true",
                     isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
                     nasaImageUrl = localStorage.getItem("cache_nasa_img"),
                     nasaImageTitle = localStorage.getItem("cache_nasa_title"),
@@ -2974,10 +3073,9 @@ fun main() {
             } catch(e: Exception) { RadioState() }
         }
 
-        val forceBgGenreState = remember { mutableStateOf<String?>(null) }
-
         App(
             savedNick = savedNick,
+            initialState = initialState,
             isFirstTime = try { localStorage.getItem("onboarding_done") == null } catch(e: Exception) { true },
             onOnboardingFinish = { try { localStorage.setItem("onboarding_done", "true") } catch(e: Exception) {} },
             onPermissionRequest = { n -> 
@@ -3422,6 +3520,8 @@ fun main() {
                     localStorage.setItem("disMode", s.isDiscreteModeEnabled.toString())
                     localStorage.setItem("mic_accepted", s.hasAcceptedMicExplain.toString())
                     localStorage.setItem("isNightMode", s.isNightMode.toString())
+                    localStorage.setItem("avoid_highways", s.isAvoidingHighways.toString())
+                    localStorage.setItem("activeProfile", s.activeProfile.name)
                     val currentNasaImg = s.nasaImageUrl
                     if (currentNasaImg != null) localStorage.setItem("cache_nasa_img", currentNasaImg)
                     // --- 🧠 MOTOR DE SINCRONIZACIÓN NASA ---
@@ -3467,7 +3567,7 @@ fun main() {
                         val targetFreq = when(profile) {
                             ActivityProfile.MOTO -> 300
                             ActivityProfile.CICLISMO -> 200
-                            ActivityProfile.SENDERISMO, ActivityProfile.MONTANA -> 120
+                            ActivityProfile.SENDERISMO -> 120
                             ActivityProfile.SOCORRISTAS -> 100
                             else -> 80
                         }
@@ -3694,40 +3794,24 @@ fun main() {
                             js("var c = document.getElementById('activity-map-container'); if(c) { c.style.display = 'none'; c.style.transform = 'rotate(0deg)'; }")
                         }
                         "SHOW_MAP_OVERLAY" -> {
-                            js("var c = document.getElementById('activity-map-container'); if(c) c.style.display = 'block';")
+                            js("""
+                                var c = document.getElementById('activity-map-container'); 
+                                if(c) c.style.display = 'block';
+                            """)
                         }
                         "INIT_REAL_MAP" -> {
-                            val containerId = if (parts.size >= 2) parts[1] else "activity-map-container"
                             js("""
                                 setTimeout(function() {
+                                    var containerId = 'activity-map-container';
                                     var container = document.getElementById(containerId);
-                                    if (!container) {
-                                        /* 🛡️ REPARACIÓN QUIRÚRGICA: Búsqueda por color de fondo único (#020619) */
-                                        var divs = document.querySelectorAll('div');
-                                        for(var i=0; i<divs.length; i++) {
-                                            var style = window.getComputedStyle(divs[i]);
-                                            var bg = style.backgroundColor;
-                                            /* Soportar formato hex y rgb */
-                                            if(bg === 'rgb(2, 6, 25)' || bg === '#020619' || bg.includes('2, 6, 25')) {
-                                                var mapDiv = document.createElement('div');
-                                                mapDiv.id = containerId;
-                                                mapDiv.style.width = '100%';
-                                                mapDiv.style.height = '100%';
-                                                mapDiv.style.position = 'absolute';
-                                                mapDiv.style.top = '0';
-                                                mapDiv.style.left = '0';
-                                                mapDiv.style.zIndex = '0';
-                                                divs[i].style.position = 'relative';
-                                                divs[i].appendChild(mapDiv);
-                                                window.initRealMap(containerId, 37.3891, -5.9845);
-                                                console.log("✅ Mapa inyectado en div táctico.");
-                                                return;
-                                            }
-                                        }
-                                    } else {
-                                        window.initRealMap(containerId, 37.3891, -5.9845);
+                                    if (container) {
+                                        container.style.display = 'block';
+                                        var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
+                                        var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
+                                        window.initRealMap(containerId, lat, lon);
+                                        setTimeout(function() { if(window.app.map) window.app.map.invalidateSize(); }, 300);
                                     }
-                                }, 800); /* Aumentado delay para asegurar carga de Compose */
+                                }, 500);
                             """)
                         }
                         "UPDATE_MAP_MARKERS" -> {
@@ -3742,6 +3826,105 @@ fun main() {
                                 val lon = parts[2]
                                 js("if(window.app && window.app.map) window.app.map.panTo([lat, lon]);")
                             }
+                        }
+                        "UPDATE_MAP_GEOMETRY" -> {
+                            if (parts.size >= 5) {
+                                val left = parts[1]
+                                val top = parts[2]
+                                val width = parts[3]
+                                val height = parts[4]
+                                js("""
+                                    var container = document.getElementById('activity-map-container');
+                                    if (container) {
+                                        container.style.display = 'block';
+                                        container.style.left = left + 'px';
+                                        container.style.top = top + 'px';
+                                        container.style.width = width + 'px';
+                                        container.style.height = height + 'px';
+                                        container.style.zIndex = '1'; // Detrás de la radio pero visible en el hueco
+                                        if (window.app && window.app.map) {
+                                            window.app.map.invalidateSize();
+                                        }
+                                    }
+                                """)
+                            }
+                        }
+                        "UPDATE_ACTIVE_PROFILE" -> {
+                            if (parts.size >= 2) {
+                                js("localStorage.setItem('activeProfile', parts[1]);")
+                            }
+                        }
+                        "SEARCH_LOCATION" -> {
+                            if (parts.size >= 2) {
+                                val query = parts[1]
+                                js("""
+                                    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query))
+                                        .then(function(r) { return r.json(); })
+                                        .then(function(data) {
+                                            if (data && data.length > 0) {
+                                                var loc = data[0];
+                                                window.setMapDestination(parseFloat(loc.lat), parseFloat(loc.lon));
+                                            }
+                                        });
+                                """)
+                            }
+                        }
+                        "FETCH_POIS" -> {
+                            js("""
+                                var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
+                                var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
+                                if(window.fetchTacticalPOIs) window.fetchTacticalPOIs(lat, lon);
+                            """)
+                        }
+                        "UPDATE_MAP_GEOMETRY" -> {
+                            if (parts.size >= 5) {
+                                val left = parts[1]
+                                val top = parts[2]
+                                val width = parts[3]
+                                val height = parts[4]
+                                js("""
+                                    var container = document.getElementById('activity-map-container');
+                                    if (container) {
+                                        container.style.display = 'block';
+                                        container.style.left = left + 'px';
+                                        container.style.top = top + 'px';
+                                        container.style.width = width + 'px';
+                                        container.style.height = height + 'px';
+                                        container.style.zIndex = '1'; // Detrás de la radio pero visible en el hueco 
+                                        // Invalidar tamaño para que Leaflet se ajuste al nuevo hueco
+                                        if (window.app && window.app.map) {
+                                            window.app.map.invalidateSize();
+                                        }
+                                    }
+                                """)
+                            }
+                        }
+                        "UPDATE_ACTIVE_PROFILE" -> {
+                            if (parts.size >= 2) {
+                                js("localStorage.setItem('activeProfile', parts[1]);")
+                            }
+                        }
+                        "SEARCH_LOCATION" -> {
+                            if (parts.size >= 2) {
+                                val query = parts[1]
+                                js("""
+                                    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query))
+                                        .then(function(r) { return r.json(); })
+                                        .then(function(data) {
+                                            if (data && data.length > 0) {
+                                                var loc = data[0];
+                                                window.setMapDestination(parseFloat(loc.lat), parseFloat(loc.lon));
+                                            }
+                                        });
+                                """)
+                            }
+                        }
+                        "FETCH_POIS" -> {
+                            js("""
+                                var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
+                                var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
+                                if(window.fetchTacticalPOIs) window.fetchTacticalPOIs(lat, lon);
+                            """)
                         }
                         "TERMINATE_DIAGNOSTICS" -> win.AndroidApp.terminateDiagnosticSequence()
                         "SHOW_BANNER" -> win.AndroidApp.showBanner(true)
@@ -3768,32 +3951,38 @@ fun main() {
                             }
                         }
                         "HIDE_MAP_OVERLAY" -> {
-                            js("var c = document.getElementById('activity-map-container'); if(c) { c.style.display = 'none'; c.style.transform = 'rotate(0deg)'; }")
+                            js("""
+                                var c = document.getElementById('activity-map-container'); 
+                                if(c) {
+                                    c.style.display = 'none';
+                                    document.getElementById('radio-root').style.clipPath = 'none';
+                                }
+                            """)
                         }
                         "SHOW_MAP_OVERLAY" -> {
-                            js("var c = document.getElementById('activity-map-container'); if(c) c.style.display = 'block';")
+                            js("""
+                                var c = document.getElementById('activity-map-container'); 
+                                if(c) {
+                                    c.style.display = 'block';
+                                    // Aplicar "Agujero" táctico en la radio para ver el mapa central
+                                    document.getElementById('radio-root').style.clipPath = 'polygon(0% 0%, 0% 100%, 10% 100%, 14% 23%, 86% 23%, 86% 63%, 14% 63%, 14% 23%, 10% 100%, 100% 100%, 100% 0%)';
+                                }
+                            """)
                         }
                         "INIT_REAL_MAP" -> {
-                            val containerId = if (parts.size >= 2) parts[1] else "activity-map-container"
                             js("""
                                 setTimeout(function() {
-                                    var divs = document.querySelectorAll('div');
-                                    for(var i=0; i<divs.length; i++) {
-                                        var style = window.getComputedStyle(divs[i]);
-                                        var bg = style.backgroundColor;
-                                        if(bg === 'rgb(2, 6, 25)' || bg === '#020619') {
-                                            var mapDiv = document.createElement('div');
-                                            mapDiv.id = containerId;
-                                            mapDiv.style.width = '100%';
-                                            mapDiv.style.height = '100%';
-                                            mapDiv.style.position = 'absolute';
-                                            mapDiv.style.top = '0';
-                                            mapDiv.style.left = '0';
-                                            mapDiv.style.zIndex = '0';
-                                            divs[i].appendChild(mapDiv);
-                                            window.initRealMap(containerId, 37.3891, -5.9845);
-                                            break;
-                                        }
+                                    var containerId = 'activity-map-container';
+                                    var container = document.getElementById(containerId);
+                                    if (container) {
+                                        container.style.display = 'block';
+                                        var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
+                                        var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
+                                        window.initRealMap(containerId, lat, lon);
+                                        setTimeout(function() { if(window.app.map) window.app.map.invalidateSize(); }, 300);
+                                        
+                                        // Aplicar recorte inicial
+                                        document.getElementById('radio-root').style.clipPath = 'polygon(0% 0%, 0% 100%, 10% 100%, 14% 23%, 86% 23%, 86% 63%, 14% 63%, 14% 23%, 10% 100%, 100% 100%, 100% 0%)';
                                     }
                                 }, 500);
                             """)
@@ -3810,6 +3999,105 @@ fun main() {
                                 val lon = parts[2]
                                 js("if(window.app && window.app.map) window.app.map.panTo([lat, lon]);")
                             }
+                        }
+                        "UPDATE_MAP_GEOMETRY" -> {
+                            if (parts.size >= 5) {
+                                val left = parts[1]
+                                val top = parts[2]
+                                val width = parts[3]
+                                val height = parts[4]
+                                js("""
+                                    var container = document.getElementById('activity-map-container');
+                                    if (container) {
+                                        container.style.display = 'block';
+                                        container.style.left = left + 'px';
+                                        container.style.top = top + 'px';
+                                        container.style.width = width + 'px';
+                                        container.style.height = height + 'px';
+                                        container.style.zIndex = '1'; // Detrás de la radio pero visible en el hueco
+                                        if (window.app && window.app.map) {
+                                            window.app.map.invalidateSize();
+                                        }
+                                    }
+                                """)
+                            }
+                        }
+                        "UPDATE_ACTIVE_PROFILE" -> {
+                            if (parts.size >= 2) {
+                                js("localStorage.setItem('activeProfile', parts[1]);")
+                            }
+                        }
+                        "SEARCH_LOCATION" -> {
+                            if (parts.size >= 2) {
+                                val query = parts[1]
+                                js("""
+                                    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query))
+                                        .then(function(r) { return r.json(); })
+                                        .then(function(data) {
+                                            if (data && data.length > 0) {
+                                                var loc = data[0];
+                                                window.setMapDestination(parseFloat(loc.lat), parseFloat(loc.lon));
+                                            }
+                                        });
+                                """)
+                            }
+                        }
+                        "FETCH_POIS" -> {
+                            js("""
+                                var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
+                                var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
+                                if(window.fetchTacticalPOIs) window.fetchTacticalPOIs(lat, lon);
+                            """)
+                        }
+                        "UPDATE_MAP_GEOMETRY" -> {
+                            if (parts.size >= 5) {
+                                val left = parts[1]
+                                val top = parts[2]
+                                val width = parts[3]
+                                val height = parts[4]
+                                js("""
+                                    var container = document.getElementById('activity-map-container');
+                                    if (container) {
+                                        container.style.display = 'block';
+                                        container.style.left = left + 'px';
+                                        container.style.top = top + 'px';
+                                        container.style.width = width + 'px';
+                                        container.style.height = height + 'px';
+                                        container.style.zIndex = '1'; // Detrás de la radio pero visible en el hueco 
+                                        // Invalidar tamaño para que Leaflet se ajuste al nuevo hueco
+                                        if (window.app && window.app.map) {
+                                            window.app.map.invalidateSize();
+                                        }
+                                    }
+                                """)
+                            }
+                        }
+                        "UPDATE_ACTIVE_PROFILE" -> {
+                            if (parts.size >= 2) {
+                                js("localStorage.setItem('activeProfile', parts[1]);")
+                            }
+                        }
+                        "SEARCH_LOCATION" -> {
+                            if (parts.size >= 2) {
+                                val query = parts[1]
+                                js("""
+                                    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query))
+                                        .then(function(r) { return r.json(); })
+                                        .then(function(data) {
+                                            if (data && data.length > 0) {
+                                                var loc = data[0];
+                                                window.setMapDestination(parseFloat(loc.lat), parseFloat(loc.lon));
+                                            }
+                                        });
+                                """)
+                            }
+                        }
+                        "FETCH_POIS" -> {
+                            js("""
+                                var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
+                                var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
+                                if(window.fetchTacticalPOIs) window.fetchTacticalPOIs(lat, lon);
+                            """)
                         }
                     }
                     console.log("🛠️ COMANDO DE INGENIERÍA ENVIADO: " + action + " (Requiere hardware Android)");
@@ -3892,29 +4180,9 @@ fun main() {
             dgtText = dgtTextState.value,
             dgtImageUrl = dgtImageUrlState.value,
             voxActive = voxActiveState.value,
-            wifiVerificationResult = wifiVerificationResultState.value,
-            initialState = initialState
+            wifiVerificationResult = wifiVerificationResultState.value
         )
-        
-        LaunchedEffect(pttBlockedTrigger.value) {
-            if (pttBlockedTrigger.value) {
-                delay(500)
-                pttBlockedTrigger.value = false
-            }
-        }
-
-        LaunchedEffect(forceInitialScreenState.value) {
-            if (forceInitialScreenState.value) {
-                delay(100)
-                forceInitialScreenState.value = false
-            }
-        }
-        
-        LaunchedEffect(Unit) { 
-            js("if(window.initFirebaseListener) window.initFirebaseListener();") 
-            js("if(window.setupBluetoothPTT) window.setupBluetoothPTT();")
-        }
     }
     return null
-    })
+})
 }

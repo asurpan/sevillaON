@@ -22,15 +22,9 @@ object MotorcycleCore {
     fun getWindFilterCutoff(profile: ActivityProfile): Int {
         return when (profile) {
             ActivityProfile.MOTO -> 300      // Ruido motor y alta velocidad
-            ActivityProfile.PARAPENTE -> 280 // Viento extremo en vuelo
-            ActivityProfile.VELA -> 250      // Viento marino constante
             ActivityProfile.CICLISMO -> 200  // Viento moderado
-            ActivityProfile.ESQUI -> 200     // Viento y frío
-            ActivityProfile.KAYAK -> 150     // Viento y agua
-            ActivityProfile.MONTANA -> 120   // Ráfagas de viento
             ActivityProfile.SENDERISMO -> 100 // Viento leve
             ActivityProfile.SOCORRISTAS -> 100 // Claridad en exteriores
-            ActivityProfile.CAZA -> 80       // Natural para susurros
             else -> 80                       // Sonido estándar (natural)
         }
     }
@@ -42,13 +36,7 @@ object MotorcycleCore {
     fun getActivityVoxThreshold(profile: ActivityProfile, baseSens: Float): Float {
         val multiplier = when (profile) {
             ActivityProfile.MOTO -> 1.4f
-            ActivityProfile.PARAPENTE -> 1.4f
-            ActivityProfile.VELA -> 1.3f
             ActivityProfile.CICLISMO -> 1.2f
-            ActivityProfile.ESQUI -> 1.2f
-            ActivityProfile.MONTANA -> 1.1f
-            ActivityProfile.KAYAK -> 1.1f
-            ActivityProfile.CAZA -> 0.8f // Alta sensibilidad para susurros
             else -> 1.0f
         }
         return (baseSens * multiplier).coerceIn(0f, 1f)

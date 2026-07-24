@@ -3,42 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ON AIR SPAIN - Red Social de Voz, Amigos y Conectar Gente en España</title>
-    <meta name="description" content="ON AIR SPAIN: La red social de voz real. Conoce gente, haz amigos y conecta con toda España a través de la radio digital.">
-    <meta name="keywords" content="ON AIR SPAIN, Red Social, Voz Real, Radio Digital, Amistad, España, Madrid, Barcelona, Valencia, Sevilla">
-    <meta name="author" content="ON AIR SPAIN">
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://sevillaon.es/">
-    <meta property="og:title" content="ON AIR SPAIN - Emisora para Conectar Gente en España">
-    <meta property="og:description" content="Conecta con gente real de todas las ciudades de España. La red de voz más auténtica.">
-    <meta property="og:image" content="https://asurpan.github.io/sevillaON/logo.png">
-    <meta property="og:image:width" content="512">
-    <meta property="og:image:height" content="512">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary">
-    <meta property="twitter:url" content="https://sevillaon.es/">
-    <meta property="twitter:title" content="ON AIR SPAIN - La Red Social de Voz más auténtica">
-    <meta property="twitter:description" content="Haz amigos y conoce gente en toda España. Siente la magia de la radio en tu móvil.">
-    <meta property="twitter:image" content="https://asurpan.github.io/sevillaON/logo.png">
-
+    <title>ON AIR SPAIN - Red Social de Voz</title>
     <style>
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #0F172A; }
-        /* 🛡️ ESCUDO ANTI-BLOQUEO: Evita que los anuncios automáticos tapen la radio */
-        .google-auto-placed { z-index: 1 !important; }
-        #app-container { position: relative; z-index: 10; }
-        /* Forzamos que los anuncios de anclaje de Google se queden arriba y no abajo */
-        ins.adsbygoogle[data-ad-status="unfilled"] { display: none !important; }
+
+        /* 📻 LA RADIO: Vive en la capa superior pero con "agujero" central opcional */
+        #radio-root {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 10;
+            pointer-events: none; /* Dejar pasar clics al mapa por defecto */
+        }
+
+        /* Permitir clics en la radio (los botones se gestionan internamente) */
+        #radio-root > * { pointer-events: auto; }
+
+        /* 🗺️ EL MAPA: Ajustado dinámicamente por la radio */
+        #activity-map-container {
+            display: none;
+            position: fixed !important;
+            z-index: 999999 !important;
+            border-radius: 28px;
+            border: 3px solid #22C55E;
+            background: #020617;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            pointer-events: auto !important;
+            overflow: hidden;
+        }
+
+        .leaflet-container { background: #020617 !important; }
+
+        /* 🛣️ ESTILOS DE RUTA GPS */
+        .leaflet-routing-container {
+            background: rgba(15, 23, 42, 0.9) !important;
+            color: white !important;
+            border-radius: 16px !important;
+            border: 1px solid #D4AF37 !important;
+            font-family: sans-serif !important;
+            font-size: 11px !important;
+            max-width: 200px !important;
+            display: none !important; /* Ocultar panel de texto por defecto para diseño táctico */
+        }
     </style>
+
+    <!-- Librerías Críticas -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <!-- 🗺️ MAPAS Y RUTAS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 </head>
-<body id="app-container">
+<body>
+    <div id="activity-map-container"></div>
+    <div id="radio-root"></div>
+
     <script>
-        // 🚀 CACHE BUSTER PARA DESARROLLO LOCAL
         const script = document.createElement('script');
         script.src = 'webApp.js?v=' + Date.now();
         document.body.appendChild(script);

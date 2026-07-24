@@ -1,313 +1,67 @@
-<!--
-  PROTECTED CORE: ESTRUCTURA HTML Y SEO
-  ESTADO: CONGELADO / NO MODIFICAR
-  - Configuración de Viewport estricta para evitar saltos en móviles.
-  - SEO optimizado para España.
-  - Carga de dependencias críticas (PeerJS, Firebase).
--->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ON AIR SPAIN | Red Social de Voz, Radio CB y Multideporte</title>
-    <meta name="description" content="📡 La App nº1 en España para conectar por voz. Radio CB, Multideporte (Moto, Bici, Montaña) y Red de Supervivencia P2P. Detecta cámaras ocultas con el Radar Hertz. ¡La red social de voz más segura!">
-    <meta name="keywords" content="red social voz, radio cb27 españa, intercomunicador multideporte, modo moto radio, ciclismo grupo radio, senderismo seguridad gps, socorristas comunicaciones, red malla wifi, detector camaras ocultas, walkie talkie android, Jose Manuel Gonzalez Lorence">
-    <meta name="author" content="Jose Manuel Gonzalez Lorence">
-
-    <!-- 📡 FAVICON PREMIUM: LOGO APP -->
-    <link rel="icon" href="logo.png">
-
-    <!-- SAO & SEO Avanzado -->
-    <link rel="canonical" href="https://asurpan.github.io/sevillaON/">
-
-    <!-- 💰 GOOGLE ADSENSE: MONETIZACIÓN WEB (AUTO-ADS) -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7866520163126353"
-     crossorigin="anonymous"></script>
-    <script>
-        // Protección: Si estamos en la App nativa, desactivamos los anuncios web para no chocar con AdMob
-        if (navigator.userAgent.includes("OnAirSpainNative")) {
-            (adsbygoogle=window.adsbygoogle||[]).pauseAdRequests=1;
-        }
-    </script>
-
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "url": "https://asurpan.github.io/sevillaON/",
-      "name": "ON AIR SPAIN",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://asurpan.github.io/sevillaON/?city={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
-    }
-    </script>
-
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "ON AIR SPAIN",
-      "operatingSystem": "Android, iOS, Web",
-      "applicationCategory": "SocialNetworkingApplication, HealthAndActivityApplication, SecurityApplication, LifestyleApplication",
-      "description": "ON AIR SPAIN es la plataforma líder de comunicación por voz multideporte y seguridad biométrica RF en España. Conecta grupos en ruta (Moto, Bici, Montaña) y protege tu privacidad.",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "EUR"
-      },
-      "author": {
-        "@type": "Person",
-        "name": "Jose Manuel Gonzalez Lorence",
-        "jobTitle": "Lead Software Architect & Elite Developer",
-        "url": "https://asurpan.github.io/sevillaON/"
-      },
-      "featureList": [
-        "Radio CB Digital Nacional y Emisoras FM",
-        "Modo Moto: Filtro de viento y VOX para cascos",
-        "Red de Supervivencia WiFi Malla (sin cobertura)",
-        "Radar WiFi para detectar cámaras ocultas en hoteles",
-        "Modos Ciclismo, Montaña y Socorristas con GPS real",
-        "Buscador de cables y metales en pared"
-      ]
-    }
-    </script>
-
-    <!-- Open Graph / Facebook / WhatsApp (SAO VIRAL) -->
-    <meta property="fb:app_id" content="966242223397117">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="ON AIR SPAIN">
-    <meta property="og:url" content="https://asurpan.github.io/sevillaON/">
-    <meta property="og:title" content="🎙️ ON AIR SPAIN | Red Social de Voz, Radio CB y Multideporte">
-    <meta property="og:description" content="📡 Conecta con gente real. La red social de voz nº1 para motoristas, ciclistas, montaña y profesionales. Radio CB y Red P2P de Supervivencia.">
-    <meta property="og:image" content="https://asurpan.github.io/sevillaON/logo.png?v=4">
-    <meta property="og:image:width" content="512">
-    <meta property="og:image:height" content="512">
-    <meta property="og:image:alt" content="Logo de ON AIR SPAIN">
-    <meta property="og:locale" content="es_ES">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary">
-    <meta property="twitter:url" content="https://asurpan.github.io/sevillaON/">
-    <meta property="twitter:title" content="🎙️ ON AIR SPAIN | Red Social de Voz, Radio CB y Multideporte">
-    <meta property="twitter:description" content="📡 Conecta con gente real. La red social de voz nº1 para motoristas, ciclistas, montaña y profesionales. Radio CB y Red P2P de Supervivencia.">
-    <meta property="twitter:image" content="https://asurpan.github.io/sevillaON/logo.png?v=4">
-
+    <title>ON AIR SPAIN | Red Social de Voz</title>
     <style>
-        * {
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none !important;
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #0F172A; }
+
+        #radio-root {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 10;
+            pointer-events: none;
         }
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0F172A;
-            touch-action: manipulation;
-            overscroll-behavior-y: none;
+        #radio-root > * { pointer-events: auto; }
+
+        #activity-map-container {
+            display: none;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: 1 !important;
+            background: #020617;
+            pointer-events: auto !important;
         }
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
+
+        .leaflet-container { background: #020617 !important; }
+
+        .leaflet-routing-container {
+            background: rgba(15, 23, 42, 0.9) !important;
+            color: white !important;
+            border-radius: 16px !important;
+            border: 1px solid #D4AF37 !important;
+            font-family: sans-serif !important;
+            font-size: 11px !important;
+            max-width: 200px !important;
+            display: none !important;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
-    <script>
-        // 🛡️ ANTI-MINIMIZE SHIELD: Bloquear menú contextual global
-        window.oncontextmenu = function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            return false;
-        };
-        // --- 🛡️ GLOBAL ERROR SHIELD & DEBUGGER ---
-        window.onerror = function(msg, url, lineNo, columnNo, error) {
-            console.error('🔥 CRITICAL ERROR:', msg, '\nAt:', url, ':', lineNo, ':', columnNo);
-            // Si es un error de script genérico, intentamos dar más contexto
-            if (msg === "Script error.") {
-                console.warn("⚠️ Error detectado en script externo o durante la carga. Verifique la consola de red.");
-            }
-            // RETORNAR TRUE evita que el error dispare el overlay rojo de Webpack en el navegador
-            return true;
-        };
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-        // Bloquear overlays de desarrollo que tapan la interfaz
-        const style = document.createElement('style');
-        style.innerHTML = `
-            #webpack-dev-server-client-overlay,
-            iframe#webpack-dev-server-client-overlay,
-            .webpack-dev-server-client-overlay,
-            nextjs-portal,
-            div[style*="z-index: 2147483647"],
-            div[style*="z-index: 9999999"] {
-                display: none !important;
-                visibility: hidden !important;
-                opacity: 0 !important;
-                pointer-events: none !important;
-                width: 0 !important;
-                height: 0 !important;
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
-    <!-- Cargamos PeerJS y Firebase con soporte CORS para depuración -->
-    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" crossorigin="anonymous"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" crossorigin="anonymous"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js" crossorigin="anonymous"></script>
-
-    <!-- 🗺️ LEAFLET: MOTOR DE MAPAS REAL (OPENSTREETMAP) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-
-    <style>
-        .leaflet-container {
-            background: #020617 !important;
-            border-radius: 28px;
-        }
-        /* Ocultar atribución para diseño limpio táctico */
-        .leaflet-control-attribution { display: none !important; }
-    </style>
-    <!-- Analytics requiere appId en main.kt para no bloquear el arranque -->
-    <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js" crossorigin="anonymous"></script> -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ON AIR">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="ON AIR SPAIN">
-    <meta name="theme-color" content="#0F172A">
-
-    <!-- SAO: Iconos específicos para Apple (Virales) -->
-    <link rel="apple-touch-icon" href="logo.png">
-    <link rel="apple-touch-startup-image" href="logo.png">
-
-    <style>
-        #web-footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 10px 0;
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            text-align: center;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            display: none; /* Se activa por script si es web */
-        }
-        #web-footer a {
-            color: rgba(255,255,255,0.4);
-            text-decoration: none;
-            font-family: sans-serif;
-            font-size: 10px;
-            margin: 0 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: color 0.3s;
-        }
-        #web-footer a:hover { color: #22C55E; }
-    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 </head>
-<body id="app-container" style="background:#0F172A;">
-    <!-- 🚀 CARGADOR VISUAL -->
-    <div id="app-loader" style="position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#0F172A;z-index:9999;transition:opacity 0.5s;">
-        <div style="width:50px;height:50px;border:3px solid rgba(34,197,94,0.1);border-top-color:#22C55E;border-radius:50%;animation:spin 1s linear infinite;"></div>
-        <p id="loader-text" style="color:#22C55E;font-family:sans-serif;font-size:12px;margin-top:20px;letter-spacing:2px;font-weight:bold;">INICIANDO ON AIR...</p>
-    </div>
-
-    <!-- 🍪 FOOTER DE PRIVACIDAD (REQUISITO ADSENSE) -->
-    <footer id="web-footer">
-        <a href="privacy.html" target="_blank">Política de Privacidad</a>
-        <a href="https://asurpan.github.io/sevillaON/">© 2026 ON AIR SPAIN</a>
-    </footer>
-
-    <!-- 🚀 SEO/SAO HYPER-OPTIMIZATION (HIDDEN FROM UI, VISIBLE TO SEARCH ENGINES) -->
-    <section style="display:none;" aria-hidden="true">
-        <h1>ON AIR SPAIN: Red Social de Voz, Radio CB y Multideporte</h1>
-        <p>¿Buscas un <strong>intercomunicador multideporte gratis</strong>? ON AIR SPAIN es la herramienta definitiva para motoristas, ciclistas, senderistas y profesionales. Conecta con tu grupo mediante voz procesada por DSP con <strong>filtros inteligentes</strong> y VOX de precisión milimétrica para cualquier actividad.</p>
-
-        <h2>Red P2P de Supervivencia: Comunicaciones Sin Cobertura</h2>
-        <p>No te quedes nunca incomunicado. Nuestra tecnología de <strong>red P2P de supervivencia</strong> permite que los móviles del grupo se conecten entre sí automáticamente si falla el 4G/5G. Perfecto para rutas de montaña, senderismo o zonas remotas. Cada móvil actúa como un puente repetidor para maximizar el alcance.</p>
-
-        <h2>Radar GPS para Rutas en Grupo y Deportes</h2>
-        <p>Visualiza a tus compañeros en tiempo real sobre un <strong>mapa gratuito (OpenStreetMap)</strong>. Cada moto o ciclista tiene su etiqueta con Nick y estado de transmisión. Ideal para <strong>socorristas</strong>, grupos de montaña y logística en exteriores. Seguridad y control total en cada salida.</p>
-
-        <h2>Escuchar Radio FM Gratis y Radioaficionados (CB27)</h2>
-        <p>Sintoniza las mejores <strong>emisoras de radio online</strong>. Desde noticias de última hora hasta los éxitos del momento. Si eres un apasionado de la <strong>radio afición</strong>, usa nuestro Walkie Talkie digital para conectar con la red de Banda Ciudadana (CB 27MHz), VHF y UHF. La comunicación más pura de España, ahora en tu móvil. Ideal para camioneros (Canal 19) y grupos de logística.</p>
-
-        <h2>Radar WiFi: Detector de Cámaras Ocultas y Seguridad Táctica</h2>
-
-        <h2>Amistad, Amor y Chat de Voz en tu Ciudad (Sin registros)</h2>
-        <p>Encuentra el amor o una buena charla en Sevilla, Madrid, Barcelona, Valencia o Málaga. Únete a las ruedas de voz para <strong>hacer amigos online</strong> y compartir momentos. Es el sitio perfecto para personas que buscan compañía auténtica y quieren probar su suerte en el destino. Chat de voz anónimo y privado.</p>
-
-        <h2>Emisoras Locales y Tendencias por Provincias</h2>
-        <ul>
-            <li><strong>Andalucía:</strong> Sevilla, Málaga, Granada, Córdoba. Ideal para <strong>ligar en Andalucía</strong> y buscar amistad.</li>
-            <li><strong>Madrid y Centro:</strong> Madrid Capital, Toledo, Valladolid. La mayor red de <strong>radioaficionados en Madrid</strong>.</li>
-            <li><strong>Cataluña y Baleares:</strong> Barcelona, Palma de Mallorca, Ibiza. <strong>Emisoras de radio FM</strong> y amistad mediterránea.</li>
-            <li><strong>Norte y Galicia:</strong> Bilbao, Vigo, A Coruña, Santander, Oviedo. Seguridad táctica y voces del norte.</li>
-            <li><strong>Levante y Murcia:</strong> Valencia, Alicante, Murcia. Chat de voz y conocer gente nueva.</li>
-            <li><strong>Aragón y Extremadura:</strong> Zaragoza, Badajoz, Cáceres. Combatir la soledad con voz en directo.</li>
-            <li><strong>Canarias:</strong> Tenerife, Las Palmas. Amistad y amor bajo el sol.</li>
-        </ul>
-        <p>Palabras más buscadas: zello alternativa, walkie talkie android, como detectar camaras ocultas, chat de voz anonimo, radio cb27 online, hacer amigos españa gratis, soledad personas mayores chat.</p>
-    </section>
+<body>
+    <div id="activity-map-container"></div>
+    <div id="radio-root"></div>
 
     <script>
-        // --- 🚀 SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA (AUTO-UPDATE) ---
         (function() {
-            // Mostrar footer legal solo en Web (Requisito Google AdSense)
-            if (!navigator.userAgent.includes("OnAirSpainNative")) {
-                document.getElementById('web-footer').style.display = 'block';
-            }
-
             const urlParams = new URLSearchParams(window.location.search);
-            const currentUrlVersion = urlParams.get('v') || "0";
-            const currentStorageVersion = localStorage.getItem("app_version_installed") || "0";
-
-            fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
-                .then(r => r.json())
-                .then(data => {
-                    const newVersion = String(data.version || "0");
-
-                    // Solo actualizamos si la versión es distinta a la de la URL Y a la del Storage
-                    // Esto evita bucles si el Storage falla.
-                    if (newVersion !== "0" && newVersion !== currentUrlVersion && newVersion !== currentStorageVersion) {
-                        console.log("🚀 Nueva versión detectada: " + newVersion + ". Actualizando...");
-                        localStorage.setItem("app_version_installed", newVersion);
-
-                        const url = new URL(window.location.href);
-                        url.searchParams.set('v', newVersion);
-                        window.location.replace(url.toString()); // replace es mejor que assignment para evitar historial infinito
-                    } else {
-                        const script = document.createElement('script');
-                        script.src = 'webApp.js?v=' + (newVersion !== "0" ? newVersion : Date.now());
-                        document.body.appendChild(script);
-                    }
-                })
-                .catch(() => {
-                    const script = document.createElement('script');
-                    script.src = 'webApp.js?v=' + Date.now();
-                    document.body.appendChild(script);
-                });
+            const v = urlParams.get('v') || Date.now();
+            const script = document.createElement('script');
+            script.src = 'webApp.js?v=' + v;
+            document.body.appendChild(script);
         })();
-
-        // --- 🛰️ REGISTRO DE SUPER-CACHÉ (SERVICE WORKER) ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('🚀 Super-Caché Táctico Activado'))
-                    .catch(err => console.warn('⚠️ Fallo al activar caché:', err));
-            });
-        }
     </script>
 </body>
 </html>

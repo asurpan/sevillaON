@@ -29,7 +29,7 @@ object RadioFmEngine {
                 isUnlocked: false,
                 headlines: [],
                 
-                // --- 🌍 DETECCIÓN DE UBICACIÓN ---
+                /* --- 🌍 DETECCIÓN DE UBICACIÓN --- */
                 detectLocalCity: function() {
                     var current = localStorage.getItem("lastCity") || "ESPAÑA (NACIONAL)";
                     if (current === "ESPAÑA (NACIONAL)") {
@@ -49,19 +49,19 @@ object RadioFmEngine {
                     }
                 },
 
-                // --- 📦 BANCO DE DATOS ---
+                /* --- 📦 BANCO DE DATOS --- */
                 refreshCache: function(callback) {
                     console.log("📥 Refrescando boletines...");
                     var self = this;
                     var city = this.currentCity || "ESPAÑA";
                     
-                    var pending = 2; // Esperamos incidencias y cámaras DGT
+                    var pending = 2; /* Esperamos incidencias y cámaras DGT */
                     var decrementPending = function() {
                         pending--;
                         if (pending === 0 && callback) callback();
                     };
                     
-                    // DGT Incidencias
+                    /* DGT Incidencias */
                     var dgtUrl = "https://services1.arcgis.com/nCKYv2vChZEOqt60/arcgis/rest/services/Incidencias_Trafico_DGT/FeatureServer/0/query?f=json&where=1%3D1&outFields=carretera,poblacion,causa,descripcion,tipo&returnGeometry=false";
                     fetch(dgtUrl).then(r => r.json()).then(data => {
                         if (data && data.features) {
@@ -82,7 +82,7 @@ object RadioFmEngine {
                         decrementPending();
                     }).catch(e => { console.warn("DGT Fetch Error"); decrementPending(); });
 
-                    // DGT Cámaras (Mejora: Buscar cámara local con búsqueda flexible)
+                    /* DGT Cámaras (Mejora: Buscar cámara local con búsqueda flexible) */
                     var camsUrl = "https://services1.arcgis.com/nCKYv2vChZEOqt60/arcgis/rest/services/Cámaras_Trafico_DGT/FeatureServer/0/query?f=json&where=1%3D1&outFields=nombre,carretera,url_imagen&returnGeometry=false&resultRecordCount=100";
                     fetch(camsUrl).then(r => r.json()).then(data => {
                         if (data && data.features) {
@@ -103,18 +103,18 @@ object RadioFmEngine {
                         decrementPending();
                     }).catch(e => { decrementPending(); });
 
-                    // NASA (Segundo plano, no bloquea callback) con Traducción Automática Multi-Motor
+                    /* NASA (Segundo plano, no bloquea callback) con Traducción Automática Multi-Motor */
                     fetch('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY').then(r => r.json()).then(data => {
                         if (data && data.title) {
                             var imgUrl = data.hdurl || data.url;
                             var titleEn = data.title;
                             var descEn = data.explanation || "";
                             
-                            // Mostramos versión original inmediatamente por si la traducción tarda
+                            /* Mostramos versión original inmediatamente por si la traducción tarda */
                             if (window.dispatch_nasa_image) window.dispatch_nasa_image(imgUrl, titleEn, descEn);
 
                             var translate = function(q, cb) {
-                                // Motor 1: Google Translate Gtx (Más fiable que MyMemory para bloques largos)
+                                /* Motor 1: Google Translate Gtx (Más fiable que MyMemory para bloques largos) */
                                 var proxyUrl = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q=" + encodeURIComponent(q);
                                 fetch(proxyUrl)
                                     .then(r => r.json())
@@ -123,7 +123,7 @@ object RadioFmEngine {
                                         cb(translated || q);
                                     })
                                     .catch(() => {
-                                        // Motor 2: MyMemory (Respaldo)
+                                        /* Motor 2: MyMemory (Respaldo) */
                                         fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(q) + '&langpair=en|es')
                                             .then(res => res.json())
                                             .then(json => {
@@ -134,7 +134,7 @@ object RadioFmEngine {
                             };
 
                             translate(titleEn, function(titleEs) {
-                                // Traducimos un bloque mayor de descripción para cubrir el APOD completo
+                                /* Traducimos un bloque mayor de descripción para cubrir el APOD completo */
                                 var descSnippet = descEn.substring(0, 1500); 
                                 translate(descSnippet, function(descEs) {
                                     localStorage.setItem("cache_nasa", "Boletín espacial: " + titleEs);
@@ -142,7 +142,7 @@ object RadioFmEngine {
                                     localStorage.setItem("cache_nasa_title", titleEs);
                                     localStorage.setItem("cache_nasa_desc", descEs + " [TRADUCCIÓN AUTOMÁTICA]");
                                     
-                                    // RE-DISPARO: Forzar a la UI a actualizar a español con los datos traducidos
+                                    /* RE-DISPARO: Forzar a la UI a actualizar a español con los datos traducidos */
                                     if (window.dispatch_nasa_image) {
                                         window.dispatch_nasa_image(imgUrl, titleEs, descEs + " [TRADUCCIÓN AUTOMÁTICA]");
                                     }
@@ -151,14 +151,14 @@ object RadioFmEngine {
                         }
                     }).catch(e => { console.warn("NASA Fetch Error"); });
 
-                    // El Tiempo
+                    /* El Tiempo */
                     if (this.currentCity && this.currentCity !== "ESPAÑA (NACIONAL)") {
                         fetch('https://wttr.in/' + encodeURIComponent(this.currentCity) + '?format=3')
                             .then(r => r.text())
                             .then(t => localStorage.setItem("cache_weather", "El tiempo: " + t))
                             .catch(e => {});
 
-                        // --- 📰 TITULARES DE PRENSA (MODO ALEXA RESUMIDO) ---
+                        /* --- 📰 TITULARES DE PRENSA (MODO ALEXA RESUMIDO) --- */
                         var searchCity = city.split(" / ")[0].split(" (")[0].trim();
                         var newsUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://news.google.com/rss/search?q=noticias+' + searchCity + '+spain&hl=es-ES&gl=ES&ceid=ES:es');
                         fetch(newsUrl).then(r => r.json()).then(data => {
@@ -166,10 +166,10 @@ object RadioFmEngine {
                             var xml = parser.parseFromString(data.contents, "text/xml");
                             var items = xml.querySelectorAll("item");
                             if (items.length > 0) {
-                                // Antonio elige la noticia más potente y lee su resumen
+                                /* Antonio elige la noticia más potente y lee su resumen */
                                 var item = items[0];
                                 var title = item.querySelector("title").innerHTML.split(" - ")[0];
-                                // Limpieza de descripción (resumen gratuito)
+                                /* Limpieza de descripción (resumen gratuito) */
                                 var desc = item.querySelector("description").innerHTML.replace(/<[^>]*>?/gm, '').substring(0, 150);
                                 
                                 var report = "Boletín informativo. La noticia del día en " + searchCity + " es: " + title + ". " + desc + ". Seguiremos informando.";
@@ -181,7 +181,7 @@ object RadioFmEngine {
                     }
                 },
 
-                // --- 🔓 DESBLOQUEO TTS ---
+                /* --- 🔓 DESBLOQUEO TTS --- */
                 unlock: function() {
                     if (this.isUnlocked) return;
                     console.log("🔓 Desbloqueando TTS...");
@@ -194,15 +194,15 @@ object RadioFmEngine {
                     this.detectLocalCity();
                 },
 
-                // --- 🔍 ESCÁNER DE RADIO ---
-                // 🔒 HARD-LOCK: En Android WebView, el .play() debe llamarse en el mismo
-                // ciclo que el click del usuario. Iniciamos un "silencio" para ganar el permiso.
+                /* --- 🔍 ESCÁNER DE RADIO --- */
+                /* 🔒 HARD-LOCK: En Android WebView, el .play() debe llamarse en el mismo */
+                /* ciclo que el click del usuario. Iniciamos un "silencio" para ganar el permiso. */
                 scan: function(city, genre, forceName) {
                     var self = this;
                     if (window.app && window.app.ctx) window.app.ctx.resume();
                     this.unlock();
                     
-                    // --- 🛡️ GESTURE SHIELD: Activar audio ANTES del fetch ---
+                    /* --- 🛡️ GESTURE SHIELD: Activar audio ANTES del fetch --- */
                     if (!this.audio) {
                         this.audio = new Audio();
                         this.audio.id = "fm-radio-element";
@@ -217,7 +217,7 @@ object RadioFmEngine {
                     }
                     if (window.app) window.app.bgRadio = this.audio;
                     
-                    // --- 🛡️ NEWS SHIELD: Pre-calentar motor de noticias ---
+                    /* --- 🛡️ NEWS SHIELD: Pre-calentar motor de noticias --- */
                     if (!this.newsAudio) {
                         this.newsAudio = new Audio();
                         this.newsAudio.setAttribute('playsinline', 'true');
@@ -225,31 +225,31 @@ object RadioFmEngine {
                         document.body.appendChild(this.newsAudio);
                     }
 
-                    // Marcamos el elemento como "activo" inmediatamente si no estaba ya sonando.
+                    /* Marcamos el elemento como "activo" inmediatamente si no estaba ya sonando. */
                     if (!this.audio.src || this.audio.paused) {
                         this.audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
                         this.audio.play().catch(function(e){});
                     }
                     
-                    // Despertamos también el motor de noticias en silencio absoluto
+                    /* Despertamos también el motor de noticias en silencio absoluto */
                     this.newsAudio.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
                     this.newsAudio.play().catch(function(e){});
 
                     this.currentCity = city || this.currentCity || "ESPAÑA (NACIONAL)";
                     this.currentGenre = genre || "MIX";
                     
-                    // --- 🎯 FEEDBACK INMEDIATO ---
+                    /* --- 🎯 FEEDBACK INMEDIATO --- */
                     if (window.dispatch_bg_station) window.dispatch_bg_station("BUSCANDO...");
 
                     if (this.currentGenre === "ANUNCIOS") {
-                        // --- 🛡️ PERMISSION ANCHOR: Arrancar noticias YA (en silencio) ---
+                        /* --- 🛡️ PERMISSION ANCHOR: Arrancar noticias YA (en silencio) --- */
                         if (this.newsAudio) {
                             this.newsAudio.src = "https://shoutcast.rtve.es/radio5_main.mp3";
                             this.newsAudio.volume = 0.0001;
                             this.newsAudio.play().catch(function(){});
                         }
 
-                        // --- 🚀 FIX: RESPUESTA INMEDIATA SI HAY TEXTO PENDIENTE ---
+                        /* --- 🚀 FIX: RESPUESTA INMEDIATA SI HAY TEXTO PENDIENTE --- */
                         var customText = window.virtualOperatorPendingText;
                         if (customText) {
                             this.currentStation = "ON AIR";
@@ -265,7 +265,7 @@ object RadioFmEngine {
                             return;
                         }
 
-                        // Si no hay texto manual, hacemos el ciclo normal con refresco
+                        /* Si no hay texto manual, hacemos el ciclo normal con refresco */
                         this.refreshCache(function() {
                             self.currentStation = "ON AIR";
                             if (window.app) window.app.currentBgStation = "ON AIR";
@@ -275,7 +275,7 @@ object RadioFmEngine {
                         return;
                     }
                     
-                    // --- 🛡️ API RESILIENCE: Filtro de alta calidad y HTTPS ---
+                    /* --- 🛡️ API RESILIENCE: Filtro de alta calidad y HTTPS --- */
                     var apiBase = "https://all.api.radio-browser.info/json/stations/search?countrycode=ES&hidebroken=true&order=bitrate&reverse=true&limit=20&https=true";
                     var genreTag = "";
                     if (this.currentGenre === "NOTICIAS") genreTag = "news";
@@ -297,7 +297,7 @@ object RadioFmEngine {
                                 var s = data[Math.floor(Math.random() * Math.min(data.length, 5))];
                                 self.play(s);
                             } else if (genreTag && self.currentCity !== "ESPAÑA (NACIONAL)") {
-                                // --- 🚀 SMART BROADEN: Si no hay local, buscar el género en toda España ---
+                                /* --- 🚀 SMART BROADEN: Si no hay local, buscar el género en toda España --- */
                                 console.log("🔍 Sin emisora local de " + genreTag + ", ampliando búsqueda nacional...");
                                 fetch(apiBase + "&tag=" + genreTag)
                                     .then(r => r.json())
@@ -319,9 +319,9 @@ object RadioFmEngine {
                         });
                 },
 
-                // --- 🎶 REPRODUCTOR ---
-                // 🔒 HARD-LOCK: Reproducción directa para evitar bloqueos CORS.
-                // OPTIMIZACIÓN: Cambio de fuente ultra-rápido sin pausas redundantes.
+                /* --- 🎶 REPRODUCTOR --- */
+                /* 🔒 HARD-LOCK: Reproducción directa para evitar bloqueos CORS. */
+                /* OPTIMIZACIÓN: Cambio de fuente ultra-rápido sin pausas redundantes. */
                 play: function(station) {
                     var self = this;
                     if (!this.audio) return;
@@ -329,10 +329,10 @@ object RadioFmEngine {
                     var streamUrl = station.url_resolved || station.url;
                     console.log("📻 Cambiando a: " + station.name + " (" + (station.bitrate || '??') + "kbps)");
                     
-                    // --- 🚀 FAST SWITCH: Cortar audio anterior inmediatamente ---
+                    /* --- 🚀 FAST SWITCH: Cortar audio anterior inmediatamente --- */
                     this.audio.pause();
                     this.audio.src = "";
-                    this.audio.load(); // Forzar limpieza de buffer
+                    this.audio.load(); /* Forzar limpieza de buffer */
                     
                     this.audio.src = streamUrl;
                     this.syncVolume();
@@ -345,15 +345,15 @@ object RadioFmEngine {
                             if (window.dispatch_bg_station) window.dispatch_bg_station(station.name);
                             self.syncVolume();
 
-                            // --- 🎙️ RADIO LIFE: Programar primer boletín automático en 10 min ---
+                            /* --- 🎙️ RADIO LIFE: Programar primer boletín automático en 10 min --- */
                             if (!self.announcementTimer) {
                                 self.announcementTimer = setTimeout(function() { self.announce(self.currentCity); }, 600000);
                             }
                         }).catch(function(err) {
                             console.error("Play Error:", err);
                             if (window.dispatch_bg_station) window.dispatch_bg_station("ERROR");
-                            // Si falla, intentamos otra emisora tras un delay para no saturar
-                            setTimeout(function() { self.scan(); }, 1000); // Reducido de 3000 a 1000 para búsqueda rápida
+                            /* Si falla, intentamos otra emisora tras un delay para no saturar */
+                            setTimeout(function() { self.scan(); }, 1000); /* Reducido de 3000 a 1000 para búsqueda rápida */
                         });
                     }
                 },
@@ -363,22 +363,22 @@ object RadioFmEngine {
                     var baseVol = parseFloat(localStorage.getItem("bgVol"));
                     if (isNaN(baseVol)) baseVol = 0.7;
                     
-                    // Sincronizar el nodo de ganancia por si alguien escucha por ahí (Replay/Monitor)
+                    /* Sincronizar el nodo de ganancia por si alguien escucha por ahí (Replay/Monitor) */
                     if (window.app && window.app.bgRadioGain && window.app.ctx) {
                         window.app.bgRadioGain.gain.setTargetAtTime(baseVol, window.app.ctx.currentTime, 0.1);
                     }
                     
-                    // APLICACIÓN DIRECTA: Única forma de garantizar sonido en streams sin CORS
+                    /* APLICACIÓN DIRECTA: Única forma de garantizar sonido en streams sin CORS */
                     this.audio.volume = baseVol;
                 },
 
-                // --- 🎙️ LOCUCIÓN ---
-                // 🔒 HARD-LOCK: No eliminar el unlock().
-                // Android requiere re-activar el motor de voz tras periodos de silencio.
+                /* --- 🎙️ LOCUCIÓN --- */
+                /* 🔒 HARD-LOCK: No eliminar el unlock(). */
+                /* Android requiere re-activar el motor de voz tras periodos de silencio. */
                 announce: function(city, force) {
                     if (!this.isUnlocked) this.unlock();
                     
-                    // --- 🛡️ PRIORIDAD HUMANA: El bot no habla si hay TX o RX ---
+                    /* --- 🛡️ PRIORIDAD HUMANA: El bot no habla si hay TX o RX --- */
                     var isRx = window.app && window.app.rxActiveInternal;
                     if (window.app.isTransmittingInternal || isRx) return;
 
@@ -401,12 +401,12 @@ object RadioFmEngine {
 
                     var selected = force ? (news || dgt || texts[0]) : texts[Math.floor(Math.random() * texts.length)];
                     
-                    // --- 🛡️ SAFETY CHECK: Si no hay avisos DGT en caché, informar al usuario ---
+                    /* --- 🛡️ SAFETY CHECK: Si no hay avisos DGT en caché, informar al usuario --- */
                     if (force && !dgt && !weather && !nasa) {
                         selected = "Consultando el boletín de servicio de " + city + ". Por ahora no hay incidencias DGT reportadas en la zona.";
                     }
                     
-                    // Si el boletín es el de la NASA, disparamos la imagen y el título a la UI
+                    /* Si el boletín es el de la NASA, disparamos la imagen y el título a la UI */
                     if (selected && selected.indexOf("espacial") !== -1 && window.dispatch_nasa_image) {
                         var imgUrl = localStorage.getItem("cache_nasa_img");
                         var title = localStorage.getItem("cache_nasa_title");
@@ -421,7 +421,7 @@ object RadioFmEngine {
                     var self = this;
                     if (!window.speechSynthesis) return;
 
-                    // --- 🛡️ PRIORIDAD HUMANA: Cancelar si hay actividad ---
+                    /* --- 🛡️ PRIORIDAD HUMANA: Cancelar si hay actividad --- */
                     var isRx = window.app && window.app.rxActiveInternal;
                     if (window.app.isTransmittingInternal || isRx) {
                         window.speechSynthesis.cancel();
@@ -429,7 +429,7 @@ object RadioFmEngine {
                         return;
                     }
                     
-                    // --- ♂️ CARGA DE SEGURIDAD: Re-intentar si las voces no están listas ---
+                    /* --- ♂️ CARGA DE SEGURIDAD: Re-intentar si las voces no están listas --- */
                     var voices = window.speechSynthesis.getVoices();
                     if (voices.length === 0) {
                         console.warn("⏳ Voces no listas, re-intentando en 500ms...");
@@ -437,40 +437,40 @@ object RadioFmEngine {
                         return;
                     }
 
-                    // --- ♂️ MOTOR DE SELECCIÓN DE VOZ MASCULINA ---
+                    /* --- ♂️ MOTOR DE SELECCIÓN DE VOZ MASCULINA --- */
                     var getMaleVoice = function() {
                         var voices = window.speechSynthesis.getVoices();
                         if (voices.length === 0) {
-                            // Si no hay voces cargadas, pedimos una carga y esperamos lo peor
+                            /* Si no hay voces cargadas, pedimos una carga y esperamos lo peor */
                             window.speechSynthesis.getVoices();
                             return null;
                         }
 
-                        // 1. Buscar voces masculinas confirmadas (Prioridad Máxima)
+                        /* 1. Buscar voces masculinas confirmadas (Prioridad Máxima) */
                         var male = voices.find(function(v) {
                             var n = v.name.toLowerCase();
                             return v.lang.indexOf('es') === 0 && (n.indexOf('pablo') !== -1 || n.indexOf('male') !== -1 || n.indexOf('david') !== -1 || n.indexOf('alvaro') !== -1 || n.indexOf('enrique') !== -1 || n.indexOf('sharp') !== -1);
                         });
                         if (male) return male;
 
-                        // 2. Fallback: Evitar nombres femeninos conocidos a toda costa
+                        /* 2. Fallback: Evitar nombres femeninos conocidos a toda costa */
                         var femaleNames = ['helena', 'sabina', 'lucia', 'zira', 'mónica', 'monica', 'laura', 'cristina', 'elsy', 'maria', 'victoria', 'juana', 'pilar', 'juana'];
                         return voices.find(function(v) {
                             var n = v.name.toLowerCase();
                             if (v.lang.indexOf('es') !== 0) return false;
-                            // Si no tiene nombre de mujer, lo aceptamos como "posible hombre"
+                            /* Si no tiene nombre de mujer, lo aceptamos como "posible hombre" */
                             return !femaleNames.some(function(fn) { return n.indexOf(fn) !== -1; });
                         });
                     };
 
-                    // --- 📰 MODO INFORMATIVO REAL (RNE RADIO 5) ---
+                    /* --- 📰 MODO INFORMATIVO REAL (RNE RADIO 5) --- */
                     if (text === "MODO_NOTICIAS_REALES") {
 
                         var intro = "Atención operadores. Conectamos con Radio Nacional de España para el boletín informativo. Activa tu receptor FM para sintonizar. Cambio.";
                         var msg = new SpeechSynthesisUtterance(intro);
                         msg.lang = 'es-ES';
                         msg.rate = 0.8;
-                        msg.pitch = 0.45; // Muy grave
+                        msg.pitch = 0.45; /* Muy grave */
                         msg.voice = getMaleVoice();
 
                         msg.volume = Math.min(1.0, (parseFloat(localStorage.getItem("bgVol")) || 0.7) * 1.2);
@@ -479,12 +479,12 @@ object RadioFmEngine {
                             if (window.app) window.app.isAnnouncerTalking = true; 
                             if (window.updateBgDucking) window.updateBgDucking();
                             
-                            // --- 📡 SINTONIZACIÓN AUTOMÁTICA ---
+                            /* --- 📡 SINTONIZACIÓN AUTOMÁTICA --- */
                             self.currentGenre = "NOTICIAS";
                             localStorage.setItem("bgGenre", "NOTICIAS");
                             if (window.dispatch_bg_genre_change) window.dispatch_bg_genre_change("NOTICIAS");
 
-                            // --- 📡 PRE-CARGA AGRESIVA (ANTI-LAG) ---
+                            /* --- 📡 PRE-CARGA AGRESIVA (ANTI-LAG) --- */
                             if (self.newsAudio) {
                                 self.newsAudio.src = "https://shoutcast.rtve.es/radio5_main.mp3";
                                 self.newsAudio.volume = 0.0001; 
@@ -509,7 +509,7 @@ object RadioFmEngine {
                                 });
                             }
 
-                            // Marcar la emisora en la interfaz
+                            /* Marcar la emisora en la interfaz */
                             self.currentStation = "RNE RADIO 5";
                             if (window.app) window.app.currentBgStation = "RNE RADIO 5";
                             if (window.dispatch_bg_station) window.dispatch_bg_station("RNE RADIO 5");
@@ -523,7 +523,7 @@ object RadioFmEngine {
                         return;
                     }
                     
-                    // --- 🛡️ AUDIO RESILIENCE: Despertar contexto antes de hablar ---
+                    /* --- 🛡️ AUDIO RESILIENCE: Despertar contexto antes de hablar --- */
                     if (window.app && window.app.ctx) window.app.ctx.resume();
                     
                     window.speechSynthesis.cancel();
@@ -538,13 +538,13 @@ object RadioFmEngine {
                         console.warn("⚠️ No se encontró voz de hombre, usando default.");
                     }
 
-                    msg.rate = 0.9; // Ajustado de 0.8 a 0.9 para velocidad natural
-                    msg.pitch = 0.45; // Más grave, más hombre
+                    msg.rate = 0.9; /* Ajustado de 0.8 a 0.9 para velocidad natural */
+                    msg.pitch = 0.45; /* Más grave, más hombre */
                     
-                    // --- 🛡️ BRIDGE NATIVO: Prioridad a la voz de la APP ANDROID ---
+                    /* --- 🛡️ BRIDGE NATIVO: Prioridad a la voz de la APP ANDROID --- */
                     if (window.AndroidApp && typeof window.AndroidApp.speak === 'function') {
                         window.AndroidApp.speak(text, 0.9, 0.45);
-                        // Sincronizar ducking manual para el bridge
+                        /* Sincronizar ducking manual para el bridge */
                         if (window.app) window.app.isAnnouncerTalking = true;
                         if (window.updateBgDucking) window.updateBgDucking();
                         setTimeout(function() {
@@ -554,7 +554,7 @@ object RadioFmEngine {
                         return;
                     }
 
-                    // --- 🛡️ ANTI-MOÑA FIX: Si por error sale voz de mujer, bajamos el tono al extremo ---
+                    /* --- 🛡️ ANTI-MOÑA FIX: Si por error sale voz de mujer, bajamos el tono al extremo --- */
                     if (!maleVoice) msg.pitch = 0.35;
                     
                     msg.volume = Math.min(1.0, (parseFloat(localStorage.getItem("bgVol")) || 0.7) * 1.2);
@@ -580,7 +580,7 @@ object RadioFmEngine {
                     if (window.speechSynthesis) window.speechSynthesis.cancel();
                     if (window.dispatch_bg_station) window.dispatch_bg_station(null);
                     
-                    // Limpiar el temporizador de boletines al apagar la radio
+                    /* Limpiar el temporizador de boletines al apagar la radio */
                     if (this.announcementTimer) {
                         clearTimeout(this.announcementTimer);
                         this.announcementTimer = null;
@@ -588,12 +588,12 @@ object RadioFmEngine {
                 }
             };
 
-            // Bridge
+            /* Bridge */
             window.scanBackgroundStation = (c, g, f) => window.fmEngine.scan(c, g, f);
             window.stopBackgroundRadio = () => window.fmEngine.stop();
             window.speak = (t) => window.fmEngine.speak(t);
 
-            // Pre-cargar voces para evitar voz de mujer al arrancar
+            /* Pre-cargar voces para evitar voz de mujer al arrancar */
             if (window.speechSynthesis) {
                 window.speechSynthesis.getVoices();
                 if (window.speechSynthesis.onvoiceschanged !== undefined) {

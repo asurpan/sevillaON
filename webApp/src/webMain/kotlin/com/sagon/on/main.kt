@@ -57,11 +57,11 @@ object MoniGuard {
                     if (isMoni || isTest) {
                         var target = 0;
                         if (isTest) {
-                            // En modo Test, si no hay cascos, limitamos drásticamente para evitar acople
+                            /* En modo Test, si no hay cascos, limitamos drásticamente para evitar acople */
                             target = has === true ? 0.7 : 0.12; 
                         } else if (isTx && isMoni) {
-                            // En modo Monitor, lo mismo
-                            // 🛡️ REPARACIÓN QUIRÚRGICA: Reducimos de 0.08 a 0.02 para eliminar retroalimentación por altavoz y cortes de PTT
+                            /* En modo Monitor, lo mismo */
+                            /* 🛡️ REPARACIÓN QUIRÚRGICA: Reducimos de 0.08 a 0.02 para eliminar retroalimentación por altavoz y cortes de PTT */
                             target = has === true ? window.app.moniVolume : (window.app.moniVolume * 0.02);
                         }
                         
@@ -69,7 +69,7 @@ object MoniGuard {
                             if (window.app.moniGain) window.app.moniGain.gain.setTargetAtTime(target, window.app.ctx.currentTime, 0.05);
                             if (window.app.moniGainNode) window.app.moniGainNode.gain.setTargetAtTime(target, window.app.ctx.currentTime, 0.05);
                         } else {
-                            // --- 🎯 FIX: CIERRE INSTANTÁNEO PARA EVITAR ECO ---
+                            /* --- 🎯 FIX: CIERRE INSTANTÁNEO PARA EVITAR ECO --- */
                             if (window.app.moniGain) window.app.moniGain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
                             if (window.app.moniGainNode) window.app.moniGainNode.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
                         }
@@ -81,7 +81,7 @@ object MoniGuard {
 
                 if (shouldCheck) {
                     window.app.lastDeviceCheck = now;
-                    // Aplicar inmediatamente con el cache para evitar silencio inicial
+                    /* Aplicar inmediatamente con el cache para evitar silencio inicial */
                     applyGain(window.app.hasHeadphonesCache || false);
                     window.checkHeadphones().then(function(has) {
                         window.app.hasHeadphonesCache = has;
@@ -94,9 +94,9 @@ object MoniGuard {
 
             window.updateMasterVolume = function() {
                 if (!window.app.ctx || !window.app.masterOut) return;
-                // --- 🔒 HARD-LOCK: MOTOR DE VOLUMEN GENERAL (PROTEGIDO) ---
-                // PROHIBIDO TOCAR: Asegura que Roger Beep y sonidos de UI se atenúen con el slider.
-                // BOOST: Subimos el multiplicador de 4.0 a 6.0 para máxima potencia en móviles.
+                /* --- 🔒 HARD-LOCK: MOTOR DE VOLUMEN GENERAL (PROTEGIDO) --- */
+                /* PROHIBIDO TOCAR: Asegura que Roger Beep y sonidos de UI se atenúen con el slider. */
+                /* BOOST: Subimos el multiplicador de 4.0 a 6.0 para máxima potencia en móviles. */
                 var gain = (window.app.rfGain || 0.5) * 6.0;
                 window.app.masterOut.gain.setTargetAtTime(gain, window.app.ctx.currentTime, 0.05);
             };
@@ -104,7 +104,7 @@ object MoniGuard {
             window.updateNoiseVolume = function() {
                 if (!window.app.ctx || !window.app.noise) return;
                 var noise = window.app.lastNoiseLevel || 0.0001;
-                // --- 🛡️ QRM PROTECTED: Mute si hay actividad, radio FM o se está buscando emisora ---
+                /* --- 🛡️ QRM PROTECTED: Mute si hay actividad, radio FM o se está buscando emisora --- */
                 var isRadioActive = (window.fmEngine && window.fmEngine.currentStation);
                 var isBusy = window.app.isTransmittingInternal || window.app.rxActiveInternal || window.app.isBeeping || window.app.isAnnouncerTalking || isRadioActive;
                 var target = isBusy ? 0.0001 : noise;
@@ -2401,7 +2401,7 @@ object RadioBridge {
                     }, { 
                         timeout: 10000, 
                         enableHighAccuracy: true,
-                        maximumAge: 120000 // Aumentamos frescura a 2 min
+                        maximumAge: 120000 /* Aumentamos frescura a 2 min */
                     });
                 });
             };

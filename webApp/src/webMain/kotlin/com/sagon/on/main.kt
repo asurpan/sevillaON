@@ -3725,12 +3725,11 @@ fun main() {
                                 setTimeout(function() {
                                     var container = document.getElementById(containerId);
                                     if (!container) {
-                                        // 🛡️ REPARACIÓN QUIRÚRGICA: Búsqueda exhaustiva del contenedor de ruta
+                                        // 🛡️ REPARACIÓN QUIRÚRGICA: Búsqueda por color de fondo (identificador único del mapa)
                                         var divs = document.querySelectorAll('div');
                                         for(var i=0; i<divs.length; i++) {
                                             var style = window.getComputedStyle(divs[i]);
                                             var bg = style.backgroundColor;
-                                            // Buscar el azul marino profundo de la caja de radar
                                             if(bg === 'rgb(2, 6, 23)' || bg === '#020617') {
                                                 var mapDiv = document.createElement('div');
                                                 mapDiv.id = containerId;
@@ -3749,7 +3748,7 @@ fun main() {
                                     } else {
                                         window.initRealMap(containerId, 37.3891, -5.9845);
                                     }
-                                }, 800);
+                                }, 500);
                             """)
                         }
                         "UPDATE_MAP_MARKERS" -> {

@@ -339,8 +339,8 @@ fun App(
 
     // --- 🌍 AUTO-SINTONIZACIÓN INICIAL ---
     LaunchedEffect(screenState) {
-        // 🛡️ FIX: Solo auto-sintonizar si es realmente la primera vez Y el usuario es nuevo (sin indicativo)
-        if (isFirstTime && savedNick.isEmpty() && screenState == Screen.RadioCB && !hasAutoTunedInSession) {
+        // 🛡️ FIX: Solo auto-sintonizar si es realmente la primera vez Y el usuario es nuevo (sin indicativo) Y no estamos en ruta
+        if (isFirstTime && savedNick.isEmpty() && screenState == Screen.RadioCB && !hasAutoTunedInSession && !showActivityMap) {
             delay(2000)
             if (radioState.city == "SEVILLA" && pendingDialog == null) {
                 pendingDialog = RadioDialogType.SELECT_CITY
@@ -1049,6 +1049,7 @@ fun App(
                             radioState = radioState.copy(bgRadioGenre = genre)
                             onBgGenreChangeExternal(genre)
                         },
+                        onNotification = { localNotification = it },
                         isBeeping = isBeeping,
                         externalPtt = externalPtt,
                         externalPttBlocked = externalPttBlocked,
@@ -1077,9 +1078,12 @@ fun App(
                     Box(
                         Modifier
                             .fillMaxSize()
-                            .pointerInput(Unit) {
-                                detectTapGestures { /* Bloqueo de clics al fondo */ }
-                            }
+                            .background(Color.Black.copy(0.3f))
+                            .clickable(
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                indication = null,
+                                onClick = { /* Bloqueo de fondo */ }
+                            )
                     ) {
                         RadioDialogs(
                             type = pendingDialog,

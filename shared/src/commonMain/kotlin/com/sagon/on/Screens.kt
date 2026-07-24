@@ -49,6 +49,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.TextStyle
@@ -1314,6 +1316,7 @@ fun ActivityPanel(
     onBgRadioStop: () -> Unit = {},
     onBgVolumeChange: (Float) -> Unit = {},
     onBgGenreChange: (String) -> Unit = {},
+    onNotification: (AppNotification) -> Unit = {},
     isBeeping: Boolean,
     externalPtt: Boolean = false,
     externalPttBlocked: Boolean = false,
@@ -1421,17 +1424,17 @@ fun ActivityPanel(
         label = "WaveRadius"
     )
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black).clickable(enabled = false) { }) {
         StarryBackground(activity = 0.4f)
         
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp)) // Aumentado de 16 a 24 para dar aire arriba
             
             // --- 📜 HEADER ---
-            Row(modifier = Modifier.fillMaxWidth().height(56.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.fillMaxWidth().height(64.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, null, tint = Color.White.copy(0.6f), modifier = Modifier.size(28.dp)) }
                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = if (state.channel == "GENERAL") "MODO ACTIVIDAD" else "ACTIVIDAD: ${state.channel}", color = LuxeColors.Gold, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.basicMarquee())
@@ -1492,10 +1495,10 @@ fun ActivityPanel(
                     .border(2.dp, LuxeColors.Gold.copy(0.3f), RoundedCornerShape(28.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                // 1. CAPA DE MAPA REAL (Fondo absoluto)
+                // CAPA DE MAPA REAL (Fondo absoluto)
                 Box(Modifier.fillMaxSize()) {
                     LaunchedEffect(Unit) {
-                        delay(1000)
+                        delay(500)
                         onExecuteEngineeringAction("INIT_REAL_MAP|activity-map-container")
                     }
                 }
@@ -1642,6 +1645,8 @@ fun ActivityPanel(
                             if (mapsUrl != null) {
                                 uriHandler.openUri(mapsUrl)
                                 triggerUiSound("click")
+                            } else {
+                                onNotification(AppNotification("BÚSQUEDA GPS", "Aún no tenemos tu posición. Toca el centro del radar para forzar la búsqueda.", NotificationType.Warning))
                             }
                         },
                         activeColor = LuxeColors.Green

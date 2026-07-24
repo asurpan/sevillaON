@@ -1532,7 +1532,7 @@ object RadioCore {
                                 nick: window.app.nick, 
                                 city: currentCity, 
                                 channel: currentCh,
-                                bgGenre: currentGenre // Informamos a los demás
+                                bgGenre: currentGenre
                             });
                         }
                     }, 10000);

@@ -1845,6 +1845,15 @@ object RadioSignaling {
                             /* --- 🛡️ RESUME CORE: Asegurar que el audio está despierto para el pitido --- */
                             if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
 
+                            /* --- 🛡️ RESUME CORE: Asegurar que el audio está despierto para el pitido --- */
+                            if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+
+                            /* --- 🛡️ ANTI-SPAM BEEP: Si ya estamos pitando, ignoramos este cierre --- */
+                            if (window.app.isBeeping) {
+                                console.log("⚠️ Ya hay un pitido activo, ignorando...");
+                                return;
+                            }
+
                             /* --- 🛡️ BLINDAJE DE SEGURIDAD PTT (CONTUNDENCIA) --- */
                             /* Al soltar el PTT, silenciamos el micro inmediatamente para que el Roger Beep sea puro. */
                             if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
@@ -1863,16 +1872,15 @@ object RadioSignaling {
                             osc.type = 'sine'; /* Pureza senoidal absoluta */
                             osc.frequency.setValueAtTime(1955, now); 
                             
-                            // Envolvente Remota: Potencia constante para la red
+                            /* Envolvente Remota: Potencia constante para la red */
                             gRemote.gain.setValueAtTime(0.0001, now);
-                            gRemote.gain.linearRampToValueAtTime(0.10, now + 0.002); 
+                            gRemote.gain.linearRampToValueAtTime(0.10, now + 0.005); 
                             gRemote.gain.setValueAtTime(0.10, now + 0.28); 
                             gRemote.gain.exponentialRampToValueAtTime(0.0001, now + 0.3); 
                             
-                            // Envolvente Local: Volumen subido a 0.08 para mejor audibilidad del emisor
-                            // Conectamos directamente a ctx.destination para evitar el phasing/vibración de los buses
+                            /* Envolvente Local: Volumen subido a 0.08 para mejor audibilidad del emisor */
                             gLocal.gain.setValueAtTime(0.0001, now);
-                            gLocal.gain.linearRampToValueAtTime(0.08, now + 0.002);
+                            gLocal.gain.linearRampToValueAtTime(0.08, now + 0.005);
                             gLocal.gain.setValueAtTime(0.08, now + 0.28);
                             gLocal.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
 
@@ -1885,28 +1893,28 @@ object RadioSignaling {
 
                             /* --- 🎯 EXACT HARDWARE SYNC --- */
                             osc.onended = function() {
-                                // Limpiar referencia al terminar
+                                /* Limpiar referencia al terminar */
                                 if (window.app.activeRogerOsc === osc) window.app.activeRogerOsc = null;
                                 
-                                // El pitido ha terminado físicamente en el motor de audio
+                                /* El pitido ha terminado físicamente en el motor de audio */
                                 window.app.isBeeping = false;
                                 if(window.dispatch_beeping) window.dispatch_beeping(false);
                                 
-                                // Restauramos ambiente
+                                /* Restauramos ambiente */
                                 if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.0, window.app.ctx.currentTime, 0.05);
                                 if (window.app.noise) {
                                     window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
                                     window.app.noise.gain.setTargetAtTime(Math.max(0.0001, window.app.lastNoiseLevel), window.app.ctx.currentTime, 0.05);
                                 }
                                 
-                                // 📡 DETERMINISTIC TAIL: La aguja baja SOLO cuando el sonido termina físicamente.
+                                /* 📡 DETERMINISTIC TAIL: La aguja baja SOLO cuando el sonido termina físicamente. */
                                 if (!window.app.isTransmittingInternal) {
                                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
                                     if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
                                 }
 
                                 window.app.voxHangTimer = 0;
-                                window.app.voxLockoutTimestamp = Date.now() + 2500;
+                                window.app.voxLockoutTimestamp = Date.now() + 1200; /* Reducido para mayor agilidad */
                             };
 
                             osc.start(now); 
@@ -2022,12 +2030,12 @@ object VOXEngine {
                                      var rv = Math.abs(rd[j] - 128);
                                      if (rv > rMax) rMax = rv;
                                  }
-                                 voiceLevel = Math.min(1.0, (rMax / 128) * 1.5); /* Modulación sutil (factor 1.5) */
+                                voiceLevel = Math.min(1.0, (rMax / 128) * 1.5); /* Modulación sutil (factor 1.5) */
                                  carrierPower = (window.app.remotePower && window.app.remotePower[peerID]) ? window.app.remotePower[peerID] : 0.7;
                                  break; /* Solo seguimos al primer transmisor activo */
                              }
                         }
-                        // La aguja se sitúa en la potencia de portadora + un pequeño baile de voz
+                        /* La aguja se sitúa en la potencia de portadora + un pequeño baile de voz */
                         displayLevel = carrierPower + (voiceLevel * 0.15);
                     } else {
                         displayLevel = remoteLevel; /* Ruido de fondo/QRM */
@@ -2048,14 +2056,14 @@ object VOXEngine {
                             if (window.app.isVoxTransmitting) {
                                 window.app.isVoxTransmitting = false;
                                 window.broadcastPTT(false, true);
-                                // Tras un corte forzado, 1 segundo de "sordera" de seguridad
+                                /* Tras un corte forzado, 1 segundo de "sordera" de seguridad */
                                 window.app.voxLockoutTimestamp = now + 1000;
                             }
                             return;
                         }
                         
                         var threshold = 1.0 - (window.app.voxSens * 0.99); 
-                        // REGLA DE ORO: Solo disparamos si el nivel está por encima del ruido aprendido
+                        /* REGLA DE ORO: Solo disparamos si el nivel está por encima del ruido aprendido */
                         var effectiveLevel = this.localLevel - (this.noiseFloor * 0.6); 
                         
                         if (effectiveLevel > Math.max(0.05, threshold)) {
@@ -2072,9 +2080,9 @@ object VOXEngine {
                                 window.app.isVoxTransmitting = false;
                                 window.broadcastPTT(false, true);
                                 if(window.dispatch_vox_sync) window.dispatch_vox_sync(false);
-                                // --- 🔒 LOCKOUT POST-TRANSMISIÓN ---
-                                // Sordera total absoluta tras soltar (2.5 segundos para cubrir Roger Beep + Eco)
-                                window.app.voxLockoutTimestamp = now + 2500; 
+                                /* --- 🔒 LOCKOUT POST-TRANSMISIÓN --- */
+                                /* Sordera total absoluta tras soltar (2.0 segundos para cubrir Roger Beep + Eco) */
+                                window.app.voxLockoutTimestamp = now + 2000; 
                             }
                         }
                     }
@@ -3771,12 +3779,13 @@ fun main() {
                                 setTimeout(function() {
                                     var container = document.getElementById(containerId);
                                     if (!container) {
-                                        // 🛡️ REPARACIÓN QUIRÚRGICA: Búsqueda por color de fondo (identificador único del mapa)
+                                        /* 🛡️ REPARACIÓN QUIRÚRGICA: Búsqueda por color de fondo único (#020619) */
                                         var divs = document.querySelectorAll('div');
                                         for(var i=0; i<divs.length; i++) {
                                             var style = window.getComputedStyle(divs[i]);
                                             var bg = style.backgroundColor;
-                                            if(bg === 'rgb(2, 6, 23)' || bg === '#020617') {
+                                            /* Soportar formato hex y rgb */
+                                            if(bg === 'rgb(2, 6, 25)' || bg === '#020619' || bg.includes('2, 6, 25')) {
                                                 var mapDiv = document.createElement('div');
                                                 mapDiv.id = containerId;
                                                 mapDiv.style.width = '100%';
@@ -3788,13 +3797,14 @@ fun main() {
                                                 divs[i].style.position = 'relative';
                                                 divs[i].appendChild(mapDiv);
                                                 window.initRealMap(containerId, 37.3891, -5.9845);
+                                                console.log("✅ Mapa inyectado en div táctico.");
                                                 return;
                                             }
                                         }
                                     } else {
                                         window.initRealMap(containerId, 37.3891, -5.9845);
                                     }
-                                }, 500);
+                                }, 800); /* Aumentado delay para asegurar carga de Compose */
                             """)
                         }
                         "UPDATE_MAP_MARKERS" -> {
@@ -3844,9 +3854,11 @@ fun main() {
                             val containerId = if (parts.size >= 2) parts[1] else "activity-map-container"
                             js("""
                                 setTimeout(function() {
-                                    var boxes = document.querySelectorAll('div');
-                                    for(var i=0; i<boxes.length; i++) {
-                                        if(boxes[i].style.height === '380.0px' || boxes[i].style.height === '380px') {
+                                    var divs = document.querySelectorAll('div');
+                                    for(var i=0; i<divs.length; i++) {
+                                        var style = window.getComputedStyle(divs[i]);
+                                        var bg = style.backgroundColor;
+                                        if(bg === 'rgb(2, 6, 25)' || bg === '#020619') {
                                             var mapDiv = document.createElement('div');
                                             mapDiv.id = containerId;
                                             mapDiv.style.width = '100%';
@@ -3855,7 +3867,7 @@ fun main() {
                                             mapDiv.style.top = '0';
                                             mapDiv.style.left = '0';
                                             mapDiv.style.zIndex = '0';
-                                            boxes[i].appendChild(mapDiv);
+                                            divs[i].appendChild(mapDiv);
                                             window.initRealMap(containerId, 37.3891, -5.9845);
                                             break;
                                         }

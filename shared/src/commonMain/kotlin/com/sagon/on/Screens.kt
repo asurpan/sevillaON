@@ -1525,12 +1525,12 @@ fun ActivityPanel(
                     .fillMaxWidth()
                     .weight(1f)
                     .clip(RoundedCornerShape(28.dp))
-                    .background(if (isMapVisible) Color.Transparent else Color(0xFF020617))
+                    .background(Color(0xFF020619)) /* Color único para que JS encuentre el mapa */
                     .border(2.dp, LuxeColors.Gold.copy(0.3f), RoundedCornerShape(28.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                // CAPA DE MAPA REAL (Fondo absoluto)
-                Box(Modifier.fillMaxSize()) {
+                /* CAPA DE MAPA REAL (Fondo absoluto) */
+                Box(Modifier.fillMaxSize().background(if (isMapVisible) Color.Transparent else Color(0xFF020619))) {
                     LaunchedEffect(Unit) {
                         delay(500)
                         onExecuteEngineeringAction("INIT_REAL_MAP|activity-map-container")

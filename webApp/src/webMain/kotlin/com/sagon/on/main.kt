@@ -1836,18 +1836,23 @@ object RadioSignaling {
                         if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.02);
                         if (typeof window.updateMoniGain === 'function') window.updateMoniGain();
                         
-                        // --- 🛡️ FEEDBACK INSTANTÁNEO AL SOLTAR ---
-                        if (typeof window.playUiSound === 'function') window.playUiSound('ptt_off');
+                        /* --- 🛡️ PRIORIDAD DE SONIDO: El relé mecánico solo suena si no hay Roger Beep --- */
+                        if (!roger) {
+                            if (typeof window.playUiSound === 'function') window.playUiSound('ptt_off');
+                        }
                         
                         if (roger) {
-                            // --- 🛡️ BLINDAJE DE SEGURIDAD PTT (CONTUNDENCIA) ---
-                            // Al soltar el PTT, silenciamos el micro inmediatamente para que el Roger Beep sea puro.
+                            /* --- 🛡️ RESUME CORE: Asegurar que el audio está despierto para el pitido --- */
+                            if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+
+                            /* --- 🛡️ BLINDAJE DE SEGURIDAD PTT (CONTUNDENCIA) --- */
+                            /* Al soltar el PTT, silenciamos el micro inmediatamente para que el Roger Beep sea puro. */
                             if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
                             
                             window.app.isBeeping = true;
                             if(window.dispatch_beeping) window.dispatch_beeping(true);
                             
-                            // --- 🔒 MOTOR DE AUDIO: ROGER BEEP LABORATORIO (100% PURO) ---
+                            /* --- 🔒 MOTOR DE AUDIO: ROGER BEEP LABORATORIO (100% PURO) --- */
                             var osc = window.app.ctx.createOscillator();
                             window.app.activeRogerOsc = osc; /* 🛡️ GUARDAR PARA POSIBLE INTERRUPCIÓN */
                             
@@ -1875,10 +1880,10 @@ object RadioSignaling {
                             if (window.app.txBus) gRemote.connect(window.app.txBus); 
                             
                             osc.connect(gLocal); 
-                            // --- 🛡️ FIX CRÍTICO: Bypass de masterOut para eliminar interferencia de fase ---
+                            /* --- 🛡️ FIX CRÍTICO: Bypass de masterOut para eliminar interferencia de fase --- */
                             gLocal.connect(window.app.ctx.destination);
 
-                            // --- 🎯 EXACT HARDWARE SYNC ---
+                            /* --- 🎯 EXACT HARDWARE SYNC --- */
                             osc.onended = function() {
                                 // Limpiar referencia al terminar
                                 if (window.app.activeRogerOsc === osc) window.app.activeRogerOsc = null;
@@ -3755,7 +3760,10 @@ fun main() {
                             }
                         }
                         "HIDE_MAP_OVERLAY" -> {
-                            js("var c = document.getElementById('activity-map-container'); if(c) c.style.display = 'none';")
+                            js("var c = document.getElementById('activity-map-container'); if(c) { c.style.display = 'none'; c.style.transform = 'rotate(0deg)'; }")
+                        }
+                        "SHOW_MAP_OVERLAY" -> {
+                            js("var c = document.getElementById('activity-map-container'); if(c) c.style.display = 'block';")
                         }
                         "INIT_REAL_MAP" -> {
                             val containerId = if (parts.size >= 2) parts[1] else "activity-map-container"
@@ -3827,7 +3835,10 @@ fun main() {
                             }
                         }
                         "HIDE_MAP_OVERLAY" -> {
-                            js("var c = document.getElementById('activity-map-container'); if(c) c.style.display = 'none';")
+                            js("var c = document.getElementById('activity-map-container'); if(c) { c.style.display = 'none'; c.style.transform = 'rotate(0deg)'; }")
+                        }
+                        "SHOW_MAP_OVERLAY" -> {
+                            js("var c = document.getElementById('activity-map-container'); if(c) c.style.display = 'block';")
                         }
                         "INIT_REAL_MAP" -> {
                             val containerId = if (parts.size >= 2) parts[1] else "activity-map-container"

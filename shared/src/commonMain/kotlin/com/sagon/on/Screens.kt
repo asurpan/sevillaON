@@ -1363,6 +1363,8 @@ fun ActivityPanel(
         if (!isMapVisible) {
             onExecuteEngineeringAction("HIDE_MAP_OVERLAY")
             return@LaunchedEffect
+        } else {
+            onExecuteEngineeringAction("SHOW_MAP_OVERLAY")
         }
 
         // Incluimos a todos los de la ruta Y a nosotros mismos si tenemos GPS
@@ -1523,7 +1525,7 @@ fun ActivityPanel(
                     .fillMaxWidth()
                     .weight(1f)
                     .clip(RoundedCornerShape(28.dp))
-                    .background(Color(0xFF020617))
+                    .background(if (isMapVisible) Color.Transparent else Color(0xFF020617))
                     .border(2.dp, LuxeColors.Gold.copy(0.3f), RoundedCornerShape(28.dp)),
                 contentAlignment = Alignment.Center
             ) {

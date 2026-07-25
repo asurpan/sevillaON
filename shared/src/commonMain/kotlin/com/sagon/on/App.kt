@@ -106,6 +106,7 @@ fun App(
     onWifiAuthResultReceived: ((String, String, String) -> Unit) -> Unit = { _ -> },
     onEngineeringFinished: (() -> Unit) -> Unit = { _ -> },
     onRouteSuggestionsReceived: ((String) -> Unit) -> Unit = { _ -> },
+    onWaypointReceived: ((String, Double, Double) -> Unit) -> Unit = { _ -> },
     onRequestLocationPermission: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onChatOpenConsumed: () -> Unit = {},
@@ -124,6 +125,7 @@ fun App(
     routeDurationMin: String? = null,
     routeDestinationName: String? = null,
     nextNavigationStep: String? = null,
+    routeWaypoints: List<RouteSuggestion> = emptyList(),
     initialState: RadioState
 ) {
     var screenState by remember { 
@@ -146,7 +148,8 @@ fun App(
                 routeDistanceKm = routeDistanceKm ?: initialState.routeDistanceKm,
                 routeDurationMin = routeDurationMin ?: initialState.routeDurationMin,
                 routeDestinationName = routeDestinationName ?: initialState.routeDestinationName,
-                nextNavigationStep = nextNavigationStep ?: initialState.nextNavigationStep
+                nextNavigationStep = nextNavigationStep ?: initialState.nextNavigationStep,
+                routeWaypoints = if (routeWaypoints.isNotEmpty()) routeWaypoints else initialState.routeWaypoints
             )
         ) 
     }
@@ -585,12 +588,14 @@ fun App(
         if (routeDistanceKm != radioState.routeDistanceKm || 
             routeDurationMin != radioState.routeDurationMin || 
             routeDestinationName != radioState.routeDestinationName ||
-            nextNavigationStep != radioState.nextNavigationStep) {
+            nextNavigationStep != radioState.nextNavigationStep ||
+            routeWaypoints != radioState.routeWaypoints) {
             radioState = radioState.copy(
                 routeDistanceKm = routeDistanceKm,
                 routeDurationMin = routeDurationMin,
                 routeDestinationName = routeDestinationName,
-                nextNavigationStep = nextNavigationStep
+                nextNavigationStep = nextNavigationStep,
+                routeWaypoints = if (routeWaypoints.isNotEmpty()) routeWaypoints else radioState.routeWaypoints
             )
         }
     }
@@ -1221,6 +1226,7 @@ fun App(
                             },
                             onHertzSentinelRequest = { showActivityRadar = true },
                             onActivityPanelRequest = { showActivityMap = true },
+                            onWaypointReceived = onWaypointReceived,
                             engineeringPanelVisible = engineeringPanelVisible,
                             onEngineeringPanelChange = { engineeringPanelVisible = it }
                         )

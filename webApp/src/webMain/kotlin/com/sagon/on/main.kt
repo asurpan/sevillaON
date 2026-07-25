@@ -1089,7 +1089,7 @@ object RadioCore {
                     }
                 };
 
-                window.setMapDestination = function(destLat, destLon, destName) {
+                window.setMapDestination = function(destLat, destLon, destName, waypointsJson) {
                     if (!window.app.map) return;
                     
                     var myLat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
@@ -1112,11 +1112,20 @@ object RadioCore {
                         profile = 'bicycle'; 
                     }
                     
+                    // --- 📍 CONSTRUIR LISTA DE WAYPOINTS ---
+                    var waypoints = [L.latLng(myLat, myLon)];
+                    
+                    if (waypointsJson) {
+                        var extraPoints = JSON.parse(waypointsJson);
+                        extraPoints.forEach(function(wp) {
+                            waypoints.push(L.latLng(wp.lat, wp.lon));
+                        });
+                    } else {
+                        waypoints.push(L.latLng(destLat, destLon));
+                    }
+                    
                     var control = L.Routing.control({
-                        waypoints: [
-                            L.latLng(myLat, myLon),
-                            L.latLng(destLat, destLon)
-                        ],
+                        waypoints: waypoints,
                         router: L.Routing.osrmv1({
                             serviceUrl: routerUrl,
                             profile: profile
@@ -1136,7 +1145,7 @@ object RadioCore {
                         var route = e.routes[0];
                         var dist = (route.summary.totalDistance / 1000).toFixed(1) + " KM";
                         var time = Math.round(route.summary.totalTime / 60) + " MIN";
-                        var name = destName || "Destino Táctico";
+                        var name = destName || (waypointsJson ? "Misión Completa" : "Destino Táctico");
                         
                         // Guardar instrucciones para el motor de voz
                         window.app.currentInstructions = route.instructions;
@@ -1149,11 +1158,17 @@ object RadioCore {
 
                     control.addTo(window.app.map);
                     window.app.routingControl = control;
-                    console.log("🛣️ Misión táctica lanzada (" + profile + ") hasta: " + destLat + "," + destLon);
                 };
 
                 window.fetchTacticalPOIs = function(lat, lon, category) {
                     if (!window.app.map) return;
+                    
+                    // --- 🧹 LIMPIEZA DE POIs ANTERIORES ---
+                    if (window.app.poiLayers) {
+                        window.app.poiLayers.forEach(layer => window.app.map.removeLayer(layer));
+                    }
+                    window.app.poiLayers = [];
+
                     var radius = 20000; // Radio de búsqueda de 20km para táctica
                     
                     var filter = 'node["historic"]'; // Default
@@ -1187,10 +1202,16 @@ object RadioCore {
                                         iconSize: [14, 14]
                                     });
                                     var marker = L.marker([poi.lat, poi.lon], { icon: icon }).addTo(window.app.map);
+                                    window.app.poiLayers.push(marker);
                                     var name = poi.tags.name || category;
                                     marker.bindTooltip(name, { permanent: false, direction: 'top' });
                                     marker.on('click', function() {
-                                        if (confirm("¿Ir hasta " + name + "?")) {
+                                        var choice = confirm("¿Añadir " + name + " a la ruta? (Aceptar = Añadir parada, Cancelar = Ir directo)");
+                                        if (choice) {
+                                            if (window.dispatch_add_waypoint) {
+                                                window.dispatch_add_waypoint(name, poi.lat, poi.lon);
+                                            }
+                                        } else {
                                             window.setMapDestination(poi.lat, poi.lon, name);
                                         }
                                     });
@@ -1262,11 +1283,11 @@ object RadioCore {
                             var color = user.isMe ? "#06B6D4" : (user.isTransmitting ? "#EF4444" : "#22C55E");
                             
                             if (markers[user.nick]) {
-                                markers[user.nick].setLatLng([user.lat, user.lon]);
+                                markers[user.nick].setLatLng([lat, lon]);
                                 markers[user.nick].setStyle({ color: color, fillColor: color });
                                 markers[user.nick].getTooltip().setContent(labelText);
                             } else {
-                                var marker = L.circleMarker([user.lat, user.lon], {
+                                var marker = L.circleMarker([lat, lon], {
                                     radius: 10,
                                     fillColor: color,
                                     color: "#FFFFFF",
@@ -2598,6 +2619,12 @@ object RadioBridge {
         win.dispatch_navigation_step = { step: String? ->
             onNavigationStep(step)
         }
+        win.dispatch_add_waypoint = { name: String, lat: Double, lon: Double ->
+            // Encontrar la app y añadir waypoint al estado
+            // Esto es un poco complejo desde aquí, mejor lo manejamos vía un evento global que el Dialog pueda escuchar.
+            val cb = win.dispatch_add_waypoint_to_app
+            if (cb != null) cb(name, lat, lon)
+        }
         win.dispatch_chat_open = { target: String? -> 
             onChatOpen(target)
             // Forzar apertura de chat en la terminal local
@@ -3922,6 +3949,10 @@ fun main() {
                             val dName = if (parts.size >= 4) parts[3] else null
                             win.setMapDestination(win.parseFloat(dLat), win.parseFloat(dLon), dName)
                         }
+                        "SET_MISSION_ROUTE" -> if (parts.size >= 2) {
+                            val wptsJson = parts[1]
+                            win.setMapDestination(null, null, null, wptsJson)
+                        }
                         "SEARCH_LOCATION" -> if (parts.size >= 2) {
                             val searchQ = parts[1]
                             win.fetch("https://nominatim.openstreetmap.org/search?format=json&q=" + win.encodeURIComponent(searchQ))
@@ -4058,6 +4089,9 @@ fun main() {
             wifiVerificationResult = wifiVerificationResultState.value,
             onRouteSuggestionsReceived = { callback ->
                 win.dispatch_route_suggestions_to_app = callback
+            },
+            onWaypointReceived = { callback ->
+                win.dispatch_add_waypoint_to_app = callback
             }
         )
     }

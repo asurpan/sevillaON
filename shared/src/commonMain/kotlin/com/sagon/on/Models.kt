@@ -163,7 +163,8 @@ data class RadioState(
     val routeDistanceKm: String? = null,
     val routeDurationMin: String? = null,
     val routeDestinationName: String? = null,
-    val nextNavigationStep: String? = null
+    val nextNavigationStep: String? = null,
+    val routeWaypoints: List<RouteSuggestion> = emptyList()
 )
 
 data class CapturedCode(val id: String, val proto: String, val data: String)

@@ -11,7 +11,6 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +21,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
@@ -78,6 +76,7 @@ fun RadioDialogs(
     onShowHelp: () -> Unit = {},
     onHertzSentinelRequest: () -> Unit = {},
     onActivityPanelRequest: () -> Unit = {},
+    onWaypointReceived: ((String, Double, Double) -> Unit) -> Unit = { _ -> },
     engineeringPanelVisible: Boolean = false,
     onEngineeringPanelChange: (Boolean) -> Unit = {}
 ) {
@@ -635,8 +634,17 @@ fun RadioDialogs(
             var destinationText by remember { mutableStateOf("") }
             var selectedActivity by remember { mutableStateOf<ActivityProfile?>(null) }
             var isLaunching by remember { mutableStateOf(false) }
+            var tempWaypoints by remember { mutableStateOf(state.routeWaypoints.toMutableList()) }
+            var selectedPois by remember { mutableStateOf(setOf<String>()) }
 
-            // --- 🛡️ MOTOR DE BÚSQUEDA EN TIEMPO REAL ---
+            LaunchedEffect(Unit) {
+                onWaypointReceived { name, lat, lon ->
+                    if (tempWaypoints.none { it.lat == lat && it.lon == lon }) {
+                        tempWaypoints = (tempWaypoints + RouteSuggestion(name, lat, lon)).toMutableList()
+                    }
+                }
+            }
+
             LaunchedEffect(destinationText) {
                 if (destinationText.length > 2) {
                     delay(500)
@@ -659,245 +667,203 @@ fun RadioDialogs(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.Route, null, tint = LuxeColors.Gold, modifier = Modifier.size(28.dp))
                             Spacer(Modifier.width(12.dp))
-                            Text("GESTIÓN DE MISIÓN", fontWeight = FontWeight.Black, fontSize = 22.sp, color = Color.White)
+                            Text("CONFIGURACIÓN DE RUTA", fontWeight = FontWeight.Black, fontSize = 22.sp, color = Color.White)
                         }
-                        Text("Configura tu equipo y radar táctico", fontSize = 12.sp, color = LuxeColors.Gold.copy(0.6f))
+                        Text("Configura tu equipo y radar de ruta", fontSize = 12.sp, color = LuxeColors.Gold.copy(0.6f))
                     }
                 },
                 text = {
                     Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                        
-                        // --- 📝 BLOQUE 1: IDENTIFICACIÓN ---
-                        Text("1. IDENTIFICACIÓN DE RUTA", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
+                        Text("1. SELECCIONA TU ACTIVIDAD", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
                         Spacer(Modifier.height(12.dp))
-                        
-                        Surface(
-                            color = Color.White.copy(0.03f),
-                            shape = RoundedCornerShape(20.dp),
-                            border = BorderStroke(1.dp, Color.White.copy(0.1f)),
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)
-                        ) {
-                            Column(Modifier.padding(16.dp)) {
-                                OutlinedTextField(
-                                    value = tempRouteName,
-                                    onValueChange = { if (it.length <= 40) tempRouteName = it.uppercase() },
-                                    label = { Text("NOMBRE / INDICATIVO RUTA", fontSize = 12.sp) },
-                                    placeholder = { Text("EJ: RUTA PIRINEOS", color = Color.White.copy(0.2f)) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LuxeColors.Gold, focusedLabelColor = LuxeColors.Gold, focusedTextColor = Color.White, unfocusedTextColor = Color.White),
-                                    leadingIcon = { Icon(Icons.Rounded.Label, null, tint = LuxeColors.Gold.copy(0.5f)) }
-                                )
-
-                                Spacer(Modifier.height(12.dp))
-
-                                OutlinedTextField(
-                                    value = tempRouteRules,
-                                    onValueChange = { if (it.length <= 150) tempRouteRules = it },
-                                    label = { Text("NOTAS / PUNTO DE ENCUENTRO", fontSize = 12.sp) },
-                                    placeholder = { Text("Opcional: Gasolinera 10:00h...", color = Color.White.copy(0.2f)) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    maxLines = 2,
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.White.copy(0.4f), focusedTextColor = Color.White, unfocusedTextColor = Color.White),
-                                    leadingIcon = { Icon(Icons.Rounded.Description, null, tint = Color.White.copy(0.3f)) }
-                                )
-                            }
-                        }
-
-                        // --- 🗺️ BLOQUE 2: DESTINO ---
-                        Text("2. DESTINO DE LA MISIÓN", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
-                        Spacer(Modifier.height(12.dp))
-
-                        Surface(
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color.White.copy(0.05f),
-                            border = BorderStroke(1.dp, Color.White.copy(0.1f))
-                        ) {
-                            Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Search, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(12.dp))
-                                BasicTextField(
-                                    value = destinationText,
-                                    onValueChange = { destinationText = it },
-                                    modifier = Modifier.weight(1f),
-                                    textStyle = TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold),
-                                    cursorBrush = SolidColor(LuxeColors.Gold)
-                                )
-                            }
-                        }
-                        
-                        if (state.routeSuggestions.isNotEmpty()) {
-                            Spacer(Modifier.height(8.dp))
-                            Surface(
-                                modifier = Modifier.fillMaxWidth().heightIn(max = 150.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.Black.copy(0.3f),
-                                border = BorderStroke(1.dp, Color.White.copy(0.05f))
-                            ) {
-                                LazyColumn {
-                                    items(state.routeSuggestions) { suggestion ->
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().clickable {
-                                                destinationText = suggestion.name
-                                                onExecuteEngineeringAction("CENTER_MAP|${suggestion.lat}|${suggestion.lon}")
-                                                onExecuteEngineeringAction("SET_DESTINATION|${suggestion.lat}|${suggestion.lon}|${suggestion.name}")
-                                            }.padding(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(Icons.Rounded.LocationOn, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(10.dp))
-                                            Text(suggestion.name, color = Color.White.copy(0.8f), fontSize = 11.sp, maxLines = 2)
-                                        }
-                                        HorizontalDivider(color = Color.White.copy(0.05f))
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(12.dp))
-                        Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            val activity = selectedActivity ?: state.activeProfile
-                            
-                            when (activity) {
-                                ActivityProfile.MOTO, ActivityProfile.CARAVANAS -> {
-                                    PoiChip("⛽ GASOLINERA", "GASOLINERAS", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("🍽️ COMIDA", "RESTAURANTES", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("🅿️ PARKING", "PARKINGS", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("🏛️ MONUMENTOS", "MONUMENTOS", onExecuteEngineeringAction, onDismiss)
-                                }
-                                ActivityProfile.CICLISMO -> {
-                                    PoiChip("💧 FUENTES", "FUENTES", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("🚲 TALLERES", "TALLERES", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("🌲 NATURALEZA", "NATURALEZA", onExecuteEngineeringAction, onDismiss)
-                                }
-                                ActivityProfile.SENDERISMO, ActivityProfile.PASEO -> {
-                                    PoiChip("🏞️ MIRADORES", "NATURALEZA", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("🌳 PARQUES", "PARQUES", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("🚻 ASEOS", "ASEOS", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("🏛️ MONUMENTOS", "MONUMENTOS", onExecuteEngineeringAction, onDismiss)
-                                }
-                                ActivityProfile.SOCORRISTAS -> {
-                                    PoiChip("🏥 HOSPITAL", "HOSPITALES", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("💊 FARMACIA", "FARMACIAS", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("🏛️ MONUMENTOS", "MONUMENTOS", onExecuteEngineeringAction, onDismiss)
-                                }
-                                else -> {
-                                    PoiChip("🏛️ MONUMENTOS", "MONUMENTOS", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("🎭 EVENTOS", "EVENTOS", onExecuteEngineeringAction, onDismiss)
-                                    PoiChip("🌲 NATURALEZA", "NATURALEZA", onExecuteEngineeringAction, onDismiss)
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(24.dp))
-
-                        // --- 🛡️ BLOQUE 3: SEGURIDAD ---
-                        Text("3. CONFIGURACIÓN TÁCTICA", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
-                        Spacer(Modifier.height(12.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            // PRIVADO
-                            Surface(
-                                onClick = { isPrivateSelection = !isPrivateSelection },
-                                modifier = Modifier.weight(1f).height(64.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                color = if (isPrivateSelection) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
-                                border = BorderStroke(1.dp, if (isPrivateSelection) LuxeColors.Gold else Color.White.copy(0.1f))
-                            ) {
-                                Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                                    Icon(if (isPrivateSelection) Icons.Rounded.Lock else Icons.Rounded.LockOpen, null, tint = if (isPrivateSelection) LuxeColors.Gold else Color.White.copy(0.4f), modifier = Modifier.size(20.dp))
-                                    Text("PRIVADO", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (isPrivateSelection) LuxeColors.Gold else Color.White)
-                                }
-                            }
-                            
-                            // Espacio vacío para equilibrar el Row tras quitar el escudo
-                            Spacer(Modifier.weight(1f))
-                        }
-
-                        if (isPrivateSelection) {
-                            OutlinedTextField(
-                                value = tempSubtone,
-                                onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) tempSubtone = it },
-                                placeholder = { Text("CÓDIGO (4 CIFRAS)", color = Color.White.copy(0.2f)) },
-                                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = LuxeColors.Gold, focusedBorderColor = LuxeColors.Gold),
-                                leadingIcon = { Icon(Icons.Rounded.Key, null, tint = LuxeColors.Gold) }
-                            )
-                        }
-
-                        // --- 🏃 BLOQUE 4: SELECTOR DE ACTIVIDAD ---
-                        Text("4. MODO DE COORDINACIÓN", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
-                        Spacer(Modifier.height(12.dp))
-                        
                         val activities = ActivityProfile.entries.filter { it != ActivityProfile.NORMAL }
-                        
                         activities.chunked(2).forEach { row ->
                             Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 row.forEach { act ->
                                     val isSelected = selectedActivity == act
-                                    val isReady = tempRouteName.isNotBlank()
-                                    
                                     Surface(
-                                        onClick = { if (isReady) selectedActivity = act },
+                                        onClick = { selectedActivity = act },
                                         modifier = Modifier.weight(1f).height(80.dp),
                                         shape = RoundedCornerShape(16.dp),
-                                        color = if (isSelected) LuxeColors.Gold.copy(0.2f) else if(isReady) Color.White.copy(0.08f) else Color.White.copy(0.02f),
-                                        border = BorderStroke(1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(if(isReady) 0.2f else 0.05f))
+                                        color = if (isSelected) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f),
+                                        border = BorderStroke(1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(0.1f))
                                     ) {
                                         Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                             val icon = getActivityIcon(act)
-                                            Icon(icon, null, tint = if (isSelected) LuxeColors.Gold else Color.White.copy(if(isReady) 0.8f else 0.2f), modifier = Modifier.size(32.dp))
+                                            Icon(icon, null, tint = if (isSelected) LuxeColors.Gold else Color.White.copy(0.4f), modifier = Modifier.size(32.dp))
                                             Spacer(Modifier.height(4.dp))
-                                            Text(
-                                                if (act == ActivityProfile.SOCORRISTAS) "SOCORRO" else act.name, 
-                                                color = if(isReady) Color.White else Color.White.copy(0.2f), 
-                                                fontSize = 10.sp, 
-                                                fontWeight = FontWeight.Black
-                                            )
+                                            Text(if (act == ActivityProfile.SOCORRISTAS) "SOCORRO" else act.name, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
                                         }
                                     }
                                 }
                             }
                         }
-                        
-                        Spacer(Modifier.height(32.dp))
-                        
-                        LuxeButton(
-                            text = if (isLaunching) "INICIANDO..." else "LANZAR MISIÓN",
-                            onClick = {
-                                if (tempRouteName.isNotBlank() && selectedActivity != null) {
-                                    isLaunching = true
-                                    val finalChannel = tempRouteName
-                                    val autoCode = if (isPrivateSelection) (if(tempSubtone.length == 4) tempSubtone else (1000..9999).random().toString()) else "0000"
-                                    
-                                    onStateChange(state.copy(
-                                        activeProfile = selectedActivity!!, 
-                                        isMotoModeEnabled = true,
-                                        isAvoidingHighways = state.isAvoidingHighways || selectedActivity == ActivityProfile.MOTO,
-                                        channel = finalChannel,
-                                        subtone = autoCode,
-                                        routeRules = tempRouteRules.ifBlank { null }
-                                    ))
-                                    onExecuteEngineeringAction("UPDATE_ACTIVE_PROFILE|${selectedActivity!!.name}")
-                                    if (destinationText.isNotBlank()) {
-                                        onExecuteEngineeringAction("SEARCH_LOCATION|$destinationText")
-                                    }
-                                    onDismiss()
-                                    onActivityPanelRequest()
-                                }
-                            },
-                            enabled = tempRouteName.isNotBlank() && selectedActivity != null,
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            containerColor = LuxeColors.Gold,
-                            contentColor = Color.Black
-                        )
 
+                        AnimatedVisibility(visible = selectedActivity != null) {
+                            Column {
+                                Spacer(Modifier.height(24.dp))
+                                Text("2. IDENTIFICACIÓN DE RUTA", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
+                                Spacer(Modifier.height(12.dp))
+                                Surface(color = Color.White.copy(0.03f), shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, Color.White.copy(0.1f)), modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)) {
+                                    Column(Modifier.padding(16.dp)) {
+                                        OutlinedTextField(value = tempRouteName, onValueChange = { if (it.length <= 40) tempRouteName = it.uppercase() }, label = { Text("NOMBRE / INDICATIVO RUTA", fontSize = 12.sp) }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LuxeColors.Gold, focusedLabelColor = LuxeColors.Gold, focusedTextColor = Color.White, unfocusedTextColor = Color.White), leadingIcon = { Icon(Icons.Rounded.Label, null, tint = LuxeColors.Gold.copy(0.5f)) })
+                                        Spacer(Modifier.height(12.dp))
+                                        OutlinedTextField(value = tempRouteRules, onValueChange = { if (it.length <= 150) tempRouteRules = it }, label = { Text("NOTAS / PUNTO DE ENCUENTRO", fontSize = 12.sp) }, modifier = Modifier.fillMaxWidth(), maxLines = 2, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.White.copy(0.4f), focusedTextColor = Color.White, unfocusedTextColor = Color.White), leadingIcon = { Icon(Icons.Rounded.Description, null, tint = Color.White.copy(0.3f)) })
+                                    }
+                                }
+                                Text("3. DESTINO Y PARADAS", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
+                                Spacer(Modifier.height(4.dp))
+                                Text("Busca un destino o añade paradas usando los filtros. Puedes reordenarlas con las flechas para optimizar tu viaje.", fontSize = 10.sp, color = Color.White.copy(0.4f), lineHeight = 14.sp)
+                                Spacer(Modifier.height(12.dp))
+                                Surface(modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(12.dp), color = Color.White.copy(0.05f), border = BorderStroke(1.dp, Color.White.copy(0.1f))) {
+                                    Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Rounded.Search, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(12.dp))
+                                        BasicTextField(value = destinationText, onValueChange = { destinationText = it }, modifier = Modifier.weight(1f), textStyle = TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold), cursorBrush = SolidColor(LuxeColors.Gold))
+                                    }
+                                }
+                                if (state.routeSuggestions.isNotEmpty()) {
+                                    Spacer(Modifier.height(8.dp))
+                                    Surface(modifier = Modifier.fillMaxWidth().heightIn(max = 150.dp), shape = RoundedCornerShape(12.dp), color = Color.Black.copy(0.3f), border = BorderStroke(1.dp, Color.White.copy(0.05f))) {
+                                        LazyColumn {
+                                            items(state.routeSuggestions) { suggestion ->
+                                                Row(modifier = Modifier.fillMaxWidth().clickable { if (tempWaypoints.none { it.lat == suggestion.lat && it.lon == suggestion.lon }) { tempWaypoints = (tempWaypoints + suggestion).toMutableList() }; destinationText = ""; onExecuteEngineeringAction("CLEAR_SUGGESTIONS") }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(Icons.Rounded.AddLocation, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
+                                                    Spacer(Modifier.width(10.dp))
+                                                    Text(suggestion.name, color = Color.White.copy(0.8f), fontSize = 11.sp, maxLines = 2)
+                                                }
+                                                HorizontalDivider(color = Color.White.copy(0.05f))
+                                            }
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.height(12.dp))
+                                Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    val activity = selectedActivity ?: state.activeProfile
+                                    
+                                    val categories = when (activity) {
+                                        ActivityProfile.MOTO, ActivityProfile.CARAVANAS -> listOf("⛽ GASOLINERA" to "GASOLINERAS", "🍽️ COMIDA" to "RESTAURANTES", "🅿️ PARKING" to "PARKINGS", "🏛️ MONUMENTOS" to "MONUMENTOS")
+                                        ActivityProfile.CICLISMO -> listOf("💧 FUENTES" to "FUENTES", "🚲 TALLERES" to "TALLERES", "🌲 NATURALEZA" to "NATURALEZA")
+                                        ActivityProfile.SENDERISMO, ActivityProfile.PASEO -> listOf("🏞️ MIRADORES" to "NATURALEZA", "🌳 PARQUES" to "PARQUES", "🚻 ASEOS" to "ASEOS", "🏛️ MONUMENTOS" to "MONUMENTOS")
+                                        ActivityProfile.SOCORRISTAS -> listOf("🏥 HOSPITAL" to "HOSPITALES", "💊 FARMACIA" to "FARMACIAS", "🏛️ MONUMENTOS" to "MONUMENTOS")
+                                        else -> listOf("🏛️ MONUMENTOS" to "MONUMENTOS", "🎭 EVENTOS" to "EVENTOS", "🌲 NATURALEZA" to "NATURALEZA")
+                                    }
+
+                                    categories.forEach { (label, cat) ->
+                                        PoiChip(
+                                            label = label,
+                                            category = cat,
+                                            isSelected = selectedPois.contains(cat),
+                                            onExecuteAction = { 
+                                                selectedPois = if (selectedPois.contains(cat)) selectedPois - cat else selectedPois + cat
+                                                onExecuteEngineeringAction(it) 
+                                            }
+                                        )
+                                    }
+                                }
+                                if (tempWaypoints.isNotEmpty()) {
+                                    Spacer(Modifier.height(20.dp))
+                                    tempWaypoints.forEachIndexed { index, wp ->
+                                        Surface(
+                                            color = Color.White.copy(0.05f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                                        ) {
+                                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Box(
+                                                    modifier = Modifier.size(24.dp).background(LuxeColors.Gold, CircleShape),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text("${index + 1}", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                                                }
+                                                Spacer(Modifier.width(12.dp))
+                                                Text(wp.name, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), maxLines = 1)
+                                                
+                                                Row {
+                                                    if (index > 0) {
+                                                        IconButton(
+                                                            onClick = { 
+                                                                val newList = tempWaypoints.toMutableList()
+                                                                val item = newList.removeAt(index)
+                                                                newList.add(index - 1, item)
+                                                                tempWaypoints = newList
+                                                            },
+                                                            modifier = Modifier.size(24.dp)
+                                                        ) {
+                                                            Icon(Icons.Rounded.KeyboardArrowUp, null, tint = Color.White.copy(0.6f), modifier = Modifier.size(20.dp))
+                                                        }
+                                                    }
+                                                    if (index < tempWaypoints.size - 1) {
+                                                        IconButton(
+                                                            onClick = { 
+                                                                val newList = tempWaypoints.toMutableList()
+                                                                val item = newList.removeAt(index)
+                                                                newList.add(index + 1, item)
+                                                                tempWaypoints = newList
+                                                            },
+                                                            modifier = Modifier.size(24.dp)
+                                                        ) {
+                                                            Icon(Icons.Rounded.KeyboardArrowDown, null, tint = Color.White.copy(0.6f), modifier = Modifier.size(20.dp))
+                                                        }
+                                                    }
+                                                    Spacer(Modifier.width(8.dp))
+                                                    IconButton(
+                                                        onClick = { tempWaypoints = tempWaypoints.toMutableList().apply { removeAt(index) } },
+                                                        modifier = Modifier.size(24.dp)
+                                                    ) {
+                                                        Icon(Icons.Rounded.Delete, null, tint = Color.Red.copy(0.6f), modifier = Modifier.size(16.dp))
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.height(24.dp))
+                                Text("4. CONFIGURACIÓN DE RUTA", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
+                                Spacer(Modifier.height(12.dp))
+                                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(onClick = { isPrivateSelection = !isPrivateSelection }, modifier = Modifier.weight(1f).height(64.dp), shape = RoundedCornerShape(16.dp), color = if (isPrivateSelection) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f), border = BorderStroke(1.dp, if (isPrivateSelection) LuxeColors.Gold else Color.White.copy(0.1f))) {
+                                        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                                            Icon(if (isPrivateSelection) Icons.Rounded.Lock else Icons.Rounded.LockOpen, null, tint = if (isPrivateSelection) LuxeColors.Gold else Color.White.copy(0.4f), modifier = Modifier.size(20.dp))
+                                            Text("PRIVADO", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (isPrivateSelection) LuxeColors.Gold else Color.White)
+                                        }
+                                    }
+                                    Spacer(Modifier.width(16.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Switch(checked = state.isAvoidingHighways || selectedActivity == ActivityProfile.MOTO, onCheckedChange = { if (selectedActivity != ActivityProfile.MOTO) onStateChange(state.copy(isAvoidingHighways = it)) }, enabled = selectedActivity != ActivityProfile.MOTO, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold, checkedTrackColor = LuxeColors.Gold.copy(0.3f)))
+                                        Text("MODO CURVAS", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                                    }
+                                }
+                                if (isPrivateSelection) {
+                                    OutlinedTextField(value = tempSubtone, onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) tempSubtone = it }, placeholder = { Text("CÓDIGO (4 CIFRAS)", color = Color.White.copy(0.2f)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp), shape = RoundedCornerShape(12.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = OutlinedTextFieldDefaults.colors(focusedTextColor = LuxeColors.Gold, focusedBorderColor = LuxeColors.Gold), leadingIcon = { Icon(Icons.Rounded.Key, null, tint = LuxeColors.Gold) })
+                                }
+                                Spacer(Modifier.height(32.dp))
+                                LuxeButton(text = if (isLaunching) "INICIANDO..." else "INICIAR RUTA", onClick = {
+                                    if (tempRouteName.isNotBlank()) {
+                                        isLaunching = true
+                                        onStateChange(state.copy(activeProfile = selectedActivity!!, isMotoModeEnabled = true, isAvoidingHighways = state.isAvoidingHighways || selectedActivity == ActivityProfile.MOTO, channel = tempRouteName, subtone = if (isPrivateSelection) tempSubtone.padStart(4, '0') else "0000", routeRules = tempRouteRules.ifBlank { null }, routeWaypoints = tempWaypoints))
+                                        onExecuteEngineeringAction("UPDATE_ACTIVE_PROFILE|${selectedActivity!!.name}")
+                                        if (tempWaypoints.isNotEmpty()) {
+                                            val jsonWaypoints = "[" + tempWaypoints.joinToString(",") { """{"name":"${it.name}","lat":${it.lat},"lon":${it.lon}}""" } + "]"
+                                            onExecuteEngineeringAction("SET_MISSION_ROUTE|$jsonWaypoints")
+                                        } else if (destinationText.isNotBlank()) {
+                                            onExecuteEngineeringAction("SEARCH_LOCATION|$destinationText")
+                                        } else {
+                                            val poiCat = when(selectedActivity) {
+                                                ActivityProfile.MOTO, ActivityProfile.CARAVANAS -> "GASOLINERAS"
+                                                ActivityProfile.CICLISMO -> "FUENTES"
+                                                ActivityProfile.SENDERISMO, ActivityProfile.PASEO -> "NATURALEZA"
+                                                ActivityProfile.SOCORRISTAS -> "HOSPITALES"
+                                                else -> "MONUMENTOS"
+                                            }
+                                            onExecuteEngineeringAction("FETCH_POIS|$poiCat")
+                                        }
+                                        onDismiss()
+                                        onActivityPanelRequest()
+                                    }
+                                }, enabled = tempRouteName.isNotBlank(), modifier = Modifier.fillMaxWidth().height(56.dp), containerColor = LuxeColors.Gold, contentColor = Color.Black)
+                            }
+                        }
                         Spacer(Modifier.height(100.dp)) 
                     }
                 },
@@ -1028,770 +994,270 @@ fun RadioDialogs(
                         Text("Escribe el nombre de un nuevo canal o selecciona uno de los activos en ${state.city}.", fontSize = 11.sp, color = Color.White.copy(0.6f), modifier = Modifier.padding(top = 4.dp))
                         Spacer(Modifier.height(20.dp))
                         OutlinedTextField(
-                            value = newChannelName, 
-                            onValueChange = { if (it.length <= 15) newChannelName = it.uppercase() }, 
-                            placeholder = { Text("BARRIO, PUEBLO, SALA...", color = Color.White.copy(0.2f)) },
-                            modifier = Modifier.fillMaxWidth(), 
-                            shape = RoundedCornerShape(16.dp), 
-                            singleLine = true, 
-                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, focusedBorderColor = LuxeColors.Gold)
+                            value = newChannelName,
+                            onValueChange = { if (it.length <= 20) newChannelName = it.uppercase() },
+                            placeholder = { Text("NOMBRE CANAL (EJ: BARRIO OESTE)", color = Color.White.copy(0.2f)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = LuxeColors.Gold,
+                                unfocusedBorderColor = Color.White.copy(0.1f)
+                            )
                         )
-
                         Spacer(Modifier.height(16.dp))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(if (isPrivateSelection) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f))
-                                .clickable { isPrivateSelection = !isPrivateSelection }
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                if (isPrivateSelection) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
-                                null,
-                                tint = if (isPrivateSelection) LuxeColors.Gold else Color.White.copy(0.3f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text("CANAL PRIVADO", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                Text(
-                                    if (isPrivateSelection) "Solo entrarán quienes sepan el código." else "Cualquiera podrá entrar y escuchar.",
-                                    color = Color.White.copy(0.5f),
-                                    fontSize = 10.sp
-                                )
-                            }
-                            Switch(
-                                checked = isPrivateSelection,
-                                onCheckedChange = { isPrivateSelection = it },
-                                colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold, checkedTrackColor = LuxeColors.Gold.copy(0.3f))
-                            )
-                        }
-
-                        if (isPrivateSelection) {
-                            Spacer(Modifier.height(12.dp))
-                            OutlinedTextField(
-                                value = tempSubtone, 
-                                onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) tempSubtone = it }, 
-                                placeholder = { Text("CÓDIGO (4 CIFRAS)", color = Color.White.copy(0.2f)) },
-                                modifier = Modifier.fillMaxWidth(), 
-                                shape = RoundedCornerShape(16.dp), 
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = LuxeColors.Gold, focusedBorderColor = LuxeColors.Gold)
-                            )
-                        }
-                        
                         if (activeRooms.isNotEmpty()) {
-                            Spacer(Modifier.height(20.dp))
-                            Text("CANALES Y RUTAS ACTIVAS:", fontSize = 9.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
+                            Text("SALAS ACTIVAS EN TU ZONA", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
                             Spacer(Modifier.height(8.dp))
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(activeRooms) { (room, count, activity, subtone) ->
-                                    val isFav = state.favoriteChannels.contains(room)
-                                    val isActivity = activity != ActivityProfile.NORMAL
-                                    val isPrivate = subtone != "0000"
-                                    
+                            LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                                items(activeRooms) { room ->
                                     Surface(
                                         onClick = { 
-                                            if (isPrivate) {
-                                                // Si es privado, cargamos los datos en el form para que el usuario ponga el código
-                                                newChannelName = room
-                                                isPrivateSelection = true
-                                                // tempSubtone = "" // Opcional: limpiar código anterior
-                                                onNotification(AppNotification("SALA PRIVADA", "Introduce el código para entrar en $room", NotificationType.Info))
-                                            } else {
-                                                // Si es público, entramos directo
-                                                onStateChange(state.copy(
-                                                    channel = room,
-                                                    activeProfile = activity,
-                                                    subtone = "0000",
-                                                    isMotoModeEnabled = isActivity
-                                                ))
-                                                onDismiss() 
-                                                if (isActivity) onActivityPanelRequest()
-                                            }
+                                            onStateChange(state.copy(channel = room.first, subtone = room.fourth, activeProfile = room.third))
+                                            onDismiss()
+                                            onNotification(AppNotification("CAMBIO DE SALA", "Has entrado en ${room.first}", NotificationType.Info))
                                         },
-                                        color = if(isActivity) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),
+                                        color = Color.White.copy(0.03f),
                                         shape = RoundedCornerShape(12.dp),
-                                        border = BorderStroke(1.dp, if (isActivity) LuxeColors.Gold.copy(0.5f) else if (isFav) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.1f))
+                                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
                                     ) {
-                                        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            if (isPrivate) {
-                                                Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold, modifier = Modifier.size(12.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                            }
-                                            if (isActivity) {
-                                                val icon = getActivityIcon(activity)
-                                                Icon(icon, null, tint = LuxeColors.Gold, modifier = Modifier.size(14.dp))
-                                                Spacer(Modifier.width(6.dp))
-                                            }
-                                            Text(room, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                            if (count > 1) {
-                                                Text(" ($count)", color = Color.White.copy(0.4f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                            }
+                                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(getActivityIcon(room.third), null, tint = LuxeColors.Gold.copy(0.5f), modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(12.dp))
+                                            Text(room.first, modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                            Text("${room.second}", color = LuxeColors.Gold, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                                            Spacer(Modifier.width(4.dp))
+                                            Icon(Icons.Rounded.Group, null, tint = LuxeColors.Gold.copy(0.5f), modifier = Modifier.size(14.dp))
                                         }
                                     }
                                 }
-                                item { Spacer(Modifier.width(180.dp)) }
                             }
                         }
-                        Spacer(Modifier.height(180.dp))
                     }
                 },
-                confirmButton = { 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (newChannelName.isNotBlank()) {
-                            val isSubtoneValid = !isPrivateSelection || tempSubtone.length == 4
-                            IconButton(
-                                onClick = {
-                                    val finalSubtone = if (isPrivateSelection) tempSubtone else "0000"
-                                    onShare(newChannelName, finalSubtone, null, null)
-                                },
-                                enabled = isSubtoneValid
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Share, 
-                                    "Compartir", 
-                                    tint = if (isSubtoneValid) LuxeColors.Gold else LuxeColors.Gold.copy(0.2f)
-                                )
-                            }
-                        }
-                        
-                        val canEnter = newChannelName.isNotBlank() && (!isPrivateSelection || tempSubtone.length == 4)
-                        TextButton(
-                            onClick = { 
-                                if (canEnter) { 
-                                    onStateChange(state.copy(
-                                        channel = newChannelName,
-                                        subtone = if (isPrivateSelection) tempSubtone else "0000"
-                                    ))
-                                    onDismiss() 
-                                } 
-                            },
-                            enabled = canEnter
-                        ) { 
-                            Text(
-                                "ENTRAR", 
-                                color = if (canEnter) LuxeColors.Gold else LuxeColors.Gold.copy(0.3f), 
-                                fontWeight = FontWeight.Black
-                            )
-                        } 
+                confirmButton = {
+                    if (newChannelName.isNotBlank()) {
+                        LuxeButton("CREAR SALA", {
+                            onStateChange(state.copy(channel = newChannelName, favoriteChannels = state.favoriteChannels + newChannelName))
+                            onDismiss()
+                        }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = onDismiss) {
-                        Text("CANCELAR", color = Color.White.copy(0.4f))
-                    }
+                    TextButton(onClick = onDismiss) { Text("CANCELAR", color = Color.White.copy(0.4f)) }
                 }
             )
         }
         RadioDialogType.RADAR_MAP -> AlertDialog(
             onDismissRequest = onDismiss,
             containerColor = LuxeColors.DeepSea,
-            text = { NationalRadarMap(users = users, onCitySelect = { onStateChange(state.copy(city = it, channel = "GENERAL")); onDismiss() }) },
-            confirmButton = { TextButton(onClick = onDismiss) { Text("CERRAR") } }
-        )
-        RadioDialogType.SOS_CONFIRM -> AlertDialog(
-            onDismissRequest = onDismiss,
-            containerColor = LuxeColors.Red,
-            titleContentColor = Color.White,
-            textContentColor = Color.White,
-            modifier = Modifier.border(1.dp, Color.White.copy(0.3f), RoundedCornerShape(12.dp)),
-            icon = { Icon(Icons.Rounded.Warning, null, tint = Color.White, modifier = Modifier.size(40.dp)) },
-            title = { Text("¿ACTIVAR ALERTA SOS?", fontWeight = FontWeight.Black) },
-            text = {
-                Column {
-                    Text("Al activar el SOS ocurrirá lo siguiente:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Spacer(Modifier.height(12.dp))
-                    Text("🚨 Sonará una SIRENA en los móviles de todos los usuarios de ${state.city}.", fontSize = 12.sp)
-                    Text("📲 Recibirán una NOTIFICACIÓN CRÍTICA con tu indicativo.", fontSize = 12.sp)
-                    Text("📍 Se enviará tu UBICACIÓN GPS a toda la red.", fontSize = 12.sp)
-                    Text("🔴 Te marcarás en ROJO parpadeante en la lista profesional.", fontSize = 12.sp)
-                    Spacer(Modifier.height(12.dp))
-                    Text("⚠️ AVISO: Esta es una herramienta de COMUNIDAD. En caso de emergencia real con riesgo vital, llame siempre al 112.", 
-                        fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Black)
-                    Spacer(Modifier.height(4.dp))
-                    Text("El mal uso conlleva baneo permanente.", 
-                        fontSize = 10.sp, color = Color.White.copy(0.7f), fontWeight = FontWeight.Bold)
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            modifier = Modifier.fillMaxSize().padding(16.dp).border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(32.dp)),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Radar, null, tint = LuxeColors.Gold)
+                    Spacer(Modifier.width(12.dp))
+                    Text("RADAR NACIONAL", color = Color.White, fontWeight = FontWeight.Black)
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, null, tint = Color.White.copy(0.4f)) }
                 }
-            },
-            confirmButton = {
-                LuxeButton(
-                    text = if (isLocatingGps) "LOCALIZANDO..." else "ACTIVAR Y ENVIAR GPS",
-                    onClick = {
-                        isLocatingGps = true
-                        onGpsRequestPro { url ->
-                            isLocatingGps = false
-                            onStateChange(state.copy(myIsSOS = true, myGpsUrl = url))
-                            triggerUiSound("siren")
-                            onDismiss()
-                        }
-                    },
-                    enabled = !isLocatingGps,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    containerColor = Color.White,
-                    contentColor = LuxeColors.Red
-                )
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("CANCELAR", color = Color.White.copy(0.7f), fontWeight = FontWeight.Bold)
-                }
-            }
-        )
-        RadioDialogType.PORTADORA -> AlertDialog(
-            onDismissRequest = onDismiss,
-            containerColor = LuxeColors.Red,
-            title = { Text("PORTADORA") },
-            text = { Text("No envíe portadora sin voz.") },
-            confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } }
-        )
-        RadioDialogType.BLACKLIST -> BlacklistDialog(
-            blockedUsers = state.blockedUsers,
-            allUsers = users,
-            onUnblock = { id -> onStateChange(state.copy(blockedUsers = state.blockedUsers - id)) },
-            onDismiss = onDismiss
-        )
-        RadioDialogType.ONBOARDING -> OnboardingDialog(onDismiss = onDismiss)
-        RadioDialogType.SELECT_CITY -> {
-            var citySearch by remember { mutableStateOf("") }
-            val filteredCities = remember(citySearch) {
-                SPAIN_CITIES.filter { it.contains(citySearch.uppercase()) }
-            }
-
-            AlertDialog(
-                onDismissRequest = onDismiss,
-                containerColor = LuxeColors.DeepSea,
-                titleContentColor = LuxeColors.Gold,
-                modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.LocationCity, null, tint = LuxeColors.Gold)
-                        Spacer(Modifier.width(12.dp))
-                        Text("SINTONIZAR CIUDAD", fontWeight = FontWeight.Black, fontSize = 18.sp)
-                    }
-                },
-                text = {
-                    Column(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
-                        // --- 📡 BOTÓN GPS AUTO-TUNE ---
-                        Surface(
-                            onClick = {
-                                isLocatingGps = true
-                                onGpsCityRequestPro { detectedCity ->
-                                    isLocatingGps = false
-                                    if (detectedCity != null) {
-                                        onStateChange(state.copy(city = detectedCity.uppercase(), channel = "GENERAL"))
-                                        onNotification(AppNotification("SINTONIZACIÓN GPS", "Conectado a $detectedCity", NotificationType.Success))
-                                        onDismiss()
-                                    } else {
-                                        onNotification(AppNotification("GPS NO EXACTO", "No hemos podido determinar tu ciudad con precisión.", NotificationType.Warning))
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            color = LuxeColors.ElectricBlue.copy(0.1f),
-                            border = BorderStroke(1.dp, LuxeColors.ElectricBlue.copy(0.4f))
-                        ) {
-                            Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                if (isLocatingGps) {
-                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = LuxeColors.ElectricBlue, strokeWidth = 2.dp)
-                                } else {
-                                    Icon(Icons.Rounded.MyLocation, null, tint = LuxeColors.ElectricBlue)
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Text(if (isLocatingGps) "LOCALIZANDO..." else "SINTONIZAR POR GPS (EXACTO)", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                            }
-                        }
-                        
-                        Text(
-                            "Esta función utiliza tu ubicación solo para sintonizar la ciudad más cercana. Los datos no se almacenan.", 
-                            fontSize = 9.sp, 
-                            color = Color.White.copy(0.4f),
-                            modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp),
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(Modifier.height(20.dp))
-
-                        OutlinedTextField(
-                            value = citySearch,
-                            onValueChange = { citySearch = it },
-                            placeholder = { Text("BUSCAR CIUDAD...", color = Color.White.copy(0.2f)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, focusedBorderColor = LuxeColors.Gold)
-                        )
-
-                        Spacer(Modifier.height(16.dp))
-
-                        LazyColumn(modifier = Modifier.weight(1f)) {
-                            // --- 🆕 OPCIÓN PARA SINTONIZAR PUEBLO PERSONALIZADO ---
-                            if (citySearch.isNotBlank() && !SPAIN_CITIES.contains(citySearch.uppercase())) {
-                                item {
-                                    Surface(
-                                        onClick = {
-                                            onStateChange(state.copy(city = citySearch.uppercase(), channel = "GENERAL"))
-                                            onDismiss()
-                                        },
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = LuxeColors.ElectricBlue.copy(0.1f),
-                                        border = BorderStroke(1.dp, LuxeColors.ElectricBlue.copy(0.3f))
-                                    ) {
-                                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Rounded.AddLocation, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(12.dp))
-                                            Text("SINTONIZAR: ${citySearch.uppercase()}", color = Color.White, fontWeight = FontWeight.Black, fontSize = 13.sp)
-                                        }
-                                    }
-                                }
-                            }
-
-                            items(filteredCities) { city ->
-                                val isSelected = city == state.city
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(if (isSelected) LuxeColors.Gold.copy(0.1f) else Color.Transparent)
-                                        .clickable { 
-                                            onStateChange(state.copy(city = city, channel = "GENERAL"))
-                                            onDismiss() 
-                                        }
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        city, 
-                                        color = if (isSelected) LuxeColors.Gold else Color.White, 
-                                        fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
-                                        fontSize = 14.sp
-                                    )
-                                    if (isSelected) {
-                                        Spacer(Modifier.weight(1f))
-                                        Icon(Icons.Rounded.Check, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                    }
-                                }
-                            }
-                            item { Spacer(Modifier.height(40.dp)) }
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = onDismiss) { Text("CERRAR", color = Color.White.copy(0.4f)) }
-                }
-            )
-        }
-        RadioDialogType.SETTINGS -> {
-            /**
-             * 🔒 HARD-LOCK: CONSOLA DE PRECISIÓN - FOCO DE INTERACCIÓN
-             * PROHIBIDO ELIMINAR DialogProperties O MODIFICAR EL MODIFIER DE FOCO.
-             * Asegura que los botones respondan al primer toque en Android WebView.
-             */
-            AlertDialog(
-                onDismissRequest = onDismiss,
-                containerColor = LuxeColors.DeepSea,
-                titleContentColor = LuxeColors.Gold,
-                // 🛡️ FIX: Forzamos el foco y el aislamiento para evitar que la ventana se quede "congelada" o sin respuesta
-                properties = androidx.compose.ui.window.DialogProperties(
-                    usePlatformDefaultWidth = true,
-                    dismissOnBackPress = true,
-                    dismissOnClickOutside = true
-                ),
-                modifier = Modifier
-                    .fillMaxWidth(0.95f)
-                    .border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Tune, null, tint = LuxeColors.Gold)
-                        Spacer(Modifier.width(12.dp))
-                        Text("CONSOLA DE PRECISIÓN", fontWeight = FontWeight.Black, fontSize = 18.sp)
-                    }
-                },
-                text = {
-                    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                        // --- 🛰️ ACCESO PRIORITARIO AL RADAR HERTZ (VINCULACIÓN NATIVA) ---
-                        Surface(
-                            onClick = { 
-                                onDismiss()
-                                onHertzSentinelRequest()
-                            },
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp).height(64.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color(0xFF06B6D4).copy(0.15f), // Cian eléctrico para máxima visibilidad
-                            border = BorderStroke(2.dp, Color(0xFF06B6D4).copy(0.5f))
-                        ) {
-                            Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier.size(36.dp).background(Color(0xFF06B6D4).copy(0.2f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Rounded.Radar, null, tint = Color(0xFF06B6D4), modifier = Modifier.size(22.dp))
-                                }
-                                Spacer(Modifier.width(16.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text("ACTIVAR RADAR HERTZ", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                                    Text("Escáner real de presencia tras muros", color = Color(0xFF06B6D4), fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                }
-                                Icon(Icons.Rounded.ChevronRight, null, tint = Color.White.copy(0.4f))
-                            }
-                        }
-
-                        // --- 🏃 ACCESO AL MODO ACTIVIDAD (DEPORTES / MANOS LIBRES) ---
-                        Surface(
-                            onClick = { 
-                                onDismiss()
-                                if (state.activeProfile == ActivityProfile.NORMAL) {
-                                    onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR)
-                                } else {
-                                    onActivityPanelRequest()
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp).height(64.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            color = LuxeColors.Gold.copy(0.1f),
-                            border = BorderStroke(2.dp, LuxeColors.Gold.copy(0.3f))
-                        ) {
-                            Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier.size(36.dp).background(LuxeColors.Gold.copy(0.2f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    val icon = when(state.activeProfile) {
-                                        ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler
-                                        ActivityProfile.CICLISMO -> Icons.Rounded.PedalBike
-                                        ActivityProfile.PASEO -> Icons.Rounded.DirectionsWalk
-                                        ActivityProfile.SENDERISMO -> Icons.Rounded.Terrain
-                                        ActivityProfile.SOCORRISTAS -> Icons.Rounded.MedicalServices
-                                        else -> Icons.Rounded.DirectionsRun
-                                    }
-                                    Icon(icon, null, tint = LuxeColors.Gold, modifier = Modifier.size(22.dp))
-                                }
-                                Spacer(Modifier.width(16.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Text("MODO ACTIVIDAD / DEPORTES", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                                    Text(if (state.activeProfile != ActivityProfile.NORMAL) "Activo: ${state.activeProfile.name}" else "Configura manos libres y red de supervivencia", color = LuxeColors.Gold, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                }
-                                Icon(Icons.Rounded.ChevronRight, null, tint = Color.White.copy(0.4f))
-                            }
-                        }
-
-                        EliteSlider("SQUELCH", state.squelch) { onStateChange(state.copy(squelch = it)) }
-                        Spacer(Modifier.height(20.dp))
-                        EliteSlider("RF GAIN", state.rfGain) { onStateChange(state.copy(rfGain = it)) }
-                        
-                        Spacer(Modifier.height(32.dp))
-                        
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            // 🛡️ LIMPIEZA: Interruptores y Sliders redundantes eliminados (Ahora en Dock Táctico)
-                            Text("AJUSTES ADICIONALES", color = Color.White.copy(0.3f), fontSize = 9.sp, fontWeight = FontWeight.Black)
-                        }
-                        
-                        AnimatedVisibility(visible = state.isMonitorEnabled) {
-                            Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(top = 20.dp)) {
-                                if (state.isMonitorEnabled) EliteSlider("VOLUMEN MONITOR", state.monitorVolume) { onStateChange(state.copy(monitorVolume = it)) }
-                            }
-                        }
-
-                        Spacer(Modifier.height(32.dp))
-                        Text("SISTEMA Y SOPORTE", color = LuxeColors.Gold, fontWeight = FontWeight.Black, fontSize = 12.sp, letterSpacing = 2.sp)
-                        Spacer(Modifier.height(20.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // Ahorro de Batería (ECO)
-                            EliteSwitch(Modifier.weight(1f), "MODO ECO", state.isEcoMode) { onStateChange(state.copy(isEcoMode = it)) }
-                            
-                            // Privacidad GPS
-                            EliteSwitch(Modifier.weight(1f), "ZONA PRIVADA", state.isGpsPrivacyEnabled) { onStateChange(state.copy(isGpsPrivacyEnabled = it)) }
-                        }
-
-                        Spacer(Modifier.height(12.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // Sin Restricciones (Ayuda / Guía)
-                            Surface(
-                                onClick = { onDismiss(); onShowHelp() },
-                                modifier = Modifier.weight(1.5f).height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                color = LuxeColors.ElectricBlue.copy(0.1f),
-                                border = BorderStroke(1.dp, LuxeColors.ElectricBlue.copy(0.4f))
-                            ) {
-                                Row(modifier = Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    Icon(Icons.Rounded.BatteryChargingFull, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("SIN RESTRICCIONES", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black, softWrap = false, maxLines = 1)
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(12.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // Mapa Radar (Movido aquí)
-                            Surface(
-                                onClick = { 
-                                    onDismiss()
-                                    onPendingDialogChange(RadioDialogType.RADAR_MAP)
-                                },
-                                modifier = Modifier.weight(1f).height(44.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.White.copy(0.05f),
-                                border = BorderStroke(1.dp, Color.White.copy(0.1f))
-                            ) {
-                                Row(modifier = Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    Icon(Icons.Rounded.Radar, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("MAPA", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black, softWrap = false, maxLines = 1)
-                                }
-                            }
-
-                            // Tutorial Completo
-                            Surface(
-                                onClick = { 
-                                    onDismiss()
-                                    onPendingDialogChange(RadioDialogType.ONBOARDING)
-                                },
-                                modifier = Modifier.weight(1f).height(44.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.White.copy(0.05f),
-                                border = BorderStroke(1.dp, Color.White.copy(0.1f))
-                            ) {
-                                Row(modifier = Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    Icon(Icons.Rounded.Info, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("TUTORIAL", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black, softWrap = false, maxLines = 1)
-                                }
-                            }
-
-                            // Derecho al Olvido (Borrar datos)
-                            Surface(
-                                onClick = { 
-                                    onDismiss()
-                                    onPendingDialogChange(RadioDialogType.DELETE_DATA)
-                                },
-                                modifier = Modifier.weight(1f).height(44.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.Red.copy(0.1f),
-                                border = BorderStroke(1.dp, Color.Red.copy(0.3f))
-                            ) {
-                                Row(modifier = Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    Icon(Icons.Rounded.DeleteSweep, null, tint = Color.Red, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("OLVIDO", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black, softWrap = false, maxLines = 1)
-                                }
-                            }
-                        }
-                        
-                        Spacer(Modifier.height(120.dp)) // 🛡️ FIX: Asegura que el botón no sea tapado por el banner en móviles
-                    }
-                },
-                confirmButton = {}
-            )
-        }
-        RadioDialogType.HERTZ_SENTINEL -> Box(Modifier.fillMaxSize()) {
-            HertzSentinelScreen(
-                onGetWifiVariance = onGetWifiVariance,
-                onGetHeading = onGetHeading,
-                onGetTilt = onGetTilt,
-                onEstadoCambio = onEstadoCambio,
-                onShare = onShare,
-                onNotification = onNotification,
-                onPlaySound = onPlaySound,
-                onExecuteEngineeringAction = onExecuteEngineeringAction,
-                onRequestPermission = onRequestLocationPermission,
-                onOpenSettings = onOpenSettings,
-                initialRfSensitivity = state.radarRfSensitivity,
-                initialMagSensitivity = state.radarMagSensitivity,
-                onSensitivityChange = { rf, mag ->
-                    onStateChange(state.copy(radarRfSensitivity = rf, radarMagSensitivity = mag))
-                },
-                onClose = onDismiss,
-                wifiAuthResult = if (state.capturedCodes.any { it.proto == "WIFI_VERIFY" }) state.capturedCodes.last { it.proto == "WIFI_VERIFY" }.data else null,
-                engineeringPanelVisible = engineeringPanelVisible,
-                onEngineeringPanelChange = onEngineeringPanelChange
-            )
-        }
-        RadioDialogType.NASA_IMAGE -> AlertDialog(
-            onDismissRequest = onDismiss,
-            containerColor = LuxeColors.DeepSea,
-            titleContentColor = LuxeColors.Gold,
-            modifier = Modifier.border(1.dp, LuxeColors.Gold.copy(0.3f), RoundedCornerShape(24.dp)),
-            icon = { Icon(Icons.Rounded.AutoAwesome, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
-            title = { 
-                Text(
-                    state.nasaImageTitle ?: "BOLETÍN NASA: IMAGEN DEL DÍA", 
-                    fontWeight = FontWeight.Black, 
-                    textAlign = TextAlign.Center,
-                    fontSize = 16.sp
-                ) 
             },
             text = {
-                val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
-
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
-                ) {
-                    // --- 🌌 PREVISUALIZACIÓN DE IMAGEN (APOD) ---
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .clickable { 
-                                state.nasaImageUrl?.let { uriHandler.openUri(it) }
-                            },
-                        color = Color.Black.copy(0.4f),
-                        border = BorderStroke(1.dp, Color.White.copy(0.15f))
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Rounded.RocketLaunch, null, tint = Color.White.copy(0.05f), modifier = Modifier.size(100.dp))
-                            Text(
-                                "TOCA PARA ABRIR IMAGEN EN ALTA RESOLUCIÓN",
-                                color = Color.White.copy(0.5f),
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Black,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(top = 120.dp).padding(horizontal = 20.dp)
-                            )
-                        }
-                    }
-
-                    if (state.nasaImageExplanation != null) {
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            state.nasaImageExplanation,
-                            fontSize = 13.sp,
-                            color = Color.White.copy(0.8f),
-                            textAlign = TextAlign.Justify,
-                            lineHeight = 18.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
-                    }
-
-                    Spacer(Modifier.height(32.dp))
-                    
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        LuxeButton(
-                            text = "COMPARTIR",
-                            onClick = { 
-                                onShare(state.city, state.channel, "NASA", null) 
-                            },
-                            enabled = true,
-                            modifier = Modifier.weight(1f).height(54.dp),
-                            containerColor = LuxeColors.ElectricBlue.copy(0.2f),
-                            contentColor = Color.White,
-                            icon = Icons.Rounded.Share
-                        )
-
-                        LuxeButton(
-                            text = "DESCARGAR",
-                            onClick = { 
-                                state.nasaImageUrl?.let { uriHandler.openUri(it) }
-                            },
-                            enabled = state.nasaImageUrl != null,
-                            modifier = Modifier.weight(1f).height(54.dp),
-                            containerColor = LuxeColors.Gold,
-                            contentColor = Color.Black,
-                            icon = Icons.Rounded.Download
-                        )
-                    }
-                    
-                    Spacer(Modifier.height(180.dp)) 
+                Box(Modifier.fillMaxSize()) {
+                    Text("Iniciando motor de radar...", color = LuxeColors.Gold, modifier = Modifier.align(Alignment.Center))
                 }
             },
             confirmButton = {}
         )
-        RadioDialogType.SELECT_NICK -> {
-            var tempNick by remember { mutableStateOf("") }
-            
-            AlertDialog(
-                onDismissRequest = { /* No cerrar si no hay nick */ },
-                containerColor = LuxeColors.DeepSea,
-                titleContentColor = LuxeColors.Gold,
-                modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.PersonAdd, null, tint = LuxeColors.Gold)
-                        Spacer(Modifier.width(12.dp))
-                        Text("IDENTIFICARSE", fontWeight = FontWeight.Black, fontSize = 18.sp)
-                    }
-                },
-                text = {
-                    Column {
-                        Text("¡Bienvenido a la ruta! Introduce un nombre o indicativo para que tus compañeros te vean en el radar.", fontSize = 13.sp, color = Color.White.copy(0.6f))
-                        
-                        Spacer(Modifier.height(20.dp))
-                        
-                        OutlinedTextField(
-                            value = tempNick,
-                            onValueChange = { if (it.length <= 15) tempNick = it.uppercase().replace(" ", "") },
-                            label = { Text("TU NOMBRE / INDICATIVO", fontSize = 10.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = LuxeColors.Gold,
-                                focusedLabelColor = LuxeColors.Gold,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                unfocusedBorderColor = Color.White.copy(0.1f)
-                            )
-                        )
-                        
-                        Spacer(Modifier.height(12.dp))
-                        Text("Al entrar aceptas el uso del micrófono para transmitir tu voz al grupo.", fontSize = 9.sp, color = Color.White.copy(0.3f), textAlign = TextAlign.Center)
-                    }
-                },
-                confirmButton = {
-                    LuxeButton(
-                        text = "ENTRAR A RUTA",
-                        onClick = {
-                            if (tempNick.isNotBlank()) {
-                                onStateChange(state.copy(hasAcceptedMicExplain = true))
-                                onNickChange(tempNick)
-                                onPermissionRequest(tempNick)
-                                onDismiss()
-                            }
-                        },
-                        enabled = tempNick.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                        containerColor = LuxeColors.Gold,
-                        contentColor = Color.Black
+        RadioDialogType.SOS_CONFIRM -> SOSConfirmDialog(
+            onConfirm = {
+                onStateChange(state.copy(activeProfile = ActivityProfile.SOCORRISTAS, channel = "EMERGENCIAS", isMotoModeEnabled = true))
+                onExecuteEngineeringAction("UPDATE_ACTIVE_PROFILE|SOCORRISTAS")
+                onDismiss()
+            },
+            onDismiss = onDismiss
+        )
+        RadioDialogType.BLACKLIST -> FeatureHelpDialog(
+            title = "Lista de Bloqueados",
+            icon = Icons.Rounded.Block,
+            iconColor = Color.Red,
+            description = "Aquí puedes gestionar a los usuarios que has silenciado. No podrás oír sus voces ni ver sus mensajes.",
+            onDismiss = { 
+                onDismiss()
+                onStateChange(state.copy(hasSeenBlacklistIntro = true))
+            }
+        )
+        RadioDialogType.ONBOARDING -> WelcomeOnboarding(
+            nick = state.nick,
+            onStart = {
+                onStateChange(state.copy(hasSeenWelcome = true))
+                onDismiss()
+                triggerUiSound("click")
+            }
+        )
+        RadioDialogType.SELECT_CITY -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            titleContentColor = LuxeColors.Gold,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = { Text("CAMBIAR DE CIUDAD", fontWeight = FontWeight.Black) },
+            text = {
+                Column {
+                    Text("Busca y desplázate a otra ubicación táctica.", color = Color.White.copy(0.6f), fontSize = 12.sp)
+                    Spacer(Modifier.height(20.dp))
+                    OutlinedTextField(
+                        value = state.city,
+                        onValueChange = { onStateChange(state.copy(city = it.uppercase())) },
+                        placeholder = { Text("EJ: MADRID", color = Color.White.copy(0.2f)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LuxeColors.Gold, focusedTextColor = Color.White)
                     )
                 }
-            )
-        }
+            },
+            confirmButton = { LuxeButton("ENTRAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black) }
+        )
+        RadioDialogType.SELECT_NICK -> NickSelectorDialog(
+            initialNick = state.nick,
+            onConfirm = { newNick ->
+                onNickChange(newNick)
+                onDismiss()
+            },
+            onDismiss = onDismiss
+        )
+        RadioDialogType.NASA_IMAGE -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = Color.Black,
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            modifier = Modifier.fillMaxSize(),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.AutoAwesome, null, tint = LuxeColors.ElectricBlue)
+                    Spacer(Modifier.width(12.dp))
+                    Text("IMAGEN DEL DÍA (NASA)", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, null, tint = Color.White) }
+                }
+            },
+            text = {
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    if (state.nasaImageUrl != null) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().height(300.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color.DarkGray
+                        ) {
+                            // En Web se renderiza vía background o similar, aquí es un placeholder visual
+                            Text("Cargando imagen espacial...", color = Color.White.copy(0.5f), modifier = Modifier.padding(20.dp))
+                        }
+                    }
+                    Spacer(Modifier.height(20.dp))
+                    Text(state.nasaImageTitle ?: "", color = LuxeColors.ElectricBlue, fontWeight = FontWeight.Black, fontSize = 18.sp)
+                    Spacer(Modifier.height(12.dp))
+                    Text(state.nasaImageExplanation ?: "", color = Color.White, fontSize = 13.sp, lineHeight = 20.sp)
+                    Spacer(Modifier.height(100.dp))
+                }
+            },
+            confirmButton = {}
+        )
+        RadioDialogType.SETTINGS -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            titleContentColor = LuxeColors.Gold,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = { Text("AJUSTES DE EQUIPO", fontWeight = FontWeight.Black) },
+            text = {
+                Column {
+                    Text("Configuración avanzada de hardware y red.", color = Color.White.copy(0.6f), fontSize = 12.sp)
+                    Spacer(Modifier.height(24.dp))
+                    
+                    // --- ⚙️ BOTÓN ACCESO NATIVO ---
+                    LuxeButton(
+                        text = "ABRIR AJUSTES ANDROID",
+                        onClick = { onOpenSettings() },
+                        enabled = true,
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        containerColor = Color.White.copy(0.05f),
+                        contentColor = Color.White,
+                        icon = Icons.Rounded.Settings
+                    )
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
+                    // --- 📶 VERIFICACIÓN WIFI ---
+                    Surface(
+                        color = Color.White.copy(0.03f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(0.1f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text("ESTADO DE RED", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                if (wifiVerificationResult != null) "Red: $wifiVerificationResult" else "Verificando integridad...",
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = { LuxeButton("CERRAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black) }
+        )
+        RadioDialogType.HERTZ_SENTINEL -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            modifier = Modifier.fillMaxSize().padding(16.dp).border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(32.dp)),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Sensors, null, tint = LuxeColors.Gold)
+                    Spacer(Modifier.width(12.dp))
+                    Text("HERTZ SENTINEL", color = Color.White, fontWeight = FontWeight.Black)
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, null, tint = Color.White.copy(0.4f)) }
+                }
+            },
+            text = {
+                Box(Modifier.fillMaxSize()) {
+                    Text("Escaneando espectro electromagnético...", color = LuxeColors.Gold, modifier = Modifier.align(Alignment.Center))
+                }
+            },
+            confirmButton = {}
+        )
         RadioDialogType.HELP_SQUELCH -> AlertDialog(
             onDismissRequest = onDismiss,
             containerColor = LuxeColors.DeepSea,
             titleContentColor = LuxeColors.Gold,
             modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
-            icon = { Icon(Icons.Rounded.FilterAlt, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
-            title = { Text("¿QUÉ ES EL SQUELCH?", fontWeight = FontWeight.Black) },
+            icon = { Icon(Icons.Rounded.Waves, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
+            title = { Text("¿QUÉ ES EL SQUELCH?", fontWeight = FontWeight.Black, textAlign = TextAlign.Center) },
             text = {
                 Column {
                     Text(
-                        "Es el silenciador de ruido. Corta el sonido de fondo (estática) para que solo oigas a tus compañeros cuando hablen.",
+                        "El Squelch (Silenciador) filtra el ruido de fondo. Solo deja pasar voces que tengan una potencia superior al nivel marcado.",
                         fontSize = 13.sp,
-                        color = Color.White.copy(0.8f),
-                        textAlign = TextAlign.Center
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "• SÚBELO: Si oyes mucho ruido de fondo molesto.\n• BÁJALO: Si tus compañeros se oyen entrecortados o muy lejos.",
+                        "Si lo pones muy bajo, oirás ruido. Si lo pones muy alto, solo oirás a los que estén muy cerca de ti.",
                         fontSize = 12.sp,
-                        color = LuxeColors.Gold.copy(0.7f),
+                        color = Color.White.copy(0.7f),
+                        textAlign = TextAlign.Center,
                         lineHeight = 18.sp
                     )
                 }
             },
             confirmButton = {
-                LuxeButton("AJUSTAR EN CONSOLA", { onDismiss(); onPendingDialogChange(RadioDialogType.SETTINGS) }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+                LuxeButton("ENTENDIDO", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
             }
         )
         RadioDialogType.HELP_GAIN -> AlertDialog(
@@ -1799,27 +1265,29 @@ fun RadioDialogs(
             containerColor = LuxeColors.DeepSea,
             titleContentColor = LuxeColors.Gold,
             modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
-            icon = { Icon(Icons.Rounded.SettingsInputAntenna, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
-            title = { Text("GANANCIA DE RF", fontWeight = FontWeight.Black) },
+            icon = { Icon(Icons.Rounded.SettingsVoice, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
+            title = { Text("GANANCIA DE RF", fontWeight = FontWeight.Black, textAlign = TextAlign.Center) },
             text = {
                 Column {
                     Text(
-                        "Controla la sensibilidad de tu antena digital. Determina cuánta señal eres capaz de captar del aire.",
+                        "La ganancia ajusta la sensibilidad de tu antena virtual. Aumentarla permite captar estaciones más lejanas.",
                         fontSize = 13.sp,
-                        color = Color.White.copy(0.8f),
-                        textAlign = TextAlign.Center
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "• AL 100%: Máximo alcance, pero captarás más interferencias.\n• BÁJALA: Si estás en una zona con mucha saturación o muchos usuarios hablando a la vez.",
+                        "Cuidado: Si hay mucha gente hablando a la vez, una ganancia muy alta puede saturar el audio de tu equipo.",
                         fontSize = 12.sp,
-                        color = LuxeColors.Gold.copy(0.7f),
+                        color = Color.White.copy(0.7f),
+                        textAlign = TextAlign.Center,
                         lineHeight = 18.sp
                     )
                 }
             },
             confirmButton = {
-                LuxeButton("AJUSTAR EN CONSOLA", { onDismiss(); onPendingDialogChange(RadioDialogType.SETTINGS) }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+                LuxeButton("ENTENDIDO", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
             }
         )
         RadioDialogType.HELP_PRIVACY -> AlertDialog(
@@ -1880,7 +1348,40 @@ fun RadioDialogs(
                 }
             }
         )
-
+        RadioDialogType.MIC_REQUEST -> MicRequestDialog(
+            onAccept = {
+                onDismiss()
+                onStateChange(state.copy(hasAcceptedMicExplain = true))
+                onMic(true, 0.7f)
+                onMic(false, 0f)
+            },
+            onDismiss = onDismiss
+        )
+        RadioDialogType.DELETE_ROOM -> if (channelToDelete != null) {
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                containerColor = LuxeColors.DeepSea,
+                titleContentColor = LuxeColors.Red,
+                modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(12.dp)),
+                title = { Row { Icon(Icons.Rounded.DeleteSweep, null, tint = LuxeColors.Red); Text(" ELIMINAR SALA") } },
+                text = { Text("¿Eliminar sala $channelToDelete?") },
+                confirmButton = {
+                    Button(onClick = {
+                        val newState = state.copy(favoriteChannels = state.favoriteChannels - channelToDelete)
+                        onStateChange(if (state.channel == channelToDelete) newState.copy(channel = "GENERAL") else newState)
+                        onNotification(AppNotification("SALA ELIMINADA", "Has vuelto al Canal Público", NotificationType.Info))
+                        onDismiss()
+                    }, colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Red)) { Text("ELIMINAR") }
+                }
+            )
+        }
+        RadioDialogType.DELETE_DATA -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.Red,
+            title = { Text("BORRAR RASTRO") },
+            text = { Text("Eliminará permanentemente tus datos en este dispositivo.") },
+            confirmButton = { Button(onClick = { onDismiss(); onLogoutConfirm() }, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = LuxeColors.Red)) { Text("BORRAR TODO") } }
+        )
         else -> {}
     }
 }
@@ -1889,21 +1390,19 @@ fun RadioDialogs(
 private fun PoiChip(
     label: String,
     category: String,
-    onExecuteAction: (String) -> Unit,
-    onDismiss: () -> Unit
+    isSelected: Boolean = false,
+    onExecuteAction: (String) -> Unit
 ) {
     Surface(
-        onClick = { 
-            onExecuteAction("FETCH_POIS|$category")
-        },
-        color = Color.White.copy(0.05f),
+        onClick = { onExecuteAction("FETCH_POIS|$category") },
+        color = if (isSelected) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, Color.White.copy(0.1f))
+        border = BorderStroke(1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(0.1f))
     ) {
         Text(
             text = label,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            color = Color.White,
+            color = if (isSelected) LuxeColors.Gold else Color.White,
             fontSize = 11.sp,
             fontWeight = FontWeight.Black
         )

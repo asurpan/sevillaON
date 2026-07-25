@@ -850,9 +850,9 @@ fun RadioPanel(
 
             Spacer(Modifier.height(24.dp))
 
-            // --- 🛠️ PANEL DE INSTRUMENTACIÓN TÁCTICA ---
+            // --- 🛠️ PANEL DE INSTRUMENTACIÓN ---
             Text(
-                "INSTRUMENTACIÓN TÁCTICA",
+                "INSTRUMENTACIÓN",
                 color = LuxeColors.Gold.copy(0.6f),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Black,

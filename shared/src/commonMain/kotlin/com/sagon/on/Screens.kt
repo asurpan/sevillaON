@@ -1331,6 +1331,7 @@ fun ActivityPanel(
     onBgGenreChange: (String) -> Unit = {},
     onNotification: (AppNotification) -> Unit = {},
     onGetHeading: () -> Float = { 0f },
+    nextInstruction: String? = null,
     isBeeping: Boolean,
     externalPtt: Boolean = false,
     externalPttBlocked: Boolean = false,
@@ -1443,6 +1444,18 @@ fun ActivityPanel(
         onExecuteEngineeringAction("SHOW_BANNER")
         delay(1000)
         onExecuteEngineeringAction("SPEAK|Modo Actividad iniciado. Optimizando audio y GPS para tu ruta.")
+    }
+
+    // --- 🔍 CONTROL DE ZOOM TÁCTICO ---
+    LaunchedEffect(isZoomed) {
+        onExecuteEngineeringAction("SET_MAP_ZOOM|${if(isZoomed) 18 else 14}")
+    }
+
+    // --- 🎙️ GUÍA POR VOZ TÁCTICA ---
+    LaunchedEffect(nextInstruction) {
+        if (nextInstruction != null) {
+            onExecuteEngineeringAction("SPEAK|$nextInstruction")
+        }
     }
 
     // --- 🛡️ FIX AMETRALLADORA: Separar intención de transmisión del pitido ---
@@ -1685,6 +1698,53 @@ fun ActivityPanel(
                                 tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White,
                                 modifier = Modifier.size(24.dp).scale(if (isTransmittingState) 1.2f else 1f)
                             )
+                        }
+                    }
+                }
+
+                // --- 📟 HUD TÁCTICO DE NAVEGACIÓN ---
+                if (state.routeDestinationName != null) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 16.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.Black.copy(0.7f))
+                            .border(1.dp, LuxeColors.ElectricBlue.copy(0.3f), RoundedCornerShape(16.dp))
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = state.routeDestinationName.uppercase(),
+                                color = LuxeColors.Gold,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 1.sp,
+                                maxLines = 1
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Route, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(12.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(state.routeDistanceKm ?: "-- KM", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                                Spacer(Modifier.width(12.dp))
+                                Icon(Icons.Rounded.Schedule, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(12.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(state.routeDurationMin ?: "-- MIN", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                            }
+                            
+                            // --- 🎙️ INDICACIÓN VISUAL DE VOZ ---
+                            if (state.nextNavigationStep != null) {
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = state.nextNavigationStep,
+                                    color = LuxeColors.ElectricBlue,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                    lineHeight = 13.sp,
+                                    maxLines = 2
+                                )
+                            }
                         }
                     }
                 }

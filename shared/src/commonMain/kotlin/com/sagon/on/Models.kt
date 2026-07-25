@@ -159,7 +159,11 @@ data class RadioState(
     val routeImage: String? = null, // Imagen opcional de la ruta
     val capturedCodes: List<CapturedCode> = emptyList(),
     val wifiNetworks: List<WifiNetwork> = emptyList(),
-    val routeSuggestions: List<RouteSuggestion> = emptyList()
+    val routeSuggestions: List<RouteSuggestion> = emptyList(),
+    val routeDistanceKm: String? = null,
+    val routeDurationMin: String? = null,
+    val routeDestinationName: String? = null,
+    val nextNavigationStep: String? = null
 )
 
 data class CapturedCode(val id: String, val proto: String, val data: String)

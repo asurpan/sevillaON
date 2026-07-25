@@ -120,6 +120,10 @@ fun App(
     nasaImageUrl: String? = null,
     nasaImageTitle: String? = null,
     nasaImageExplanation: String? = null,
+    routeDistanceKm: String? = null,
+    routeDurationMin: String? = null,
+    routeDestinationName: String? = null,
+    nextNavigationStep: String? = null,
     initialState: RadioState
 ) {
     var screenState by remember { 
@@ -133,7 +137,19 @@ fun App(
     var isAppReady by remember { mutableStateOf(true) }
 
     var nick by remember { mutableStateOf(savedNick) }
-    var radioState by remember { mutableStateOf(initialState) }
+    var radioState by remember { 
+        mutableStateOf(
+            initialState.copy(
+                nasaImageUrl = nasaImageUrl ?: initialState.nasaImageUrl,
+                nasaImageTitle = nasaImageTitle ?: initialState.nasaImageTitle,
+                nasaImageExplanation = nasaImageExplanation ?: initialState.nasaImageExplanation,
+                routeDistanceKm = routeDistanceKm ?: initialState.routeDistanceKm,
+                routeDurationMin = routeDurationMin ?: initialState.routeDurationMin,
+                routeDestinationName = routeDestinationName ?: initialState.routeDestinationName,
+                nextNavigationStep = nextNavigationStep ?: initialState.nextNavigationStep
+            )
+        ) 
+    }
     var localNotification by remember { mutableStateOf<AppNotification?>(null) }
     var showActivityRadar by remember { mutableStateOf(false) } // 🛡️ Pantalla de Radar de Presencia / Actividad
     var showActivityMap by remember { mutableStateOf(initialState.activeProfile != ActivityProfile.NORMAL) } // 🛡️ Nueva pantalla de Deporte/Ruta
@@ -556,7 +572,7 @@ fun App(
         }
     }
 
-    LaunchedEffect(nasaImageUrl, nasaImageTitle, nasaImageExplanation) {
+    LaunchedEffect(nasaImageUrl, nasaImageTitle, nasaImageExplanation, routeDistanceKm, routeDurationMin, routeDestinationName) {
         if (nasaImageUrl != null && nasaImageUrl != radioState.nasaImageUrl) {
             radioState = radioState.copy(
                 nasaImageUrl = nasaImageUrl,
@@ -565,6 +581,17 @@ fun App(
             )
             // Abrir automáticamente el diálogo al recibir una nueva imagen
             pendingDialog = RadioDialogType.NASA_IMAGE
+        }
+        if (routeDistanceKm != radioState.routeDistanceKm || 
+            routeDurationMin != radioState.routeDurationMin || 
+            routeDestinationName != radioState.routeDestinationName ||
+            nextNavigationStep != radioState.nextNavigationStep) {
+            radioState = radioState.copy(
+                routeDistanceKm = routeDistanceKm,
+                routeDurationMin = routeDurationMin,
+                routeDestinationName = routeDestinationName,
+                nextNavigationStep = nextNavigationStep
+            )
         }
     }
 
@@ -1087,6 +1114,7 @@ fun App(
                         },
                         onNotification = { localNotification = it },
                         onGetHeading = onGetHeading,
+                        nextInstruction = radioState.nextNavigationStep,
                         isBeeping = isBeeping,
                         externalPtt = externalPtt,
                         externalPttBlocked = externalPttBlocked,

@@ -632,6 +632,17 @@ fun RadioDialogs(
         RadioDialogType.ACTIVITY_SELECTOR -> {
             var tempRouteName by remember { mutableStateOf("") }
             var tempRouteRules by remember { mutableStateOf("") }
+            var destinationText by remember { mutableStateOf("") }
+            var selectedActivity by remember { mutableStateOf<ActivityProfile?>(null) }
+            var isLaunching by remember { mutableStateOf(false) }
+
+            // --- 🛡️ MOTOR DE BÚSQUEDA EN TIEMPO REAL ---
+            LaunchedEffect(destinationText) {
+                if (destinationText.length > 2) {
+                    delay(500)
+                    onExecuteEngineeringAction("GET_LOCATION_SUGGESTIONS|$destinationText")
+                }
+            }
             
             AlertDialog(
                 onDismissRequest = onDismiss,
@@ -656,27 +667,7 @@ fun RadioDialogs(
                 text = {
                     Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                         
-                        // --- ℹ️ INFO CARD ---
-                        Surface(
-                            color = LuxeColors.ElectricBlue.copy(0.05f),
-                            shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.dp, LuxeColors.ElectricBlue.copy(0.2f)),
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)
-                        ) {
-                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Info, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    "Crea el equipo, comparte el enlace y aparecerán en tu Radar GPS al instante sin registros.",
-                                    color = Color.White.copy(0.8f),
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    lineHeight = 16.sp
-                                )
-                            }
-                        }
-
-                        // --- 📝 BLOQUE 1: DATOS DE LA RUTA ---
+                        // --- 📝 BLOQUE 1: IDENTIFICACIÓN ---
                         Text("1. IDENTIFICACIÓN DE RUTA", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
                         Spacer(Modifier.height(12.dp))
                         
@@ -684,7 +675,7 @@ fun RadioDialogs(
                             color = Color.White.copy(0.03f),
                             shape = RoundedCornerShape(20.dp),
                             border = BorderStroke(1.dp, Color.White.copy(0.1f)),
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)
                         ) {
                             Column(Modifier.padding(16.dp)) {
                                 OutlinedTextField(
@@ -715,8 +706,96 @@ fun RadioDialogs(
                             }
                         }
 
-                        // --- 🛡️ BLOQUE 2: SEGURIDAD Y PRIVACIDAD ---
-                        Text("2. CONFIGURACIÓN TÁCTICA", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
+                        // --- 🗺️ BLOQUE 2: DESTINO ---
+                        Text("2. DESTINO DE LA MISIÓN", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
+                        Spacer(Modifier.height(12.dp))
+
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color.White.copy(0.05f),
+                            border = BorderStroke(1.dp, Color.White.copy(0.1f))
+                        ) {
+                            Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Search, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(12.dp))
+                                BasicTextField(
+                                    value = destinationText,
+                                    onValueChange = { destinationText = it },
+                                    modifier = Modifier.weight(1f),
+                                    textStyle = TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold),
+                                    cursorBrush = SolidColor(LuxeColors.Gold)
+                                )
+                            }
+                        }
+                        
+                        if (state.routeSuggestions.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().heightIn(max = 150.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.Black.copy(0.3f),
+                                border = BorderStroke(1.dp, Color.White.copy(0.05f))
+                            ) {
+                                LazyColumn {
+                                    items(state.routeSuggestions) { suggestion ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().clickable {
+                                                destinationText = suggestion.name
+                                                onExecuteEngineeringAction("CENTER_MAP|${suggestion.lat}|${suggestion.lon}")
+                                                onExecuteEngineeringAction("SET_DESTINATION|${suggestion.lat}|${suggestion.lon}|${suggestion.name}")
+                                            }.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Rounded.LocationOn, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(10.dp))
+                                            Text(suggestion.name, color = Color.White.copy(0.8f), fontSize = 11.sp, maxLines = 2)
+                                        }
+                                        HorizontalDivider(color = Color.White.copy(0.05f))
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+                        Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            val activity = selectedActivity ?: state.activeProfile
+                            
+                            when (activity) {
+                                ActivityProfile.MOTO, ActivityProfile.CARAVANAS -> {
+                                    PoiChip("⛽ GASOLINERA", "GASOLINERAS", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("🍽️ COMIDA", "RESTAURANTES", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("🅿️ PARKING", "PARKINGS", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("🏛️ MONUMENTOS", "MONUMENTOS", onExecuteEngineeringAction, onDismiss)
+                                }
+                                ActivityProfile.CICLISMO -> {
+                                    PoiChip("💧 FUENTES", "FUENTES", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("🚲 TALLERES", "TALLERES", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("🌲 NATURALEZA", "NATURALEZA", onExecuteEngineeringAction, onDismiss)
+                                }
+                                ActivityProfile.SENDERISMO, ActivityProfile.PASEO -> {
+                                    PoiChip("🏞️ MIRADORES", "NATURALEZA", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("🌳 PARQUES", "PARQUES", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("🚻 ASEOS", "ASEOS", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("🏛️ MONUMENTOS", "MONUMENTOS", onExecuteEngineeringAction, onDismiss)
+                                }
+                                ActivityProfile.SOCORRISTAS -> {
+                                    PoiChip("🏥 HOSPITAL", "HOSPITALES", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("💊 FARMACIA", "FARMACIAS", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("🏛️ MONUMENTOS", "MONUMENTOS", onExecuteEngineeringAction, onDismiss)
+                                }
+                                else -> {
+                                    PoiChip("🏛️ MONUMENTOS", "MONUMENTOS", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("🎭 EVENTOS", "EVENTOS", onExecuteEngineeringAction, onDismiss)
+                                    PoiChip("🌲 NATURALEZA", "NATURALEZA", onExecuteEngineeringAction, onDismiss)
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+
+                        // --- 🛡️ BLOQUE 3: SEGURIDAD ---
+                        Text("3. CONFIGURACIÓN TÁCTICA", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
                         Spacer(Modifier.height(12.dp))
 
                         Row(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -733,20 +812,9 @@ fun RadioDialogs(
                                     Text("PRIVADO", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (isPrivateSelection) LuxeColors.Gold else Color.White)
                                 }
                             }
-
-                            // ZONA PROTEGIDA
-                            Surface(
-                                onClick = { onStateChange(state.copy(isGpsPrivacyEnabled = !state.isGpsPrivacyEnabled)) },
-                                modifier = Modifier.weight(1f).height(64.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                color = if (state.isGpsPrivacyEnabled) LuxeColors.ElectricBlue.copy(0.15f) else Color.White.copy(0.05f),
-                                border = BorderStroke(1.dp, if (state.isGpsPrivacyEnabled) LuxeColors.ElectricBlue else Color.White.copy(0.1f))
-                            ) {
-                                Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                                    Icon(Icons.Rounded.Security, null, tint = if (state.isGpsPrivacyEnabled) LuxeColors.ElectricBlue else Color.White.copy(0.4f), modifier = Modifier.size(20.dp))
-                                    Text("ESCUDO GPS", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (state.isGpsPrivacyEnabled) LuxeColors.ElectricBlue else Color.White)
-                                }
-                            }
+                            
+                            // Espacio vacío para equilibrar el Row tras quitar el escudo
+                            Spacer(Modifier.weight(1f))
                         }
 
                         if (isPrivateSelection) {
@@ -763,8 +831,8 @@ fun RadioDialogs(
                             )
                         }
 
-                        // --- 🏃 BLOQUE 3: SELECTOR DE ACTIVIDAD ---
-                        Text("3. MODO DE COORDINACIÓN", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
+                        // --- 🏃 BLOQUE 4: SELECTOR DE ACTIVIDAD ---
+                        Text("4. MODO DE COORDINACIÓN", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
                         Spacer(Modifier.height(12.dp))
                         
                         val activities = ActivityProfile.entries.filter { it != ActivityProfile.NORMAL }
@@ -772,38 +840,23 @@ fun RadioDialogs(
                         activities.chunked(2).forEach { row ->
                             Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 row.forEach { act ->
-                                    val isSelected = state.activeProfile == act
-                                    val isEnabled = tempRouteName.isNotBlank()
+                                    val isSelected = selectedActivity == act
+                                    val isReady = tempRouteName.isNotBlank()
                                     
                                     Surface(
-                                        onClick = { 
-                                            if (isEnabled) {
-                                                val finalChannel = if (tempRouteName.isNotBlank()) tempRouteName else state.channel
-                                                val autoCode = if (isPrivateSelection) (if(tempSubtone.length == 4) tempSubtone else (1000..9999).random().toString()) else "0000"
-                                                onStateChange(state.copy(
-                                                    activeProfile = act, 
-                                                    isMotoModeEnabled = true,
-                                                    channel = finalChannel,
-                                                    subtone = autoCode,
-                                                    routeRules = tempRouteRules.ifBlank { null }
-                                                ))
-                                                onExecuteEngineeringAction("UPDATE_ACTIVE_PROFILE|${act.name}")
-                                                onDismiss()
-                                                onActivityPanelRequest()
-                                            }
-                                        },
+                                        onClick = { if (isReady) selectedActivity = act },
                                         modifier = Modifier.weight(1f).height(80.dp),
                                         shape = RoundedCornerShape(16.dp),
-                                        color = if (isSelected) LuxeColors.Gold.copy(0.2f) else if(isEnabled) Color.White.copy(0.08f) else Color.White.copy(0.02f),
-                                        border = BorderStroke(1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(if(isEnabled) 0.2f else 0.05f))
+                                        color = if (isSelected) LuxeColors.Gold.copy(0.2f) else if(isReady) Color.White.copy(0.08f) else Color.White.copy(0.02f),
+                                        border = BorderStroke(1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(if(isReady) 0.2f else 0.05f))
                                     ) {
                                         Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                             val icon = getActivityIcon(act)
-                                            Icon(icon, null, tint = if (isSelected) LuxeColors.Gold else Color.White.copy(if(isEnabled) 0.8f else 0.2f), modifier = Modifier.size(32.dp))
+                                            Icon(icon, null, tint = if (isSelected) LuxeColors.Gold else Color.White.copy(if(isReady) 0.8f else 0.2f), modifier = Modifier.size(32.dp))
                                             Spacer(Modifier.height(4.dp))
                                             Text(
                                                 if (act == ActivityProfile.SOCORRISTAS) "SOCORRO" else act.name, 
-                                                color = if(isEnabled) Color.White else Color.White.copy(0.2f), 
+                                                color = if(isReady) Color.White else Color.White.copy(0.2f), 
                                                 fontSize = 10.sp, 
                                                 fontWeight = FontWeight.Black
                                             )
@@ -813,10 +866,42 @@ fun RadioDialogs(
                             }
                         }
                         
-                        Spacer(Modifier.height(140.dp)) 
+                        Spacer(Modifier.height(32.dp))
+                        
+                        LuxeButton(
+                            text = if (isLaunching) "INICIANDO..." else "LANZAR MISIÓN",
+                            onClick = {
+                                if (tempRouteName.isNotBlank() && selectedActivity != null) {
+                                    isLaunching = true
+                                    val finalChannel = tempRouteName
+                                    val autoCode = if (isPrivateSelection) (if(tempSubtone.length == 4) tempSubtone else (1000..9999).random().toString()) else "0000"
+                                    
+                                    onStateChange(state.copy(
+                                        activeProfile = selectedActivity!!, 
+                                        isMotoModeEnabled = true,
+                                        isAvoidingHighways = state.isAvoidingHighways || selectedActivity == ActivityProfile.MOTO,
+                                        channel = finalChannel,
+                                        subtone = autoCode,
+                                        routeRules = tempRouteRules.ifBlank { null }
+                                    ))
+                                    onExecuteEngineeringAction("UPDATE_ACTIVE_PROFILE|${selectedActivity!!.name}")
+                                    if (destinationText.isNotBlank()) {
+                                        onExecuteEngineeringAction("SEARCH_LOCATION|$destinationText")
+                                    }
+                                    onDismiss()
+                                    onActivityPanelRequest()
+                                }
+                            },
+                            enabled = tempRouteName.isNotBlank() && selectedActivity != null,
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            containerColor = LuxeColors.Gold,
+                            contentColor = Color.Black
+                        )
+
+                        Spacer(Modifier.height(100.dp)) 
                     }
                 },
-                confirmButton = { TextButton(onClick = onDismiss) { Text("CANCELAR", color = Color.White.copy(0.4f)) } }
+                confirmButton = {}
             )
         }
         RadioDialogType.MIC_REQUEST -> MicRequestDialog(
@@ -1796,130 +1881,31 @@ fun RadioDialogs(
             }
         )
 
-        RadioDialogType.ROUTE_PLANNER -> {
-            var destinationText by remember { mutableStateOf("") }
-            var isSearching by remember { mutableStateOf(false) }
-
-            // --- 🛡️ MOTOR DE BÚSQUEDA EN TIEMPO REAL ---
-            LaunchedEffect(destinationText) {
-                if (destinationText.length > 2) {
-                    delay(500) // Debounce
-                    onExecuteEngineeringAction("GET_LOCATION_SUGGESTIONS|$destinationText")
-                }
-            }
-
-            AlertDialog(
-                onDismissRequest = onDismiss,
-                containerColor = LuxeColors.DeepSea,
-                modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
-                title = { 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Explore, null, tint = LuxeColors.Gold, modifier = Modifier.size(28.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Text("PLANIFICADOR AVENTURA", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
-                    }
-                },
-                text = {
-                    Column {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color.White.copy(0.05f),
-                            border = BorderStroke(1.dp, Color.White.copy(0.1f))
-                        ) {
-                            Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Search, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(12.dp))
-                                BasicTextField(
-                                    value = destinationText,
-                                    onValueChange = { destinationText = it },
-                                    modifier = Modifier.weight(1f),
-                                    textStyle = TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold),
-                                    cursorBrush = SolidColor(LuxeColors.Gold)
-                                )
-                            }
-                        }
-                        
-                        // --- 📍 LISTA DE SUGERENCIAS ---
-                        if (state.routeSuggestions.isNotEmpty()) {
-                            Spacer(Modifier.height(12.dp))
-                            Surface(
-                                modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.Black.copy(0.3f),
-                                border = BorderStroke(1.dp, Color.White.copy(0.05f))
-                            ) {
-                                LazyColumn {
-                                    items(state.routeSuggestions) { suggestion ->
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    onExecuteEngineeringAction("CENTER_MAP|${suggestion.lat}|${suggestion.lon}")
-                                                    onExecuteEngineeringAction("SET_DESTINATION|${suggestion.lat}|${suggestion.lon}")
-                                                    onDismiss()
-                                                }
-                                                .padding(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(Icons.Rounded.LocationOn, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(10.dp))
-                                            Text(suggestion.name, color = Color.White.copy(0.8f), fontSize = 11.sp, maxLines = 2)
-                                        }
-                                        HorizontalDivider(color = Color.White.copy(0.05f))
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(20.dp))
-                        
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Switch(
-                                checked = state.isAvoidingHighways,
-                                onCheckedChange = { onStateChange(state.copy(isAvoidingHighways = it)) },
-                                colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold, checkedTrackColor = LuxeColors.Gold.copy(0.3f))
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text("MODO CURVAS", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                Text("Evitar autopistas", color = Color.White.copy(0.5f), fontSize = 10.sp)
-                            }
-                        }
-                        
-                        Spacer(Modifier.height(20.dp))
-                        
-                        LuxeButton(
-                            text = "BUSCAR CASTILLOS",
-                            onClick = {
-                                onExecuteEngineeringAction("FETCH_POIS|CASTLES")
-                                onPlaySound("click")
-                            },
-                            enabled = true,
-                            modifier = Modifier.fillMaxWidth().height(44.dp),
-                            containerColor = Color.White.copy(0.1f),
-                            contentColor = Color.White
-                        )
-                    }
-                },
-                confirmButton = {
-                    LuxeButton(
-                        text = if (isSearching) "CALCULANDO..." else "LANZAR MISIÓN",
-                        onClick = {
-                            if (destinationText.isNotBlank()) {
-                                isSearching = true
-                                onExecuteEngineeringAction("SEARCH_LOCATION|$destinationText")
-                                onDismiss()
-                            }
-                        },
-                        enabled = destinationText.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                        containerColor = LuxeColors.Gold,
-                        contentColor = Color.Black
-                    )
-                }
-            )
-        }
         else -> {}
+    }
+}
+
+@Composable
+private fun PoiChip(
+    label: String,
+    category: String,
+    onExecuteAction: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Surface(
+        onClick = { 
+            onExecuteAction("FETCH_POIS|$category")
+        },
+        color = Color.White.copy(0.05f),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, Color.White.copy(0.1f))
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            color = Color.White,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Black
+        )
     }
 }

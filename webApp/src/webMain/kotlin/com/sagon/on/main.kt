@@ -1089,7 +1089,7 @@ object RadioCore {
                     }
                 };
 
-                window.setMapDestination = function(destLat, destLon) {
+                window.setMapDestination = function(destLat, destLon, destName) {
                     if (!window.app.map) return;
                     
                     var myLat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
@@ -1101,7 +1101,6 @@ object RadioCore {
                     
                     // --- 🧠 SELECCIÓN DE PERFIL INTELIGENTE ---
                     var activeProfile = localStorage.getItem("activeProfile") || "NORMAL";
-                    var isAvoidingHighways = localStorage.getItem("avoid_highways") === "true";
                     var routerUrl = 'https://router.project-osrm.org/route/v1';
                     
                     var profile = 'driving'; 
@@ -1109,9 +1108,7 @@ object RadioCore {
                         profile = 'bicycle';
                     } else if (['PASEO', 'SENDERISMO'].indexOf(activeProfile) !== -1) {
                         profile = 'foot';
-                    } else if (activeProfile === 'MOTO' && isAvoidingHighways) {
-                        // Para moto "Modo Curvas", usamos perfil de bici (que evita autopistas) 
-                        // pero sobre la red de carreteras (si el router lo permite)
+                    } else if (activeProfile === 'MOTO') {
                         profile = 'bicycle'; 
                     }
                     
@@ -1125,7 +1122,7 @@ object RadioCore {
                             profile: profile
                         }),
                         lineOptions: {
-                            styles: [{ color: '#06B6D4', weight: 6, opacity: 0.8 }]
+                            styles: [{ color: '#22C55E', weight: 6, opacity: 0.8 }]
                         },
                         createMarker: function() { return null; },
                         addWaypoints: false,
@@ -1135,31 +1132,66 @@ object RadioCore {
                         show: false
                     });
                     
+                    control.on('routesfound', function(e) {
+                        var route = e.routes[0];
+                        var dist = (route.summary.totalDistance / 1000).toFixed(1) + " KM";
+                        var time = Math.round(route.summary.totalTime / 60) + " MIN";
+                        var name = destName || "Destino Táctico";
+                        
+                        // Guardar instrucciones para el motor de voz
+                        window.app.currentInstructions = route.instructions;
+                        window.app.lastSpokenStepIndex = -1;
+                        
+                        if (window.dispatch_route_info) {
+                            window.dispatch_route_info(dist, time, name);
+                        }
+                    });
+
                     control.addTo(window.app.map);
                     window.app.routingControl = control;
                     console.log("🛣️ Misión táctica lanzada (" + profile + ") hasta: " + destLat + "," + destLon);
                 };
 
-                window.fetchTacticalPOIs = function(lat, lon) {
+                window.fetchTacticalPOIs = function(lat, lon, category) {
                     if (!window.app.map) return;
-                    var radius = 50000;
-                    var query = '[out:json][timeout:25];(node["historic"="castle"](around:' + radius + ',' + lat + ',' + lon + ');node["historic"="monument"](around:' + radius + ',' + lat + ',' + lon + ');node["tourism"="viewpoint"](around:' + radius + ',' + lat + ',' + lon + '););out body;';
+                    var radius = 20000; // Radio de búsqueda de 20km para táctica
+                    
+                    var filter = 'node["historic"]'; // Default
+                    if (category === "MONUMENTOS") filter = 'node["historic"]';
+                    else if (category === "EVENTOS") filter = 'node["amenity"~"theatre|cinema|arts_centre"]';
+                    else if (category === "NATURALEZA") filter = 'node["tourism"~"viewpoint|picnic_site"]';
+                    else if (category === "GASOLINERAS") filter = 'node["amenity"="fuel"]';
+                    else if (category === "RESTAURANTES") filter = 'node["amenity"="restaurant"]';
+                    else if (category === "PARKINGS") filter = 'node["amenity"="parking"]';
+                    else if (category === "FUENTES") filter = 'node["amenity"="drinking_water"]';
+                    else if (category === "TALLERES") filter = 'node["shop"~"bicycle|motorcycle|car_repair"]';
+                    else if (category === "HOSPITALES") filter = 'node["amenity"~"hospital|clinic"]';
+                    else if (category === "FARMACIAS") filter = 'node["amenity"="pharmacy"]';
+                    else if (category === "PARQUES") filter = 'node["leisure"="park"]';
+                    else if (category === "ASEOS") filter = 'node["amenity"="toilets"]';
+                    
+                    var query = '[out:json][timeout:25];(' + filter + '(around:' + radius + ',' + lat + ',' + lon + '););out body;';
                     fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query))
                         .then(function(r) { return r.json(); })
                         .then(function(data) {
                             if (data && data.elements) {
                                 data.elements.forEach(function(poi) {
+                                    var iconColor = "#D4AF37"; // Gold default
+                                    if (["GASOLINERAS", "FUENTES"].indexOf(category) !== -1) iconColor = "#06B6D4"; // Cyan
+                                    if (["HOSPITALES", "FARMACIAS"].indexOf(category) !== -1) iconColor = "#E11D48"; // Red
+                                    if (["NATURALEZA", "PARQUES"].indexOf(category) !== -1) iconColor = "#22C55E"; // Green
+                                    
                                     var icon = L.divIcon({
                                         className: 'tactical-poi',
-                                        html: '<div style="background:#D4AF37;border:2px solid white;border-radius:50%;width:12px;height:12px;box-shadow:0 0 10px gold;"></div>',
-                                        iconSize: [12, 12]
+                                        html: '<div style="background:' + iconColor + ';border:2px solid white;border-radius:50%;width:14px;height:14px;box-shadow:0 0 10px ' + iconColor + ';"></div>',
+                                        iconSize: [14, 14]
                                     });
                                     var marker = L.marker([poi.lat, poi.lon], { icon: icon }).addTo(window.app.map);
-                                    var name = poi.tags.name || "Punto de Interés";
+                                    var name = poi.tags.name || category;
                                     marker.bindTooltip(name, { permanent: false, direction: 'top' });
                                     marker.on('click', function() {
                                         if (confirm("¿Ir hasta " + name + "?")) {
-                                            window.setMapDestination(poi.lat, poi.lon);
+                                            window.setMapDestination(poi.lat, poi.lon, name);
                                         }
                                     });
                                 });
@@ -1183,6 +1215,24 @@ object RadioCore {
                         var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
                         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
                     };
+
+                    // --- 🎙️ MOTOR DE NAVEGACIÓN POR VOZ (PROXIMIDAD) ---
+                    if (window.app.currentInstructions && window.app.currentInstructions.length > 0) {
+                        var nextIdx = (window.app.lastSpokenStepIndex || -1) + 1;
+                        if (nextIdx < window.app.currentInstructions.length) {
+                            var step = window.app.currentInstructions[nextIdx];
+                            var dToStep = getDist(myLat, myLon, step.latLng.lat, step.latLng.lng) * 1000; // en metros
+                            
+                            // Si estamos a menos de 40m, cantamos la jugada
+                            if (dToStep < 40) {
+                                var instructionText = step.text;
+                                if (window.dispatch_navigation_step) {
+                                    window.dispatch_navigation_step(instructionText);
+                                }
+                                window.app.lastSpokenStepIndex = nextIdx;
+                            }
+                        }
+                    }
 
                     var activeNicks = users.map(u => u.nick);
                     for (var nick in markers) {
@@ -2515,7 +2565,9 @@ object RadioBridge {
         onCodeCaptured: (String, String) -> Unit,
         onWifiListReceived: (String) -> Unit,
         onEngineeringFinished: () -> Unit,
-        onRouteSuggestions: (String) -> Unit
+        onRouteSuggestions: (String) -> Unit,
+        onRouteInfo: (String?, String?, String?) -> Unit,
+        onNavigationStep: (String?) -> Unit
     ) {
         win.dispatch_mic = onMic
         win.dispatch_beeping = onBeep
@@ -2540,6 +2592,12 @@ object RadioBridge {
         win.dispatch_wifi_list = onWifiListReceived
         win.dispatch_engineering_finished = onEngineeringFinished
         win.dispatch_route_suggestions = onRouteSuggestions
+        win.dispatch_route_info = { dist: String?, dur: String?, dest: String? ->
+            onRouteInfo(dist, dur, dest)
+        }
+        win.dispatch_navigation_step = { step: String? ->
+            onNavigationStep(step)
+        }
         win.dispatch_chat_open = { target: String? -> 
             onChatOpen(target)
             // Forzar apertura de chat en la terminal local
@@ -2651,6 +2709,10 @@ fun main() {
         val forceChatOpenState = remember { mutableStateOf(false) }
         val forceChatTargetState = remember { mutableStateOf<String?>(null) }
         val wifiVerificationResultState = remember { mutableStateOf<String?>(null) }
+        val routeDistanceState = remember { mutableStateOf<String?>(null) }
+        val routeDurationState = remember { mutableStateOf<String?>(null) }
+        val routeDestinationNameState = remember { mutableStateOf<String?>(null) }
+        val routeNavigationStepState = remember { mutableStateOf<String?>(null) }
 
         val win: dynamic = js("window")
         
@@ -3011,6 +3073,14 @@ fun main() {
             onRouteSuggestions = { json ->
                 val cb = win.dispatch_route_suggestions_to_app
                 if (cb != null) cb(json)
+            },
+            onRouteInfo = { dist, dur, dest ->
+                routeDistanceState.value = dist
+                routeDurationState.value = dur
+                routeDestinationNameState.value = dest
+            },
+            onNavigationStep = { step ->
+                routeNavigationStepState.value = step
             }
         )
 
@@ -3819,8 +3889,14 @@ fun main() {
                             val container = document.getElementById("activity-map-container")
                             if (container != null) {
                                 val cs = container.asDynamic().style
-                                cs.transition = "transform 0.2s ease-out"
+                                cs.transition = "transform 0.15s linear"
                                 cs.transform = "rotate(" + (-win.parseFloat(angle)) + "deg)"
+                            }
+                        }
+                        "SET_MAP_ZOOM" -> if (parts.size >= 2) {
+                            val zoomLevel = parts[1]
+                            if (win.app != null && win.app.map != null) {
+                                win.app.map.setZoom(win.parseFloat(zoomLevel))
                             }
                         }
                         "UPDATE_ACTIVE_PROFILE" -> if (parts.size >= 2) {
@@ -3843,7 +3919,8 @@ fun main() {
                         }
                         "SET_DESTINATION" -> if (parts.size >= 3) {
                             val dLat = parts[1]; val dLon = parts[2]
-                            win.setMapDestination(win.parseFloat(dLat), win.parseFloat(dLon))
+                            val dName = if (parts.size >= 4) parts[3] else null
+                            win.setMapDestination(win.parseFloat(dLat), win.parseFloat(dLon), dName)
                         }
                         "SEARCH_LOCATION" -> if (parts.size >= 2) {
                             val searchQ = parts[1]
@@ -3852,14 +3929,15 @@ fun main() {
                                 .then { data: dynamic ->
                                     if (data != null && data.length > 0) {
                                         val loc = data[0]
-                                        win.setMapDestination(win.parseFloat(loc.lat), win.parseFloat(loc.lon))
+                                        win.setMapDestination(win.parseFloat(loc.lat), win.parseFloat(loc.lon), loc.display_name)
                                     }
                                 }
                         }
                         "FETCH_POIS" -> {
+                            val cat = if (parts.size >= 2) parts[1] else "MONUMENTOS"
                             val lat = win.parseFloat(localStorage.getItem("last_lat")) ?: 37.3891
                             val lon = win.parseFloat(localStorage.getItem("last_lon")) ?: -5.9845
-                            if (win.fetchTacticalPOIs != null) win.fetchTacticalPOIs(lat, lon)
+                            if (win.fetchTacticalPOIs != null) win.fetchTacticalPOIs(lat, lon, cat)
                         }
                     }
 
@@ -3967,6 +4045,10 @@ fun main() {
             nasaImageUrl = nasaImageUrlState.value ?: initialState.nasaImageUrl,
             nasaImageTitle = nasaImageTitleState.value ?: initialState.nasaImageTitle,
             nasaImageExplanation = nasaImageExplanationState.value ?: initialState.nasaImageExplanation,
+            routeDistanceKm = routeDistanceState.value,
+            routeDurationMin = routeDurationState.value,
+            routeDestinationName = routeDestinationNameState.value,
+            nextNavigationStep = routeNavigationStepState.value,
             onDgtUpdate = { _ ->
                 // Actualización vía locutor (opcional)
             },

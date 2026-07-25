@@ -166,7 +166,8 @@ data class RadioState(
     val routeDurationMin: String? = null,
     val routeDestinationName: String? = null,
     val nextNavigationStep: String? = null,
-    val routeWaypoints: List<RouteSuggestion> = emptyList()
+    val routeWaypoints: List<RouteSuggestion> = emptyList(),
+    val poiSuggestions: List<RouteSuggestion> = emptyList()
 )
 
 data class CapturedCode(val id: String, val proto: String, val data: String)

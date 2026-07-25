@@ -6,6 +6,7 @@ package com.sagon.on
  * 
  * Gestiona el motor de audio, WebRTC, Guardian de Voz, Chat y Bridge de Mapas.
  * Blindado contra alteraciones en la física de aguja y sincronización de capas.
+ * ⚠️ NOTA CRÍTICA: PROHIBIDO MODIFICAR EL DISEÑO VISUAL O LOS ICONOS DEL MAPA.
  */
 
 import androidx.compose.foundation.layout.*
@@ -118,7 +119,6 @@ object MoniGuard {
 object RadioCore {
     fun install() {
         js("""
-            (function() {
                 window.APP_VERSION = 1715600000040; /* Referencia interna para Auto-Update */
 
                 window.sanitizePath = function(s) {
@@ -166,10 +166,9 @@ object RadioCore {
                         .catch(function(err) { console.warn("Update check skipped:", err.message); });
                 };
 
-                // Comprobar cada 5 minutos
-                setInterval(window.checkAppUpdate, 300000);
-                // Y al arrancar
-                setTimeout(window.checkAppUpdate, 5000);
+                // --- 🛡️ SISTEMA DE ACTUALIZACIÓN DESACTIVADO EN LOCAL PARA EVITAR REINICIOS ---
+                // setInterval(window.checkAppUpdate, 300000);
+                // setTimeout(window.checkAppUpdate, 5000);
 
                 // --- SEGURIDAD: CLAVE ROTADA Y PROTEGIDA POR RESTRICCIONES DE GOOGLE CLOUD ---
                 var _p1 = "AIza"; var _p2 = "SyBA7tMb"; var _p3 = "cvbrl2lt"; var _p4 = "Tweqydmk7"; var _p5 = "PRfk-R7fWw";
@@ -1057,8 +1056,7 @@ object RadioCore {
                         try { window.app.map.remove(); } catch(e) {}
                     }
                     
-                    var hour = new Date().getHours();
-                    var isNight = (hour >= 20 || hour < 8);
+                    var isNight = (window.app && window.app.isNightMode === true);
                     
                     var map = L.map(containerId, {
                         zoomControl: true, // Habilitar controles de zoom
@@ -1078,9 +1076,7 @@ object RadioCore {
                     window.app.routingControl = null;
                     
                     map.on('contextmenu', function(e) {
-                        if (confirm("¿Trazar ruta hasta esta ubicación?")) {
-                            window.setMapDestination(e.latlng.lat, e.latlng.lng);
-                        }
+                        window.setMapDestination(e.latlng.lat, e.latlng.lng);
                     });
 
                     // --- 🛡️ AUTO-ZOOM A MI POSICIÓN ---
@@ -1132,8 +1128,15 @@ object RadioCore {
                         }),
                         lineOptions: {
                             styles: [
-                                { color: '#000', weight: 10, opacity: 0.2 }, // Sombra
-                                { color: '#22C55E', weight: 6, opacity: 0.9 } // Línea Principal Neón
+                                { color: '#000000', weight: 16, opacity: 0.3 },
+                                { color: '#39FF14', weight: 8, opacity: 0.6 },
+                                { 
+                                    color: '#39FF14', 
+                                    weight: 4, 
+                                    opacity: 0.6, 
+                                    dashArray: '12, 20', 
+                                    className: 'route-path-flow' 
+                                }
                             ]
                         },
                         createMarker: function(i, wp) {
@@ -1163,8 +1166,8 @@ object RadioCore {
                     
                     control.on('routesfound', function(e) {
                         var route = e.routes[0];
-                        // Auto-ajustar mapa para ver toda la ruta (Dopamina Visual)
-                        if (window.app.map) window.app.map.fitBounds(L.latLngBounds(route.coordinates), { padding: [50, 50] });
+                        // Auto-ajustar mapa para ver toda la ruta completa de inmediato
+                        if (window.app.map) window.app.map.fitBounds(L.latLngBounds(route.coordinates), { padding: [80, 80] });
                         var dist = (route.summary.totalDistance / 1000).toFixed(1) + " KM";
                         var time = Math.round(route.summary.totalTime / 60) + " MIN";
                         var name = destName || (waypointsJson ? "Misión Completa" : "Destino Táctico");
@@ -1191,38 +1194,52 @@ object RadioCore {
                 };
 
                 window.getPoiFilter = function(category) {
-                    var filter = 'node["historic"]'; // Default
-                    if (category === "MONUMENTOS") filter = 'node["historic"]';
-                    else if (category === "EVENTOS") filter = 'node["amenity"~"theatre|cinema|arts_centre|marketplace|community_centre|stadium|public_bath"]["tourism"~"theme_park|zoo"]';
-                    else if (category === "NATURALEZA") filter = 'node["tourism"~"viewpoint|picnic_site"]';
-                    else if (category === "GASOLINERAS") filter = 'node["amenity"="fuel"]';
-                    else if (category === "RESTAURANTES") filter = 'node["amenity"="restaurant"]';
-                    else if (category === "PARKINGS") filter = 'node["amenity"="parking"]';
-                    else if (category === "FUENTES") filter = 'node["amenity"="drinking_water"]';
-                    else if (category === "TALLERES") filter = 'node["shop"~"bicycle|motorcycle|car_repair"]';
-                    else if (category === "HOSPITALES") filter = 'node["amenity"~"hospital|clinic"]';
-                    else if (category === "FARMACIAS") filter = 'node["amenity"="pharmacy"]';
-                    else if (category === "PARQUES") filter = 'node["leisure"="park"]';
-                    else if (category === "ASEOS") filter = 'node["amenity"="toilets"]';
+                    var filter = 'nwr["historic"]'; 
+                    if (category === "MONUMENTOS") filter = '(nwr["historic"];nwr["tourism"~"attraction|museum|gallery|castle|ruins"];nwr["viewpoint"];)';
+                    else if (category === "EVENTOS") filter = 'nwr["amenity"~"theatre|cinema|arts_centre|marketplace|community_centre|stadium|public_bath"]["tourism"~"theme_park|zoo|museum|gallery|attraction"]';
+                    else if (category === "NATURALEZA") filter = 'nwr["tourism"~"viewpoint|picnic_site|attraction"]["historic"~"castle|ruins"]';
+                    else if (category === "GASOLINERAS") filter = 'nwr["amenity"="fuel"]';
+                    else if (category === "RESTAURANTES") filter = 'nwr["amenity"~"restaurant|cafe|pub|fast_food"]';
+                    else if (category === "PARKINGS") filter = 'nwr["amenity"="parking"]';
+                    else if (category === "FUENTES") filter = 'nwr["amenity"="drinking_water"]';
+                    else if (category === "TALLERES") filter = 'nwr["shop"~"bicycle|motorcycle|car_repair"]';
+                    else if (category === "HOSPITALES") filter = 'nwr["amenity"~"hospital|clinic"]';
+                    else if (category === "FARMACIAS") filter = 'nwr["amenity"="pharmacy"]';
+                    else if (category === "PARQUES") filter = 'nwr["leisure"="park"]';
+                    else if (category === "ASEOS") filter = 'nwr["amenity"="toilets"]';
                     return filter;
                 };
 
                 window.fetchTacticalPOIs = function(lat, lon, category) {
                     if (!window.app.map) return;
                     
-                    // --- 🧹 LIMPIEZA DE POIs ANTERIORES ---
                     if (window.app.poiLayers) {
-                        window.app.poiLayers.forEach(layer => window.app.map.removeLayer(layer));
+                        window.app.poiLayers.forEach(function(layer) { window.app.map.removeLayer(layer); });
                     }
                     window.app.poiLayers = [];
 
-                    var radius = 20000; // Radio de búsqueda de 20km para táctica
+                    var radius = 20000; 
                     var filter = window.getPoiFilter(category);
+                    var around = '(around:' + radius + ',' + lat + ',' + lon + ')';
                     
-                    var query = '[out:json][timeout:25];(' + filter + '(around:' + radius + ',' + lat + ',' + lon + '););out body;';
-                    fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query))
+                    // --- 🛡️ CONSTRUCCIÓN QUIRÚRGICA: Inyectar radio en cada parte separada por punto y coma ---
+                    var cleanFilter = filter.replace('(', '').replace(')', '');
+                    var queryParts = cleanFilter.split(';').filter(function(p){ return p.trim().length > 0; });
+                    var finalQuery = '[out:json][timeout:25];(';
+                    for(var i=0; i<queryParts.length; i++) {
+                        finalQuery += queryParts[i].trim() + around + ';';
+                    }
+                    finalQuery += ');out center;';
+                    
+                    console.log("📡 BUSCANDO [" + category + "] EN: " + lat + "," + lon);
+                    console.log("🔍 QUERY: " + finalQuery);
+
+                    fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(finalQuery))
                         .then(function(r) { return r.json(); })
                         .then(function(data) {
+                            if (data && data.elements) {
+                                console.log("✅ ENCONTRADOS: " + data.elements.length + " sitios.");
+                            }
                             window.renderTacticalPOIs(data, category);
                         }).catch(function(err) { console.error("Error POI:", err); });
                 };
@@ -1236,14 +1253,15 @@ object RadioCore {
                     route.forEach(function(wp) { if(wp.latLng) points.push(wp.latLng); });
                     if (points.length === 0) return;
 
-                    var radius = 8000; // 8km alrededor de los puntos de la ruta
+                    var radius = 8000; 
                     var filter = window.getPoiFilter(category);
                     
+                    // --- 🧠 CONSULTA OPTIMIZADA: Añadimos 'out center' para edificios ---
                     var arounds = points.map(function(p) { 
-                        return '(around:' + radius + ',' + p.lat + ',' + p.lng + ')'; 
+                        return 'nwr' + filter.replace('nwr', '').replace('node', '') + '(around:' + radius + ',' + p.lat + ',' + p.lng + ');'; 
                     }).join('');
                     
-                    var query = '[out:json][timeout:25];(' + filter + arounds + ';);out body;';
+                    var query = '[out:json][timeout:30];(' + arounds + ');out center 50;';
                     fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query))
                         .then(function(r) { return r.json(); })
                         .then(function(data) {
@@ -1252,29 +1270,40 @@ object RadioCore {
                 };
 
                 window.renderTacticalPOIs = function(data, category, isAlongRoute) {
-                    if (!data || !data.elements) return;
+                    if (!data || !data.elements) {
+                        console.warn("🚫 RENDER: No hay datos para pintar.");
+                        return;
+                    }
                     
-                    // Si no es "alongRoute", limpiamos los anteriores (fetchTacticalPOIs ya lo hace, pero por seguridad)
+                    console.log("🎨 RENDER: Procesando " + data.elements.length + " marcadores...");
+                    
                     if (!isAlongRoute && window.app.poiLayers) {
-                        window.app.poiLayers.forEach(layer => window.app.map.removeLayer(layer));
+                        window.app.poiLayers.forEach(function(layer) { window.app.map.removeLayer(layer); });
                         window.app.poiLayers = [];
                     }
                     if (!window.app.poiLayers) window.app.poiLayers = [];
 
                     data.elements.forEach(function(poi) {
-                        // Evitar duplicados si ya existen en la capa
-                        var exists = window.app.poiLayers.some(l => l.getLatLng().lat === poi.lat && l.getLatLng().lng === poi.lon);
+                        // --- 🛡️ EXTRACCIÓN DE POSICIÓN (PUNTOS O CENTRO DE EDIFICIOS) ---
+                        var pLat = poi.lat || (poi.center ? poi.center.lat : null);
+                        var pLon = poi.lon || (poi.center ? poi.center.lon : null);
+                        
+                        if (!pLat || !pLon) return;
+
+                        var exists = window.app.poiLayers.some(function(l) {
+                            var pos = l.getLatLng();
+                            return Math.abs(pos.lat - pLat) < 0.0001 && Math.abs(pos.lng - pLon) < 0.0001;
+                        });
                         if (exists) return;
 
-                        var iconColor = "#D4AF37"; // Gold default
-                        if (["GASOLINERAS", "FUENTES"].indexOf(category) !== -1) iconColor = "#06B6D4"; // Cyan
-                        if (["HOSPITALES", "FARMACIAS"].indexOf(category) !== -1) iconColor = "#E11D48"; // Red
-                        if (["NATURALEZA", "PARQUES"].indexOf(category) !== -1) iconColor = "#22C55E"; // Green
-                        if (category === "EVENTOS") iconColor = "#A855F7"; // Púrpura Eléctrico
+                        var iconColor = "#D4AF37"; 
+                        if (["GASOLINERAS", "FUENTES"].indexOf(category) !== -1) iconColor = "#06B6D4"; 
+                        if (["HOSPITALES", "FARMACIAS"].indexOf(category) !== -1) iconColor = "#E11D48"; 
+                        if (["NATURALEZA", "PARQUES"].indexOf(category) !== -1) iconColor = "#22C55E"; 
+                        if (category === "EVENTOS") iconColor = "#A855F7"; 
                         
                         var html = '<div style="background:' + iconColor + ';border:2px solid white;border-radius:50%;width:14px;height:14px;box-shadow:0 0 10px ' + iconColor + ';"></div>';
                         if (isAlongRoute || category === "EVENTOS") {
-                            // Efecto pulso para POIs del trayecto o Eventos (Dopamina)
                             html = '<div class="poi-pulse" style="background:' + iconColor + ';border:2px solid white;border-radius:50%;width:14px;height:14px;box-shadow:0 0 15px ' + iconColor + ';"></div>';
                         }
 
@@ -1283,21 +1312,24 @@ object RadioCore {
                             html: html,
                             iconSize: [14, 14]
                         });
-                        var marker = L.marker([poi.lat, poi.lon], { icon: icon }).addTo(window.app.map);
+                        var marker = L.marker([pLat, pLon], { icon: icon }).addTo(window.app.map);
                         window.app.poiLayers.push(marker);
                         var name = poi.tags.name || category;
                         marker.bindTooltip(name, { permanent: false, direction: 'top' });
                         marker.on('click', function() {
-                            var choice = confirm("¿Añadir " + name + " a la ruta? (Aceptar = Añadir parada, Cancelar = Ir directo)");
-                            if (choice) {
-                                if (window.dispatch_add_waypoint) {
-                                    window.dispatch_add_waypoint(name, poi.lat, poi.lon);
-                                }
-                            } else {
-                                window.setMapDestination(poi.lat, poi.lon, name);
-                            }
+                            window.setMapDestination(pLat, pLon, name);
                         });
                     });
+                    
+                    if (window.dispatch_poi_results) {
+                        var poiList = data.elements.map(function(p) {
+                            var n = (p.tags.name || category).replace("|", " ").replace(";", ",");
+                            var pLat = p.lat || (p.center ? p.center.lat : 0);
+                            var pLon = p.lon || (p.center ? p.center.lon : 0);
+                            return n + "|" + pLat + "|" + pLon;
+                        }).join(";");
+                        window.dispatch_poi_results(poiList);
+                    }
                 };
 
                 window.updateMapMarkers = function(usersJson) {
@@ -1331,6 +1363,14 @@ object RadioCore {
                                     window.dispatch_navigation_step(instructionText);
                                 }
                                 window.app.lastSpokenStepIndex = nextIdx;
+                            }
+
+                            // --- 🔍 AUTO-ZOOM INTELIGENTE ---
+                            if (dToStep < 150) {
+                                if (map.getZoom() < 18) map.setZoom(18, { animate: true });
+                            } else if (dToStep > 250) {
+                                // Solo alejamos si no hemos hecho zoom manual recientemente
+                                if (map.getZoom() > 14) map.setZoom(14, { animate: true });
                             }
                         }
                     }
@@ -1380,9 +1420,7 @@ object RadioCore {
                                 
                                 // --- 🚀 ACCIÓN: IR HACIA ÉL ---
                                 marker.on('click', function() {
-                                    if(confirm("¿Iniciar navegación GPS hacia " + user.nick + "?")) {
-                                        window.open("https://www.google.com/maps/dir/?api=1&destination=" + user.lat + "," + user.lon, "_blank");
-                                    }
+                                    window.open("https://www.google.com/maps/dir/?api=1&destination=" + user.lat + "," + user.lon, "_blank");
                                 });
                                 
                                 markers[user.nick] = marker;
@@ -1857,7 +1895,6 @@ object RadioCore {
                         window.updateChatListener();
                     }
                 };
-            })();
         """)
     }
 }
@@ -2667,6 +2704,7 @@ object RadioBridge {
         onWifiListReceived: (String) -> Unit,
         onEngineeringFinished: () -> Unit,
         onRouteSuggestions: (String) -> Unit,
+        onPoiResults: (String) -> Unit,
         onRouteInfo: (String?, String?, String?) -> Unit,
         onNavigationStep: (String?) -> Unit
     ) {
@@ -2693,6 +2731,7 @@ object RadioBridge {
         win.dispatch_wifi_list = onWifiListReceived
         win.dispatch_engineering_finished = onEngineeringFinished
         win.dispatch_route_suggestions = onRouteSuggestions
+        win.dispatch_poi_results = onPoiResults
         win.dispatch_route_info = { dist: String?, dur: String?, dest: String? ->
             onRouteInfo(dist, dur, dest)
         }
@@ -3179,6 +3218,10 @@ fun main() {
             },
             onRouteSuggestions = { json ->
                 val cb = win.dispatch_route_suggestions_to_app
+                if (cb != null) cb(json)
+            },
+            onPoiResults = { json ->
+                val cb = win.dispatch_poi_results_to_app
                 if (cb != null) cb(json)
             },
             onRouteInfo = { dist, dur, dest ->
@@ -3923,6 +3966,8 @@ fun main() {
                     val cmd = parts[0]
 
                     // 🔒 HARD-LOCK: BRIDGE DE MAPAS DE PRECISIÓN (ESTRATIFICACIÓN DE CAPAS)
+                    // ⚠️ NOTA CRÍTICA DE DISEÑO: EL MAPA DEBE QUEDAR SIEMPRE DENTRO DE LA CARD DEL RADAR.
+                    // ESTÁ PROHIBIDO SACAR EL MAPA A PANTALLA COMPLETA O CAMBIAR SU Z-INDEX.
                     when (cmd) {
                         "UPDATE_MAP_GEOMETRY" -> if (parts.size >= 5) {
                             val lVal = parts[1]; val tVal = parts[2]; val wVal = parts[3]; val hVal = parts[4]
@@ -3930,27 +3975,45 @@ fun main() {
                             val rootLayer = document.getElementById("radio-root")
                             
                             if (container != null && rootLayer != null) {
+                                // --- 🔒 PROTECCIÓN: MATEMÁTICA PURA (SIN CONCATENACIÓN) ---
+                                val l = win.parseFloat(lVal).unsafeCast<Double>()
+                                val t = win.parseFloat(tVal).unsafeCast<Double>()
+                                val w = win.parseFloat(wVal).unsafeCast<Double>()
+                                val h = win.parseFloat(hVal).unsafeCast<Double>()
+                                
+                                val roundedL = win.Math.floor(l)
+                                val roundedT = win.Math.floor(t)
+                                val roundedW = win.Math.floor(w)
+                                val roundedH = win.Math.floor(h)
+                                
+                                val r = roundedL + roundedW
+                                val b = roundedT + roundedH
+
                                 // 1. Capa Inferior: Mapa
                                 val cs = container.asDynamic().style
                                 cs.display = "block"
                                 cs.position = "fixed"
-                                cs.left = lVal + "px"
-                                cs.top = tVal + "px"
-                                cs.width = wVal + "px"
-                                cs.height = hVal + "px"
+                                cs.left = roundedL.toString() + "px"
+                                cs.top = roundedT.toString() + "px"
+                                cs.width = roundedW.toString() + "px"
+                                cs.height = roundedH.toString() + "px"
                                 cs.zIndex = "1"
                                 cs.borderRadius = "28px"
-                                cs.pointerEvents = "auto"
                                 
-                                // 2. Capa Superior: Radio (Transparente)
+                                // 2. Capa Superior: Radio (con AGUJERO TÁCTICO)
                                 val rs = rootLayer.asDynamic().style
                                 rs.zIndex = "10"
                                 rs.background = "transparent"
-                                rs.clipPath = "none"
-                                rs.webkitClipPath = "none"
-                                rs.pointerEvents = "none" // Permite clics al mapa de fondo
+                                
+                                // Recorte 'inset' con bordes redondeados (Exacto al diseño de la card)
+                                val path = "inset(" + roundedT + "px calc(100% - " + r + "px) calc(100% - " + b + "px) " + roundedL + "px round 28px)"
+                                rs.clipPath = path
+                                rs.webkitClipPath = path
+                                rs.pointerEvents = "auto" // Habilitar botones
 
-                                if (win.app != null && win.app.map != null) win.app.map.invalidateSize()
+                                if (win.app != null && win.app.map != null) {
+                                    win.app.map.invalidateSize()
+                                }
                             }
                         }
                         "HIDE_MAP_OVERLAY" -> {
@@ -4046,9 +4109,37 @@ fun main() {
                         }
                         "FETCH_POIS" -> {
                             val cat = if (parts.size >= 2) parts[1] else "MONUMENTOS"
-                            val lat = if (parts.size >= 4) win.parseFloat(parts[2]) else (win.parseFloat(localStorage.getItem("last_lat")) ?: 37.3891)
-                            val lon = if (parts.size >= 4) win.parseFloat(parts[3]) else (win.parseFloat(localStorage.getItem("last_lon")) ?: -5.9845)
+                            
+                            // --- 🛡️ ROBUSTEZ TOTAL: COORDENADAS SEGURAS ---
+                            var lat = 0.0; var lon = 0.0
+                            if (parts.size >= 4) {
+                                val p2 = parts[2].toDoubleOrNull()
+                                val p3 = parts[3].toDoubleOrNull()
+                                if (p2 != null) lat = p2
+                                if (p3 != null) lon = p3
+                            }
+                            
+                            if (lat == 0.0 || lon == 0.0) {
+                                val savedLat = localStorage.getItem("last_lat")
+                                val savedLon = localStorage.getItem("last_lon")
+                                lat = if (savedLat != null) win.parseFloat(savedLat) as Double else 37.3891
+                                lon = if (savedLon != null) win.parseFloat(savedLon) as Double else -5.9845
+                            }
+                            
                             if (win.fetchTacticalPOIs != null) win.fetchTacticalPOIs(lat, lon, cat)
+                        }
+                        "CLEAR_POIS" -> {
+                             js("""
+                                 if (window.app && window.app.poiLayers) {
+                                     window.app.poiLayers.forEach(function(l){ 
+                                         try { window.app.map.removeLayer(l); } catch(e){} 
+                                     });
+                                     window.app.poiLayers = [];
+                                 }
+                             """)
+                        }
+                        "CLEAR_SUGGESTIONS" -> {
+                             // Lógica opcional para limpiar lista de sugerencias tras elegir destino
                         }
                         "FETCH_POIS_ALONG_ROUTE" -> {
                             val cat = if (parts.size >= 2) parts[1] else "MONUMENTOS"
@@ -4078,7 +4169,7 @@ fun main() {
                                         // Informar a la app de los nuevos waypoints para que se vean en la lista
                                         if (win.dispatch_add_waypoint_to_app != null) {
                                             win.dispatch_add_waypoint_to_app(name, poi.lat, poi.lon)
-                                            win.dispatch_add_waypoint_to_app("Regreso a Casa", lat, lon)
+                                            win.dispatch_add_waypoint_to_app("Vuelta a Casa 🏠", lat, lon)
                                         }
                                     }
                                 }
@@ -4087,7 +4178,7 @@ fun main() {
                             val lat = win.parseFloat(localStorage.getItem("last_lat")) ?: 37.3891
                             val lon = win.parseFloat(localStorage.getItem("last_lon")) ?: -5.9845
                             if (win.dispatch_add_waypoint_to_app != null) {
-                                win.dispatch_add_waypoint_to_app("Retorno al Origen", lat, lon)
+                                win.dispatch_add_waypoint_to_app("Vuelta a Casa 🏠", lat, lon)
                             }
                         }
                     }
@@ -4209,6 +4300,9 @@ fun main() {
             wifiVerificationResult = wifiVerificationResultState.value,
             onRouteSuggestionsReceived = { callback ->
                 win.dispatch_route_suggestions_to_app = callback
+            },
+            onPoiResultsReceived = { callback ->
+                win.dispatch_poi_results_to_app = callback
             },
             onWaypointReceived = { callback ->
                 win.dispatch_add_waypoint_to_app = callback

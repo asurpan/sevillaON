@@ -1506,10 +1506,24 @@ fun ActivityPanel(
             
             // --- 📜 HEADER ---
             Row(modifier = Modifier.fillMaxWidth().height(64.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, null, tint = Color.White.copy(0.6f), modifier = Modifier.size(28.dp)) }
-                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = if (state.channel == "GENERAL") "MODO ACTIVIDAD" else "ACTIVIDAD: ${state.channel}", color = LuxeColors.Gold, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.basicMarquee())
-                    Text(if (state.subtone != "0000") "CÓDIGO PRIVADO: ${state.subtone}" else "RED P2P ACTIVA", color = if (state.subtone != "0000") LuxeColors.Gold.copy(0.7f) else LuxeColors.Green, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                Surface(
+                    onClick = onClose,
+                    color = LuxeColors.Red.copy(0.1f),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, LuxeColors.Red.copy(0.3f))
+                ) {
+                    Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Flag, null, tint = LuxeColors.Red, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("FINALIZAR", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    }
+                }
+                Column(
+                    modifier = Modifier.weight(1f).clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY) }, 
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = state.city, color = LuxeColors.Gold, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, modifier = Modifier.basicMarquee())
+                    Text(if (state.subtone != "0000") "CÓDIGO: ${state.subtone}" else "CANAL: ${state.channel}", color = Color.White.copy(0.5f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
                 
                 Surface(
@@ -1558,14 +1572,15 @@ fun ActivityPanel(
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                // Padding ajustado: Protegemos los botones laterales pero dejamos el mapa grande
+                // Padding ajustado: Protegemos los botones laterales pero dejamos el mapa grande (Evitar solapamiento)
                 val adaptivePadding = if (isMapVisible) {
-                    if (maxWidth < 600.dp) 32.dp else 80.dp
+                    if (maxWidth < 600.dp) 72.dp else 100.dp
                 } else 0.dp
 
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxHeight()
+                        .widthIn(max = 500.dp) // 🔒 DISEÑO CARD PC: Fijar ancho máximo para centrado perfecto
                         .padding(horizontal = adaptivePadding)
                         .clip(RoundedCornerShape(28.dp))
                         // AGUJERO REAL: Usamos BlendMode.Clear para borrar el fondo justo en esta tarjeta
@@ -1775,7 +1790,9 @@ fun ActivityPanel(
                 Column(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .padding(start = 16.dp).padding(vertical = 16.dp)
+                        .padding(start = 8.dp).padding(vertical = 16.dp)
+                        .background(Color.Black.copy(0.9f), RoundedCornerShape(24.dp))
+                        .padding(8.dp)
                         .verticalScroll(rememberScrollState()), 
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
@@ -1798,7 +1815,9 @@ fun ActivityPanel(
                 Column(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .padding(end = 16.dp).padding(vertical = 16.dp)
+                        .padding(end = 8.dp).padding(vertical = 16.dp)
+                        .background(Color.Black.copy(0.9f), RoundedCornerShape(24.dp))
+                        .padding(8.dp)
                         .verticalScroll(rememberScrollState()), 
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
@@ -1832,13 +1851,15 @@ fun ActivityPanel(
                     )
 
                     // --- 🛣️ BOTÓN RUTA (PLANIFICADOR) ---
-                    TacticalDockIconActivity(
-                        icon = Icons.Rounded.AddLocationAlt, 
-                        label = "RUTA", 
-                        isActive = false, 
-                        onClick = { onPendingDialogChange(RadioDialogType.ROUTE_PLANNER) },
-                        activeColor = LuxeColors.Gold
-                    )
+                    if (state.routeDestinationName == null) {
+                        TacticalDockIconActivity(
+                            icon = Icons.Rounded.AddLocationAlt, 
+                            label = "RUTA", 
+                            isActive = false, 
+                            onClick = { onPendingDialogChange(RadioDialogType.ROUTE_PLANNER) },
+                            activeColor = LuxeColors.Gold
+                        )
+                    }
 
                     // --- 🧭 BOTÓN RUMBO (NAVEGACIÓN) ---
                     TacticalDockIconActivity(
@@ -2048,7 +2069,11 @@ fun TacticalDockIconActivity(
                     imageVector = icon, 
                     contentDescription = null, 
                     tint = if (isActive) activeColor else Color.White, 
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(26.dp).graphicsLayer {
+                        shadowElevation = 8f
+                        shape = CircleShape
+                        clip = false
+                    }
                 )
             }
         }

@@ -69,12 +69,30 @@
 
         /* ✨ EFECTO DOPAMINA: Pulso para POIs del trayecto */
         @keyframes poi-pulse-animation {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.4); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
+            0% { transform: scale(1); opacity: 1; box-shadow: 0 0 10px rgba(57, 255, 20, 0.4); }
+            50% { transform: scale(1.5); opacity: 0.8; box-shadow: 0 0 25px rgba(57, 255, 20, 0.8); }
+            100% { transform: scale(1); opacity: 1; box-shadow: 0 0 10px rgba(57, 255, 20, 0.4); }
         }
         .poi-pulse {
             animation: poi-pulse-animation 2s infinite ease-in-out;
+        }
+
+        /* 🏹 ANIMACIÓN DE DIRECCIÓN (FLECHAS VERDES SUTILES) */
+        @keyframes route-flow {
+            from { stroke-dashoffset: 50; }
+            to { stroke-dashoffset: 0; }
+        }
+        .route-path-flow {
+            animation: route-flow 1.5s linear infinite;
+        }
+
+        /* 🏹 ANIMACIÓN DE FLUJO DE RUTA (FLECHAS SUTILES) */
+        @keyframes route-flow {
+            from { stroke-dashoffset: 50; }
+            to { stroke-dashoffset: 0; }
+        }
+        .route-path-flow {
+            animation: route-flow 2s linear infinite;
         }
     </style>
 

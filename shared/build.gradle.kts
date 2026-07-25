@@ -23,10 +23,8 @@ kotlin {
     }
     
     sourceSets {
-        androidMain.dependencies {
-            implementation(libs.compose.uiToolingPreview)
-        }
         commonMain.dependencies {
+            implementation(kotlin("stdlib"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -36,6 +34,14 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.datetime)
+        }
+        
+        androidMain.get().dependsOn(commonMain.get())
+        jsMain.get().dependsOn(commonMain.get())
+        wasmJsMain.get().dependsOn(commonMain.get())
+
+        androidMain.dependencies {
+            implementation(libs.compose.uiToolingPreview)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -7,6 +7,7 @@ package com.sagon.on
  * Este archivo gestiona el estado global de la emisora, persistencia y navegación global.
  * Sincronización maestra de Audio Core e Interfaz de Usuario.
  * Blindado contra modificaciones en la gestión de flujos de estado y seguridad.
+ * ⚠️ NOTA CRÍTICA: PROHIBIDO MODIFICAR EL DISEÑO VISUAL, ICONOS O COLORES ESTABLECIDOS.
  */
 
 import androidx.compose.animation.*
@@ -106,6 +107,7 @@ fun App(
     onWifiAuthResultReceived: ((String, String, String) -> Unit) -> Unit = { _ -> },
     onEngineeringFinished: (() -> Unit) -> Unit = { _ -> },
     onRouteSuggestionsReceived: ((String) -> Unit) -> Unit = { _ -> },
+    onPoiResultsReceived: ((String) -> Unit) -> Unit = { _ -> },
     onWaypointReceived: ((String, Double, Double) -> Unit) -> Unit = { _ -> },
     onRequestLocationPermission: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
@@ -209,6 +211,20 @@ fun App(
                     )
                 }
                 radioState = radioState.copy(routeSuggestions = list)
+            } catch(e: Exception) {}
+        }
+
+        onPoiResultsReceived { json ->
+            try {
+                val list = json.split(";").filter { it.isNotBlank() }.map { line ->
+                    val parts = line.split("|")
+                    RouteSuggestion(
+                        name = parts.getOrNull(0) ?: "Punto de Interés",
+                        lat = parts.getOrNull(1)?.toDoubleOrNull() ?: 0.0,
+                        lon = parts.getOrNull(2)?.toDoubleOrNull() ?: 0.0
+                    )
+                }
+                radioState = radioState.copy(poiSuggestions = list)
             } catch(e: Exception) {}
         }
     }
@@ -394,9 +410,9 @@ fun App(
 
     // --- 🌍 AUTO-SINTONIZACIÓN INICIAL ---
     LaunchedEffect(screenState) {
-        // 🛡️ FIX: Solo auto-sintonizar si es realmente la primera vez Y el usuario es nuevo (sin indicativo) Y no estamos en ruta
-        if (isFirstTime && savedNick.isEmpty() && screenState == Screen.RadioCB && !hasAutoTunedInSession && !showActivityMap) {
-            delay(2000)
+        // 🛡️ FIX: Forzar selector de ciudad si estamos en SEVILLA por defecto al entrar
+        if (isFirstTime && screenState == Screen.RadioCB && !hasAutoTunedInSession) {
+            delay(1500)
             if (radioState.city == "SEVILLA" && pendingDialog == null) {
                 pendingDialog = RadioDialogType.SELECT_CITY
                 hasAutoTunedInSession = true
@@ -613,11 +629,16 @@ fun App(
         if (screenState == Screen.RadioCB && !hasInitializedRadio) {
             hasInitializedRadio = true
             // --- 🌍 SINTONIZACIÓN GEOGRÁFICA (BAJO DEMANDA) ---
-            // Solo intentamos GPS si es un usuario totalmente nuevo para no molestar
-            if (savedNick.isEmpty() && isFirstTime && radioState.city == "SEVILLA") {
+            if (isFirstTime && !hasAutoTunedInSession) {
                 onGpsCityRequest { detectedCity ->
-                    if (detectedCity != null) {
-                        radioState = radioState.copy(city = detectedCity.uppercase())
+                    val upper = detectedCity?.uppercase()
+                    if (upper != null && SPAIN_CITIES.contains(upper)) {
+                        radioState = radioState.copy(city = upper)
+                        hasAutoTunedInSession = true
+                    } else {
+                        // Si es un barrio o no se detecta bien, forzamos el selector
+                        pendingDialog = RadioDialogType.SELECT_CITY
+                        hasAutoTunedInSession = true
                     }
                 }
             }
@@ -1161,14 +1182,21 @@ fun App(
                             state = radioState,
                             onStateChange = { newState ->
                                 // 🛡️ SINCRONIZACIÓN MAESTRA: Propagar cambios a radioState y al motor de audio
+                                val oldState = radioState
                                 val oldProfile = radioState.activeProfile
                                 radioState = newState
                                 
-                                // 1. Propagar cambios de micrófono (VOX, Roger, Potencia)
-                                onMicEnable(voxActive, radioState.isRogerBeepEnabled, radioState.veteranPower)
+                                // 1. Propagar cambios de micrófono (SOLO SI CAMBIAN REALMENTE)
+                                if (oldState.isRogerBeepEnabled != newState.isRogerBeepEnabled || 
+                                    oldState.veteranPower != newState.veteranPower) {
+                                    onMicEnable(voxActive, newState.isRogerBeepEnabled, newState.veteranPower)
+                                }
                                 
-                                // 2. Propagar cambios de Eco/Reverb
-                                onEchoChange(radioState.isReverbEnabled, radioState.reverbLevel)
+                                // 2. Propagar cambios de Eco/Reverb (SOLO SI CAMBIAN REALMENTE)
+                                if (oldState.isReverbEnabled != newState.isReverbEnabled || 
+                                    oldState.reverbLevel != newState.reverbLevel) {
+                                    onEchoChange(newState.isReverbEnabled, newState.reverbLevel)
+                                }
                                 
                                 // 3. Propagar cierre de actividad si el perfil vuelve a ser NORMAL
                                 if (oldProfile != ActivityProfile.NORMAL && newState.activeProfile == ActivityProfile.NORMAL) {

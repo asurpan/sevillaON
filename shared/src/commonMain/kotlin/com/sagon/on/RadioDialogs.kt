@@ -8,9 +8,11 @@ package com.sagon.on
  */
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,8 +23,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.text.font.FontWeight
@@ -629,7 +633,7 @@ fun RadioDialogs(
                 onStateChange(state.copy(hasSeenMasterIntro = true))
             }
         )
-        RadioDialogType.ACTIVITY_SELECTOR -> {
+        RadioDialogType.ACTIVITY_SELECTOR, RadioDialogType.ROUTE_PLANNER -> {
             var tempRouteName by remember { mutableStateOf("") }
             var tempRouteRules by remember { mutableStateOf("") }
             var destinationText by remember { mutableStateOf("") }
@@ -737,13 +741,20 @@ fun RadioDialogs(
                                     )
                                     Spacer(Modifier.width(12.dp))
                                     Text(
-                                        if (isCalculating) "BUSCANDO DESTINO SORPRESA..." else "✨ GENERAR RUTA DE AVENTURA", 
+                                        if (isCalculating) "CALCULANDO RUTA..." else "✨ GENERAR RUTA DE AVENTURA", 
                                         color = Color.White, 
                                         fontSize = 12.sp, 
                                         fontWeight = FontWeight.Black
                                     )
                                 }
-                                if (!isCalculating) {
+                                if (isCalculating) {
+                                    Spacer(Modifier.height(8.dp))
+                                    LinearProgressIndicator(
+                                        modifier = Modifier.fillMaxWidth().height(2.dp),
+                                        color = LuxeColors.Gold,
+                                        trackColor = LuxeColors.Gold.copy(0.1f)
+                                    )
+                                } else {
                                     Text(
                                         "Misión sorpresa de ida y vuelta con paradas interesantes.", 
                                         color = Color.White.copy(0.4f), 
@@ -789,9 +800,51 @@ fun RadioDialogs(
                                         OutlinedTextField(value = tempRouteRules, onValueChange = { if (it.length <= 150) tempRouteRules = it }, label = { Text("NOTAS / PUNTO DE ENCUENTRO", fontSize = 12.sp) }, modifier = Modifier.fillMaxWidth(), maxLines = 2, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.White.copy(0.4f), focusedTextColor = Color.White, unfocusedTextColor = Color.White), leadingIcon = { Icon(Icons.Rounded.Description, null, tint = Color.White.copy(0.3f)) })
                                     }
                                 }
+                                var editingWaypointIndex by remember { mutableStateOf<Int?>(null) }
+                                var editingWaypointName by remember { mutableStateOf("") }
+                                
+                                if (editingWaypointIndex != null) {
+                                    AlertDialog(
+                                        onDismissRequest = { editingWaypointIndex = null },
+                                        containerColor = LuxeColors.DeepSea,
+                                        title = { Text("EDITAR PARADA", color = Color.White, fontWeight = FontWeight.Black) },
+                                        text = {
+                                            OutlinedTextField(
+                                                value = editingWaypointName,
+                                                onValueChange = { editingWaypointName = it },
+                                                label = { Text("Nombre de la parada") },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LuxeColors.Gold, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                                            )
+                                        },
+                                        confirmButton = {
+                                            Row {
+                                                TextButton(onClick = {
+                                                    val newList = tempWaypoints.toMutableList()
+                                                    newList.removeAt(editingWaypointIndex!!)
+                                                    tempWaypoints = newList
+                                                    editingWaypointIndex = null
+                                                }) { Text("ELIMINAR", color = Color.Red.copy(0.7f), fontWeight = FontWeight.Bold) }
+                                                
+                                                Spacer(Modifier.width(8.dp))
+                                                
+                                                LuxeButton("GUARDAR", {
+                                                    val newList = tempWaypoints.toMutableList()
+                                                    newList[editingWaypointIndex!!] = newList[editingWaypointIndex!!].copy(name = editingWaypointName)
+                                                    tempWaypoints = newList
+                                                    editingWaypointIndex = null
+                                                }, true, Modifier.height(44.dp), LuxeColors.Gold, Color.Black)
+                                            }
+                                        },
+                                        dismissButton = {
+                                            TextButton(onClick = { editingWaypointIndex = null }) { Text("CANCELAR", color = Color.White.copy(0.4f)) }
+                                        }
+                                    )
+                                }
+
                                 Text("3. DESTINO Y PARADAS", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
                                 Spacer(Modifier.height(4.dp))
-                                Text("Busca un destino o añade paradas usando los filtros. Puedes reordenarlas con las flechas para optimizar tu viaje.", fontSize = 10.sp, color = Color.White.copy(0.4f), lineHeight = 14.sp)
+                                Text("Toca una parada para cambiar su nombre o reordénalas.", fontSize = 10.sp, color = Color.White.copy(0.4f), lineHeight = 14.sp)
                                 
                                 // --- 📊 PANEL DE TELEMETRÍA (DOPAMINA) ---
                                 if (state.routeDistanceKm != null || state.routeDurationMin != null) {
@@ -835,6 +888,7 @@ fun RadioDialogs(
                                         LazyColumn {
                                             items(state.routeSuggestions) { suggestion ->
                                                 Row(modifier = Modifier.fillMaxWidth().clickable { 
+                                                    onStateChange(state.copy(poiSuggestions = emptyList()))
                                                     if (tempWaypoints.none { it.lat == suggestion.lat && it.lon == suggestion.lon }) { 
                                                         tempWaypoints = (tempWaypoints + suggestion).toMutableList() 
                                                     }
@@ -878,52 +932,115 @@ fun RadioDialogs(
                                             label = label,
                                             category = cat,
                                             isSelected = selectedPois.contains(cat),
-                                            onExecuteAction = { 
-                                                selectedPois = if (selectedPois.contains(cat)) selectedPois - cat else selectedPois + cat
-                                                
-                                                // Si hay una búsqueda previa (destino), buscar allí. Si no, en posición actual.
-                                                if (lastSearchLat != null && lastSearchLon != null) {
-                                                    onExecuteEngineeringAction("FETCH_POIS|$cat|$lastSearchLat|$lastSearchLon")
-                                                } else {
-                                                    onExecuteEngineeringAction(it) 
+                                                onExecuteAction = { 
+                                                    onStateChange(state.copy(poiSuggestions = emptyList()))
+                                                    val becomingSelected = !selectedPois.contains(cat)
+                                                    selectedPois = if (becomingSelected) selectedPois + cat else selectedPois - cat
+                                                    
+                                                    if (becomingSelected) {
+                                                        // --- 📡 FEEDBACK DE BÚSQUEDA ---
+                                                        onNotification(AppNotification("BUSCANDO...", "Localizando $label más cercanos...", NotificationType.Info))
+
+                                                        // Si hay una búsqueda previa (destino), buscar allí. Si no, en posición actual.
+                                                        if (lastSearchLat != null && lastSearchLon != null) {
+                                                            onExecuteEngineeringAction("FETCH_POIS|$cat|$lastSearchLat|$lastSearchLon")
+                                                        } else {
+                                                            // Forzar búsqueda en última posición guardada
+                                                            onExecuteEngineeringAction("FETCH_POIS|$cat") 
+                                                        }
+                                                        triggerUiSound("click")
+                                                    } else {
+                                                        // Si se deselecciona, limpiamos marcadores de esa categoría
+                                                        onExecuteEngineeringAction("CLEAR_POIS|$cat")
+                                                    }
                                                 }
-                                            }
                                         )
                                     }
                                 }
-                                if (tempWaypoints.isNotEmpty()) {
-                                    Spacer(Modifier.height(12.dp))
-                                    // --- 🔄 BOTÓN AÑADIR RETORNO ---
-                                    TextButton(
-                                        onClick = { 
-                                            onWaypointReceived { _, _, _ -> } // Activar escucha si no estaba
-                                            onExecuteEngineeringAction("GET_LOCATION_SUGGESTIONS|MY_POSITION") 
-                                            // El motor JS debería responder con la posición actual y el diálogo la añadirá
-                                            tempWaypoints = (tempWaypoints + RouteSuggestion("Regreso al Origen", 0.0, 0.0)).toMutableList()
-                                            // Nota: En una implementación real, MY_POSITION devolvería las coordenadas reales.
-                                            // Para este caso, forzamos un retorno circular en el motor JS.
-                                            onExecuteEngineeringAction("ADD_RETURN_POINT")
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
+                                
+                                // --- 🏛️ LISTA DE SITIOS ENCONTRADOS (POI SUGGESTIONS) ---
+                                if (state.poiSuggestions.isNotEmpty()) {
+                                    Spacer(Modifier.height(16.dp))
+                                    Text("SITIOS DE INTERÉS ENCONTRADOS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.7f), letterSpacing = 1.sp)
+                                    Spacer(Modifier.height(8.dp))
+                                    LazyRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Rounded.Loop, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text("🔄 AÑADIR RETORNO AL ORIGEN (RUTA CIRCULAR)", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                        items(state.poiSuggestions) { poi ->
+                                            Surface(
+                                                onClick = {
+                                                    if (tempWaypoints.none { it.lat == poi.lat && it.lon == poi.lon }) {
+                                                        val newList = tempWaypoints.toMutableList()
+                                                        if (newList.size >= 2) {
+                                                            // Insertar antes del último (meta)
+                                                            newList.add(newList.size - 1, poi)
+                                                        } else {
+                                                            newList.add(poi)
+                                                        }
+                                                        tempWaypoints = newList
+                                                        triggerUiSound("switch")
+                                                    }
+                                                },
+                                                color = LuxeColors.Gold.copy(0.1f),
+                                                shape = RoundedCornerShape(12.dp),
+                                                border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.2f))
+                                            ) {
+                                                Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(Icons.Rounded.LocationOn, null, tint = LuxeColors.Gold, modifier = Modifier.size(14.dp))
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text(poi.name, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
                                         }
+                                    }
+                                }
+
+                                if (tempWaypoints.isNotEmpty()) {
+                                    Spacer(Modifier.height(16.dp))
+                                    val isCircular = tempWaypoints.size > 1 && tempWaypoints.first().lat == tempWaypoints.last().lat && tempWaypoints.first().lon == tempWaypoints.last().lon
+                                    
+                                    // --- 🔄 BOTÓN AÑADIR VUELTA (INTELIGENTE) ---
+                                    if (!isCircular) {
+                                        val blinkInfinite = rememberInfiniteTransition()
+                                        val blinkAlpha by blinkInfinite.animateFloat(0.3f, 1f, infiniteRepeatable(tween(800), RepeatMode.Reverse))
+                                        
+                                        Surface(
+                                            onClick = { 
+                                                onExecuteEngineeringAction("ADD_RETURN_POINT")
+                                                triggerUiSound("switch")
+                                            },
+                                            modifier = Modifier.fillMaxWidth().graphicsLayer(alpha = blinkAlpha),
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = LuxeColors.ElectricBlue.copy(0.15f),
+                                            border = BorderStroke(1.5.dp, LuxeColors.ElectricBlue)
+                                        ) {
+                                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                                                Icon(Icons.Rounded.Loop, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(20.dp))
+                                                Spacer(Modifier.width(10.dp))
+                                                Text("🔄 AÑADIR VUELTA A CASA (CERRAR RUTA)", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                            }
+                                        }
+                                        Spacer(Modifier.height(12.dp))
                                     }
 
                                     Spacer(Modifier.height(8.dp))
                                     tempWaypoints.forEachIndexed { index, wp ->
                                         val isFirst = index == 0
                                         val isLast = index == tempWaypoints.size - 1
-                                        val isCircular = tempWaypoints.size > 2 && tempWaypoints.first().lat == tempWaypoints.last().lat && tempWaypoints.first().lon == tempWaypoints.last().lon
+                                        
+                                        val metaInfinite = rememberInfiniteTransition()
+                                        val metaGlow by if (isLast) metaInfinite.animateFloat(0f, 15f, infiniteRepeatable(tween(1000), RepeatMode.Reverse)) else remember { mutableStateOf(0f) }
                                         
                                         Surface(
-                                            color = if (isLast) LuxeColors.Gold.copy(0.08f) else Color.White.copy(0.05f),
+                                            onClick = { 
+                                                editingWaypointIndex = index
+                                                editingWaypointName = wp.name
+                                            },
+                                            color = if (isLast) LuxeColors.Gold.copy(0.12f) else Color.White.copy(0.05f),
                                             shape = RoundedCornerShape(12.dp),
-                                            border = if (isLast) BorderStroke(1.dp, LuxeColors.Gold.copy(0.2f)) else null,
-                                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                                            border = if (isLast) BorderStroke(2.dp, LuxeColors.Gold) else BorderStroke(0.5.dp, Color.White.copy(0.1f)),
+                                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).graphicsLayer(shadowElevation = if (isLast) metaGlow else 0f)
                                         ) {
                                             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                                 Box(
@@ -1507,17 +1624,21 @@ fun RadioDialogs(
         )
         RadioDialogType.FINISH_ACTIVITY_CONFIRM -> AlertDialog(
             onDismissRequest = onDismiss,
-            containerColor = LuxeColors.Slate900,
+            containerColor = LuxeColors.DeepSea,
             properties = androidx.compose.ui.window.DialogProperties(
                 usePlatformDefaultWidth = true,
                 dismissOnBackPress = true,
                 dismissOnClickOutside = true
             ),
-            icon = { Icon(Icons.Rounded.Warning, null, tint = LuxeColors.Gold) },
-            title = { Text("¿FINALIZAR RUTA?", color = Color.White, fontWeight = FontWeight.Black) },
-            text = { Text("¿Estás seguro de que quieres cerrar el modo ruta? Volverás al canal público general.", color = Color.White.copy(0.7f), fontSize = 14.sp) },
+            icon = { Icon(Icons.Rounded.Flag, null, tint = LuxeColors.Red, modifier = Modifier.size(40.dp)) },
+            title = { Text("¿HAS LLEGADO A TU DESTINO?", color = Color.White, fontWeight = FontWeight.Black, textAlign = TextAlign.Center) },
+            text = { 
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Al finalizar la ruta, volverás al canal público general y dejarás de compartir tu posición exacta.", textAlign = TextAlign.Center, color = Color.White.copy(0.7f), fontSize = 13.sp)
+                }
+            },
             confirmButton = {
-                LuxeButton("SÍ, FINALIZAR", { 
+                LuxeButton("SÍ, FINALIZAR RUTA", { 
                     onStateChange(state.copy(
                         activeProfile = ActivityProfile.NORMAL,
                         isMotoModeEnabled = false,
@@ -1525,11 +1646,11 @@ fun RadioDialogs(
                         subtone = "0000"
                     ))
                     onDismiss()
-                }, true, Modifier.fillMaxWidth().height(56.dp), Color.Red, Color.White)
+                }, true, Modifier.fillMaxWidth().height(56.dp), LuxeColors.Red, Color.White)
             },
             dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("CONTINUAR RUTA", color = LuxeColors.Gold, fontWeight = FontWeight.Bold)
+                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                    Text("CONTINUAR NAVEGANDO", color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold)
                 }
             }
         )

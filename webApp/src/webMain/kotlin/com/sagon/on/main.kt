@@ -1133,7 +1133,7 @@ object RadioCore {
                         lineOptions: {
                             styles: [
                                 { color: '#000', weight: 10, opacity: 0.2 }, // Sombra
-                                { color: '#22C55E', weight: 6, opacity: 0.9 }  // Línea Principal Neón
+                                { color: '#22C55E', weight: 6, opacity: 0.9 } // Línea Principal Neón
                             ]
                         },
                         createMarker: function(i, wp) {

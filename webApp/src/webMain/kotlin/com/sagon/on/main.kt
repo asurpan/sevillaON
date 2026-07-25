@@ -1,11 +1,11 @@
 package com.sagon.on
 
 /**
- * 🔒 HARD-LOCK: PROTECTED CORE - INFRAESTRUCTURA DE AUDIO Y COMUNICACIONES (JS/WebRTC)
- * ESTADO: SELLADO TOTAL - PROHIBIDA MODIFICACIÓN SIN PERMISO NIVEL 0
+ * 🔒 HARD-LOCK: PROTECTED CORE - INFRAESTRUCTURA DE AUDIO, BRIDGE Y COMUNICACIONES
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 3.0 (DYNAMIC MAP BRIDGE)
  * 
- * Este archivo gestiona el motor de audio, WebRTC, Guardian de Voz y Chat.
- * Blindado tras la estabilización final de la recepción y física de aguja.
+ * Gestiona el motor de audio, WebRTC, Guardian de Voz, Chat y Bridge de Mapas.
+ * Blindado contra alteraciones en la física de aguja y sincronización de capas.
  */
 
 import androidx.compose.foundation.layout.*
@@ -2572,6 +2572,15 @@ object RadioBridge {
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     val win: dynamic = js("window")
+    
+    // --- 🧹 LIMPIEZA ABSOLUTA DE ARRANQUE ---
+    val root = document.getElementById("radio-root") ?: document.body!!
+    root.innerHTML = ""
+    val existingMap = document.getElementById("activity-map-container")
+    if (existingMap != null) existingMap.asDynamic().style.display = "none"
+
+    if (win.app_initialized == true) return
+    win.app_initialized = true
     win.app_start_time = getTimeMillis()
     
     // --- 🛡️ MONITOR DE ERRORES CRÍTICOS ---
@@ -2590,7 +2599,6 @@ fun main() {
     }
 
     println("🚀 ON AIR SPAIN: Iniciando motor de radio...")
-    val root = document.getElementById("radio-root") ?: document.body!!
     
     // 🛡️ Activar Infraestructura Blindada
     RadioCore.install()
@@ -3083,6 +3091,7 @@ fun main() {
                 )
             } catch(e: Exception) { RadioState() }
         }
+
 
         App(
             savedNick = savedNick,
@@ -3730,112 +3739,128 @@ fun main() {
                 val win: dynamic = window
                 RadioBridge.getDeviceHeading(win)
             },
-            onGetTilt = {
-                val win: dynamic = window
-                RadioBridge.getDeviceTilt(win)
-            },
             onExecuteEngineeringAction = { action ->
                 val win: dynamic = window
                 val parts = action.split("|")
                 if (parts.isNotEmpty()) {
                     val cmd = parts[0]
 
-                    // --- 🛠️ COMANDOS COMPARTIDOS (WEB / ANDROID) ---
+                    // 🔒 HARD-LOCK: BRIDGE DE MAPAS DE PRECISIÓN (ESTRATIFICACIÓN DE CAPAS)
                     when (cmd) {
                         "UPDATE_MAP_GEOMETRY" -> if (parts.size >= 5) {
-                            val l = parts[1]; val t = parts[2]; val w = parts[3]; val h = parts[4]
-                            js("""
-                                var container = document.getElementById('activity-map-container');
-                                var root = document.getElementById('radio-root');
-                                if (container) {
-                                    container.style.display = 'block';
-                                    container.style.left = l + 'px';
-                                    container.style.top = t + 'px';
-                                    container.style.width = w + 'px';
-                                    container.style.height = h + 'px';
-                                    container.style.zIndex = '0';
-                                    if (root) {
-                                        root.style.zIndex = '10';
-                                        var x1 = l + 'px'; var y1 = t + 'px';
-                                        var x2 = (parseFloat(l) + parseFloat(w)) + 'px';
-                                        var y2 = (parseFloat(t) + parseFloat(h)) + 'px';
-                                        root.style.clipPath = 'polygon(0% 0%, 0% 100%, ' + x1 + ' 100%, ' + x1 + ' ' + y1 + ', ' + x2 + ' ' + y1 + ', ' + x2 + ' ' + y2 + ', ' + x1 + ' ' + y2 + ', ' + x1 + ' 100%, 100% 100%, 100% 0%)';
-                                    }
-                                    if (window.app && window.app.map) window.app.map.invalidateSize();
-                                }
-                            """)
-                        }
-                        "HIDE_MAP_OVERLAY" -> js("""
-                            var c = document.getElementById('activity-map-container');
-                            if (c) {
-                                c.style.display = 'none';
-                                c.style.transform = 'rotate(0deg)';
+                            val lVal = parts[1]; val tVal = parts[2]; val wVal = parts[3]; val hVal = parts[4]
+                            val container = document.getElementById("activity-map-container")
+                            val rootLayer = document.getElementById("radio-root")
+                            
+                            if (container != null && rootLayer != null) {
+                                // 1. Capa Inferior: Mapa
+                                val cs = container.asDynamic().style
+                                cs.display = "block"
+                                cs.position = "fixed"
+                                cs.left = lVal + "px"
+                                cs.top = tVal + "px"
+                                cs.width = wVal + "px"
+                                cs.height = hVal + "px"
+                                cs.zIndex = "1"
+                                cs.borderRadius = "28px"
+                                cs.pointerEvents = "auto"
+                                
+                                // 2. Capa Superior: Radio (Transparente)
+                                val rs = rootLayer.asDynamic().style
+                                rs.zIndex = "10"
+                                rs.background = "transparent"
+                                rs.clipPath = "none"
+                                rs.webkitClipPath = "none"
+                                rs.pointerEvents = "none" // Permite clics al mapa de fondo
+
+                                if (win.app != null && win.app.map != null) win.app.map.invalidateSize()
                             }
-                            var root = document.getElementById('radio-root');
-                            if (root) root.style.clipPath = 'none';
-                        """)
-                        "SHOW_MAP_OVERLAY" -> js("var c = document.getElementById('activity-map-container'); if(c) c.style.display = 'block';")
-                        "INIT_REAL_MAP" -> js("""
-                            setTimeout(function() {
-                                var containerId = 'activity-map-container';
-                                var container = document.getElementById(containerId);
-                                if (container) {
-                                    container.style.display = 'block';
-                                    var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
-                                    var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
-                                    window.initRealMap(containerId, lat, lon);
-                                    setTimeout(function() { if(window.app.map) window.app.map.invalidateSize(); }, 300);
+                        }
+                        "HIDE_MAP_OVERLAY" -> {
+                            val container = document.getElementById("activity-map-container")
+                            if (container != null) container.asDynamic().style.display = "none"
+                            val rootLayer = document.getElementById("radio-root")
+                            if (rootLayer != null) {
+                                rootLayer.asDynamic().style.background = "#0F172A"
+                                rootLayer.asDynamic().style.pointerEvents = "auto"
+                            }
+                        }
+                        "SHOW_MAP_OVERLAY" -> {
+                            val container = document.getElementById("activity-map-container")
+                            if (container != null) container.asDynamic().style.display = "block"
+                        }
+                        "INIT_REAL_MAP" -> {
+                            val latP = if (parts.size >= 2) parts[1] else "null"
+                            val lonP = if (parts.size >= 3) parts[2] else "null"
+                            win.setTimeout({
+                                val containerId = "activity-map-container"
+                                val container = document.getElementById(containerId)
+                                if (container != null) {
+                                    container.asDynamic().style.display = "block"
+                                    val lat = if (latP != "null") win.parseFloat(latP) else (win.parseFloat(localStorage.getItem("last_lat")) ?: 37.3891)
+                                    val lon = if (lonP != "null") win.parseFloat(lonP) else (win.parseFloat(localStorage.getItem("last_lon")) ?: -5.9845)
+                                    win.initRealMap(containerId, lat, lon)
+                                    win.setTimeout({ if(win.app != null && win.app.map != null) win.app.map.invalidateSize() }, 300)
                                 }
-                            }, 500);
-                        """)
+                            }, 300)
+                        }
                         "UPDATE_MAP_MARKERS" -> if (parts.size >= 2) {
                             val markersJson = parts[1]
-                            (win.asDynamic()).updateMapMarkers(markersJson)
+                            win.updateMapMarkers(markersJson)
                         }
                         "CENTER_MAP" -> if (parts.size >= 3) {
                             val lat = parts[1]; val lon = parts[2]
-                            js("if(window.app && window.app.map) window.app.map.panTo([lat, lon]);")
+                            if (win.app != null && win.app.map != null) {
+                                win.app.map.panTo(arrayOf(win.parseFloat(lat), win.parseFloat(lon)))
+                            }
                         }
                         "ROTATE_MAP" -> if (parts.size >= 2) {
                             val angle = parts[1]
-                            js("var c = document.getElementById('activity-map-container'); if(c) { c.style.transition = 'transform 0.2s ease-out'; c.style.transform = 'rotate(' + (-angle) + 'deg)'; }")
+                            val container = document.getElementById("activity-map-container")
+                            if (container != null) {
+                                val cs = container.asDynamic().style
+                                cs.transition = "transform 0.2s ease-out"
+                                cs.transform = "rotate(" + (-win.parseFloat(angle)) + "deg)"
+                            }
                         }
-                        "UPDATE_ACTIVE_PROFILE" -> if (parts.size >= 2) js("localStorage.setItem('activeProfile', parts[1]);")
+                        "UPDATE_ACTIVE_PROFILE" -> if (parts.size >= 2) {
+                            val profile = parts[1]
+                            localStorage.setItem("activeProfile", profile)
+                        }
                         "GET_LOCATION_SUGGESTIONS" -> if (parts.size >= 2) {
                             val locQuery = parts[1]
-                            js("""
-                                fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(locQuery))
-                                    .then(function(r) { return r.json(); })
-                                    .then(function(data) {
-                                        if(window.dispatch_route_suggestions) {
-                                            var str = data.map(function(item) {
-                                                var name = (item.display_name || "Ubicacion").replace(/\|/g, " ").replace(/;/g, ",");
-                                                return name + "|" + item.lat + "|" + item.lon;
-                                            }).join(";");
-                                            window.dispatch_route_suggestions(str);
-                                        }
-                                    });
-                            """)
+                            win.fetch("https://nominatim.openstreetmap.org/search?format=json&q=" + win.encodeURIComponent(locQuery))
+                                .then { r: dynamic -> r.json() }
+                                .then { data: dynamic ->
+                                    if (win.dispatch_route_suggestions != null) {
+                                        val str = data.map { item: dynamic ->
+                                            val name = (item.display_name ?: "Ubicacion").toString().replace("|", " ").replace(";", ",")
+                                            name + "|" + item.lat + "|" + item.lon
+                                        }.join(";")
+                                        win.dispatch_route_suggestions(str)
+                                    }
+                                }
                         }
-                        "SET_DESTINATION" -> if (parts.size >= 3) js("window.setMapDestination(parseFloat(parts[1]), parseFloat(parts[2]));")
+                        "SET_DESTINATION" -> if (parts.size >= 3) {
+                            val dLat = parts[1]; val dLon = parts[2]
+                            win.setMapDestination(win.parseFloat(dLat), win.parseFloat(dLon))
+                        }
                         "SEARCH_LOCATION" -> if (parts.size >= 2) {
                             val searchQ = parts[1]
-                            js("""
-                                fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(searchQ))
-                                    .then(function(r) { return r.json(); })
-                                    .then(function(data) {
-                                        if (data && data.length > 0) {
-                                            var loc = data[0];
-                                            window.setMapDestination(parseFloat(loc.lat), parseFloat(loc.lon));
-                                        }
-                                    });
-                            """)
+                            win.fetch("https://nominatim.openstreetmap.org/search?format=json&q=" + win.encodeURIComponent(searchQ))
+                                .then { r: dynamic -> r.json() }
+                                .then { data: dynamic ->
+                                    if (data != null && data.length > 0) {
+                                        val loc = data[0]
+                                        win.setMapDestination(win.parseFloat(loc.lat), win.parseFloat(loc.lon))
+                                    }
+                                }
                         }
-                        "FETCH_POIS" -> js("""
-                            var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
-                            var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
-                            if(window.fetchTacticalPOIs) window.fetchTacticalPOIs(lat, lon);
-                        """)
+                        "FETCH_POIS" -> {
+                            val lat = win.parseFloat(localStorage.getItem("last_lat")) ?: 37.3891
+                            val lon = win.parseFloat(localStorage.getItem("last_lon")) ?: -5.9845
+                            if (win.fetchTacticalPOIs != null) win.fetchTacticalPOIs(lat, lon)
+                        }
                     }
 
                     // --- 📱 COMANDOS ESPECÍFICOS DE ANDROID ---
@@ -3863,7 +3888,7 @@ fun main() {
                             "PLAY_STORED_CODE" -> if (parts.size >= 3) win.AndroidApp.playStoredRFCode(parts[1], parts[2])
                             "GET_WIFI_SCAN" -> win.AndroidApp.startWifiSecurityScan()
                             "CHECK_NETWORK_CRITICAL" -> {
-                                val isCritical = win.AndroidApp.checkNetworkCritical() as Boolean
+                                val isCritical = win.AndroidApp.checkNetworkCritical().unsafeCast<Boolean>()
                                 js("if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(isCritical);")
                             }
                             "TRY_WIFI_CONNECT" -> if (parts.size >= 3) win.AndroidApp.tryWifiAuditConnect(parts[1], parts[2])
@@ -3942,7 +3967,7 @@ fun main() {
             nasaImageUrl = nasaImageUrlState.value ?: initialState.nasaImageUrl,
             nasaImageTitle = nasaImageTitleState.value ?: initialState.nasaImageTitle,
             nasaImageExplanation = nasaImageExplanationState.value ?: initialState.nasaImageExplanation,
-            onDgtUpdate = { text ->
+            onDgtUpdate = { _ ->
                 // Actualización vía locutor (opcional)
             },
             dgtText = dgtTextState.value,

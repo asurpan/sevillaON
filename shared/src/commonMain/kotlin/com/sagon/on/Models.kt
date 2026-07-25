@@ -118,6 +118,8 @@ data class RadioState(
     val hasSeenRadarMagic: Boolean = false,
     val hasSeenEcoIntro: Boolean = false,
     val hasSeenDspIntro: Boolean = false,
+    val hasSeenBlacklistIntro: Boolean = false,
+    val hasSeenWelcome: Boolean = false,
     val hasSeenLockIntro: Boolean = false,
     val hasSeenReplayIntro: Boolean = false,
     val hasSeenWattsIntro: Boolean = false,

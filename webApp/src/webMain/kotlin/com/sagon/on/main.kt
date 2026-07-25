@@ -1061,7 +1061,7 @@ object RadioCore {
                     var isNight = (hour >= 20 || hour < 8);
                     
                     var map = L.map(containerId, {
-                        zoomControl: false,
+                        zoomControl: true, // Habilitar controles de zoom
                         attributionControl: false
                     }).setView([lat || 37.3891, lon || -5.9845], 13);
                     
@@ -1131,9 +1131,29 @@ object RadioCore {
                             profile: profile
                         }),
                         lineOptions: {
-                            styles: [{ color: '#22C55E', weight: 6, opacity: 0.8 }]
+                            styles: [
+                                { color: '#000', weight: 10, opacity: 0.2 }, // Sombra
+                                { color: '#22C55E', weight: 6, opacity: 0.9 }  // Línea Principal Neón
+                            ]
                         },
-                        createMarker: function() { return null; },
+                        createMarker: function(i, wp) {
+                            var isFirst = i === 0;
+                            var isLast = i === waypoints.length - 1;
+                            var iconColor = "#22C55E";
+                            
+                            var html = '<div style="background:' + iconColor + ';border:2px solid white;border-radius:50%;width:14px;height:14px;box-shadow:0 0 10px ' + iconColor + ';"></div>';
+                            if (isFirst) html = '<div style="background:#FFF;border:2px solid #22C55E;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;"><div style="background:#22C55E;width:6px;height:6px;border-radius:50%;"></div></div>';
+                            if (isLast) html = '<div style="background:#22C55E;border:2px solid white;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;"><div style="color:white;font-size:10px;">🏁</div></div>';
+
+                            return L.marker(wp.latLng, {
+                                icon: L.divIcon({
+                                    className: 'route-marker',
+                                    html: html,
+                                    iconSize: [18, 18],
+                                    iconAnchor: [9, 9]
+                                })
+                            });
+                        },
                         addWaypoints: false,
                         routeWhileDragging: false,
                         draggableWaypoints: false,
@@ -1143,6 +1163,8 @@ object RadioCore {
                     
                     control.on('routesfound', function(e) {
                         var route = e.routes[0];
+                        // Auto-ajustar mapa para ver toda la ruta (Dopamina Visual)
+                        if (window.app.map) window.app.map.fitBounds(L.latLngBounds(route.coordinates), { padding: [50, 50] });
                         var dist = (route.summary.totalDistance / 1000).toFixed(1) + " KM";
                         var time = Math.round(route.summary.totalTime / 60) + " MIN";
                         var name = destName || (waypointsJson ? "Misión Completa" : "Destino Táctico");
@@ -1154,10 +1176,35 @@ object RadioCore {
                         if (window.dispatch_route_info) {
                             window.dispatch_route_info(dist, time, name);
                         }
+                        
+                        // --- 🚀 AUTO-DOPAMINE: Buscar POIs a lo largo de la ruta recién trazada ---
+                        var activeProfile = localStorage.getItem("activeProfile") || "NORMAL";
+                        var autoCat = "MONUMENTOS";
+                        if (activeProfile === "MOTO" || activeProfile === "CICLISMO") autoCat = "NATURALEZA";
+                        else if (activeProfile === "SOCORRISTAS") autoCat = "HOSPITALES";
+                        
+                        window.fetchPoisAlongRoute(autoCat);
                     });
 
                     control.addTo(window.app.map);
                     window.app.routingControl = control;
+                };
+
+                window.getPoiFilter = function(category) {
+                    var filter = 'node["historic"]'; // Default
+                    if (category === "MONUMENTOS") filter = 'node["historic"]';
+                    else if (category === "EVENTOS") filter = 'node["amenity"~"theatre|cinema|arts_centre|marketplace|community_centre|stadium|public_bath"]["tourism"~"theme_park|zoo"]';
+                    else if (category === "NATURALEZA") filter = 'node["tourism"~"viewpoint|picnic_site"]';
+                    else if (category === "GASOLINERAS") filter = 'node["amenity"="fuel"]';
+                    else if (category === "RESTAURANTES") filter = 'node["amenity"="restaurant"]';
+                    else if (category === "PARKINGS") filter = 'node["amenity"="parking"]';
+                    else if (category === "FUENTES") filter = 'node["amenity"="drinking_water"]';
+                    else if (category === "TALLERES") filter = 'node["shop"~"bicycle|motorcycle|car_repair"]';
+                    else if (category === "HOSPITALES") filter = 'node["amenity"~"hospital|clinic"]';
+                    else if (category === "FARMACIAS") filter = 'node["amenity"="pharmacy"]';
+                    else if (category === "PARQUES") filter = 'node["leisure"="park"]';
+                    else if (category === "ASEOS") filter = 'node["amenity"="toilets"]';
+                    return filter;
                 };
 
                 window.fetchTacticalPOIs = function(lat, lon, category) {
@@ -1170,54 +1217,87 @@ object RadioCore {
                     window.app.poiLayers = [];
 
                     var radius = 20000; // Radio de búsqueda de 20km para táctica
-                    
-                    var filter = 'node["historic"]'; // Default
-                    if (category === "MONUMENTOS") filter = 'node["historic"]';
-                    else if (category === "EVENTOS") filter = 'node["amenity"~"theatre|cinema|arts_centre"]';
-                    else if (category === "NATURALEZA") filter = 'node["tourism"~"viewpoint|picnic_site"]';
-                    else if (category === "GASOLINERAS") filter = 'node["amenity"="fuel"]';
-                    else if (category === "RESTAURANTES") filter = 'node["amenity"="restaurant"]';
-                    else if (category === "PARKINGS") filter = 'node["amenity"="parking"]';
-                    else if (category === "FUENTES") filter = 'node["amenity"="drinking_water"]';
-                    else if (category === "TALLERES") filter = 'node["shop"~"bicycle|motorcycle|car_repair"]';
-                    else if (category === "HOSPITALES") filter = 'node["amenity"~"hospital|clinic"]';
-                    else if (category === "FARMACIAS") filter = 'node["amenity"="pharmacy"]';
-                    else if (category === "PARQUES") filter = 'node["leisure"="park"]';
-                    else if (category === "ASEOS") filter = 'node["amenity"="toilets"]';
+                    var filter = window.getPoiFilter(category);
                     
                     var query = '[out:json][timeout:25];(' + filter + '(around:' + radius + ',' + lat + ',' + lon + '););out body;';
                     fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query))
                         .then(function(r) { return r.json(); })
                         .then(function(data) {
-                            if (data && data.elements) {
-                                data.elements.forEach(function(poi) {
-                                    var iconColor = "#D4AF37"; // Gold default
-                                    if (["GASOLINERAS", "FUENTES"].indexOf(category) !== -1) iconColor = "#06B6D4"; // Cyan
-                                    if (["HOSPITALES", "FARMACIAS"].indexOf(category) !== -1) iconColor = "#E11D48"; // Red
-                                    if (["NATURALEZA", "PARQUES"].indexOf(category) !== -1) iconColor = "#22C55E"; // Green
-                                    
-                                    var icon = L.divIcon({
-                                        className: 'tactical-poi',
-                                        html: '<div style="background:' + iconColor + ';border:2px solid white;border-radius:50%;width:14px;height:14px;box-shadow:0 0 10px ' + iconColor + ';"></div>',
-                                        iconSize: [14, 14]
-                                    });
-                                    var marker = L.marker([poi.lat, poi.lon], { icon: icon }).addTo(window.app.map);
-                                    window.app.poiLayers.push(marker);
-                                    var name = poi.tags.name || category;
-                                    marker.bindTooltip(name, { permanent: false, direction: 'top' });
-                                    marker.on('click', function() {
-                                        var choice = confirm("¿Añadir " + name + " a la ruta? (Aceptar = Añadir parada, Cancelar = Ir directo)");
-                                        if (choice) {
-                                            if (window.dispatch_add_waypoint) {
-                                                window.dispatch_add_waypoint(name, poi.lat, poi.lon);
-                                            }
-                                        } else {
-                                            window.setMapDestination(poi.lat, poi.lon, name);
-                                        }
-                                    });
-                                });
-                            }
+                            window.renderTacticalPOIs(data, category);
                         }).catch(function(err) { console.error("Error POI:", err); });
+                };
+
+                window.fetchPoisAlongRoute = function(category) {
+                    if (!window.app.routingControl || !window.app.map) return;
+                    var route = window.app.routingControl.getPlan().getWaypoints();
+                    if (route.length < 2) return;
+                    
+                    var points = [];
+                    route.forEach(function(wp) { if(wp.latLng) points.push(wp.latLng); });
+                    if (points.length === 0) return;
+
+                    var radius = 8000; // 8km alrededor de los puntos de la ruta
+                    var filter = window.getPoiFilter(category);
+                    
+                    var arounds = points.map(function(p) { 
+                        return '(around:' + radius + ',' + p.lat + ',' + p.lng + ')'; 
+                    }).join('');
+                    
+                    var query = '[out:json][timeout:25];(' + filter + arounds + ';);out body;';
+                    fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query))
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            window.renderTacticalPOIs(data, category, true);
+                        }).catch(function(err) { console.error("Error POI Trayecto:", err); });
+                };
+
+                window.renderTacticalPOIs = function(data, category, isAlongRoute) {
+                    if (!data || !data.elements) return;
+                    
+                    // Si no es "alongRoute", limpiamos los anteriores (fetchTacticalPOIs ya lo hace, pero por seguridad)
+                    if (!isAlongRoute && window.app.poiLayers) {
+                        window.app.poiLayers.forEach(layer => window.app.map.removeLayer(layer));
+                        window.app.poiLayers = [];
+                    }
+                    if (!window.app.poiLayers) window.app.poiLayers = [];
+
+                    data.elements.forEach(function(poi) {
+                        // Evitar duplicados si ya existen en la capa
+                        var exists = window.app.poiLayers.some(l => l.getLatLng().lat === poi.lat && l.getLatLng().lng === poi.lon);
+                        if (exists) return;
+
+                        var iconColor = "#D4AF37"; // Gold default
+                        if (["GASOLINERAS", "FUENTES"].indexOf(category) !== -1) iconColor = "#06B6D4"; // Cyan
+                        if (["HOSPITALES", "FARMACIAS"].indexOf(category) !== -1) iconColor = "#E11D48"; // Red
+                        if (["NATURALEZA", "PARQUES"].indexOf(category) !== -1) iconColor = "#22C55E"; // Green
+                        if (category === "EVENTOS") iconColor = "#A855F7"; // Púrpura Eléctrico
+                        
+                        var html = '<div style="background:' + iconColor + ';border:2px solid white;border-radius:50%;width:14px;height:14px;box-shadow:0 0 10px ' + iconColor + ';"></div>';
+                        if (isAlongRoute || category === "EVENTOS") {
+                            // Efecto pulso para POIs del trayecto o Eventos (Dopamina)
+                            html = '<div class="poi-pulse" style="background:' + iconColor + ';border:2px solid white;border-radius:50%;width:14px;height:14px;box-shadow:0 0 15px ' + iconColor + ';"></div>';
+                        }
+
+                        var icon = L.divIcon({
+                            className: 'tactical-poi',
+                            html: html,
+                            iconSize: [14, 14]
+                        });
+                        var marker = L.marker([poi.lat, poi.lon], { icon: icon }).addTo(window.app.map);
+                        window.app.poiLayers.push(marker);
+                        var name = poi.tags.name || category;
+                        marker.bindTooltip(name, { permanent: false, direction: 'top' });
+                        marker.on('click', function() {
+                            var choice = confirm("¿Añadir " + name + " a la ruta? (Aceptar = Añadir parada, Cancelar = Ir directo)");
+                            if (choice) {
+                                if (window.dispatch_add_waypoint) {
+                                    window.dispatch_add_waypoint(name, poi.lat, poi.lon);
+                                }
+                            } else {
+                                window.setMapDestination(poi.lat, poi.lon, name);
+                            }
+                        });
+                    });
                 };
 
                 window.updateMapMarkers = function(usersJson) {
@@ -3932,7 +4012,7 @@ fun main() {
                         }
                         "GET_LOCATION_SUGGESTIONS" -> if (parts.size >= 2) {
                             val locQuery = parts[1]
-                            win.fetch("https://nominatim.openstreetmap.org/search?format=json&q=" + win.encodeURIComponent(locQuery))
+                            win.fetch("https://nominatim.openstreetmap.org/search?format=json&countrycodes=es,pt&q=" + win.encodeURIComponent(locQuery))
                                 .then { r: dynamic -> r.json() }
                                 .then { data: dynamic ->
                                     if (win.dispatch_route_suggestions != null) {
@@ -3955,7 +4035,7 @@ fun main() {
                         }
                         "SEARCH_LOCATION" -> if (parts.size >= 2) {
                             val searchQ = parts[1]
-                            win.fetch("https://nominatim.openstreetmap.org/search?format=json&q=" + win.encodeURIComponent(searchQ))
+                            win.fetch("https://nominatim.openstreetmap.org/search?format=json&countrycodes=es,pt&q=" + win.encodeURIComponent(searchQ))
                                 .then { r: dynamic -> r.json() }
                                 .then { data: dynamic ->
                                     if (data != null && data.length > 0) {
@@ -3966,9 +4046,49 @@ fun main() {
                         }
                         "FETCH_POIS" -> {
                             val cat = if (parts.size >= 2) parts[1] else "MONUMENTOS"
+                            val lat = if (parts.size >= 4) win.parseFloat(parts[2]) else (win.parseFloat(localStorage.getItem("last_lat")) ?: 37.3891)
+                            val lon = if (parts.size >= 4) win.parseFloat(parts[3]) else (win.parseFloat(localStorage.getItem("last_lon")) ?: -5.9845)
+                            if (win.fetchTacticalPOIs != null) win.fetchTacticalPOIs(lat, lon, cat)
+                        }
+                        "FETCH_POIS_ALONG_ROUTE" -> {
+                            val cat = if (parts.size >= 2) parts[1] else "MONUMENTOS"
+                            if (win.fetchPoisAlongRoute != null) win.fetchPoisAlongRoute(cat)
+                        }
+                        "GENERATE_ADVENTURE_ROUTE" -> {
+                            val activity = parts.getOrNull(1) ?: "NORMAL"
+                            val cat = when(activity) {
+                                "MOTO", "CICLISMO" -> "NATURALEZA"
+                                else -> "MONUMENTOS"
+                            }
                             val lat = win.parseFloat(localStorage.getItem("last_lat")) ?: 37.3891
                             val lon = win.parseFloat(localStorage.getItem("last_lon")) ?: -5.9845
-                            if (win.fetchTacticalPOIs != null) win.fetchTacticalPOIs(lat, lon, cat)
+                            val filter = win.getPoiFilter(cat)
+                            // Buscar un punto aleatorio en un radio de 15km
+                            val query = "[out:json][timeout:15];($filter(around:15000,$lat,$lon););out body 5;"
+                            win.fetch("https://overpass-api.de/api/interpreter?data=" + win.encodeURIComponent(query))
+                                .then { r: dynamic -> r.json() }
+                                .then { data: dynamic ->
+                                    if (data != null && data.elements != null && data.elements.length > 0) {
+                                        val poi = data.elements[win.Math.floor(win.Math.random() * data.elements.length)]
+                                        val name = "AVENTURA: " + (poi.tags.name ?: cat)
+                                        // Crear ruta circular: Origen -> Destino -> Origen
+                                        val wpts = "[{\"name\":\"Origen\",\"lat\":$lat,\"lon\":$lon},{\"name\":\"$name\",\"lat\":${poi.lat},\"lon\":${poi.lon}},{\"name\":\"Retorno\",\"lat\":$lat,\"lon\":$lon}]"
+                                        win.setMapDestination(null, null, null, wpts)
+                                        
+                                        // Informar a la app de los nuevos waypoints para que se vean en la lista
+                                        if (win.dispatch_add_waypoint_to_app != null) {
+                                            win.dispatch_add_waypoint_to_app(name, poi.lat, poi.lon)
+                                            win.dispatch_add_waypoint_to_app("Regreso a Casa", lat, lon)
+                                        }
+                                    }
+                                }
+                        }
+                        "ADD_RETURN_POINT" -> {
+                            val lat = win.parseFloat(localStorage.getItem("last_lat")) ?: 37.3891
+                            val lon = win.parseFloat(localStorage.getItem("last_lon")) ?: -5.9845
+                            if (win.dispatch_add_waypoint_to_app != null) {
+                                win.dispatch_add_waypoint_to_app("Retorno al Origen", lat, lon)
+                            }
                         }
                     }
 

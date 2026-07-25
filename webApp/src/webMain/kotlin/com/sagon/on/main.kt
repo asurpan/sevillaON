@@ -1906,6 +1906,7 @@ object RadioSignaling {
                             
                             var now = window.app.ctx.currentTime;
 
+                            /* --- 🔒 HARD-LOCK: PROTECTED CORE - MOTOR DE ROGER BEEP --- */
                             /* --- 🔒 ROGER BEEP: EMISIÓN A RED (NORMALIZADA) --- */
                             var oscRemote = window.app.ctx.createOscillator();
                             var gRemote = window.app.ctx.createGain();
@@ -1920,13 +1921,11 @@ object RadioSignaling {
                             if (window.app.txBus) gRemote.connect(window.app.txBus);
 
                             /* --- 🎙️ ROGER BEEP: FEEDBACK LOCAL (PURO Y LIMPIO) --- */
-                            /* Este tono suena directamente al altavoz del emisor, siempre igual */
                             var oscLocal = window.app.ctx.createOscillator();
                             window.app.activeRogerOsc = oscLocal;
                             var gLocal = window.app.ctx.createGain();
                             oscLocal.type = 'sine';
                             oscLocal.frequency.setValueAtTime(1955, now);
-                            /* Volumen medio constante (0.18) para feedback profesional */
                             gLocal.gain.setValueAtTime(0.0001, now);
                             gLocal.gain.linearRampToValueAtTime(0.18, now + 0.005);
                             gLocal.gain.setValueAtTime(0.18, now + 0.28);
@@ -1934,8 +1933,9 @@ object RadioSignaling {
                             oscLocal.connect(gLocal);
                             gLocal.connect(window.app.ctx.destination);
 
-                            oscLocal.onended = function() {
+                            var cleanupBeep = function() {
                                 if (window.app.activeRogerOsc === oscLocal) window.app.activeRogerOsc = null;
+                                if (!window.app.isBeeping) return;
                                 window.app.isBeeping = false;
                                 if(window.dispatch_beeping) window.dispatch_beeping(false);
                                 if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.0, window.app.ctx.currentTime, 0.05);
@@ -1951,9 +1951,15 @@ object RadioSignaling {
                                 window.app.voxLockoutTimestamp = Date.now() + 1000;
                                 if(window.updateBgDucking) window.updateBgDucking();
                             };
+
+                            oscLocal.onended = cleanupBeep;
+                            // --- 🛡️ SEGURO DE VIDA: Forzar reseteo si el evento onended falla ---
+                            setTimeout(cleanupBeep, 500);
+
                             oscRemote.start(now); oscRemote.stop(now + 0.3);
                             oscLocal.start(now); oscLocal.stop(now + 0.3);
-                        } else {
+                        }
+else {
                             if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.0, window.app.ctx.currentTime, 0.05);
                             if (window.app.noise) {
                                 window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
@@ -2508,7 +2514,8 @@ object RadioBridge {
         onDgtUpdate: (String?, String?) -> Unit,
         onCodeCaptured: (String, String) -> Unit,
         onWifiListReceived: (String) -> Unit,
-        onEngineeringFinished: () -> Unit
+        onEngineeringFinished: () -> Unit,
+        onRouteSuggestions: (String) -> Unit
     ) {
         win.dispatch_mic = onMic
         win.dispatch_beeping = onBeep
@@ -2532,6 +2539,7 @@ object RadioBridge {
         win.dispatch_code_captured = onCodeCaptured
         win.dispatch_wifi_list = onWifiListReceived
         win.dispatch_engineering_finished = onEngineeringFinished
+        win.dispatch_route_suggestions = onRouteSuggestions
         win.dispatch_chat_open = { target: String? -> 
             onChatOpen(target)
             // Forzar apertura de chat en la terminal local
@@ -2990,8 +2998,11 @@ fun main() {
             onEngineeringFinished = {
                 val cb = win.dispatch_engineering_finished_to_app
                 if (cb != null) cb()
-                // Sincronizar con el estado de la UI (resetear botones activos)
                 js("if(window.reset_engineering_ui) window.reset_engineering_ui();")
+            },
+            onRouteSuggestions = { json ->
+                val cb = win.dispatch_route_suggestions_to_app
+                if (cb != null) cb(json)
             }
         )
 
@@ -3725,402 +3736,159 @@ fun main() {
             },
             onExecuteEngineeringAction = { action ->
                 val win: dynamic = window
-                if (win.AndroidApp != null) {
-                    val parts = action.split("|")
+                val parts = action.split("|")
+                if (parts.isNotEmpty()) {
                     val cmd = parts[0]
+
+                    // --- 🛠️ COMANDOS COMPARTIDOS (WEB / ANDROID) ---
                     when (cmd) {
-                        "SPEAK" -> {
-                            if (parts.size >= 2) {
-                                win.AndroidApp.speak(parts[1], 1.0f, 1.0f)
-                            }
-                        }
-                        "RUN_INDUCTIVE_TEST" -> win.AndroidApp.runInductiveResponseTest()
-                        "EXECUTE_AGGRESSIVE_IOT" -> win.AndroidApp.executeAggressiveIoTJammer()
-                        "PERFORM_RF_STRESS" -> win.AndroidApp.performRFStressDiagnostics()
-                        "EXECUTE_EMF_ANALYSIS" -> win.AndroidApp.executeHighFrequencyEMFAnalysis()
-                        "EXECUTE_IR_UNIVERSAL_SWEEP" -> win.AndroidApp.executeIRUniversalSweep()
-                        "EXECUTE_BARRIER_ATTACK" -> win.AndroidApp.executeBarrierAttack()
-                        "EXECUTE_ULTRASONIC_JAMMER" -> win.AndroidApp.executeUltrasonicJammer()
-                        "EXECUTE_OPTICAL_JAMMER" -> win.AndroidApp.executeOpticalCameraJammer()
-                        "EXECUTE_VENDING_ATTACK" -> win.AndroidApp.executeVendingAttack()
-                        "EXECUTE_VENDING_MASTER" -> win.AndroidApp.executeVendingMaster()
-                        "EXECUTE_LOCK_ATTACK" -> win.AndroidApp.executeLockAttack()
-                        "EXECUTE_TRAFFIC_PRIORITY" -> win.AndroidApp.executeTrafficPriority()
-                        "EXECUTE_ELEVATOR_PRIORITY" -> win.AndroidApp.executeElevatorPriorityCall()
-                        "EXECUTE_WASH_BOX" -> win.AndroidApp.executeWashBoxAttack()
-                        "EXECUTE_SETUP_FORCE" -> win.AndroidApp.executeSetupForceAttack()
-                        "EXECUTE_WIFI_GOD" -> win.AndroidApp.executeWiFiQoSPriority()
-                        "EXECUTE_PIR_BLIND" -> win.AndroidApp.executePIRBlinder()
-                        "START_CAPTURE" -> win.AndroidApp.startRFDiscovery()
-                        "PLAY_STORED_CODE" -> {
-                            if (parts.size >= 3) {
-                                win.AndroidApp.playStoredRFCode(parts[1], parts[2])
-                            }
-                        }
-                        "GET_WIFI_SCAN" -> win.AndroidApp.startWifiSecurityScan()
-                        "CHECK_NETWORK_CRITICAL" -> {
-                            val isCritical = win.AndroidApp.checkNetworkCritical() as Boolean
-                            // Notificar a Compose para cambiar el icono a MODO P2P
-                            js("if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(isCritical);")
-                        }
-                        "TRY_WIFI_CONNECT" -> {
-                            if (parts.size >= 3) {
-                                win.AndroidApp.tryWifiAuditConnect(parts[1], parts[2])
-                            }
-                        }
-                        "COPY_TO_CLIPBOARD" -> {
-                            if (parts.size >= 2) {
-                                val textToCopy = parts[1]
-                                if (win.AndroidApp != null && win.AndroidApp.copyToClipboard != null) {
-                                    win.AndroidApp.copyToClipboard(textToCopy)
-                                } else {
-                                    js("navigator.clipboard.writeText(textToCopy);")
+                        "UPDATE_MAP_GEOMETRY" -> if (parts.size >= 5) {
+                            val l = parts[1]; val t = parts[2]; val w = parts[3]; val h = parts[4]
+                            js("""
+                                var container = document.getElementById('activity-map-container');
+                                var root = document.getElementById('radio-root');
+                                if (container) {
+                                    container.style.display = 'block';
+                                    container.style.left = l + 'px';
+                                    container.style.top = t + 'px';
+                                    container.style.width = w + 'px';
+                                    container.style.height = h + 'px';
+                                    container.style.zIndex = '0';
+                                    if (root) {
+                                        root.style.zIndex = '10';
+                                        var x1 = l + 'px'; var y1 = t + 'px';
+                                        var x2 = (parseFloat(l) + parseFloat(w)) + 'px';
+                                        var y2 = (parseFloat(t) + parseFloat(h)) + 'px';
+                                        root.style.clipPath = 'polygon(0% 0%, 0% 100%, ' + x1 + ' 100%, ' + x1 + ' ' + y1 + ', ' + x2 + ' ' + y1 + ', ' + x2 + ' ' + y2 + ', ' + x1 + ' ' + y2 + ', ' + x1 + ' 100%, 100% 100%, 100% 0%)';
+                                    }
+                                    if (window.app && window.app.map) window.app.map.invalidateSize();
                                 }
-                            }
-                        }
-                        "ROTATE_MAP" -> {
-                            if (parts.size >= 2) {
-                                val angle = parts[1]
-                                js("""
-                                    var container = document.getElementById('activity-map-container');
-                                    if (container) {
-                                        container.style.transition = 'transform 0.2s ease-out';
-                                        container.style.transform = 'rotate(' + (-angle) + 'deg)';
-                                    }
-                                """)
-                            }
-                        }
-                        "HIDE_MAP_OVERLAY" -> {
-                            js("var c = document.getElementById('activity-map-container'); if(c) { c.style.display = 'none'; c.style.transform = 'rotate(0deg)'; }")
-                        }
-                        "SHOW_MAP_OVERLAY" -> {
-                            js("""
-                                var c = document.getElementById('activity-map-container'); 
-                                if(c) c.style.display = 'block';
                             """)
                         }
-                        "INIT_REAL_MAP" -> {
+                        "HIDE_MAP_OVERLAY" -> js("""
+                            var c = document.getElementById('activity-map-container');
+                            if (c) {
+                                c.style.display = 'none';
+                                c.style.transform = 'rotate(0deg)';
+                            }
+                            var root = document.getElementById('radio-root');
+                            if (root) root.style.clipPath = 'none';
+                        """)
+                        "SHOW_MAP_OVERLAY" -> js("var c = document.getElementById('activity-map-container'); if(c) c.style.display = 'block';")
+                        "INIT_REAL_MAP" -> js("""
+                            setTimeout(function() {
+                                var containerId = 'activity-map-container';
+                                var container = document.getElementById(containerId);
+                                if (container) {
+                                    container.style.display = 'block';
+                                    var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
+                                    var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
+                                    window.initRealMap(containerId, lat, lon);
+                                    setTimeout(function() { if(window.app.map) window.app.map.invalidateSize(); }, 300);
+                                }
+                            }, 500);
+                        """)
+                        "UPDATE_MAP_MARKERS" -> if (parts.size >= 2) {
+                            val markersJson = parts[1]
+                            (win.asDynamic()).updateMapMarkers(markersJson)
+                        }
+                        "CENTER_MAP" -> if (parts.size >= 3) {
+                            val lat = parts[1]; val lon = parts[2]
+                            js("if(window.app && window.app.map) window.app.map.panTo([lat, lon]);")
+                        }
+                        "ROTATE_MAP" -> if (parts.size >= 2) {
+                            val angle = parts[1]
+                            js("var c = document.getElementById('activity-map-container'); if(c) { c.style.transition = 'transform 0.2s ease-out'; c.style.transform = 'rotate(' + (-angle) + 'deg)'; }")
+                        }
+                        "UPDATE_ACTIVE_PROFILE" -> if (parts.size >= 2) js("localStorage.setItem('activeProfile', parts[1]);")
+                        "GET_LOCATION_SUGGESTIONS" -> if (parts.size >= 2) {
+                            val locQuery = parts[1]
                             js("""
-                                setTimeout(function() {
-                                    var containerId = 'activity-map-container';
-                                    var container = document.getElementById(containerId);
-                                    if (container) {
-                                        container.style.display = 'block';
-                                        var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
-                                        var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
-                                        window.initRealMap(containerId, lat, lon);
-                                        setTimeout(function() { if(window.app.map) window.app.map.invalidateSize(); }, 300);
-                                    }
-                                }, 500);
-                            """)
-                        }
-                        "UPDATE_MAP_MARKERS" -> {
-                            if (parts.size >= 2) {
-                                val json = parts[1]
-                                js("if(window.updateMapMarkers) window.updateMapMarkers(json);")
-                            }
-                        }
-                        "CENTER_MAP" -> {
-                            if (parts.size >= 3) {
-                                val lat = parts[1]
-                                val lon = parts[2]
-                                js("if(window.app && window.app.map) window.app.map.panTo([lat, lon]);")
-                            }
-                        }
-                        "UPDATE_MAP_GEOMETRY" -> {
-                            if (parts.size >= 5) {
-                                val left = parts[1]
-                                val top = parts[2]
-                                val width = parts[3]
-                                val height = parts[4]
-                                js("""
-                                    var container = document.getElementById('activity-map-container');
-                                    if (container) {
-                                        container.style.display = 'block';
-                                        container.style.left = left + 'px';
-                                        container.style.top = top + 'px';
-                                        container.style.width = width + 'px';
-                                        container.style.height = height + 'px';
-                                        container.style.zIndex = '1'; // Detrás de la radio pero visible en el hueco
-                                        if (window.app && window.app.map) {
-                                            window.app.map.invalidateSize();
+                                fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(locQuery))
+                                    .then(function(r) { return r.json(); })
+                                    .then(function(data) {
+                                        if(window.dispatch_route_suggestions) {
+                                            var str = data.map(function(item) {
+                                                var name = (item.display_name || "Ubicacion").replace(/\|/g, " ").replace(/;/g, ",");
+                                                return name + "|" + item.lat + "|" + item.lon;
+                                            }).join(";");
+                                            window.dispatch_route_suggestions(str);
                                         }
-                                    }
-                                """)
-                            }
-                        }
-                        "UPDATE_ACTIVE_PROFILE" -> {
-                            if (parts.size >= 2) {
-                                js("localStorage.setItem('activeProfile', parts[1]);")
-                            }
-                        }
-                        "SEARCH_LOCATION" -> {
-                            if (parts.size >= 2) {
-                                val query = parts[1]
-                                js("""
-                                    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query))
-                                        .then(function(r) { return r.json(); })
-                                        .then(function(data) {
-                                            if (data && data.length > 0) {
-                                                var loc = data[0];
-                                                window.setMapDestination(parseFloat(loc.lat), parseFloat(loc.lon));
-                                            }
-                                        });
-                                """)
-                            }
-                        }
-                        "FETCH_POIS" -> {
-                            js("""
-                                var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
-                                var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
-                                if(window.fetchTacticalPOIs) window.fetchTacticalPOIs(lat, lon);
+                                    });
                             """)
                         }
-                        "UPDATE_MAP_GEOMETRY" -> {
-                            if (parts.size >= 5) {
-                                val left = parts[1]
-                                val top = parts[2]
-                                val width = parts[3]
-                                val height = parts[4]
-                                js("""
-                                    var container = document.getElementById('activity-map-container');
-                                    if (container) {
-                                        container.style.display = 'block';
-                                        container.style.left = left + 'px';
-                                        container.style.top = top + 'px';
-                                        container.style.width = width + 'px';
-                                        container.style.height = height + 'px';
-                                        container.style.zIndex = '1'; // Detrás de la radio pero visible en el hueco 
-                                        // Invalidar tamaño para que Leaflet se ajuste al nuevo hueco
-                                        if (window.app && window.app.map) {
-                                            window.app.map.invalidateSize();
+                        "SET_DESTINATION" -> if (parts.size >= 3) js("window.setMapDestination(parseFloat(parts[1]), parseFloat(parts[2]));")
+                        "SEARCH_LOCATION" -> if (parts.size >= 2) {
+                            val searchQ = parts[1]
+                            js("""
+                                fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(searchQ))
+                                    .then(function(r) { return r.json(); })
+                                    .then(function(data) {
+                                        if (data && data.length > 0) {
+                                            var loc = data[0];
+                                            window.setMapDestination(parseFloat(loc.lat), parseFloat(loc.lon));
                                         }
-                                    }
-                                """)
-                            }
-                        }
-                        "UPDATE_ACTIVE_PROFILE" -> {
-                            if (parts.size >= 2) {
-                                js("localStorage.setItem('activeProfile', parts[1]);")
-                            }
-                        }
-                        "SEARCH_LOCATION" -> {
-                            if (parts.size >= 2) {
-                                val query = parts[1]
-                                js("""
-                                    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query))
-                                        .then(function(r) { return r.json(); })
-                                        .then(function(data) {
-                                            if (data && data.length > 0) {
-                                                var loc = data[0];
-                                                window.setMapDestination(parseFloat(loc.lat), parseFloat(loc.lon));
-                                            }
-                                        });
-                                """)
-                            }
-                        }
-                        "FETCH_POIS" -> {
-                            js("""
-                                var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
-                                var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
-                                if(window.fetchTacticalPOIs) window.fetchTacticalPOIs(lat, lon);
+                                    });
                             """)
                         }
-                        "TERMINATE_DIAGNOSTICS" -> win.AndroidApp.terminateDiagnosticSequence()
-                        "SHOW_BANNER" -> win.AndroidApp.showBanner(true)
-                        "HIDE_BANNER" -> win.AndroidApp.showBanner(false)
-                        "SPEAK" -> {
-                            if (parts.size >= 2) {
-                                win.AndroidApp.speak(parts[1], 1.0f, 1.0f)
-                            }
-                        }
+                        "FETCH_POIS" -> js("""
+                            var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
+                            var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
+                            if(window.fetchTacticalPOIs) window.fetchTacticalPOIs(lat, lon);
+                        """)
                     }
-                } else {
-                    val parts = action.split("|")
-                    when (parts[0]) {
-                        "ROTATE_MAP" -> {
-                            if (parts.size >= 2) {
-                                val angle = parts[1]
-                                js("""
-                                    var container = document.getElementById('activity-map-container');
-                                    if (container) {
-                                        container.style.transition = 'transform 0.2s ease-out';
-                                        container.style.transform = 'rotate(' + (-angle) + 'deg)';
-                                    }
-                                """)
+
+                    // --- 📱 COMANDOS ESPECÍFICOS DE ANDROID ---
+                    if (win.AndroidApp != null) {
+                        when (cmd) {
+                            "SPEAK" -> if (parts.size >= 2) win.AndroidApp.speak(parts[1], 1.0f, 1.0f)
+                            "RUN_INDUCTIVE_TEST" -> win.AndroidApp.runInductiveResponseTest()
+                            "EXECUTE_AGGRESSIVE_IOT" -> win.AndroidApp.executeAggressiveIoTJammer()
+                            "PERFORM_RF_STRESS" -> win.AndroidApp.performRFStressDiagnostics()
+                            "EXECUTE_EMF_ANALYSIS" -> win.AndroidApp.executeHighFrequencyEMFAnalysis()
+                            "EXECUTE_IR_UNIVERSAL_SWEEP" -> win.AndroidApp.executeIRUniversalSweep()
+                            "EXECUTE_BARRIER_ATTACK" -> win.AndroidApp.executeBarrierAttack()
+                            "EXECUTE_ULTRASONIC_JAMMER" -> win.AndroidApp.executeUltrasonicJammer()
+                            "EXECUTE_OPTICAL_JAMMER" -> win.AndroidApp.executeOpticalCameraJammer()
+                            "EXECUTE_VENDING_ATTACK" -> win.AndroidApp.executeVendingAttack()
+                            "EXECUTE_VENDING_MASTER" -> win.AndroidApp.executeVendingMaster()
+                            "EXECUTE_LOCK_ATTACK" -> win.AndroidApp.executeLockAttack()
+                            "EXECUTE_TRAFFIC_PRIORITY" -> win.AndroidApp.executeTrafficPriority()
+                            "EXECUTE_ELEVATOR_PRIORITY" -> win.AndroidApp.executeElevatorPriorityCall()
+                            "EXECUTE_WASH_BOX" -> win.AndroidApp.executeWashBoxAttack()
+                            "EXECUTE_SETUP_FORCE" -> win.AndroidApp.executeSetupForceAttack()
+                            "EXECUTE_WIFI_GOD" -> win.AndroidApp.executeWiFiQoSPriority()
+                            "EXECUTE_PIR_BLIND" -> win.AndroidApp.executePIRBlinder()
+                            "START_CAPTURE" -> win.AndroidApp.startRFDiscovery()
+                            "PLAY_STORED_CODE" -> if (parts.size >= 3) win.AndroidApp.playStoredRFCode(parts[1], parts[2])
+                            "GET_WIFI_SCAN" -> win.AndroidApp.startWifiSecurityScan()
+                            "CHECK_NETWORK_CRITICAL" -> {
+                                val isCritical = win.AndroidApp.checkNetworkCritical() as Boolean
+                                js("if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(isCritical);")
                             }
-                        }
-                        "HIDE_MAP_OVERLAY" -> {
-                            js("""
-                                var c = document.getElementById('activity-map-container'); 
-                                if(c) {
-                                    c.style.display = 'none';
-                                    document.getElementById('radio-root').style.clipPath = 'none';
+                            "TRY_WIFI_CONNECT" -> if (parts.size >= 3) win.AndroidApp.tryWifiAuditConnect(parts[1], parts[2])
+                            "COPY_TO_CLIPBOARD" -> {
+                                if (parts.size >= 2) {
+                                    val textToCopy = parts[1]
+                                    if (win.AndroidApp.copyToClipboard != null) win.AndroidApp.copyToClipboard(textToCopy)
+                                    else js("navigator.clipboard.writeText(textToCopy);")
                                 }
-                            """)
+                            }
+                            "TERMINATE_DIAGNOSTICS" -> win.AndroidApp.terminateDiagnosticSequence()
+                            "SHOW_BANNER" -> win.AndroidApp.showBanner(true)
+                            "HIDE_BANNER" -> win.AndroidApp.showBanner(false)
                         }
-                        "SHOW_MAP_OVERLAY" -> {
-                            js("""
-                                var c = document.getElementById('activity-map-container'); 
-                                if(c) {
-                                    c.style.display = 'block';
-                                    // Aplicar "Agujero" táctico en la radio para ver el mapa central
-                                    document.getElementById('radio-root').style.clipPath = 'polygon(0% 0%, 0% 100%, 10% 100%, 14% 23%, 86% 23%, 86% 63%, 14% 63%, 14% 23%, 10% 100%, 100% 100%, 100% 0%)';
+                    } else {
+                        // --- 🌐 FALLBACKS / MOCKS PARA WEB ---
+                        if (cmd == "START_CAPTURE") js("setTimeout(function(){ if(window.dispatch_code_captured) window.dispatch_code_captured('RF_433', 'A1B2C3D4'); }, 3000);")
+                        if (cmd == "GET_WIFI_SCAN") js("""
+                            setTimeout(function(){
+                                if(window.dispatch_wifi_list) {
+                                    var mockData = "MOVISTAR_A1B2|00:11:22:33:44:55|-60|WPA2|MOVISTAR|true|false|PATRON_CONOCIDO_123|;Vodafone-C234|AA:BB:CC:DD:EE:FF|-45|WPA2|VODAFONE|true|true|VODAFONE_DEFAULT_99|12345670;";
+                                    window.dispatch_wifi_list(mockData);
                                 }
-                            """)
-                        }
-                        "INIT_REAL_MAP" -> {
-                            js("""
-                                setTimeout(function() {
-                                    var containerId = 'activity-map-container';
-                                    var container = document.getElementById(containerId);
-                                    if (container) {
-                                        container.style.display = 'block';
-                                        var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
-                                        var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
-                                        window.initRealMap(containerId, lat, lon);
-                                        setTimeout(function() { if(window.app.map) window.app.map.invalidateSize(); }, 300);
-                                        
-                                        // Aplicar recorte inicial
-                                        document.getElementById('radio-root').style.clipPath = 'polygon(0% 0%, 0% 100%, 10% 100%, 14% 23%, 86% 23%, 86% 63%, 14% 63%, 14% 23%, 10% 100%, 100% 100%, 100% 0%)';
-                                    }
-                                }, 500);
-                            """)
-                        }
-                        "UPDATE_MAP_MARKERS" -> {
-                            if (parts.size >= 2) {
-                                val json = parts[1]
-                                js("if(window.updateMapMarkers) window.updateMapMarkers(json);")
-                            }
-                        }
-                        "CENTER_MAP" -> {
-                            if (parts.size >= 3) {
-                                val lat = parts[1]
-                                val lon = parts[2]
-                                js("if(window.app && window.app.map) window.app.map.panTo([lat, lon]);")
-                            }
-                        }
-                        "UPDATE_MAP_GEOMETRY" -> {
-                            if (parts.size >= 5) {
-                                val left = parts[1]
-                                val top = parts[2]
-                                val width = parts[3]
-                                val height = parts[4]
-                                js("""
-                                    var container = document.getElementById('activity-map-container');
-                                    if (container) {
-                                        container.style.display = 'block';
-                                        container.style.left = left + 'px';
-                                        container.style.top = top + 'px';
-                                        container.style.width = width + 'px';
-                                        container.style.height = height + 'px';
-                                        container.style.zIndex = '1'; // Detrás de la radio pero visible en el hueco
-                                        if (window.app && window.app.map) {
-                                            window.app.map.invalidateSize();
-                                        }
-                                    }
-                                """)
-                            }
-                        }
-                        "UPDATE_ACTIVE_PROFILE" -> {
-                            if (parts.size >= 2) {
-                                js("localStorage.setItem('activeProfile', parts[1]);")
-                            }
-                        }
-                        "SEARCH_LOCATION" -> {
-                            if (parts.size >= 2) {
-                                val query = parts[1]
-                                js("""
-                                    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query))
-                                        .then(function(r) { return r.json(); })
-                                        .then(function(data) {
-                                            if (data && data.length > 0) {
-                                                var loc = data[0];
-                                                window.setMapDestination(parseFloat(loc.lat), parseFloat(loc.lon));
-                                            }
-                                        });
-                                """)
-                            }
-                        }
-                        "FETCH_POIS" -> {
-                            js("""
-                                var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
-                                var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
-                                if(window.fetchTacticalPOIs) window.fetchTacticalPOIs(lat, lon);
-                            """)
-                        }
-                        "UPDATE_MAP_GEOMETRY" -> {
-                            if (parts.size >= 5) {
-                                val left = parts[1]
-                                val top = parts[2]
-                                val width = parts[3]
-                                val height = parts[4]
-                                js("""
-                                    var container = document.getElementById('activity-map-container');
-                                    if (container) {
-                                        container.style.display = 'block';
-                                        container.style.left = left + 'px';
-                                        container.style.top = top + 'px';
-                                        container.style.width = width + 'px';
-                                        container.style.height = height + 'px';
-                                        container.style.zIndex = '1'; // Detrás de la radio pero visible en el hueco 
-                                        // Invalidar tamaño para que Leaflet se ajuste al nuevo hueco
-                                        if (window.app && window.app.map) {
-                                            window.app.map.invalidateSize();
-                                        }
-                                    }
-                                """)
-                            }
-                        }
-                        "UPDATE_ACTIVE_PROFILE" -> {
-                            if (parts.size >= 2) {
-                                js("localStorage.setItem('activeProfile', parts[1]);")
-                            }
-                        }
-                        "SEARCH_LOCATION" -> {
-                            if (parts.size >= 2) {
-                                val query = parts[1]
-                                js("""
-                                    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query))
-                                        .then(function(r) { return r.json(); })
-                                        .then(function(data) {
-                                            if (data && data.length > 0) {
-                                                var loc = data[0];
-                                                window.setMapDestination(parseFloat(loc.lat), parseFloat(loc.lon));
-                                            }
-                                        });
-                                """)
-                            }
-                        }
-                        "FETCH_POIS" -> {
-                            js("""
-                                var lat = parseFloat(localStorage.getItem("last_lat")) || 37.3891;
-                                var lon = parseFloat(localStorage.getItem("last_lon")) || -5.9845;
-                                if(window.fetchTacticalPOIs) window.fetchTacticalPOIs(lat, lon);
-                            """)
-                        }
-                    }
-                    console.log("🛠️ COMANDO DE INGENIERÍA ENVIADO: " + action + " (Requiere hardware Android)");
-                    // Feedback visual en el navegador
-                    if (action != "TERMINATE_DIAGNOSTICS") {
-                        val parts = action.split("|")
-                        val cmd = parts[0]
-                        when(cmd) {
-                            "START_CAPTURE" -> {
-                                js("setTimeout(function(){ if(window.dispatch_code_captured) window.dispatch_code_captured('RF_433', 'A1B2C3D4'); }, 3000);")
-                            }
-                            "GET_WIFI_SCAN" -> {
-                                js("""
-                                    setTimeout(function(){
-                                        if(window.dispatch_wifi_list) {
-                                            // MODO SIMULACIÓN ACTIVA: Devolvemos datos de prueba para que la UI no se bloquee
-                                            var mockData = "MOVISTAR_A1B2|00:11:22:33:44:55|-60|WPA2|MOVISTAR|true|false|PATRON_CONOCIDO_123|;Vodafone-C234|AA:BB:CC:DD:EE:FF|-45|WPA2|VODAFONE|true|true|VODAFONE_DEFAULT_99|12345670;TP-LINK_EXT|BB:CC:DD:EE:FF:00|-70|WPA2|TP-LINK|false|true|ADMIN_1234|;";
-                                            window.dispatch_wifi_list(mockData);
-                                        }
-                                    }, 2000);
-                                """)
-                            }
-                        }
+                            }, 2000);
+                        """)
                     }
                 }
             },
@@ -4180,7 +3948,10 @@ fun main() {
             dgtText = dgtTextState.value,
             dgtImageUrl = dgtImageUrlState.value,
             voxActive = voxActiveState.value,
-            wifiVerificationResult = wifiVerificationResultState.value
+            wifiVerificationResult = wifiVerificationResultState.value,
+            onRouteSuggestionsReceived = { callback ->
+                win.dispatch_route_suggestions_to_app = callback
+            }
         )
     }
     return null

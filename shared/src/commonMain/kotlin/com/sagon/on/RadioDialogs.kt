@@ -8,7 +8,6 @@ package com.sagon.on
  */
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
+import kotlinx.coroutines.delay
 
 enum class RadioDialogType {
     ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS, 
@@ -1800,6 +1800,14 @@ fun RadioDialogs(
             var destinationText by remember { mutableStateOf("") }
             var isSearching by remember { mutableStateOf(false) }
 
+            // --- 🛡️ MOTOR DE BÚSQUEDA EN TIEMPO REAL ---
+            LaunchedEffect(destinationText) {
+                if (destinationText.length > 2) {
+                    delay(500) // Debounce
+                    onExecuteEngineeringAction("GET_LOCATION_SUGGESTIONS|$destinationText")
+                }
+            }
+
             AlertDialog(
                 onDismissRequest = onDismiss,
                 containerColor = LuxeColors.DeepSea,
@@ -1832,6 +1840,38 @@ fun RadioDialogs(
                             }
                         }
                         
+                        // --- 📍 LISTA DE SUGERENCIAS ---
+                        if (state.routeSuggestions.isNotEmpty()) {
+                            Spacer(Modifier.height(12.dp))
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.Black.copy(0.3f),
+                                border = BorderStroke(1.dp, Color.White.copy(0.05f))
+                            ) {
+                                LazyColumn {
+                                    items(state.routeSuggestions) { suggestion ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    onExecuteEngineeringAction("CENTER_MAP|${suggestion.lat}|${suggestion.lon}")
+                                                    onExecuteEngineeringAction("SET_DESTINATION|${suggestion.lat}|${suggestion.lon}")
+                                                    onDismiss()
+                                                }
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Rounded.LocationOn, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(10.dp))
+                                            Text(suggestion.name, color = Color.White.copy(0.8f), fontSize = 11.sp, maxLines = 2)
+                                        }
+                                        HorizontalDivider(color = Color.White.copy(0.05f))
+                                    }
+                                }
+                            }
+                        }
+
                         Spacer(Modifier.height(20.dp))
                         
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

@@ -105,6 +105,7 @@ fun App(
     onWifiListReceived: ((String) -> Unit) -> Unit = { _ -> },
     onWifiAuthResultReceived: ((String, String, String) -> Unit) -> Unit = { _ -> },
     onEngineeringFinished: (() -> Unit) -> Unit = { _ -> },
+    onRouteSuggestionsReceived: ((String) -> Unit) -> Unit = { _ -> },
     onRequestLocationPermission: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onChatOpenConsumed: () -> Unit = {},
@@ -176,6 +177,20 @@ fun App(
 
         onEngineeringFinished {
             engineeringResetTrigger++
+        }
+
+        onRouteSuggestionsReceived { json ->
+            try {
+                val list = json.split(";").filter { it.isNotBlank() }.map { line ->
+                    val parts = line.split("|")
+                    RouteSuggestion(
+                        name = parts.getOrNull(0) ?: "Ubicación Desconocida",
+                        lat = parts.getOrNull(1)?.toDoubleOrNull() ?: 0.0,
+                        lon = parts.getOrNull(2)?.toDoubleOrNull() ?: 0.0
+                    )
+                }
+                radioState = radioState.copy(routeSuggestions = list)
+            } catch(e: Exception) {}
         }
     }
 

@@ -158,10 +158,13 @@ data class RadioState(
     val routeRules: String? = null, // Normas o info de la ruta activa
     val routeImage: String? = null, // Imagen opcional de la ruta
     val capturedCodes: List<CapturedCode> = emptyList(),
-    val wifiNetworks: List<WifiNetwork> = emptyList()
+    val wifiNetworks: List<WifiNetwork> = emptyList(),
+    val routeSuggestions: List<RouteSuggestion> = emptyList()
 )
 
 data class CapturedCode(val id: String, val proto: String, val data: String)
+
+data class RouteSuggestion(val name: String, val lat: Double, val lon: Double)
 
 data class WifiNetwork(
     val ssid: String,

@@ -1343,6 +1343,7 @@ fun ActivityPanel(
     var isHeadingUpEnabled by remember { mutableStateOf(false) }
     var routeKms by remember { mutableStateOf(0.0f) }
     var isPttBlockedByRx by remember { mutableStateOf(false) }
+    var pttLocked by remember { mutableStateOf(state.isPttLatched) }
 
     // --- 👥 GESTIÓN DE PARTICIPANTES EN RUTA ---
     val routeParticipants = remember(users, state.channel) {
@@ -1356,6 +1357,12 @@ fun ActivityPanel(
     LaunchedEffect(externalPttBlocked) {
         if (externalPttBlocked) {
             isPttBlockedByRx = true
+        }
+    }
+
+    LaunchedEffect(externalPtt) {
+        if (externalPtt != pttLocked) {
+            pttLocked = externalPtt
         }
     }
 
@@ -1434,7 +1441,7 @@ fun ActivityPanel(
     }
 
     // --- 🛡️ FIX AMETRALLADORA: Separar intención de transmisión del pitido ---
-    val effectivePtt = (isPressed || voxActive || externalPtt)
+    val effectivePtt = (isPressed || voxActive || externalPtt || pttLocked)
     val isTransmittingState = (effectivePtt && !isPttBlockedByRx) || isBeeping
 
     LaunchedEffect(effectivePtt) { 
@@ -1526,25 +1533,37 @@ fun ActivityPanel(
             Spacer(Modifier.height(12.dp))
 
             // --- 🗺️ ZONA CENTRAL: RADAR + BOTONES LATERALES ---
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = if (isMapVisible) 80.dp else 0.dp) // --- 🛡️ FIX: Evitar que el mapa tape los docks ---
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(if (isMapVisible) Color.Transparent else Color(0xFF020619).copy(alpha = 0.8f))
-                    .border(2.dp, if (isMapVisible) LuxeColors.Green.copy(0.5f) else LuxeColors.Gold.copy(0.3f), RoundedCornerShape(28.dp))
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                val adaptivePadding = if (isMapVisible) {
+                    if (maxWidth < 600.dp) 4.dp else 80.dp
+                } else 0.dp
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = adaptivePadding)
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(if (isMapVisible) Color.Transparent else Color(0xFF020619).copy(alpha = 0.8f))
+                        .border(2.dp, if (isMapVisible) LuxeColors.Green.copy(0.5f) else LuxeColors.Gold.copy(0.3f), RoundedCornerShape(28.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                /* CAPA DE MAPA REAL (Fondo absoluto) */
+                Box(Modifier
+                    .fillMaxSize()
+                    .background(Color.Transparent)
                     .onGloballyPositioned { layoutCoordinates ->
                         if (isMapVisible) {
                             val position = layoutCoordinates.positionInWindow()
                             val size = layoutCoordinates.size
                             onExecuteEngineeringAction("UPDATE_MAP_GEOMETRY|${position.x}|${position.y}|${size.width}|${size.height}")
                         }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                /* CAPA DE MAPA REAL (Fondo absoluto) */
-                Box(Modifier.fillMaxSize().background(Color.Transparent)) {
+                    }
+                ) {
                     LaunchedEffect(Unit) {
                         delay(500)
                         onExecuteEngineeringAction("INIT_REAL_MAP")
@@ -1781,6 +1800,7 @@ fun ActivityPanel(
                     )
                 }
             }
+        }
 
             Spacer(Modifier.height(12.dp))
 
@@ -1842,44 +1862,73 @@ fun ActivityPanel(
             }
 
             // --- 🛠️ PTT ---
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(110.dp)
-                    .pointerInput(state.isInterfaceLocked) {
-                        if (!state.isInterfaceLocked) {
-                            coroutineScope {
-                                detectTapGestures(
-                                    onPress = { offset ->
-                                        if (isPttBlockedByRx || rx) {
-                                            triggerUiSound("static")
-                                        }
-
-                                        if (!isPttBlockedByRx && !state.isInterfaceLocked && !rx) {
-                                            val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset)
-                                            launch { interactionSource.emit(press) }
-                                            try {
-                                                tryAwaitRelease()
-                                            } finally {
-                                                launch { interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }
-                                            }
-                                        } else {
-                                            tryAwaitRelease()
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }, 
-                shape = RoundedCornerShape(32.dp), 
-                color = if (isTransmittingState) Color.Red.copy(0.2f) else if (rx) Color.Green.copy(0.15f) else Color.White.copy(0.08f), 
-                border = BorderStroke(3.dp, if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White.copy(0.2f))
+            Row(
+                modifier = Modifier.fillMaxWidth().height(110.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = if (isTransmittingState) Icons.Rounded.Mic else if (rx) Icons.Rounded.VolumeUp else Icons.Rounded.MicNone, contentDescription = null, tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, modifier = Modifier.size(44.dp))
-                        Spacer(Modifier.width(20.dp))
-                        Text(if (isTransmittingState) "HABLANDO (AIRE)" else if (rx) "AIRE: RECIBIENDO" else "PULSAR PARA HABLAR", color = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .pointerInput(state.isInterfaceLocked) {
+                            if (!state.isInterfaceLocked) {
+                                coroutineScope {
+                                    detectTapGestures(
+                                        onPress = { offset ->
+                                            if (isPttBlockedByRx || rx) {
+                                                triggerUiSound("static")
+                                            }
+
+                                            if (!isPttBlockedByRx && !state.isInterfaceLocked && !rx) {
+                                                val press = androidx.compose.foundation.interaction.PressInteraction.Press(offset)
+                                                launch { interactionSource.emit(press) }
+                                                try {
+                                                    tryAwaitRelease()
+                                                } finally {
+                                                    launch { interactionSource.emit(androidx.compose.foundation.interaction.PressInteraction.Release(press)) }
+                                                }
+                                            } else {
+                                                tryAwaitRelease()
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }, 
+                    shape = RoundedCornerShape(32.dp), 
+                    color = if (isTransmittingState) Color.Red.copy(0.2f) else if (rx) Color.Green.copy(0.15f) else Color.White.copy(0.08f), 
+                    border = BorderStroke(3.dp, if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White.copy(0.2f))
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = if (isTransmittingState) Icons.Rounded.Mic else if (rx) Icons.Rounded.VolumeUp else Icons.Rounded.MicNone, contentDescription = null, tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, modifier = Modifier.size(44.dp))
+                            Spacer(Modifier.width(20.dp))
+                            Text(if (isTransmittingState) "HABLANDO (AIRE)" else if (rx) "AIRE: RECIBIENDO" else "PULSAR PARA HABLAR", color = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                        }
+                    }
+                }
+
+                Surface(
+                    onClick = { 
+                        if (!state.isInterfaceLocked) {
+                            pttLocked = !pttLocked
+                            onStateChange(state.copy(isPttLatched = pttLocked)) 
+                            triggerUiSound("switch")
+                        }
+                    },
+                    modifier = Modifier.size(110.dp),
+                    shape = RoundedCornerShape(32.dp),
+                    color = if (pttLocked) Color.Red.copy(0.2f) else Color.White.copy(0.05f),
+                    border = BorderStroke(3.dp, if (pttLocked) Color.Red else Color.White.copy(0.1f))
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            if (pttLocked) Icons.Rounded.Lock else Icons.Rounded.LockOpen, 
+                            null, 
+                            tint = if (pttLocked) Color.Red else Color.White.copy(0.3f),
+                            modifier = Modifier.size(36.dp)
+                        )
                     }
                 }
             }

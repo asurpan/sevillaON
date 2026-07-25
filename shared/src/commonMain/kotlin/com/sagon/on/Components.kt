@@ -31,7 +31,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontWeight
@@ -45,7 +45,7 @@ import kotlin.math.*
 import kotlin.random.Random
 
 @Composable
-fun StarryBackground(activity: Float = 0f, isEcoMode: Boolean = false) {
+fun StarryBackground(activity: Float = 0f, isEcoMode: Boolean = false, hole: androidx.compose.ui.geometry.Rect? = null) {
     val infiniteTransition = rememberInfiniteTransition(label = "Stars")
     val alpha by if (isEcoMode) remember { mutableStateOf(0.4f) } else infiniteTransition.animateFloat(
         initialValue = 0.2f, targetValue = 0.8f,
@@ -64,59 +64,83 @@ fun StarryBackground(activity: Float = 0f, isEcoMode: Boolean = false) {
     )
 
     Canvas(Modifier.fillMaxSize()) {
-        // --- 🌌 CAPA 1: NEBULOSA/AURORA LUXE (Desactivada en ECO) ---
-        if (!isEcoMode) {
-            val auroraBrush = Brush.radialGradient(
-                colors = listOf(
-                    LuxeColors.ElectricBlue.copy(0.1f), // Siempre azul sutil, sin amarillear
-                    Color.Transparent
-                ),
-                center = Offset(size.width * (0.5f + sin(starProgress * 2 * PI.toFloat()) * 0.2f), size.height * 0.3f),
-                radius = size.width * 1.5f
-            )
-            drawRect(brush = auroraBrush, alpha = auroraAlpha)
+        // --- 🛡️ SISTEMA DE RECORTE PARA MAPA REAL ---
+        if (hole != null) {
+            clipRect(
+                left = hole.left,
+                top = hole.top,
+                right = hole.right,
+                bottom = hole.bottom,
+                clipOp = ClipOp.Difference
+            ) {
+                drawStarryContent(activity, isEcoMode, starProgress, alpha, auroraAlpha, auroraAlpha)
+            }
+        } else {
+            drawStarryContent(activity, isEcoMode, starProgress, alpha, auroraAlpha, auroraAlpha)
         }
+    }
+}
 
-        // --- ✨ CAPA 2: ESTRELLAS ---
-        val center = Offset(size.width / 2, size.height / 2)
-        val maxDist = size.width.coerceAtLeast(size.height)
-        val stars = if (isEcoMode) 60 else 120 
-        for (i in 0 until stars) {
-            val random = Random(i.toLong())
-            val angle = random.nextFloat() * 2 * PI.toFloat()
-            val startDistMult = random.nextFloat()
-            
-            val currentProgress = if (isEcoMode) startDistMult else (1f - (startDistMult + starProgress).rem(1f))
-            val dist = currentProgress * maxDist
-            
-            val x = center.x + cos(angle) * dist
-            val y = center.y + sin(angle) * dist
-            
-            val radius = (currentProgress * 2.5.dp.toPx()).coerceAtLeast(0.1.dp.toPx())
-            val individualAlpha = (currentProgress * alpha * 0.7f).coerceIn(0f, 1f)
-            
-            drawCircle(
-                color = if (i % 10 == 0) Color.White.copy(0.5f) else Color.White, // Eliminamos puntos dorados
-                radius = radius,
-                center = Offset(x, y),
-                alpha = individualAlpha
-            )
-        }
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStarryContent(
+    activity: Float,
+    isEcoMode: Boolean,
+    starProgress: Float,
+    alpha: Float,
+    auroraAlpha: Float,
+    unused: Float // Solo para mantener firma
+) {
+    // --- 🌌 CAPA 1: NEBULOSA/AURORA LUXE (Desactivada en ECO) ---
+    if (!isEcoMode) {
+        val auroraBrush = Brush.radialGradient(
+            colors = listOf(
+                LuxeColors.ElectricBlue.copy(0.1f), 
+                Color.Transparent
+            ),
+            center = Offset(size.width * (0.5f + sin(starProgress * 2 * PI.toFloat()) * 0.2f), size.height * 0.3f),
+            radius = size.width * 1.5f
+        )
+        drawRect(brush = auroraBrush, alpha = auroraAlpha)
+    }
 
-        // --- 🌊 CAPA 3: ONDAS DE PROPAGACIÓN (Desactivadas en ECO) ---
-        if (activity > 0 && !isEcoMode) {
-            val waveProgress = (starProgress * 5).rem(1f)
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color.Transparent, LuxeColors.ElectricBlue.copy(0.1f * (1f - waveProgress)), Color.Transparent),
-                    center = center,
-                    radius = maxDist * waveProgress
-                ),
-                radius = maxDist * waveProgress,
+    // --- ✨ CAPA 2: ESTRELLAS ---
+    val center = Offset(size.width / 2, size.height / 2)
+    val maxDist = size.width.coerceAtLeast(size.height)
+    val stars = if (isEcoMode) 60 else 120 
+    for (i in 0 until stars) {
+        val random = Random(i.toLong())
+        val angle = random.nextFloat() * 2 * PI.toFloat()
+        val startDistMult = random.nextFloat()
+        
+        val currentProgress = if (isEcoMode) startDistMult else (1f - (startDistMult + starProgress).rem(1f))
+        val dist = currentProgress * maxDist
+        
+        val x = center.x + cos(angle) * dist
+        val y = center.y + sin(angle) * dist
+        
+        val radius = (currentProgress * 2.5.dp.toPx()).coerceAtLeast(0.1.dp.toPx())
+        val individualAlpha = (currentProgress * alpha * 0.7f).coerceIn(0f, 1f)
+        
+        drawCircle(
+            color = if (i % 10 == 0) Color.White.copy(0.5f) else Color.White, 
+            radius = radius,
+            center = Offset(x, y),
+            alpha = individualAlpha
+        )
+    }
+
+    // --- 🌊 CAPA 3: ONDAS DE PROPAGACIÓN (Desactivadas en ECO) ---
+    if (activity > 0 && !isEcoMode) {
+        val waveProgress = (starProgress * 5).rem(1f)
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(Color.Transparent, LuxeColors.ElectricBlue.copy(0.1f * (1f - waveProgress)), Color.Transparent),
                 center = center,
-                style = Stroke(width = 1.5.dp.toPx())
-            )
-        }
+                radius = maxDist * waveProgress
+            ),
+            radius = maxDist * waveProgress,
+            center = center,
+            style = Stroke(width = 1.5.dp.toPx())
+        )
     }
 }
 

@@ -1,13 +1,14 @@
 [
   {
     "relation": [
-      "delegate_permission/common.handle_all_urls"
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
     ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.sagon.on",
       "sha256_cert_fingerprints": [
-        "CD:EF:45:6E:AA:B9:6F:75:22:BC:E8:E2:08:58:17:6F:C6:A2:B1:35:B6:F4:67:23:D4:C6:0D:FD:92:B3:9C:4F"
+        "34:27:D7:51:CB:D9:75:D4:85:73:0F:44:91:FB:DF:FE:26:77:42:99:BF:23:63:10:57:D4:3D:9B:4E:9B:B5:AA"
       ]
     }
   }

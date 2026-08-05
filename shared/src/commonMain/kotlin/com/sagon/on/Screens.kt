@@ -740,7 +740,7 @@ fun RadioPanel(
 
                                 Spacer(Modifier.height(6.dp))
                                 
-                                val displayChannel = if (state.channel == "GENERAL") "SELECCIONAR CANAL" else state.channel
+                                val displayChannel = if (state.channel == "GENERAL") "SELECCIONAR BARRIO O LUGAR" else state.channel
                                 Text(
                                     text = state.city,
                                     color = if(rx) LuxeColors.Gold else Color.White,

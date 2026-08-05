@@ -97,8 +97,8 @@ object MoniGuard {
                 if (!window.app.ctx || !window.app.masterOut) return;
                 /* --- 🔒 HARD-LOCK: MOTOR DE VOLUMEN GENERAL (PROTEGIDO) --- */
                 /* PROHIBIDO TOCAR: Asegura que Roger Beep y sonidos de UI se atenúen con el slider. */
-                /* BOOST: Subimos el multiplicador de 4.0 a 6.0 para máxima potencia en móviles. */
-                var gain = (window.app.rfGain || 0.5) * 6.0;
+                /* BOOST: Bajamos a 2.5 para una fidelidad total sin clipping en móviles. */
+                var gain = (window.app.rfGain || 0.5) * 2.5;
                 window.app.masterOut.gain.setTargetAtTime(gain, window.app.ctx.currentTime, 0.05);
             };
 
@@ -515,7 +515,12 @@ object RadioCore {
 
                 window.startReplayRecording = function() {
                     if (!window.app || !window.app.replayDest) return;
-                    if (window.app.replayRecorder) return;
+                    
+                    // --- 🛡️ ROBUSTEZ: Reiniciar si ya existe uno en mal estado ---
+                    if (window.app.replayRecorder) {
+                        try { window.app.replayRecorder.stop(); } catch(e) {}
+                        window.app.replayRecorder = null;
+                    }
                     
                     setTimeout(function() {
                         try {
@@ -530,19 +535,23 @@ object RadioCore {
                             window.app.replayRecorder.ondataavailable = function(e) {
                                 if (e.data.size > 0) {
                                     if (!window.app.headerChunk) {
-                                        // El primer bloque contiene las cabeceras vitales para el decodificador
                                         window.app.headerChunk = e.data;
                                     } else {
                                         window.app.replayChunks.push(e.data);
                                         if (window.dispatch_replay_available) window.dispatch_replay_available(true);
-                                        // Mantenemos unos 30 segundos (10 bloques de 3s) para un historial completo
-                                        if (window.app.replayChunks.length > 10) window.app.replayChunks.shift();
+                                        if (window.app.replayChunks.length > 15) window.app.replayChunks.shift();
                                     }
                                 }
                             };
-                            window.app.replayRecorder.start(3000); 
+                            
+                            window.app.replayRecorder.onerror = function(err) {
+                                console.warn("Replay Recorder Error:", err);
+                                setTimeout(window.startReplayRecording, 2000);
+                            };
+
+                            window.app.replayRecorder.start(2000); // Bloques más cortos (2s) para mayor agilidad
                         } catch(e) { console.error("Error Replay:", e); }
-                    }, 1000);
+                    }, 500);
                 };
 
                 window.playReplay = function() {
@@ -1668,7 +1677,7 @@ object RadioCore {
                                 txCompressor.connect(window.app.micAnalyser);
 
                                 var makeupGain = window.app.ctx.createGain();
-                                makeupGain.gain.value = 2.5; /* Incrementado de 1.2 a 2.5 para mayor presencia en red */
+                                makeupGain.gain.value = 0.8; /* Ajuste fino: 0.8 para una voz de cristal en la red. */
                                 txCompressor.connect(makeupGain);
 
                                 /* --- 🛡️ TRANSMISOR DE RED (LIMPIEZA Y CONEXIÓN ABSOLUTA) --- */
@@ -1925,18 +1934,22 @@ object RadioSignaling {
                 if (!window.app.ctx) return;
                 var ctx = window.app.ctx;
                 var now = ctx.currentTime;
-                // --- 🔔 BEEP DE CORTESÍA (ENTRADA EN CANAL) ---
-                // Sonido limpio y profesional: Doble tono electrónico ascendente
-                [600, 900].forEach(function(f, i) {
+                // --- 🚨 CHIRP TIPO POLICÍA (NUEVA ANTENA) ---
+                // Sonido característico de entrada táctica: doble barrido ascendente ultra-rápido
+                [0, 0.12].forEach(function(delay) {
                     var o = ctx.createOscillator();
                     var g = ctx.createGain();
                     o.type = 'sine';
-                    o.frequency.setValueAtTime(f, now + (i * 0.1));
-                    g.gain.setValueAtTime(0, now + (i * 0.1));
-                    g.gain.linearRampToValueAtTime(0.08, now + (i * 0.1) + 0.02);
-                    g.gain.linearRampToValueAtTime(0, now + (i * 0.1) + 0.1);
+                    // Barrido de 1200Hz a 2400Hz en 50ms
+                    o.frequency.setValueAtTime(1200, now + delay);
+                    o.frequency.exponentialRampToValueAtTime(2400, now + delay + 0.05);
+                    
+                    g.gain.setValueAtTime(0, now + delay);
+                    g.gain.linearRampToValueAtTime(0.12, now + delay + 0.01);
+                    g.gain.linearRampToValueAtTime(0, now + delay + 0.06);
+                    
                     o.connect(g); g.connect(window.app.masterOut);
-                    o.start(now + (i * 0.1)); o.stop(now + (i * 0.1) + 0.1);
+                    o.start(now + delay); o.stop(now + delay + 0.07);
                 });
             };
 
@@ -2154,8 +2167,17 @@ object RadioSignaling {
                             };
 
                             oscLocal.onended = cleanupBeep;
-                            // --- 🛡️ SEGURO DE VIDA: Forzar reseteo si el evento onended falla ---
-                            setTimeout(cleanupBeep, 500);
+                            
+                            // --- 🛡️ SEGURO DE VIDA (FORZADO): Blindaje total del fin de Roger Beep ---
+                            // Si por algún motivo el navegador no dispara el evento 'onended',
+                            // este temporizador asegura que la radio se resetee en 500ms (el beep dura 300ms).
+                            if (window.app._beepSecurityTimeout) clearTimeout(window.app._beepSecurityTimeout);
+                            window.app._beepSecurityTimeout = setTimeout(function() {
+                                if (window.app.isBeeping) {
+                                    console.warn("🛡️ Roger Beep: Disparo de seguridad ejecutado.");
+                                    cleanupBeep();
+                                }
+                            }, 500);
 
                             oscRemote.start(now); oscRemote.stop(now + 0.3);
                             oscLocal.start(now); oscLocal.stop(now + 0.3);
@@ -4065,17 +4087,28 @@ fun main() {
                         "INIT_REAL_MAP" -> {
                             val latP = if (parts.size >= 2) parts[1] else "null"
                             val lonP = if (parts.size >= 3) parts[2] else "null"
+                            
+                            // --- 🛡️ AJUSTE PARA RADAR NACIONAL (FULL SCREEN) ---
+                            val container = document.getElementById("activity-map-container")
+                            if (container != null) {
+                                val cs = container.asDynamic().style
+                                cs.display = "block"
+                                cs.position = "fixed"
+                                cs.left = "0"
+                                cs.top = "0"
+                                cs.width = "100%"
+                                cs.height = "100%"
+                                cs.zIndex = "150" // Por encima de la radio para ver el mapa
+                                cs.borderRadius = "0"
+                            }
+
                             win.setTimeout({
                                 val containerId = "activity-map-container"
-                                val container = document.getElementById(containerId)
-                                if (container != null) {
-                                    container.asDynamic().style.display = "block"
-                                    val lat = if (latP != "null") win.parseFloat(latP) else (win.parseFloat(localStorage.getItem("last_lat")) ?: 37.3891)
-                                    val lon = if (lonP != "null") win.parseFloat(lonP) else (win.parseFloat(localStorage.getItem("last_lon")) ?: -5.9845)
-                                    win.initRealMap(containerId, lat, lon)
-                                    win.setTimeout({ if(win.app != null && win.app.map != null) win.app.map.invalidateSize() }, 300)
-                                }
-                            }, 300)
+                                val lat = if (latP != "null") win.parseFloat(latP) else (win.parseFloat(localStorage.getItem("last_lat")) ?: 37.3891)
+                                val lon = if (lonP != "null") win.parseFloat(lonP) else (win.parseFloat(localStorage.getItem("last_lon")) ?: -5.9845)
+                                win.initRealMap(containerId, lat, lon)
+                                win.setTimeout({ if(win.app != null && win.app.map != null) win.app.map.invalidateSize() }, 300)
+                            }, 100)
                         }
                         "UPDATE_MAP_MARKERS" -> if (parts.size >= 2) {
                             val markersJson = parts[1]

@@ -66,7 +66,7 @@ fun RadioDialogs(
     onMic: (Boolean, Float) -> Unit,
     onGpsRequestPro: (callback: (String?) -> Unit) -> Unit,
     onGpsCityRequestPro: (callback: (String?) -> Unit) -> Unit,
-    onPendingDialogChange: (RadioDialogType?) -> Unit,
+    onPendingDialogChange: (RadioDialogType?, String?) -> Unit,
     onNickChange: (String) -> Unit = {},
     onGetWifiVariance: (Int) -> Float = { _ -> 0f },
     onGetHeading: () -> Float = { 0f },
@@ -507,7 +507,7 @@ fun RadioDialogs(
                     // --- 🚀 INFORMACIÓN NASA (ESPACIAL) ---
                     if (state.nasaImageUrl != null) {
                         Surface(
-                            onClick = { onPendingDialogChange(RadioDialogType.NASA_IMAGE) },
+                            onClick = { onPendingDialogChange(RadioDialogType.NASA_IMAGE, null) },
                             color = Color.White.copy(0.05f),
                             shape = RoundedCornerShape(12.dp),
                             border = BorderStroke(1.dp, LuxeColors.ElectricBlue.copy(0.3f)),
@@ -819,17 +819,37 @@ fun RadioDialogs(
                                 if (state.poiSuggestions.isNotEmpty()) {
                                     LazyColumn {
                                         items(state.poiSuggestions) { poi ->
+                                            val isAlreadyAdded = tempWaypoints.any { it.lat == poi.lat && it.lon == poi.lon }
                                             Surface(
-                                                onClick = { if (tempWaypoints.none { it.lat == poi.lat && it.lon == poi.lon }) tempWaypoints = (tempWaypoints + poi).toMutableList() },
-                                                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                                                color = LuxeColors.Gold.copy(0.05f),
-                                                shape = RoundedCornerShape(8.dp),
-                                                border = BorderStroke(0.5.dp, LuxeColors.Gold.copy(0.2f))
+                                                onClick = { 
+                                                    if (!isAlreadyAdded) {
+                                                        tempWaypoints = (tempWaypoints + poi).toMutableList()
+                                                        onPlaySound("click")
+                                                    }
+                                                },
+                                                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                                                color = if (isAlreadyAdded) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
+                                                shape = RoundedCornerShape(12.dp),
+                                                border = BorderStroke(1.dp, if (isAlreadyAdded) LuxeColors.Gold else LuxeColors.Gold.copy(0.2f))
                                             ) {
-                                                Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(Icons.Rounded.AddLocation, null, tint = LuxeColors.Gold, modifier = Modifier.size(14.dp))
-                                                    Spacer(Modifier.width(8.dp))
-                                                    Text(poi.name, color = Color.White, fontSize = 10.sp, maxLines = 1)
+                                                Row(
+                                                    Modifier.padding(12.dp), 
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                                        Icon(
+                                                            if (isAlreadyAdded) Icons.Rounded.CheckCircle else Icons.Rounded.AddLocation, 
+                                                            null, 
+                                                            tint = LuxeColors.Gold, 
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                        Spacer(Modifier.width(12.dp))
+                                                        Text(poi.name, color = Color.White, fontSize = 11.sp, maxLines = 1)
+                                                    }
+                                                    if (!isAlreadyAdded) {
+                                                        Text("AÑADIR", color = LuxeColors.Gold, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                                                    }
                                                 }
                                             }
                                         }
@@ -1115,27 +1135,46 @@ fun RadioDialogs(
                 }
             )
         }
-        RadioDialogType.RADAR_MAP -> AlertDialog(
-            onDismissRequest = onDismiss,
-            containerColor = LuxeColors.DeepSea,
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
-            modifier = Modifier.fillMaxSize().padding(16.dp).border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(32.dp)),
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Radar, null, tint = LuxeColors.Gold)
-                    Spacer(Modifier.width(12.dp))
-                    Text("RADAR NACIONAL", color = Color.White, fontWeight = FontWeight.Black)
-                    Spacer(Modifier.weight(1f))
-                    IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, null, tint = Color.White.copy(0.4f)) }
-                }
-            },
-            text = {
-                Box(Modifier.fillMaxSize()) {
-                    Text("Iniciando motor de radar...", color = LuxeColors.Gold, modifier = Modifier.align(Alignment.Center))
-                }
-            },
-            confirmButton = {}
-        )
+        RadioDialogType.RADAR_MAP -> {
+            LaunchedEffect(Unit) {
+                onExecuteEngineeringAction("INIT_REAL_MAP")
+                onExecuteEngineeringAction("FETCH_POIS|ESTACIONES")
+            }
+            
+            AlertDialog(
+                onDismissRequest = {
+                    onExecuteEngineeringAction("HIDE_MAP_OVERLAY")
+                    onDismiss()
+                },
+                containerColor = Color.Transparent, // Transparent para ver el mapa real debajo
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                title = {
+                    Surface(
+                        color = LuxeColors.DeepSea.copy(0.9f),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f))
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Radar, null, tint = LuxeColors.Gold)
+                            Spacer(Modifier.width(12.dp))
+                            Text("RADAR NACIONAL", color = Color.White, fontWeight = FontWeight.Black)
+                            Spacer(Modifier.weight(1f))
+                            IconButton(onClick = {
+                                onExecuteEngineeringAction("HIDE_MAP_OVERLAY")
+                                onDismiss()
+                            }) { Icon(Icons.Rounded.Close, null, tint = Color.White.copy(0.4f)) }
+                        }
+                    }
+                },
+                text = {
+                    // El mapa se inyecta desde JS en el activity-map-container
+                    // Aquí solo dejamos el espacio vacío
+                    Box(Modifier.fillMaxSize())
+                },
+                confirmButton = {}
+            )
+        }
         RadioDialogType.BLACKLIST -> FeatureHelpDialog(
             title = "Lista de Bloqueados",
             icon = Icons.Rounded.Block,
@@ -1154,29 +1193,77 @@ fun RadioDialogs(
                 triggerUiSound("click")
             }
         )
-        RadioDialogType.SELECT_CITY -> AlertDialog(
-            onDismissRequest = onDismiss,
-            containerColor = LuxeColors.DeepSea,
-            titleContentColor = LuxeColors.Gold,
-            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
-            title = { Text("CAMBIAR DE CIUDAD", fontWeight = FontWeight.Black) },
-            text = {
-                Column {
-                    Text("Busca y desplázate a otra ubicación táctica.", color = Color.White.copy(0.6f), fontSize = 12.sp)
-                    Spacer(Modifier.height(20.dp))
-                    OutlinedTextField(
-                        value = state.city,
-                        onValueChange = { onStateChange(state.copy(city = it.uppercase())) },
-                        placeholder = { Text("EJ: MADRID", color = Color.White.copy(0.2f)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LuxeColors.Gold, focusedTextColor = Color.White)
-                    )
+        RadioDialogType.SELECT_CITY -> {
+            var searchText by remember { mutableStateOf(state.city) }
+            val filteredCities = remember(searchText) {
+                if (searchText.length >= 1) {
+                    SPAIN_CITIES.filter { it.contains(searchText, ignoreCase = true) }.take(8)
+                } else SPAIN_CITIES.take(8)
+            }
+
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                containerColor = LuxeColors.DeepSea,
+                titleContentColor = LuxeColors.Gold,
+                modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+                title = { Text("CAMBIAR DE CIUDAD", fontWeight = FontWeight.Black) },
+                text = {
+                    Column {
+                        Text("Busca y elige tu canal oficial de ciudad.", color = Color.White.copy(0.6f), fontSize = 12.sp)
+                        Spacer(Modifier.height(20.dp))
+                        OutlinedTextField(
+                            value = searchText,
+                            onValueChange = { searchText = it.uppercase() },
+                            placeholder = { Text("BUSCAR CIUDAD...", color = Color.White.copy(0.2f)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LuxeColors.Gold, focusedTextColor = Color.White)
+                        )
+                        
+                        Spacer(Modifier.height(16.dp))
+                        Text("CANALES DISPONIBLES", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
+                        Spacer(Modifier.height(8.dp))
+                        
+                        LazyColumn(modifier = Modifier.heightIn(max = 280.dp)) {
+                            items(filteredCities) { cityName ->
+                                val isCurrent = cityName == state.city
+                                Surface(
+                                    onClick = { 
+                                        onStateChange(state.copy(city = cityName, channel = "GENERAL", subtone = "0000"))
+                                        onDismiss()
+                                    },
+                                    color = if(isCurrent) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.04f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                                    border = BorderStroke(1.dp, if(isCurrent) LuxeColors.Gold else LuxeColors.Gold.copy(0.2f))
+                                ) {
+                                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Rounded.LocationCity, null, tint = LuxeColors.Gold, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(12.dp))
+                                        Text(cityName, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                        if(isCurrent) {
+                                            Spacer(Modifier.weight(1f))
+                                            Text("ACTUAL", color = LuxeColors.Gold, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    if (SPAIN_CITIES.contains(searchText)) {
+                        LuxeButton("SINTONIZAR", {
+                            onStateChange(state.copy(city = searchText, channel = "GENERAL", subtone = "0000"))
+                            onDismiss()
+                        }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+                    } else {
+                        Text("Selecciona una ciudad de la lista", color = Color.Red.copy(0.7f), fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    }
                 }
-            },
-            confirmButton = { LuxeButton("ENTRAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black) }
-        )
+            )
+        }
         RadioDialogType.SELECT_NICK -> NickSelectorDialog(
             initialNick = nick,
             onConfirm = { newNick ->
@@ -1312,7 +1399,7 @@ fun RadioDialogs(
                     Text("SEGURIDAD Y PRIVACIDAD", color = LuxeColors.Red.copy(0.7f), fontSize = 10.sp, fontWeight = FontWeight.Black)
                     Spacer(Modifier.height(12.dp))
                     Surface(
-                        onClick = { onPendingDialogChange(RadioDialogType.DELETE_DATA) },
+                        onClick = { onPendingDialogChange(RadioDialogType.DELETE_DATA, null) },
                         color = LuxeColors.Red.copy(0.05f),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.dp, LuxeColors.Red.copy(0.2f)),

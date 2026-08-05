@@ -137,6 +137,8 @@ fun App(
         ) 
     }
 
+    var channelToDelete by remember { mutableStateOf<String?>(null) }
+
     // --- ⏳ GESTIÓN DE CARGA INICIAL ---
     var isAppReady by remember { mutableStateOf(true) }
 
@@ -874,7 +876,10 @@ fun App(
                             showExitConfirmExternal = showExitDialog,
                             onExitConfirmDismiss = { showExitDialog = false },
                             pendingDialog = pendingDialog,
-                            onPendingDialogChange = { pendingDialog = it },
+                            onPendingDialogChange = { dialog, payload -> 
+                                pendingDialog = dialog
+                                if (payload != null) channelToDelete = payload
+                            },
                             radarActivo = radarActivo,
                             radarNivel = nivelPerturbacion,
                             onHertzSentinelRequest = { showActivityRadar = true },
@@ -1129,7 +1134,10 @@ fun App(
                         onExecuteEngineeringAction = onExecuteEngineeringAction,
                         onGpsRequest = onGpsRequest,
                         onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g, radioState.routeImage) },
-                        onPendingDialogChange = { pendingDialog = it },
+                        onPendingDialogChange = { dialog, payload -> 
+                            pendingDialog = dialog
+                            if (payload != null) channelToDelete = payload
+                        },
                         bgStationName = bgStationName,
                         onBgRadioScan = onBgRadioScan,
                         onBgRadioStop = onBgRadioStop,
@@ -1178,7 +1186,10 @@ fun App(
                     ) {
                         RadioDialogs(
                             type = pendingDialog,
-                            onDismiss = { pendingDialog = null },
+                            onDismiss = { 
+                                pendingDialog = null
+                                channelToDelete = null
+                            },
                             state = radioState,
                             onStateChange = { newState ->
                                 // 🛡️ SINCRONIZACIÓN MAESTRA: Propagar cambios a radioState y al motor de audio
@@ -1223,7 +1234,10 @@ fun App(
                             onMic = { a, p -> onMicEnable(a, radioState.isRogerBeepEnabled, p) },
                             onGpsRequestPro = onGpsRequest,
                             onGpsCityRequestPro = onGpsCityRequest,
-                            onPendingDialogChange = { pendingDialog = it },
+                            onPendingDialogChange = { dialog, payload -> 
+                                pendingDialog = dialog
+                                if (payload != null) channelToDelete = payload
+                            },
                             onGetWifiVariance = onGetWifiVariance,
                             onGetHeading = onGetHeading,
                             onGetTilt = onGetTilt,
@@ -1247,6 +1261,7 @@ fun App(
                             onOpenSettings = onOpenSettings,
                             users = remoteUsers,
                             nick = nick,
+                            channelToDelete = channelToDelete,
                             onPrivateChat = onPrivateChatRequest,
                             onShowHelp = { 
                                 showWebHelpDialog = true 

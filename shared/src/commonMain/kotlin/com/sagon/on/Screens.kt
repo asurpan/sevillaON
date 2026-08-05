@@ -387,7 +387,7 @@ fun RadioPanel(
     showExitConfirmExternal: Boolean,
     onExitConfirmDismiss: () -> Unit,
     pendingDialog: RadioDialogType?,
-    onPendingDialogChange: (RadioDialogType?) -> Unit,
+    onPendingDialogChange: (RadioDialogType?, String?) -> Unit,
     radarActivo: Boolean = false,
     radarNivel: Float = 0f,
     onHertzSentinelRequest: () -> Unit = {},
@@ -518,7 +518,7 @@ fun RadioPanel(
                 delay(1000)
                 portadoraOffenseTimer++
                 if (portadoraOffenseTimer >= 60) { 
-                    onPendingDialogChange(RadioDialogType.PORTADORA)
+                    onPendingDialogChange(RadioDialogType.PORTADORA, null)
                     if (portadoraOffenseTimer % 5 == 0) triggerUiSound("siren")
                 }
                 if (portadoraOffenseTimer >= 120) { 
@@ -615,7 +615,7 @@ fun RadioPanel(
                 IconButton(onClick = onExit) { Icon(Icons.Rounded.PowerSettingsNew, null, tint = Color.Red.copy(0.6f)) }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.clickable { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY) }
+                    modifier = Modifier.clickable { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Tu indicativo: ", color = Color.White.copy(0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
@@ -646,7 +646,7 @@ fun RadioPanel(
                             .clip(CircleShape)
                             .background(Color.White.copy(0.05f))
                             .border(1.dp, Color.White.copy(0.1f), CircleShape)
-                            .clickable { onPendingDialogChange(RadioDialogType.SETTINGS) },
+                            .clickable { onPendingDialogChange(RadioDialogType.SETTINGS, null) },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Rounded.Tune, null, tint = Color.White, modifier = Modifier.size(20.dp))
@@ -686,11 +686,11 @@ fun RadioPanel(
                         ) {
                             Column(Modifier.width(80.dp), horizontalAlignment = Alignment.Start) {
                                 TechLabel("SQUELCH", "${(state.squelch * 100).toInt()}%") {
-                                    onPendingDialogChange(RadioDialogType.SETTINGS)
+                                    onPendingDialogChange(RadioDialogType.SETTINGS, null)
                                 }
                                 Spacer(Modifier.height(16.dp))
                                 TechLabel("GANANCIA", "${(state.rfGain * 100).toInt()}%") {
-                                    onPendingDialogChange(RadioDialogType.SETTINGS)
+                                    onPendingDialogChange(RadioDialogType.SETTINGS, null)
                                 }
                             }
 
@@ -753,7 +753,7 @@ fun RadioPanel(
                                         .fillMaxWidth()
                                         .basicMarquee(iterations = Int.MAX_VALUE)
                                         .clickable { 
-                                            if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY) 
+                                            if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY, null) 
                                         }
                                 )
                                 
@@ -762,8 +762,8 @@ fun RadioPanel(
                                 Surface(
                                     onClick = { 
                                         if (!state.isInterfaceLocked) { 
-                                            if (!state.hasAcceptedMicExplain) onPendingDialogChange(RadioDialogType.MIC_REQUEST) 
-                                            else onPendingDialogChange(RadioDialogType.CREATE_CHANNEL)
+                                            if (!state.hasAcceptedMicExplain) onPendingDialogChange(RadioDialogType.MIC_REQUEST, null) 
+                                            else onPendingDialogChange(RadioDialogType.CREATE_CHANNEL, null)
                                         } 
                                     },
                                     modifier = Modifier.fillMaxWidth().height(44.dp),
@@ -799,7 +799,7 @@ fun RadioPanel(
                                 modifier = Modifier
                                     .width(80.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .clickable { onPendingDialogChange(RadioDialogType.WATTS) },
+                                    .clickable { onPendingDialogChange(RadioDialogType.WATTS, null) },
                                 horizontalAlignment = Alignment.End
                             ) {
                                 Text("WATTS", color = Color.White.copy(0.3f), fontSize = 9.sp, fontWeight = FontWeight.Black)
@@ -826,7 +826,7 @@ fun RadioPanel(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Surface(
-                                onClick = { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SUBTONO) },
+                                onClick = { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SUBTONO, null) },
                                 color = if(state.subtone != "0000") LuxeColors.Gold.copy(0.1f) else Color.Transparent,
                                 shape = RoundedCornerShape(8.dp),
                                 border = if(state.subtone != "0000") BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)) else null
@@ -881,7 +881,7 @@ fun RadioPanel(
                         icon = Icons.Rounded.Radio, 
                         label = "RADIO FM", 
                         isActive = bgStationName != null, 
-                        onClick = { onPendingDialogChange(RadioDialogType.FMSCAN); triggerUiSound("click") },
+                        onClick = { onPendingDialogChange(RadioDialogType.FMSCAN, null); triggerUiSound("click") },
                         onLongClick = { if (bgStationName != null) onBgRadioStop() else onBgRadioScan(state.city, state.bgRadioGenre); triggerUiSound("switch") }
                     ) 
                 }
@@ -891,13 +891,13 @@ fun RadioPanel(
                         label = "RUTA", 
                         isActive = state.activeProfile != ActivityProfile.NORMAL, 
                         onClick = { 
-                            if (state.activeProfile == ActivityProfile.NORMAL) onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR) 
+                            if (state.activeProfile == ActivityProfile.NORMAL) onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR, null) 
                             else onActivityPanelRequest()
                             triggerUiSound("click")
                         },
                         onLongClick = {
                             if (state.activeProfile != ActivityProfile.NORMAL) {
-                                onPendingDialogChange(RadioDialogType.FINISH_ACTIVITY_CONFIRM)
+                                onPendingDialogChange(RadioDialogType.FINISH_ACTIVITY_CONFIRM, null)
                                 triggerUiSound("click")
                             }
                         }
@@ -918,7 +918,7 @@ fun RadioPanel(
                         icon = Icons.Rounded.Radar, 
                         label = "RADAR", 
                         isActive = true, 
-                        onClick = { onPendingDialogChange(RadioDialogType.RADAR_MAP); triggerUiSound("click") }
+                        onClick = { onPendingDialogChange(RadioDialogType.RADAR_MAP, null); triggerUiSound("click") }
                     ) 
                 }
                 item { 
@@ -926,18 +926,18 @@ fun RadioPanel(
                         icon = Icons.Rounded.Settings, 
                         label = "EQUIPO", 
                         isActive = true, 
-                        onClick = { onPendingDialogChange(RadioDialogType.SETTINGS); triggerUiSound("click") }
+                        onClick = { onPendingDialogChange(RadioDialogType.SETTINGS, null); triggerUiSound("click") }
                     ) 
                 }
                 
                 // --- AJUSTES TÉCNICOS ---
-                item { TacticalDockIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) { onStateChange(state.copy(isVoxEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.VOX); triggerUiSound("click") } }) }
+                item { TacticalDockIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) { onStateChange(state.copy(isVoxEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.VOX, null); triggerUiSound("click") } }) }
                 item { TacticalDockIcon(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)); triggerUiSound("switch") }) }
-                item { TacticalDockIcon(icon = Icons.Rounded.SettingsInputAntenna, label = "ECO", isActive = state.isReverbEnabled, onClick = { if (state.isReverbEnabled) { onStateChange(state.copy(isReverbEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.REVERB); triggerUiSound("click") } }) }
-                item { TacticalDockIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) { onStateChange(state.copy(isDspEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.DSP); triggerUiSound("click") } }) }
-                item { TacticalDockIcon(icon = Icons.Rounded.Headset, label = "MONI", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) { onStateChange(state.copy(isMonitorEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.MONI); triggerUiSound("click") } }) }
-                item { TacticalDockIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE); triggerUiSound("click") }) }
-                item { TacticalDockIcon(icon = Icons.AutoMirrored.Rounded.Chat, label = "INVITAR", isActive = true, activeColor = LuxeColors.Green, onClick = { onPendingDialogChange(RadioDialogType.INVITE); triggerUiSound("click") }) }
+                item { TacticalDockIcon(icon = Icons.Rounded.SettingsInputAntenna, label = "ECO", isActive = state.isReverbEnabled, onClick = { if (state.isReverbEnabled) { onStateChange(state.copy(isReverbEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.REVERB, null); triggerUiSound("click") } }) }
+                item { TacticalDockIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) { onStateChange(state.copy(isDspEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.DSP, null); triggerUiSound("click") } }) }
+                item { TacticalDockIcon(icon = Icons.Rounded.Headset, label = "MONI", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) { onStateChange(state.copy(isMonitorEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.MONI, null); triggerUiSound("click") } }) }
+                item { TacticalDockIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE, null); triggerUiSound("click") }) }
+                item { TacticalDockIcon(icon = Icons.AutoMirrored.Rounded.Chat, label = "INVITAR", isActive = true, activeColor = LuxeColors.Green, onClick = { onPendingDialogChange(RadioDialogType.INVITE, null); triggerUiSound("click") }) }
             }
 
             Spacer(Modifier.height(24.dp))
@@ -1095,7 +1095,7 @@ fun RadioPanel(
                         color = Color.White.copy(0.2f),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 12.dp).clickable { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.CREATE_CHANNEL) }
+                        modifier = Modifier.padding(vertical = 12.dp).clickable { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.CREATE_CHANNEL, null) }
                     )
                 }
             }
@@ -1340,7 +1340,7 @@ fun ActivityPanel(
     onExecuteEngineeringAction: (String) -> Unit,
     onGpsRequest: (callback: (String?) -> Unit) -> Unit,
     onShare: (String, String, String?, String?) -> Unit,
-    onPendingDialogChange: (RadioDialogType?) -> Unit,
+    onPendingDialogChange: (RadioDialogType?, String?) -> Unit,
     bgStationName: String?,
     onBgRadioScan: (String, String) -> Unit,
     onBgRadioStop: () -> Unit = {},
@@ -1536,7 +1536,7 @@ fun ActivityPanel(
                     }
                 }
                 Column(
-                    modifier = Modifier.weight(1f).clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY) }, 
+                    modifier = Modifier.weight(1f).clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }, 
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(text = state.city, color = LuxeColors.Gold, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, modifier = Modifier.basicMarquee())
@@ -1809,8 +1809,8 @@ fun ActivityPanel(
                         .verticalScroll(rememberScrollState()), 
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    TacticalDockIconActivity(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX) })
-                    TacticalDockIconActivity(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE) })
+                    TacticalDockIconActivity(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX, null) })
+                    TacticalDockIconActivity(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE, null) })
                     TacticalDockIconActivity(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) })
                     TacticalDockIconActivity(
                         icon = if (state.isGpsPrivacyEnabled) Icons.Rounded.Security else Icons.Rounded.LocationOff, 
@@ -1819,7 +1819,7 @@ fun ActivityPanel(
                         onClick = { 
                             val newState = !state.isGpsPrivacyEnabled
                             onStateChange(state.copy(isGpsPrivacyEnabled = newState)) 
-                            if (newState) onPendingDialogChange(RadioDialogType.HELP_PRIVACY)
+                            if (newState) onPendingDialogChange(RadioDialogType.HELP_PRIVACY, null)
                         }, 
                         activeColor = LuxeColors.ElectricBlue
                     )
@@ -1834,7 +1834,7 @@ fun ActivityPanel(
                         .verticalScroll(rememberScrollState()), 
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    TacticalDockIconActivity(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) onStateChange(state.copy(isDspEnabled = false)) else onPendingDialogChange(RadioDialogType.DSP) })
+                    TacticalDockIconActivity(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) onStateChange(state.copy(isDspEnabled = false)) else onPendingDialogChange(RadioDialogType.DSP, null) })
                     
                     TacticalDockIconActivity(
                         icon = Icons.Rounded.Radio, 
@@ -1845,7 +1845,7 @@ fun ActivityPanel(
                             if (bgStationName != null) onBgRadioStop() 
                             else {
                                 if (routeDj?.bgGenre != null) onStateChange(state.copy(bgRadioGenre = routeDj.bgGenre))
-                                onPendingDialogChange(RadioDialogType.FMSCAN) 
+                                onPendingDialogChange(RadioDialogType.FMSCAN, null) 
                             }
                         }
                     )
@@ -1867,7 +1867,7 @@ fun ActivityPanel(
                     }
 
                     if (state.routeDestinationName == null) {
-                        TacticalDockIconActivity(icon = Icons.Rounded.AddLocationAlt, label = "RUTA", isActive = false, onClick = { onPendingDialogChange(RadioDialogType.ROUTE_PLANNER) }, activeColor = LuxeColors.Gold)
+                        TacticalDockIconActivity(icon = Icons.Rounded.AddLocationAlt, label = "RUTA", isActive = false, onClick = { onPendingDialogChange(RadioDialogType.ROUTE_PLANNER, null) }, activeColor = LuxeColors.Gold)
                     }
 
                     val mapsUrl = state.myGpsUrl

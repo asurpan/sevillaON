@@ -106,7 +106,7 @@ fun CentinelMonitor(
                                 }
 
                                 val segmentColor = when {
-                                    i < 6 -> Color(0xFF22C55E) // Verde
+                                    i < 6 -> LuxeColors.Gold // Azul Piscina
                                     i < 8 -> Color(0xFFFFD700) // Amarillo
                                     else -> Color.Red          // Rojo
                                 }

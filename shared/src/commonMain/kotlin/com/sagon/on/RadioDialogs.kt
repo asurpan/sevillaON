@@ -23,6 +23,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -39,7 +41,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 enum class RadioDialogType {
-    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, VOX, MONI, ROGER, REVERB, CHAT, SCAN, FMSCAN, ADS, 
+    ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, VOX, MONI, ROGER, REVERB, CHAT, FMSCAN, ADS, 
     INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, RADAR_MAP, SOS_CONFIRM, 
     BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, NASA_IMAGE, HERTZ_SENTINEL, DISCRETE, ACTIVITY_SELECTOR, SELECT_NICK, 
     MASTER_HELP, HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, FINISH_ACTIVITY_CONFIRM, ROUTE_PLANNER, SEARCH_DESTINATION
@@ -88,7 +90,6 @@ fun RadioDialogs(
     var tempSubtone by remember(type) { mutableStateOf(state.subtone) }
     var isPrivateSelection by remember(type) { mutableStateOf(false) }
     var newChannelName by remember(type) { mutableStateOf("") }
-    var isLocatingGps by remember(type) { mutableStateOf(false) }
 
     when (type) {
         RadioDialogType.ANTENNA -> FeatureHelpDialog(
@@ -357,16 +358,7 @@ fun RadioDialogs(
                 triggerUiSound("click")
             }
         )
-        RadioDialogType.SCAN -> FeatureHelpDialog(
-            title = "Escáner de Frecuencias",
-            icon = Icons.Rounded.Sensors,
-            description = "Busca actividad automáticamente en otras ciudades de España.",
-            onDismiss = { 
-                onDismiss()
-                onStateChange(state.copy(hasSeenScanIntro = true, isScanning = true))
-                triggerUiSound("static")
-            }
-        )
+
         RadioDialogType.FMSCAN -> {
             var selectedGenre by remember { mutableStateOf(state.bgRadioGenre) }
             AlertDialog(
@@ -635,45 +627,22 @@ fun RadioDialogs(
         )
         RadioDialogType.ACTIVITY_SELECTOR, RadioDialogType.ROUTE_PLANNER -> {
             var tempRouteName by remember { mutableStateOf("") }
-            var tempRouteRules by remember { mutableStateOf("") }
             var destinationText by remember { mutableStateOf("") }
-            var selectedActivity by remember { mutableStateOf<ActivityProfile?>(null) }
+            var selectedActivity by remember { mutableStateOf<ActivityProfile?>(state.activeProfile.takeIf { it != ActivityProfile.NORMAL } ?: ActivityProfile.MOTO) }
             var isLaunching by remember { mutableStateOf(false) }
             var tempWaypoints by remember { mutableStateOf(state.routeWaypoints.toMutableList()) }
             var selectedPois by remember { mutableStateOf(setOf<String>()) }
             val scope = rememberCoroutineScope()
             
-            // --- 🧠 ESTADO DE BÚSQUEDA CONTEXTUAL (DOPAMINA) ---
             var lastSearchLat by remember { mutableStateOf<Double?>(null) }
             var lastSearchLon by remember { mutableStateOf<Double?>(null) }
 
-            // --- 🗺️ PREVISUALIZACIÓN EN TIEMPO REAL ---
             LaunchedEffect(tempWaypoints) {
                 if (tempWaypoints.isNotEmpty()) {
                     val jsonWaypoints = "[" + tempWaypoints.joinToString(",") { 
                         """{"name":"${it.name.replace("\"", "'")}","lat":${it.lat},"lon":${it.lon}}""" 
                     } + "]"
                     onExecuteEngineeringAction("SET_MISSION_ROUTE|$jsonWaypoints")
-                    
-                    // AUTO-BÚSQUEDA EN TRAYECTO: Si hay ruta, buscar POIs relevantes automáticamente
-                    val activity = selectedActivity ?: state.activeProfile
-                    val autoCat = when(activity) {
-                        ActivityProfile.MOTO, ActivityProfile.CARAVANAS -> "NATURALEZA" // Miradores
-                        ActivityProfile.CICLISMO -> "FUENTES"
-                        ActivityProfile.PASEO, ActivityProfile.SENDERISMO -> "MONUMENTOS"
-                        ActivityProfile.SOCORRISTAS -> "HOSPITALES"
-                        else -> "MONUMENTOS"
-                    }
-                    onExecuteEngineeringAction("FETCH_POIS_ALONG_ROUTE|$autoCat")
-                }
-            }
-
-            LaunchedEffect(Unit) {
-                onWaypointReceived { name, lat, lon ->
-                    if (tempWaypoints.none { it.lat == lat && it.lon == lon }) {
-                        tempWaypoints = (tempWaypoints + RouteSuggestion(name, lat, lon)).toMutableList()
-                        triggerUiSound("switch") // Feedback auditivo de éxito
-                    }
                 }
             }
 
@@ -683,495 +652,225 @@ fun RadioDialogs(
                     onExecuteEngineeringAction("GET_LOCATION_SUGGESTIONS|$destinationText")
                 }
             }
+
+            LaunchedEffect(Unit) {
+                onWaypointReceived { name, lat, lon ->
+                    if (tempWaypoints.none { it.lat == lat && it.lon == lon }) {
+                        tempWaypoints = (tempWaypoints + RouteSuggestion(name, lat, lon)).toMutableList()
+                    }
+                }
+            }
             
             AlertDialog(
                 onDismissRequest = onDismiss,
                 containerColor = LuxeColors.DeepSea,
-                titleContentColor = LuxeColors.Gold,
-                properties = androidx.compose.ui.window.DialogProperties(
-                    usePlatformDefaultWidth = true,
-                    dismissOnBackPress = true,
-                    dismissOnClickOutside = true
-                ),
-                modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(32.dp)),
+                properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .fillMaxHeight(0.9f)
+                    .border(1.dp, LuxeColors.Gold.copy(0.2f), RoundedCornerShape(24.dp))
+                    .pointerInput(Unit) { detectTapGestures { /* Bloqueo PTT */ } },
                 title = {
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Route, null, tint = LuxeColors.Gold, modifier = Modifier.size(28.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Route, null, tint = LuxeColors.Gold, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("PLANIFICADOR DE RUTA", fontWeight = FontWeight.Black, fontSize = 18.sp, color = Color.White)
-                            Text("Configura tu misión táctica", fontSize = 10.sp, color = LuxeColors.Gold.copy(0.6f))
+                            Text("PLANIFICADOR TÁCTICO", fontWeight = FontWeight.Black, fontSize = 16.sp, color = Color.White)
+                            Text("Configura tu misión y descubre paradas", fontSize = 10.sp, color = LuxeColors.Gold.copy(0.6f))
                         }
-                        IconButton(onClick = onDismiss) {
-                            Icon(Icons.Rounded.Close, null, tint = Color.White.copy(0.4f))
-                        }
+                        IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, null, tint = Color.White.copy(0.4f)) }
                     }
                 },
                 text = {
-                    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                        Text("1. SELECCIONA TU ACTIVIDAD", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
-                        Spacer(Modifier.height(12.dp))
-                        
-                        // --- ✨ MODO AVENTURA (BOTÓN DESTACADO) ---
-                        var isCalculating by remember { mutableStateOf(false) }
-                        Surface(
-                            onClick = { 
-                                isCalculating = true
-                                if (selectedActivity == null) {
-                                    selectedActivity = state.activeProfile.takeIf { it != ActivityProfile.NORMAL } ?: ActivityProfile.MOTO
-                                }
-                                val activity = selectedActivity!!
-                                onExecuteEngineeringAction("GENERATE_ADVENTURE_ROUTE|${activity.name}")
-                                triggerUiSound("click")
-                                // Reset de estado tras un pequeño delay
-                                scope.launch { delay(3000); isCalculating = false }
-                            },
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isCalculating) LuxeColors.Gold.copy(0.1f) else LuxeColors.ElectricBlue.copy(0.15f),
-                            border = BorderStroke(1.dp, if (isCalculating) LuxeColors.Gold else LuxeColors.ElectricBlue)
-                        ) {
-                            Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    Icon(
-                                        if (isCalculating) Icons.Rounded.Sync else Icons.Rounded.AutoAwesome, 
-                                        null, 
-                                        tint = if (isCalculating) LuxeColors.Gold else LuxeColors.ElectricBlue, 
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(Modifier.width(12.dp))
-                                    Text(
-                                        if (isCalculating) "CALCULANDO RUTA..." else "✨ GENERAR RUTA DE AVENTURA", 
-                                        color = Color.White, 
-                                        fontSize = 12.sp, 
-                                        fontWeight = FontWeight.Black
-                                    )
-                                }
-                                if (isCalculating) {
-                                    Spacer(Modifier.height(8.dp))
-                                    LinearProgressIndicator(
-                                        modifier = Modifier.fillMaxWidth().height(2.dp),
-                                        color = LuxeColors.Gold,
-                                        trackColor = LuxeColors.Gold.copy(0.1f)
-                                    )
-                                } else {
-                                    Text(
-                                        "Misión sorpresa de ida y vuelta con paradas interesantes.", 
-                                        color = Color.White.copy(0.4f), 
-                                        fontSize = 9.sp, 
-                                        modifier = Modifier.padding(top = 4.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                        val activities = ActivityProfile.entries.filter { it != ActivityProfile.NORMAL }
-                        activities.chunked(2).forEach { row ->
-                            Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                row.forEach { act ->
+                    Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        // --- COLUMNA 1: CONFIGURACIÓN ---
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("1. ACTIVIDAD Y NOMBRE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold)
+                            Spacer(Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ActivityProfile.entries.filter { it != ActivityProfile.NORMAL }.forEach { act ->
                                     val isSelected = selectedActivity == act
                                     Surface(
                                         onClick = { selectedActivity = act },
-                                        modifier = Modifier.weight(1f).height(80.dp),
-                                        shape = RoundedCornerShape(16.dp),
+                                        modifier = Modifier.weight(1f).height(50.dp),
+                                        shape = RoundedCornerShape(12.dp),
                                         color = if (isSelected) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f),
                                         border = BorderStroke(1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(0.1f))
-                                    ) {
-                                        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                                            val icon = getActivityIcon(act)
-                                            Icon(icon, null, tint = if (isSelected) LuxeColors.Gold else Color.White.copy(0.4f), modifier = Modifier.size(32.dp))
-                                            Spacer(Modifier.height(4.dp))
-                                            Text(if (act == ActivityProfile.SOCORRISTAS) "SOCORRO" else act.name, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                                        ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(getActivityIcon(act), null, tint = if (isSelected) LuxeColors.Gold else Color.White.copy(0.5f), modifier = Modifier.size(24.dp))
                                         }
                                     }
                                 }
                             }
-                        }
-
-                        AnimatedVisibility(visible = selectedActivity != null) {
-                            Column {
-                                Spacer(Modifier.height(24.dp))
-                                Text("2. IDENTIFICACIÓN DE RUTA", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
-                                Spacer(Modifier.height(12.dp))
-                                Surface(color = Color.White.copy(0.03f), shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, Color.White.copy(0.1f)), modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp)) {
-                                    Column(Modifier.padding(16.dp)) {
-                                        OutlinedTextField(value = tempRouteName, onValueChange = { if (it.length <= 40) tempRouteName = it.uppercase() }, label = { Text("NOMBRE / INDICATIVO RUTA", fontSize = 12.sp) }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LuxeColors.Gold, focusedLabelColor = LuxeColors.Gold, focusedTextColor = Color.White, unfocusedTextColor = Color.White), leadingIcon = { Icon(Icons.Rounded.Label, null, tint = LuxeColors.Gold.copy(0.5f)) })
-                                        Spacer(Modifier.height(12.dp))
-                                        OutlinedTextField(value = tempRouteRules, onValueChange = { if (it.length <= 150) tempRouteRules = it }, label = { Text("NOTAS / PUNTO DE ENCUENTRO", fontSize = 12.sp) }, modifier = Modifier.fillMaxWidth(), maxLines = 2, shape = RoundedCornerShape(12.dp), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.White.copy(0.4f), focusedTextColor = Color.White, unfocusedTextColor = Color.White), leadingIcon = { Icon(Icons.Rounded.Description, null, tint = Color.White.copy(0.3f)) })
-                                    }
-                                }
-                                var editingWaypointIndex by remember { mutableStateOf<Int?>(null) }
-                                var editingWaypointName by remember { mutableStateOf("") }
-                                
-                                if (editingWaypointIndex != null) {
-                                    AlertDialog(
-                                        onDismissRequest = { editingWaypointIndex = null },
-                                        containerColor = LuxeColors.DeepSea,
-                                        title = { Text("EDITAR PARADA", color = Color.White, fontWeight = FontWeight.Black) },
-                                        text = {
-                                            OutlinedTextField(
-                                                value = editingWaypointName,
-                                                onValueChange = { editingWaypointName = it },
-                                                label = { Text("Nombre de la parada") },
-                                                modifier = Modifier.fillMaxWidth(),
-                                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LuxeColors.Gold, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
-                                            )
-                                        },
-                                        confirmButton = {
-                                            Row {
-                                                TextButton(onClick = {
-                                                    val newList = tempWaypoints.toMutableList()
-                                                    newList.removeAt(editingWaypointIndex!!)
-                                                    tempWaypoints = newList
-                                                    editingWaypointIndex = null
-                                                }) { Text("ELIMINAR", color = Color.Red.copy(0.7f), fontWeight = FontWeight.Bold) }
-                                                
-                                                Spacer(Modifier.width(8.dp))
-                                                
-                                                LuxeButton("GUARDAR", {
-                                                    val newList = tempWaypoints.toMutableList()
-                                                    newList[editingWaypointIndex!!] = newList[editingWaypointIndex!!].copy(name = editingWaypointName)
-                                                    tempWaypoints = newList
-                                                    editingWaypointIndex = null
-                                                }, true, Modifier.height(44.dp), LuxeColors.Gold, Color.Black)
-                                            }
-                                        },
-                                        dismissButton = {
-                                            TextButton(onClick = { editingWaypointIndex = null }) { Text("CANCELAR", color = Color.White.copy(0.4f)) }
-                                        }
+                            Spacer(Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = tempRouteName,
+                                onValueChange = { if (it.length <= 30) tempRouteName = it.uppercase() },
+                                placeholder = { Text("NOMBRE DE MISIÓN", fontSize = 11.sp) },
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LuxeColors.Gold, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                            )
+                            
+                            Spacer(Modifier.height(16.dp))
+                            Text("2. RUTA (PARADAS)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold)
+                            Spacer(Modifier.height(8.dp))
+                            Surface(modifier = Modifier.fillMaxWidth().height(44.dp), shape = RoundedCornerShape(12.dp), color = Color.White.copy(0.05f), border = BorderStroke(1.dp, Color.White.copy(0.1f))) {
+                                Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Rounded.Search, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    BasicTextField(
+                                        value = destinationText,
+                                        onValueChange = { destinationText = it },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textStyle = TextStyle(color = Color.White, fontSize = 13.sp),
+                                        cursorBrush = SolidColor(LuxeColors.Gold),
+                                        decorationBox = { if(destinationText.isEmpty()) Text("Buscar destino...", color = Color.White.copy(0.2f), fontSize = 13.sp); it() }
                                     )
                                 }
-
-                                Text("3. DESTINO Y PARADAS", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
-                                Spacer(Modifier.height(4.dp))
-                                Text("Toca una parada para cambiar su nombre o reordénalas.", fontSize = 10.sp, color = Color.White.copy(0.4f), lineHeight = 14.sp)
-                                
-                                // --- 📊 PANEL DE TELEMETRÍA (DOPAMINA) ---
-                                if (state.routeDistanceKm != null || state.routeDurationMin != null) {
-                                    Spacer(Modifier.height(16.dp))
-                                    Surface(
-                                        color = LuxeColors.Gold.copy(0.1f),
-                                        shape = RoundedCornerShape(16.dp),
-                                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceAround) {
-                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Text("DISTANCIA", fontSize = 9.sp, color = LuxeColors.Gold, fontWeight = FontWeight.Black)
-                                                Text(state.routeDistanceKm ?: "-- KM", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Black)
-                                            }
-                                            Box(modifier = Modifier.width(1.dp).height(30.dp).background(LuxeColors.Gold.copy(0.2f)))
-                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Text("TIEMPO EST.", fontSize = 9.sp, color = LuxeColors.Gold, fontWeight = FontWeight.Black)
-                                                Text(state.routeDurationMin ?: "-- MIN", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.Black)
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer(Modifier.height(12.dp))
-                                Surface(modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(12.dp), color = Color.White.copy(0.05f), border = BorderStroke(1.dp, Color.White.copy(0.1f))) {
-                                    Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Rounded.Search, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(20.dp))
-                                        Spacer(Modifier.width(12.dp))
-                                        Box(Modifier.weight(1f)) {
-                                            if (destinationText.isEmpty()) {
-                                                Text("Ej: Aracena, Huelva", color = Color.White.copy(0.2f), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                                            }
-                                            BasicTextField(value = destinationText, onValueChange = { destinationText = it }, modifier = Modifier.fillMaxWidth(), textStyle = TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold), cursorBrush = SolidColor(LuxeColors.Gold))
-                                        }
-                                    }
-                                }
-                                if (state.routeSuggestions.isNotEmpty()) {
-                                    Spacer(Modifier.height(8.dp))
-                                    Surface(modifier = Modifier.fillMaxWidth().heightIn(max = 150.dp), shape = RoundedCornerShape(12.dp), color = Color.Black.copy(0.3f), border = BorderStroke(1.dp, Color.White.copy(0.05f))) {
-                                        LazyColumn {
-                                            items(state.routeSuggestions) { suggestion ->
-                                                Row(modifier = Modifier.fillMaxWidth().clickable { 
-                                                    onStateChange(state.copy(poiSuggestions = emptyList()))
-                                                    if (tempWaypoints.none { it.lat == suggestion.lat && it.lon == suggestion.lon }) { 
-                                                        tempWaypoints = (tempWaypoints + suggestion).toMutableList() 
-                                                    }
-                                                    lastSearchLat = suggestion.lat
-                                                    lastSearchLon = suggestion.lon
-                                                    destinationText = ""
-                                                    onExecuteEngineeringAction("CLEAR_SUGGESTIONS")
-                                                    
-                                                    // DOPAMINA: Buscar POIs automáticamente al seleccionar destino
-                                                    val activity = selectedActivity ?: state.activeProfile
-                                                    val autoCat = when(activity) {
-                                                        ActivityProfile.MOTO, ActivityProfile.CARAVANAS -> "NATURALEZA"
-                                                        ActivityProfile.PASEO, ActivityProfile.SENDERISMO -> "MONUMENTOS"
-                                                        else -> "MONUMENTOS"
-                                                    }
-                                                    onExecuteEngineeringAction("FETCH_POIS|$autoCat|${suggestion.lat}|${suggestion.lon}")
-                                                }.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(Icons.Rounded.AddLocation, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                                    Spacer(Modifier.width(10.dp))
-                                                    Text(suggestion.name, color = Color.White.copy(0.8f), fontSize = 11.sp, maxLines = 2)
-                                                }
-                                                HorizontalDivider(color = Color.White.copy(0.05f))
-                                            }
-                                        }
-                                    }
-                                }
-                                Spacer(Modifier.height(12.dp))
-                                Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    val activity = selectedActivity ?: state.activeProfile
-                                    
-                                    val categories = when (activity) {
-                                        ActivityProfile.MOTO, ActivityProfile.CARAVANAS -> listOf("⛽ GASOLINERA" to "GASOLINERAS", "🍽️ COMIDA" to "RESTAURANTES", "🅿️ PARKING" to "PARKINGS", "🏛️ MONUMENTOS" to "MONUMENTOS")
-                                        ActivityProfile.CICLISMO -> listOf("💧 FUENTES" to "FUENTES", "🚲 TALLERES" to "TALLERES", "🌲 NATURALEZA" to "NATURALEZA")
-                                        ActivityProfile.SENDERISMO, ActivityProfile.PASEO -> listOf("🏞️ MIRADORES" to "NATURALEZA", "🌳 PARQUES" to "PARQUES", "🚻 ASEOS" to "ASEOS", "🏛️ MONUMENTOS" to "MONUMENTOS")
-                                        ActivityProfile.SOCORRISTAS -> listOf("🏥 HOSPITAL" to "HOSPITALES", "💊 FARMACIA" to "FARMACIAS", "🏛️ MONUMENTOS" to "MONUMENTOS")
-                                        else -> listOf("🏛️ MONUMENTOS" to "MONUMENTOS", "🎭 EVENTOS" to "EVENTOS", "🌲 NATURALEZA" to "NATURALEZA")
-                                    }
-
-                                    categories.forEach { (label, cat) ->
-                                        PoiChip(
-                                            label = label,
-                                            category = cat,
-                                            isSelected = selectedPois.contains(cat),
-                                                onExecuteAction = { 
-                                                    onStateChange(state.copy(poiSuggestions = emptyList()))
-                                                    val becomingSelected = !selectedPois.contains(cat)
-                                                    selectedPois = if (becomingSelected) selectedPois + cat else selectedPois - cat
-                                                    
-                                                    if (becomingSelected) {
-                                                        // --- 📡 FEEDBACK DE BÚSQUEDA ---
-                                                        onNotification(AppNotification("BUSCANDO...", "Localizando $label más cercanos...", NotificationType.Info))
-
-                                                        // Si hay una búsqueda previa (destino), buscar allí. Si no, en posición actual.
-                                                        if (lastSearchLat != null && lastSearchLon != null) {
-                                                            onExecuteEngineeringAction("FETCH_POIS|$cat|$lastSearchLat|$lastSearchLon")
-                                                        } else {
-                                                            // Forzar búsqueda en última posición guardada
-                                                            onExecuteEngineeringAction("FETCH_POIS|$cat") 
-                                                        }
-                                                        triggerUiSound("click")
-                                                    } else {
-                                                        // Si se deselecciona, limpiamos marcadores de esa categoría
-                                                        onExecuteEngineeringAction("CLEAR_POIS|$cat")
-                                                    }
-                                                }
-                                        )
-                                    }
-                                }
-                                
-                                // --- 🏛️ LISTA DE SITIOS ENCONTRADOS (POI SUGGESTIONS) ---
-                                if (state.poiSuggestions.isNotEmpty()) {
-                                    Spacer(Modifier.height(16.dp))
-                                    Text("SITIOS DE INTERÉS ENCONTRADOS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.7f), letterSpacing = 1.sp)
-                                    Spacer(Modifier.height(8.dp))
-                                    LazyRow(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        items(state.poiSuggestions) { poi ->
+                            }
+                            
+                            Box(modifier = Modifier.weight(1f).padding(top = 8.dp)) {
+                                LazyColumn {
+                                    if (state.routeSuggestions.isNotEmpty()) {
+                                        item { Text("SUGERENCIAS", fontSize = 9.sp, color = LuxeColors.Gold.copy(0.5f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp)) }
+                                        items(state.routeSuggestions) { sug ->
                                             Surface(
-                                                onClick = {
-                                                    if (tempWaypoints.none { it.lat == poi.lat && it.lon == poi.lon }) {
-                                                        val newList = tempWaypoints.toMutableList()
-                                                        if (newList.size >= 2) {
-                                                            // Insertar antes del último (meta)
-                                                            newList.add(newList.size - 1, poi)
-                                                        } else {
-                                                            newList.add(poi)
-                                                        }
-                                                        tempWaypoints = newList
-                                                        triggerUiSound("switch")
+                                                onClick = { 
+                                                    if (tempWaypoints.none { it.lat == sug.lat && it.lon == sug.lon }) {
+                                                        tempWaypoints = (tempWaypoints + sug).toMutableList()
                                                     }
+                                                    lastSearchLat = sug.lat; lastSearchLon = sug.lon; destinationText = ""
+                                                    onExecuteEngineeringAction("CLEAR_SUGGESTIONS")
                                                 },
+                                                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                                                 color = LuxeColors.Gold.copy(0.1f),
-                                                shape = RoundedCornerShape(12.dp),
-                                                border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.2f))
+                                                shape = RoundedCornerShape(8.dp)
                                             ) {
-                                                Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                    Icon(Icons.Rounded.LocationOn, null, tint = LuxeColors.Gold, modifier = Modifier.size(14.dp))
-                                                    Spacer(Modifier.width(8.dp))
-                                                    Text(poi.name, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                                }
+                                                Text(sug.name, color = Color.White, fontSize = 10.sp, modifier = Modifier.padding(8.dp), maxLines = 1)
                                             }
                                         }
                                     }
-                                }
-
-                                if (tempWaypoints.isNotEmpty()) {
-                                    Spacer(Modifier.height(16.dp))
-                                    val isCircular = tempWaypoints.size > 1 && tempWaypoints.first().lat == tempWaypoints.last().lat && tempWaypoints.first().lon == tempWaypoints.last().lon
                                     
-                                    // --- 🔄 BOTÓN AÑADIR VUELTA (INTELIGENTE) ---
-                                    if (!isCircular) {
-                                        val blinkInfinite = rememberInfiniteTransition()
-                                        val blinkAlpha by blinkInfinite.animateFloat(0.3f, 1f, infiniteRepeatable(tween(800), RepeatMode.Reverse))
-                                        
+                                    item { Spacer(Modifier.height(8.dp)); Text("PARADAS ACTUALES", fontSize = 9.sp, color = LuxeColors.Gold.copy(0.5f), fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp)) }
+                                    items(tempWaypoints.size) { index ->
+                                        val wp = tempWaypoints[index]
                                         Surface(
-                                            onClick = { 
-                                                onExecuteEngineeringAction("ADD_RETURN_POINT")
-                                                triggerUiSound("switch")
-                                            },
-                                            modifier = Modifier.fillMaxWidth().graphicsLayer(alpha = blinkAlpha),
-                                            shape = RoundedCornerShape(12.dp),
-                                            color = LuxeColors.ElectricBlue.copy(0.15f),
-                                            border = BorderStroke(1.5.dp, LuxeColors.ElectricBlue)
+                                            color = Color.White.copy(0.03f),
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
                                         ) {
-                                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                                Icon(Icons.Rounded.Loop, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(20.dp))
-                                                Spacer(Modifier.width(10.dp))
-                                                Text("🔄 AÑADIR VUELTA A CASA (CERRAR RUTA)", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
-                                            }
-                                        }
-                                        Spacer(Modifier.height(12.dp))
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-                                    tempWaypoints.forEachIndexed { index, wp ->
-                                        val isFirst = index == 0
-                                        val isLast = index == tempWaypoints.size - 1
-                                        
-                                        val metaInfinite = rememberInfiniteTransition()
-                                        val metaGlow by if (isLast) metaInfinite.animateFloat(0f, 15f, infiniteRepeatable(tween(1000), RepeatMode.Reverse)) else remember { mutableStateOf(0f) }
-                                        
-                                        Surface(
-                                            onClick = { 
-                                                editingWaypointIndex = index
-                                                editingWaypointName = wp.name
-                                            },
-                                            color = if (isLast) LuxeColors.Gold.copy(0.12f) else Color.White.copy(0.05f),
-                                            shape = RoundedCornerShape(12.dp),
-                                            border = if (isLast) BorderStroke(2.dp, LuxeColors.Gold) else BorderStroke(0.5.dp, Color.White.copy(0.1f)),
-                                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).graphicsLayer(shadowElevation = if (isLast) metaGlow else 0f)
-                                        ) {
-                                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                Box(
-                                                    modifier = Modifier.size(24.dp).background(if (isLast) LuxeColors.Gold else LuxeColors.Gold.copy(0.6f), CircleShape),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    val icon = when {
-                                                        isFirst -> Icons.Rounded.MyLocation
-                                                        isLast && isCircular -> Icons.Rounded.Loop
-                                                        isLast -> Icons.Rounded.Flag
-                                                        else -> null
-                                                    }
-                                                    
-                                                    if (icon != null) {
-                                                        Icon(icon, null, tint = Color.Black, modifier = Modifier.size(14.dp))
-                                                    } else {
-                                                        Text("${index + 1}", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                                                    }
-                                                }
-                                                Spacer(Modifier.width(12.dp))
-                                                Column(modifier = Modifier.weight(1f)) {
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Text(
-                                                            wp.name, 
-                                                            color = if (isLast) LuxeColors.Gold else Color.White, 
-                                                            fontSize = 12.sp, 
-                                                            fontWeight = FontWeight.Bold, 
-                                                            maxLines = 1
-                                                        )
-                                                        if (isLast) {
-                                                            Spacer(Modifier.width(8.dp))
-                                                            val activityIcon = getActivityIcon(selectedActivity ?: state.activeProfile)
-                                                            Icon(activityIcon, null, tint = LuxeColors.Gold.copy(0.5f), modifier = Modifier.size(12.dp))
-                                                        }
-                                                    }
-                                                    if (isLast) {
-                                                        Text(if (isCircular) "RUTA CIRCULAR (RETORNO)" else "DESTINO FINAL", fontSize = 8.sp, color = LuxeColors.Gold.copy(0.6f), fontWeight = FontWeight.Black)
-                                                    }
-                                                }
-                                                
-                                                Row {
-                                                    if (index > 0) {
-                                                        IconButton(
-                                                            onClick = { 
-                                                                val newList = tempWaypoints.toMutableList()
-                                                                val item = newList.removeAt(index)
-                                                                newList.add(index - 1, item)
-                                                                tempWaypoints = newList
-                                                            },
-                                                            modifier = Modifier.size(24.dp)
-                                                        ) {
-                                                            Icon(Icons.Rounded.KeyboardArrowUp, null, tint = Color.White.copy(0.6f), modifier = Modifier.size(20.dp))
-                                                        }
-                                                    }
-                                                    if (index < tempWaypoints.size - 1) {
-                                                        IconButton(
-                                                            onClick = { 
-                                                                val newList = tempWaypoints.toMutableList()
-                                                                val item = newList.removeAt(index)
-                                                                newList.add(index + 1, item)
-                                                                tempWaypoints = newList
-                                                            },
-                                                            modifier = Modifier.size(24.dp)
-                                                        ) {
-                                                            Icon(Icons.Rounded.KeyboardArrowDown, null, tint = Color.White.copy(0.6f), modifier = Modifier.size(20.dp))
-                                                        }
-                                                    }
-                                                    Spacer(Modifier.width(8.dp))
-                                                    IconButton(
-                                                        onClick = { tempWaypoints = tempWaypoints.toMutableList().apply { removeAt(index) } },
-                                                        modifier = Modifier.size(24.dp)
-                                                    ) {
-                                                        Icon(Icons.Rounded.Delete, null, tint = Color.Red.copy(0.6f), modifier = Modifier.size(16.dp))
-                                                    }
+                                            Row(Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(if(index == 0) Icons.Rounded.MyLocation else Icons.Rounded.LocationOn, null, tint = LuxeColors.Gold, modifier = Modifier.size(14.dp))
+                                                Spacer(Modifier.width(8.dp))
+                                                Text(wp.name, color = Color.White, fontSize = 10.sp, modifier = Modifier.weight(1f), maxLines = 1)
+                                                IconButton(onClick = { tempWaypoints = tempWaypoints.toMutableList().apply { removeAt(index) } }, modifier = Modifier.size(20.dp)) {
+                                                    Icon(Icons.Rounded.Delete, null, tint = Color.Red.copy(0.4f), modifier = Modifier.size(14.dp))
                                                 }
                                             }
                                         }
                                     }
                                 }
-                                Spacer(Modifier.height(24.dp))
-                                Text("4. CONFIGURACIÓN DE RUTA", fontSize = 11.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold, letterSpacing = 1.sp)
-                                Spacer(Modifier.height(12.dp))
-                                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Surface(onClick = { isPrivateSelection = !isPrivateSelection }, modifier = Modifier.weight(1f).height(64.dp), shape = RoundedCornerShape(16.dp), color = if (isPrivateSelection) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f), border = BorderStroke(1.dp, if (isPrivateSelection) LuxeColors.Gold else Color.White.copy(0.1f))) {
-                                        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                                            Icon(if (isPrivateSelection) Icons.Rounded.Lock else Icons.Rounded.LockOpen, null, tint = if (isPrivateSelection) LuxeColors.Gold else Color.White.copy(0.4f), modifier = Modifier.size(20.dp))
-                                            Text("PRIVADO", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (isPrivateSelection) LuxeColors.Gold else Color.White)
-                                        }
-                                    }
-                                    Spacer(Modifier.width(16.dp))
-                                    Column(Modifier.weight(1f)) {
-                                        Switch(checked = state.isAvoidingHighways || selectedActivity == ActivityProfile.MOTO, onCheckedChange = { if (selectedActivity != ActivityProfile.MOTO) onStateChange(state.copy(isAvoidingHighways = it)) }, enabled = selectedActivity != ActivityProfile.MOTO, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold, checkedTrackColor = LuxeColors.Gold.copy(0.3f)))
-                                        Text("MODO CURVAS", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
-                                    }
-                                }
-                                if (isPrivateSelection) {
-                                    OutlinedTextField(value = tempSubtone, onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) tempSubtone = it }, placeholder = { Text("CÓDIGO (4 CIFRAS)", color = Color.White.copy(0.2f)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp), shape = RoundedCornerShape(12.dp), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = OutlinedTextFieldDefaults.colors(focusedTextColor = LuxeColors.Gold, focusedBorderColor = LuxeColors.Gold), leadingIcon = { Icon(Icons.Rounded.Key, null, tint = LuxeColors.Gold) })
-                                }
-                                Spacer(Modifier.height(32.dp))
-                                LuxeButton(text = if (isLaunching) "INICIANDO..." else "INICIAR RUTA", onClick = {
-                                    if (tempRouteName.isNotBlank()) {
-                                        isLaunching = true
-                                        onStateChange(state.copy(activeProfile = selectedActivity!!, isMotoModeEnabled = true, isAvoidingHighways = state.isAvoidingHighways || selectedActivity == ActivityProfile.MOTO, channel = tempRouteName, subtone = if (isPrivateSelection) tempSubtone.padStart(4, '0') else "0000", routeRules = tempRouteRules.ifBlank { null }, routeWaypoints = tempWaypoints))
-                                        onExecuteEngineeringAction("UPDATE_ACTIVE_PROFILE|${selectedActivity!!.name}")
-                                        if (tempWaypoints.isNotEmpty()) {
-                                            val jsonWaypoints = "[" + tempWaypoints.joinToString(",") { """{"name":"${it.name}","lat":${it.lat},"lon":${it.lon}}""" } + "]"
-                                            onExecuteEngineeringAction("SET_MISSION_ROUTE|$jsonWaypoints")
-                                        } else if (destinationText.isNotBlank()) {
-                                            onExecuteEngineeringAction("SEARCH_LOCATION|$destinationText")
-                                        } else {
-                                            val poiCat = when(selectedActivity) {
-                                                ActivityProfile.MOTO, ActivityProfile.CARAVANAS -> "GASOLINERAS"
-                                                ActivityProfile.CICLISMO -> "FUENTES"
-                                                ActivityProfile.SENDERISMO, ActivityProfile.PASEO -> "NATURALEZA"
-                                                ActivityProfile.SOCORRISTAS -> "HOSPITALES"
-                                                else -> "MONUMENTOS"
-                                            }
-                                            onExecuteEngineeringAction("FETCH_POIS|$poiCat")
-                                        }
-                                        onDismiss()
-                                        onActivityPanelRequest()
-                                    }
-                                }, enabled = tempRouteName.isNotBlank(), modifier = Modifier.fillMaxWidth().height(56.dp), containerColor = LuxeColors.Gold, contentColor = Color.Black)
                             }
                         }
-                        Spacer(Modifier.height(100.dp)) 
+
+                        // --- COLUMNA 2: EXPLORACIÓN ---
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("3. EXPLORACIÓN TÁCTICA", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold)
+                            Spacer(Modifier.height(8.dp))
+                            
+                            val cats = listOf(
+                                Icons.Rounded.LocalGasStation to "GASOLINERAS", 
+                                Icons.Rounded.Restaurant to "RESTAURANTES", 
+                                Icons.Rounded.LocalParking to "PARKINGS", 
+                                Icons.Rounded.AccountBalance to "MONUMENTOS", 
+                                Icons.Rounded.Terrain to "NATURALEZA"
+                            )
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                cats.forEach { (icon, cat) ->
+                                    val isSel = selectedPois.contains(cat)
+                                    Surface(
+                                        onClick = { 
+                                            selectedPois = if (isSel) selectedPois - cat else selectedPois + cat
+                                            if (!isSel) {
+                                                if (lastSearchLat != null && lastSearchLon != null) {
+                                                    onExecuteEngineeringAction("FETCH_POIS|$cat|$lastSearchLat|$lastSearchLon")
+                                                } else {
+                                                    onExecuteEngineeringAction("FETCH_POIS|$cat")
+                                                }
+                                            } else {
+                                                onExecuteEngineeringAction("CLEAR_POIS|$cat")
+                                            }
+                                        },
+                                        modifier = Modifier.weight(1f).height(40.dp),
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = if (isSel) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f),
+                                        border = BorderStroke(1.dp, if (isSel) LuxeColors.Gold else Color.White.copy(0.1f))
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) { 
+                                            Icon(icon, null, tint = if(isSel) LuxeColors.Gold else Color.White.copy(0.5f), modifier = Modifier.size(20.dp)) 
+                                        }
+                                    }
+                                }
+                            }
+
+                            Box(modifier = Modifier.weight(1f).padding(top = 12.dp)) {
+                                if (state.poiSuggestions.isNotEmpty()) {
+                                    LazyColumn {
+                                        items(state.poiSuggestions) { poi ->
+                                            Surface(
+                                                onClick = { if (tempWaypoints.none { it.lat == poi.lat && it.lon == poi.lon }) tempWaypoints = (tempWaypoints + poi).toMutableList() },
+                                                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                                                color = LuxeColors.Gold.copy(0.05f),
+                                                shape = RoundedCornerShape(8.dp),
+                                                border = BorderStroke(0.5.dp, LuxeColors.Gold.copy(0.2f))
+                                            ) {
+                                                Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(Icons.Rounded.AddLocation, null, tint = LuxeColors.Gold, modifier = Modifier.size(14.dp))
+                                                    Spacer(Modifier.width(8.dp))
+                                                    Text(poi.name, color = Color.White, fontSize = 10.sp, maxLines = 1)
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Text("Selecciona una categoría para explorar el área.", color = Color.White.copy(0.3f), fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.align(Alignment.Center))
+                                }
+                            }
+
+                            Spacer(Modifier.height(16.dp))
+                            LuxeButton(
+                                text = if(isLaunching) "INICIANDO..." else "✨ LANZAR MISIÓN",
+                                onClick = { 
+                                    if (selectedActivity != null && tempWaypoints.isNotEmpty()) {
+                                        isLaunching = true
+                                        onStateChange(state.copy(activeProfile = selectedActivity!!, channel = tempRouteName.ifBlank { "MISIÓN TÁCTICA" }, routeWaypoints = tempWaypoints))
+                                        onExecuteEngineeringAction("UPDATE_ACTIVE_PROFILE|${selectedActivity!!.name}")
+                                        onDismiss(); onActivityPanelRequest()
+                                    }
+                                },
+                                enabled = selectedActivity != null && tempWaypoints.isNotEmpty() && !isLaunching,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                containerColor = LuxeColors.Gold,
+                                contentColor = Color.Black
+                            )
+                        }
                     }
                 },
                 confirmButton = {}
             )
         }
+        RadioDialogType.SEARCH_DESTINATION -> {}
+        RadioDialogType.SOS_CONFIRM -> SOSConfirmDialog(
+            onConfirm = {
+                onStateChange(state.copy(activeProfile = ActivityProfile.SOCORRISTAS, channel = "EMERGENCIAS", isMotoModeEnabled = true))
+                onExecuteEngineeringAction("UPDATE_ACTIVE_PROFILE|SOCORRISTAS")
+                onDismiss()
+            },
+            onDismiss = onDismiss
+        )
         RadioDialogType.MIC_REQUEST -> MicRequestDialog(
             onAccept = {
                 onDismiss()
@@ -1274,7 +973,8 @@ fun RadioDialogs(
                 .map { (name, uInRoom) ->
                     val activity = uInRoom.map { it.activity }.find { it != ActivityProfile.NORMAL } ?: ActivityProfile.NORMAL
                     val subtone = uInRoom.firstOrNull()?.subtone ?: "0000"
-                    QuadItem(name, uInRoom.size, activity, subtone)
+                    val item: QuadItem<String, Int, ActivityProfile, String> = QuadItem(name, uInRoom.size, activity, subtone)
+                    item
                 }.sortedByDescending { it.second }
 
             AlertDialog(
@@ -1293,12 +993,12 @@ fun RadioDialogs(
                 text = {
                     Column {
                         Text("Crea tu Barrio, tu pueblo, tu lugar, tu sala... privada o pública.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LuxeColors.Gold)
-                        Text("Escribe el nombre de un nuevo canal o selecciona uno de los activos en ${state.city}.", fontSize = 11.sp, color = Color.White.copy(0.6f), modifier = Modifier.padding(top = 4.dp))
+                        Text("Escribe el nombre de un nuevo canal o selecciona uno de los oficiales.", fontSize = 11.sp, color = Color.White.copy(0.6f), modifier = Modifier.padding(top = 4.dp))
                         Spacer(Modifier.height(20.dp))
                         OutlinedTextField(
                             value = newChannelName,
                             onValueChange = { if (it.length <= 20) newChannelName = it.uppercase() },
-                            placeholder = { Text("NOMBRE CANAL (EJ: BARRIO OESTE)", color = Color.White.copy(0.2f)) },
+                            placeholder = { Text("NOMBRE CANAL / CIUDAD", color = Color.White.copy(0.2f)) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
                             singleLine = true,
@@ -1309,6 +1009,45 @@ fun RadioDialogs(
                                 unfocusedBorderColor = Color.White.copy(0.1f)
                             )
                         )
+                        
+                        // --- 🏘️ SUGERENCIAS DE CIUDADES (CANALES OFICIALES) ---
+                        val filteredCities = remember(newChannelName) {
+                            if (newChannelName.length >= 1) {
+                                SPAIN_CITIES.filter { 
+                                    it.contains(newChannelName, ignoreCase = true) && it != state.city 
+                                }.take(8)
+                            } else emptyList()
+                        }
+                        
+                        if (filteredCities.isNotEmpty()) {
+                            Spacer(Modifier.height(12.dp))
+                            Text("CANALES CIUDADES (NACIONAL)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
+                            Spacer(Modifier.height(8.dp))
+                            LazyColumn(modifier = Modifier.heightIn(max = 250.dp)) {
+                                items(filteredCities) { cityName ->
+                                    Surface(
+                                        onClick = { 
+                                            onStateChange(state.copy(city = cityName, channel = "GENERAL", subtone = "0000"))
+                                            onDismiss()
+                                            onNotification(AppNotification("SINTONIZANDO CIUDAD", "Has entrado en la frecuencia de $cityName", NotificationType.Success))
+                                        },
+                                        color = Color.White.copy(0.04f),
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.2f))
+                                    ) {
+                                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Rounded.LocationCity, null, tint = LuxeColors.Gold, modifier = Modifier.size(18.dp))
+                                            Spacer(Modifier.width(12.dp))
+                                            Text(cityName, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                            Spacer(Modifier.weight(1f))
+                                            Icon(Icons.Rounded.ChevronRight, null, tint = LuxeColors.Gold.copy(0.4f), modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         Spacer(Modifier.height(16.dp))
                         if (activeRooms.isNotEmpty()) {
                             Text("SALAS ACTIVAS EN TU ZONA", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
@@ -1372,14 +1111,6 @@ fun RadioDialogs(
                 }
             },
             confirmButton = {}
-        )
-        RadioDialogType.SOS_CONFIRM -> SOSConfirmDialog(
-            onConfirm = {
-                onStateChange(state.copy(activeProfile = ActivityProfile.SOCORRISTAS, channel = "EMERGENCIAS", isMotoModeEnabled = true))
-                onExecuteEngineeringAction("UPDATE_ACTIVE_PROFILE|SOCORRISTAS")
-                onDismiss()
-            },
-            onDismiss = onDismiss
         )
         RadioDialogType.BLACKLIST -> FeatureHelpDialog(
             title = "Lista de Bloqueados",
@@ -1473,12 +1204,51 @@ fun RadioDialogs(
             title = { Text("AJUSTES DE EQUIPO", fontWeight = FontWeight.Black) },
             text = {
                 Column {
-                    Text("Configuración avanzada de hardware y red.", color = Color.White.copy(0.6f), fontSize = 12.sp)
+                    Text("Configuración de hardware, red y privacidad.", color = Color.White.copy(0.6f), fontSize = 12.sp)
                     Spacer(Modifier.height(24.dp))
                     
+                    // --- 🔔 AJUSTES DE NOTIFICACIÓN ---
+                    Text("PREFERENCIAS", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Notificaciones de Red", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("Alertas SOS y mensajes importantes.", color = Color.White.copy(0.4f), fontSize = 10.sp)
+                        }
+                        Switch(
+                            checked = state.notificationsEnabled,
+                            onCheckedChange = { onStateChange(state.copy(notificationsEnabled = it)) },
+                            colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold)
+                        )
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Privacidad GPS", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("Añadir jitter de 200m a mi zona.", color = Color.White.copy(0.4f), fontSize = 10.sp)
+                        }
+                        Switch(
+                            checked = state.isGpsPrivacyEnabled,
+                            onCheckedChange = { onStateChange(state.copy(isGpsPrivacyEnabled = it)) },
+                            colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold)
+                        )
+                    }
+                    
+                    Spacer(Modifier.height(24.dp))
+                    
+                    // --- 🎚️ CONTROLES ANALÓGICOS ---
+                    Text("SENSIBILIDAD Y FILTRADO", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    Spacer(Modifier.height(12.dp))
+                    
+                    EliteSlider("SQUELCH (FILTRO)", state.squelch) { onStateChange(state.copy(squelch = it)) }
+                    Spacer(Modifier.height(12.dp))
+                    EliteSlider("GANANCIA DE RF", state.rfGain) { onStateChange(state.copy(rfGain = it)) }
+                    
+                    Spacer(Modifier.height(24.dp))
+
                     // --- ⚙️ BOTÓN ACCESO NATIVO ---
                     LuxeButton(
-                        text = "ABRIR AJUSTES ANDROID",
+                        text = "AJUSTES AVANZADOS ANDROID",
                         onClick = { onOpenSettings() },
                         enabled = true,
                         modifier = Modifier.fillMaxWidth().height(50.dp),
@@ -1497,16 +1267,43 @@ fun RadioDialogs(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(Modifier.padding(12.dp)) {
-                            Text("ESTADO DE RED", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.SignalWifiStatusbarConnectedNoInternet4, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("ESTADO DE RED", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                            }
                             Spacer(Modifier.height(8.dp))
                             Text(
-                                if (wifiVerificationResult != null) "Red: $wifiVerificationResult" else "Verificando integridad...",
+                                if (wifiVerificationResult != null) "Diagnóstico: $wifiVerificationResult" else "Verificando integridad de red...",
                                 color = Color.White,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
+
+                    Spacer(Modifier.height(24.dp))
+                    
+                    // --- 🗑️ DERECHO AL OLVIDO ---
+                    Text("SEGURIDAD Y PRIVACIDAD", color = LuxeColors.Red.copy(0.7f), fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    Spacer(Modifier.height(12.dp))
+                    Surface(
+                        onClick = { onPendingDialogChange(RadioDialogType.DELETE_DATA) },
+                        color = LuxeColors.Red.copy(0.05f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, LuxeColors.Red.copy(0.2f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.DeleteSweep, null, tint = LuxeColors.Red, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column {
+                                Text("Derecho al Olvido", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Text("Borrar permanentemente mis datos locales.", color = Color.White.copy(0.4f), fontSize = 10.sp)
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(20.dp))
                 }
             },
             confirmButton = { LuxeButton("CERRAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black) }

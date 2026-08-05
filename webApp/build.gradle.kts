@@ -11,8 +11,14 @@ kotlin {
                 devServer = (devServer ?: org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.DevServer()).apply {
                     open = true // 🔒 HARD-LOCK: Lanzar navegador automáticamente
                     port = 8080
-                    // 🔒 HARD-LOCK: Servir desde la raíz para encontrar index.html principal
-                    static = mutableListOf(project.projectDir.parentFile.absolutePath) 
+                    // 🚀 SPEED-BOOST: Servir solo archivos específicos en lugar de escanear toda la raíz
+                    static = mutableListOf(
+                        project.projectDir.parentFile.resolve("index.html").absolutePath,
+                        project.projectDir.parentFile.resolve("logo.png").absolutePath,
+                        project.projectDir.parentFile.resolve("manifest.json").absolutePath,
+                        project.projectDir.parentFile.resolve("sw.js").absolutePath,
+                        project.projectDir.parentFile.resolve("google9312739a0adb99dd.html").absolutePath
+                    ) 
                 }
                 // 🔒 HARD-LOCK: El nombre del archivo DEBE coincidir con index.html
                 outputFileName = "webApp.js"

@@ -1,13 +1,23 @@
 {
-  "name": "ON AIR SPAIN | Radio CB y Modo Moto",
+  "name": "ON AIR SPAIN | Red Social de Voz Táctica",
   "short_name": "ON AIR",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#0F172A",
   "theme_color": "#0F172A",
-  "description": "Radio CB Digital, Modo Moto con filtro de viento y Red de Supervivencia P2P para deportes y seguridad.",
-  "categories": ["social", "sports", "utilities", "security"],
+  "description": "Radio CB Digital de última generación. Modo Moto con filtrado de viento, Planificador de Misiones y Red Social de Voz en tiempo real.",
+  "categories": ["social", "sports", "utilities", "travel", "navigation"],
+  "dir": "ltr",
+  "lang": "es-ES",
+  "prefer_related_applications": true,
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.sagon.on",
+      "id": "com.sagon.on"
+    }
+  ],
   "icons": [
     {
       "src": "logo.png",
@@ -26,7 +36,8 @@
       "src": "https://asurpan.github.io/sevillaON/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "label": "Logo ON AIR SPAIN"
+      "label": "Logo ON AIR SPAIN",
+      "form_factor": "narrow"
     }
   ]
 }

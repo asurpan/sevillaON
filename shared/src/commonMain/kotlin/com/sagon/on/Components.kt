@@ -42,104 +42,76 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import kotlinx.coroutines.delay
 import kotlin.math.*
-import kotlin.random.Random
+
 
 @Composable
 fun StarryBackground(activity: Float = 0f, isEcoMode: Boolean = false, hole: androidx.compose.ui.geometry.Rect? = null) {
-    val infiniteTransition = rememberInfiniteTransition(label = "Stars")
-    val alpha by if (isEcoMode) remember { mutableStateOf(0.4f) } else infiniteTransition.animateFloat(
-        initialValue = 0.2f, targetValue = 0.8f,
-        animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing), RepeatMode.Reverse),
-        label = "StarAlpha"
-    )
-    val starProgress by if (isEcoMode) remember { mutableStateOf(0f) } else infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(25000, easing = LinearEasing), RepeatMode.Restart),
-        label = "StarMove"
+    val infiniteTransition = rememberInfiniteTransition(label = "PoolFlow")
+    
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.05f, targetValue = 0.15f,
+        animationSpec = infiniteRepeatable(tween(5000, easing = LinearOutSlowInEasing), RepeatMode.Reverse),
+        label = "PulseAlpha"
     )
     
-    val auroraAlpha by animateFloatAsState(
-        targetValue = if (isEcoMode) 0f else (if (activity > 0) 0.6f else 0.15f),
-        animationSpec = tween(1000), label = "AuroraAlpha"
+    val moveProgress by infiniteTransition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(20000, easing = LinearEasing), RepeatMode.Restart),
+        label = "Move"
     )
 
     Canvas(Modifier.fillMaxSize()) {
-        // --- 🛡️ SISTEMA DE RECORTE PARA MAPA REAL ---
         if (hole != null) {
             clipRect(
-                left = hole.left,
-                top = hole.top,
-                right = hole.right,
-                bottom = hole.bottom,
+                left = hole.left, top = hole.top, right = hole.right, bottom = hole.bottom,
                 clipOp = ClipOp.Difference
             ) {
-                drawStarryContent(activity, isEcoMode, starProgress, alpha, auroraAlpha, auroraAlpha)
+                drawPoolContent(activity, isEcoMode, moveProgress, pulseAlpha)
             }
         } else {
-            drawStarryContent(activity, isEcoMode, starProgress, alpha, auroraAlpha, auroraAlpha)
+            drawPoolContent(activity, isEcoMode, moveProgress, pulseAlpha)
         }
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStarryContent(
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPoolContent(
     activity: Float,
     isEcoMode: Boolean,
-    starProgress: Float,
-    alpha: Float,
-    auroraAlpha: Float,
-    unused: Float // Solo para mantener firma
+    progress: Float,
+    pulseAlpha: Float
 ) {
-    // --- 🌌 CAPA 1: NEBULOSA/AURORA LUXE (Desactivada en ECO) ---
+    // 1. FONDO BASE PROFUNDO
+    drawRect(color = Color(0xFF020617))
+
     if (!isEcoMode) {
-        val auroraBrush = Brush.radialGradient(
-            colors = listOf(
-                LuxeColors.ElectricBlue.copy(0.1f), 
-                Color.Transparent
-            ),
-            center = Offset(size.width * (0.5f + sin(starProgress * 2 * PI.toFloat()) * 0.2f), size.height * 0.3f),
-            radius = size.width * 1.5f
+        // 2. AURORA BLUE (Nébula fluida profesional)
+        val center = Offset(
+            size.width * (0.5f + sin(progress * 2 * PI.toFloat()) * 0.15f),
+            size.height * (0.3f + cos(progress * PI.toFloat()) * 0.1f)
         )
-        drawRect(brush = auroraBrush, alpha = auroraAlpha)
-    }
-
-    // --- ✨ CAPA 2: ESTRELLAS ---
-    val center = Offset(size.width / 2, size.height / 2)
-    val maxDist = size.width.coerceAtLeast(size.height)
-    val stars = if (isEcoMode) 60 else 120 
-    for (i in 0 until stars) {
-        val random = Random(i.toLong())
-        val angle = random.nextFloat() * 2 * PI.toFloat()
-        val startDistMult = random.nextFloat()
-        
-        val currentProgress = if (isEcoMode) startDistMult else (1f - (startDistMult + starProgress).rem(1f))
-        val dist = currentProgress * maxDist
-        
-        val x = center.x + cos(angle) * dist
-        val y = center.y + sin(angle) * dist
-        
-        val radius = (currentProgress * 2.5.dp.toPx()).coerceAtLeast(0.1.dp.toPx())
-        val individualAlpha = (currentProgress * alpha * 0.7f).coerceIn(0f, 1f)
-        
-        drawCircle(
-            color = if (i % 10 == 0) Color.White.copy(0.5f) else Color.White, 
-            radius = radius,
-            center = Offset(x, y),
-            alpha = individualAlpha
-        )
-    }
-
-    // --- 🌊 CAPA 3: ONDAS DE PROPAGACIÓN (Desactivadas en ECO) ---
-    if (activity > 0 && !isEcoMode) {
-        val waveProgress = (starProgress * 5).rem(1f)
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(Color.Transparent, LuxeColors.ElectricBlue.copy(0.1f * (1f - waveProgress)), Color.Transparent),
+                colors = listOf(LuxeColors.Gold.copy(alpha = pulseAlpha + activity * 0.1f), Color.Transparent),
                 center = center,
-                radius = maxDist * waveProgress
+                radius = size.width * 1.2f
             ),
-            radius = maxDist * waveProgress,
             center = center,
-            style = Stroke(width = 1.5.dp.toPx())
+            radius = size.width * 1.2f
+        )
+
+        // 3. REFLEJOS LÍQUIDOS SUTILES
+        val liquidCenter = Offset(
+            size.width * (0.2f + cos(progress * 2 * PI.toFloat()) * 0.1f),
+            size.height * 0.8f
+        )
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(Color.White.copy(0.02f), Color.Transparent),
+                center = liquidCenter,
+                radius = size.width * 0.8f
+            ),
+            center = liquidCenter,
+            radius = size.width * 0.8f
         )
     }
 }
@@ -317,7 +289,7 @@ fun AnalogMeter(value: Float, isTransmitting: Boolean, modifier: Modifier = Modi
                 val isMajor = i % 4 == 0
                 val isMedium = i % 2 == 0 && !isMajor
                 val markLen = if (isMajor) 18.dp.toPx() else if (isMedium) 12.dp.toPx() else 6.dp.toPx()
-                val color = if (i >= 16) LuxeColors.Red else Color(0xFF22C55E)
+                val color = if (i >= 16) LuxeColors.Red else LuxeColors.Gold
                 
                 drawLine(
                     color = if (isMajor || isMedium) color else color.copy(0.3f),
@@ -1106,14 +1078,14 @@ fun NotificationConsentDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
 fun MicRequestDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF0F172A), // Fondo Slate muy profundo
-        modifier = Modifier.padding(16.dp).border(1.dp, LuxeColors.Green.copy(0.3f), RoundedCornerShape(12.dp)),
+        containerColor = LuxeColors.DeepSea,
+        modifier = Modifier.padding(16.dp).border(1.dp, LuxeColors.Gold.copy(0.3f), RoundedCornerShape(24.dp)),
         icon = { 
             Box(
-                modifier = Modifier.size(64.dp).background(LuxeColors.Green.copy(0.1f), CircleShape),
+                modifier = Modifier.size(64.dp).background(LuxeColors.Gold.copy(0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Rounded.Mic, null, tint = LuxeColors.Green, modifier = Modifier.size(32.dp)) 
+                Icon(Icons.Rounded.Mic, null, tint = LuxeColors.Gold, modifier = Modifier.size(32.dp)) 
             }
         },
         title = { 
@@ -1136,13 +1108,13 @@ fun MicRequestDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
                 Spacer(Modifier.height(24.dp))
                 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Rounded.RecordVoiceOver, null, tint = LuxeColors.Green, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Rounded.RecordVoiceOver, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(12.dp))
                     Text("AUDIO EN DIRECTO: Nada se graba ni se guarda.", fontSize = 11.sp, color = Color.White.copy(0.8f))
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Green, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(12.dp))
                     Text("PRIVACIDAD: El micro solo se abre al pulsar PTT.", fontSize = 11.sp, color = Color.White.copy(0.8f))
                 }
@@ -1154,7 +1126,7 @@ fun MicRequestDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
                 onClick = onAccept,
                 enabled = true,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                containerColor = LuxeColors.Green,
+                containerColor = LuxeColors.Gold,
                 contentColor = Color.Black
             )
         }

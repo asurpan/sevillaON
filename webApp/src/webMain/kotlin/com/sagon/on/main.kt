@@ -1059,8 +1059,9 @@ object RadioCore {
                     var isNight = (window.app && window.app.isNightMode === true);
                     
                     var map = L.map(containerId, {
-                        zoomControl: true, // Habilitar controles de zoom
-                        attributionControl: false
+                        zoomControl: false, 
+                        attributionControl: false,
+                        fadeAnimation: true
                     }).setView([lat || 37.3891, lon || -5.9845], 13);
                     
                     var tileUrl = isNight 
@@ -1211,7 +1212,7 @@ object RadioCore {
                 };
 
                 window.fetchTacticalPOIs = function(lat, lon, category) {
-                    if (!window.app.map) return;
+                    if (!window.app.map || !lat || !lon) return;
                     
                     if (window.app.poiLayers) {
                         window.app.poiLayers.forEach(function(layer) { window.app.map.removeLayer(layer); });
@@ -1222,19 +1223,21 @@ object RadioCore {
                     var filter = window.getPoiFilter(category);
                     var around = '(around:' + radius + ',' + lat + ',' + lon + ')';
                     
-                    // --- 🛡️ CONSTRUCCIÓN QUIRÚRGICA: Inyectar radio en cada parte separada por punto y coma ---
-                    var cleanFilter = filter.replace('(', '').replace(')', '');
-                    var queryParts = cleanFilter.split(';').filter(function(p){ return p.trim().length > 0; });
-                    var finalQuery = '[out:json][timeout:25];(';
-                    for(var i=0; i<queryParts.length; i++) {
-                        finalQuery += queryParts[i].trim() + around + ';';
-                    }
-                    finalQuery += ');out center;';
+                    // --- 🛡️ CONSTRUCCIÓN ULTRA-ROBUSTA: Inyectar radio tras cada palabra clave ---
+                    var query = '[out:json][timeout:25];(';
+                    var keywords = ["node", "way", "relation", "nwr"];
+                    var currentFilter = filter;
+                    
+                    keywords.forEach(function(kw) {
+                        currentFilter = currentFilter.split(kw).join(kw + around);
+                    });
+                    
+                    query += currentFilter + ');out center;';
                     
                     console.log("📡 BUSCANDO [" + category + "] EN: " + lat + "," + lon);
-                    console.log("🔍 QUERY: " + finalQuery);
+                    console.log("🔍 QUERY FINAL: " + query);
 
-                    fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(finalQuery))
+                    fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query))
                         .then(function(r) { return r.json(); })
                         .then(function(data) {
                             if (data && data.elements) {
@@ -1333,8 +1336,15 @@ object RadioCore {
                 };
 
                 window.updateMapMarkers = function(usersJson) {
-                    if (!window.app.map) return;
-                    var users = JSON.parse(usersJson);
+                    if (!window.app.map || !usersJson) return;
+                    
+                    var users = [];
+                    try {
+                        users = JSON.parse(usersJson);
+                    } catch(e) { return; }
+                    
+                    if (!Array.isArray(users)) return;
+
                     var map = window.app.map;
                     var markers = window.app.mapMarkers;
                     
@@ -1344,6 +1354,7 @@ object RadioCore {
                     
                     // Función interna para calcular KM entre dos puntos
                     var getDist = function(lat1, lon1, lat2, lon2) {
+                        if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return 9999;
                         var R = 6371; var dLat = (lat2-lat1) * Math.PI/180; var dLon = (lon2-lon1) * Math.PI/180;
                         var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
                         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
@@ -1375,7 +1386,7 @@ object RadioCore {
                         }
                     }
 
-                    var activeNicks = users.map(u => u.nick);
+                    var activeNicks = users.filter(u => u && u.nick).map(u => u.nick);
                     for (var nick in markers) {
                         if (activeNicks.indexOf(nick) === -1) {
                             map.removeLayer(markers[nick]);
@@ -1384,17 +1395,19 @@ object RadioCore {
                     }
                     
                     users.forEach(function(user) {
+                        if (!user || !user.nick) return;
+                        
                         var lat = user.lat;
                         var lon = user.lon;
                         
                         // --- 🛡️ PROTOCOLO SIN GPS: Si soy YO y no tengo coordenadas, me quedo en el centro ---
-                        if (user.isMe && (!lat || !lon)) {
+                        if (user.isMe && (lat == null || lon == null)) {
                             var center = map.getCenter();
                             lat = center.lat;
                             lon = center.lng;
                         }
 
-                        if (lat && lon) {
+                        if (lat != null && lon != null) {
                             var dist = getDist(myLat, myLon, lat, lon);
                             var distText = dist < 0.05 ? "AQUÍ" : (dist < 1 ? Math.round(dist*1000) + "m" : dist.toFixed(1) + "km");
                             var labelText = user.nick + " (" + distText + ")";
@@ -2815,6 +2828,7 @@ fun main() {
     win.handleEarlyRedirect().then(fun(redirected: Boolean): Any? {
         if (redirected == true) return null
 
+        println("⚡ Compose: Inicializando Viewport en 'radio-root'...")
         ComposeViewport(root) {
             // 🚀 QUITAR CARGADOR HTML CUANDO COMPOSE ARRANCA
             LaunchedEffect(Unit) {
@@ -3278,8 +3292,11 @@ fun main() {
                 val urlActivity = params.get("activity")?.toString()
                 val urlImg = params.get("img")?.toString()
 
+                val savedCity = localStorage.getItem("lastCity")
+                val finalCity = urlCity ?: (savedCity ?: "")
+
                 RadioState(
-                    city = urlCity ?: (localStorage.getItem("lastCity") ?: "SEVILLA"),
+                    city = finalCity,
                     channel = urlChannel ?: (localStorage.getItem("lastChannel") ?: "GENERAL"),
                     subtone = urlSubtone ?: (localStorage.getItem("lastSubtone") ?: "0000"),
                     isWorkModeActive = urlPro == "true",
@@ -3310,6 +3327,28 @@ fun main() {
                     nasaImageExplanation = localStorage.getItem("cache_nasa_desc")
                 )
             } catch(e: Exception) { RadioState() }
+        }
+
+        // --- 🌍 GEOLOCALIZACIÓN INICIAL POR IP ---
+        LaunchedEffect(initialState.city) {
+            if (initialState.city.isEmpty()) {
+                val win: dynamic = window
+                if (win.detectCityByGps != null) {
+                    println("🌐 Detectando ubicación por IP...")
+                    win.detectCityByGps().then { detected: String? ->
+                        if (detected != null && detected.isNotBlank()) {
+                            println("📍 Ubicación detectada: $detected")
+                            localStorage.setItem("lastCity", detected)
+                            // Recargamos para aplicar la ciudad detectada limpiamente
+                            win.location.reload()
+                        } else {
+                            // Fallback si falla todo
+                            localStorage.setItem("lastCity", "ESPAÑA (NACIONAL)")
+                            win.location.reload()
+                        }
+                    }
+                }
+            }
         }
 
 
@@ -3462,20 +3501,20 @@ fun main() {
                         )
                         val randomPhrase = phrases.random()
                         
-                        "$greeting\n\n$randomPhrase\n\n🚀 BOLETÍN NASA: $title\n\n🖼️ Imagen Real: $img\n\n📻 Escúchalo en directo: https://asurpan.github.io/sevillaON/?nasa=true"
+                        "✨ $greeting ✨\n\n$randomPhrase\n\n🔭 BOLETÍN COSMOS: $title\n\n📸 Ver Imagen Real: $img\n\n📻 Sintoniza el canal de la NASA en directo aquí:\n👉 https://asurpan.github.io/sevillaON/?nasa=true"
                     }
                     city == "RADAR" -> "🛰️ ¡He activado el CENTINELA HERTZ! \n\nEstoy usando mi móvil como un radar WiFi para detectar presencia tras los muros y localizar cables en la pared. \n\nPrueba este 'sexto sentido' táctico aquí: https://asurpan.github.io/sevillaON/"
                     proRole == "SENTINEL" -> "🛰️ Radar Hertz activado. Vigilando perturbaciones biológicas en el área."
                     proRole == "ACTIVITY" -> {
                         val activityName = platform ?: "Ruta"
                         val imgParam = if (imageUrl != null) "&img=${js("encodeURIComponent")(imageUrl)}" else ""
-                        "🏍️ ¡VAMOS DE RUTA! ($activityName)\n\nHe activado mi Radio en Modo Actividad para compartir mi posición en tiempo real con el grupo.\n\nÚnete a la ruta y sígueme en el mapa aquí: https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&activity=true&type=$activityName$imgParam"
+                        "🏍️ ¡VAMOS DE RUTA! ($activityName)\n\nHe activado mi Radio en Modo Actividad para compartir mi posición en tiempo real con el grupo.\n\nÚnete a la ruta y sígueme en el mapa aquí:\n👉 https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&activity=true&type=$activityName$imgParam"
                     }
                     else -> {
                         val salaText = if (channel == "GENERAL") "SALA GENERAL" else "CANAL PRIVADO: $channel"
                         val extraSub = if (subtone != "0000") "\n\n🔑 CÓDIGO DE ACCESO: $subtone" else ""
                         val imgParam = if (imageUrl != null) "&img=${js("encodeURIComponent")(imageUrl)}" else ""
-                        "📻 ¡BREICO, BREICO!\n\nTe invito a mi canal en la Radio ON.\n\n📍 CIUDAD: $city\n💬 CANAL: $channel$extraSub\n\nEntra directo aquí: https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone$imgParam"
+                        "📻 ¡BREICO, BREICO!\n\nTe invito a mi canal en la Radio ON AIR SPAIN.\n\n📍 CIUDAD: $city\n💬 CANAL: $channel$extraSub\n\nEntra directo a la frecuencia aquí:\n👇 https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone$imgParam"
                     }
                 }
                 
@@ -3965,51 +4004,45 @@ fun main() {
                 if (parts.isNotEmpty()) {
                     val cmd = parts[0]
 
-                    // 🔒 HARD-LOCK: BRIDGE DE MAPAS DE PRECISIÓN (ESTRATIFICACIÓN DE CAPAS)
-                    // ⚠️ NOTA CRÍTICA DE DISEÑO: EL MAPA DEBE QUEDAR SIEMPRE DENTRO DE LA CARD DEL RADAR.
-                    // ESTÁ PROHIBIDO SACAR EL MAPA A PANTALLA COMPLETA O CAMBIAR SU Z-INDEX.
                     when (cmd) {
+                        // 🔒 HARD-LOCK: BRIDGE DE MAPAS DE PRECISIÓN (ESTRATIFICACIÓN DE CAPAS)
+                        // ⚠️ NOTA CRÍTICA DE DISEÑO: EL MAPA DEBE QUEDAR SIEMPRE DENTRO DE LA CARD DEL RADAR.
+                        // ESTÁ PROHIBIDO SACAR EL MAPA A PANTALLA COMPLETA O CAMBIAR SU Z-INDEX.
                         "UPDATE_MAP_GEOMETRY" -> if (parts.size >= 5) {
                             val lVal = parts[1]; val tVal = parts[2]; val wVal = parts[3]; val hVal = parts[4]
                             val container = document.getElementById("activity-map-container")
                             val rootLayer = document.getElementById("radio-root")
                             
                             if (container != null && rootLayer != null) {
-                                // --- 🔒 PROTECCIÓN: MATEMÁTICA PURA (SIN CONCATENACIÓN) ---
-                                val l = win.parseFloat(lVal).unsafeCast<Double>()
-                                val t = win.parseFloat(tVal).unsafeCast<Double>()
-                                val w = win.parseFloat(wVal).unsafeCast<Double>()
-                                val h = win.parseFloat(hVal).unsafeCast<Double>()
-                                
-                                val roundedL = win.Math.floor(l)
-                                val roundedT = win.Math.floor(t)
-                                val roundedW = win.Math.floor(w)
-                                val roundedH = win.Math.floor(h)
-                                
-                                val r = roundedL + roundedW
-                                val b = roundedT + roundedH
+                                val l: dynamic = win.parseFloat(lVal)
+                                val t: dynamic = win.parseFloat(tVal)
+                                val w: dynamic = win.parseFloat(wVal)
+                                val h: dynamic = win.parseFloat(hVal)
 
-                                // 1. Capa Inferior: Mapa
+                                // 1. Capa Inferior: Mapa (Ajuste milimétrico)
                                 val cs = container.asDynamic().style
                                 cs.display = "block"
                                 cs.position = "fixed"
-                                cs.left = roundedL.toString() + "px"
-                                cs.top = roundedT.toString() + "px"
-                                cs.width = roundedW.toString() + "px"
-                                cs.height = roundedH.toString() + "px"
+                                cs.left = l.toString() + "px"
+                                cs.top = t.toString() + "px"
+                                cs.width = w.toString() + "px"
+                                cs.height = h.toString() + "px"
                                 cs.zIndex = "1"
                                 cs.borderRadius = "28px"
+                                cs.overflow = "hidden"
+                                cs.background = "transparent"
                                 
-                                // 2. Capa Superior: Radio (con AGUJERO TÁCTICO)
+                                // 2. Capa Superior: Radio (Transparente para ver el mapa)
                                 val rs = rootLayer.asDynamic().style
                                 rs.zIndex = "10"
                                 rs.background = "transparent"
                                 
-                                // Recorte 'inset' con bordes redondeados (Exacto al diseño de la card)
-                                val path = "inset(" + roundedT + "px calc(100% - " + r + "px) calc(100% - " + b + "px) " + roundedL + "px round 28px)"
-                                rs.clipPath = path
-                                rs.webkitClipPath = path
-                                rs.pointerEvents = "auto" // Habilitar botones
+                                // 🛡️ PROTECCIÓN CRÍTICA: NO USAR clipPath ni pointerEvents = 'auto'
+                                // El archivo index.html ya tiene la lógica de pointer-events: none para el root
+                                // y pointer-events: auto para los hijos, permitiendo interactuar con el mapa
+                                // sin ocultar los botones laterales de la radio.
+                                rs.clipPath = ""
+                                rs.webkitClipPath = ""
 
                                 if (win.app != null && win.app.map != null) {
                                     win.app.map.invalidateSize()

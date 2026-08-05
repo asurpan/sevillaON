@@ -106,6 +106,7 @@ data class RadioState(
     val isDiscreteModeEnabled: Boolean = false, // Modo Discreto: No hablar si la app está de fondo
     val isMotoModeEnabled: Boolean = false, // Modo Moto: Filtro viento + Mapa + Malla WiFi
     val isAvoidingHighways: Boolean = false, // --- 🏍️ MODO AVENTURA: Evitar autopistas ---
+    val notificationsEnabled: Boolean = true, // Notificaciones push activadas
     val discoveredPOIs: List<TacticalPOI> = emptyList(),
     val activeProfile: ActivityProfile = ActivityProfile.NORMAL,
     val motoLatitude: Double? = null,

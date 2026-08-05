@@ -1217,6 +1217,7 @@ object RadioCore {
                     else if (category === "FARMACIAS") filter = 'nwr["amenity"="pharmacy"]';
                     else if (category === "PARQUES") filter = 'nwr["leisure"="park"]';
                     else if (category === "ASEOS") filter = 'nwr["amenity"="toilets"]';
+                    else if (category === "ESTACIONES") filter = 'nwr["man_made"~"tower|mast"]["tower:type"="communication"]';
                     return filter;
                 };
 

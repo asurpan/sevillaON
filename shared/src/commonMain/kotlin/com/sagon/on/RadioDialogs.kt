@@ -1138,7 +1138,21 @@ fun RadioDialogs(
         RadioDialogType.RADAR_MAP -> {
             LaunchedEffect(Unit) {
                 onExecuteEngineeringAction("INIT_REAL_MAP")
+                // --- 🛡️ BUSCAR REPETIDORES REALES (OSM) ---
                 onExecuteEngineeringAction("FETCH_POIS|ESTACIONES")
+            }
+
+            // --- 🛰️ MOTOR DE RADAR EN VIVO: Sincronizar todos los usuarios con posición ---
+            LaunchedEffect(users) {
+                val participants = users.filter { it.lat != null && it.lon != null && it.nick != nick }
+                // Incluimos a nosotros mismos (azul) y al resto (verde/rojo)
+                val me = """{"nick":"${nick} (YO)","lat":${state.motoLatitude ?: "null"},"lon":${state.motoLongitude ?: "null"},"isTransmitting":false,"isMe":true}"""
+
+                val json = "[" + (listOf(me) + participants.map { 
+                    """{"nick":"${it.nick}","lat":${it.lat},"lon":${it.lon},"isTransmitting":${it.isTransmitting},"isMe":false}""" 
+                }).joinToString(",") + "]"
+                
+                onExecuteEngineeringAction("UPDATE_MAP_MARKERS|$json")
             }
             
             AlertDialog(

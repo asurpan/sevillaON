@@ -51,6 +51,7 @@ jobs:
           cp -f index.html ./dist/ || true
           cp -f logo.png ./dist/ || true
           cp -f sw.js ./dist/ || true
+          cp -f google9312739a0adb99dd.html ./dist/ || true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

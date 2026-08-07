@@ -591,41 +591,59 @@ object RadioCore {
                                             // --- 🧠 MOTOR DE REPLAY INTELIGENTE (SKIP SILENCES) ---
                                             var data = audioBuffer.getChannelData(0);
                                             var sampleRate = audioBuffer.sampleRate;
-                                            var threshold = 0.005; /* Umbral de detección de voz ultrasensible */
-                                            var padding = Math.floor(sampleRate * 0.1); // 100ms padding
+                                            var threshold = 0.005; /* Umbral de detección estricto */
+                                            var padding = Math.floor(sampleRate * 0.150); // 150ms padding
+                                            var crossfadeLen = Math.floor(sampleRate * 0.020); // 20ms crossfade
+                                            var scanStep = 128; // Escaneo eficiente
                                             
-                                            var activeSegments = [];
+                                            var rawSegments = [];
                                             var inVoice = false;
-                                            var start = 0;
+                                            var voiceStart = 0;
                                             
-                                            // Escaneamos el buffer buscando segmentos de voz
-                                            for (var i = 0; i < data.length; i += 100) {
+                                            for (var i = 0; i < data.length; i += scanStep) {
                                                 var magnitude = Math.abs(data[i]);
                                                 if (!inVoice && magnitude > threshold) {
                                                     inVoice = true;
-                                                    start = Math.max(0, i - padding);
-                                                } else if (inVoice && magnitude < threshold / 2) {
-                                                    var isStillSilent = true;
-                                                    for (var j = i; j < i + 500 && j < data.length; j += 100) {
+                                                    voiceStart = Math.max(0, i - padding);
+                                                } else if (inVoice && magnitude < threshold) {
+                                                    // Confirmar silencio real con ventana de 200ms
+                                                    var lookAhead = Math.floor(sampleRate * 0.2);
+                                                    var stillSilent = true;
+                                                    for (var j = i; j < i + lookAhead && j < data.length; j += scanStep) {
                                                         if (Math.abs(data[j]) > threshold) {
-                                                            isStillSilent = false;
+                                                            stillSilent = false;
                                                             break;
                                                         }
                                                     }
-                                                    if (isStillSilent) {
+                                                    if (stillSilent) {
                                                         inVoice = false;
-                                                        activeSegments.push({ start: start, end: Math.min(data.length, i + padding) });
+                                                        rawSegments.push({ start: voiceStart, end: Math.min(data.length, i + padding) });
                                                     }
                                                 }
                                             }
-                                            if (inVoice) activeSegments.push({ start: start, end: data.length });
+                                            if (inVoice) rawSegments.push({ start: voiceStart, end: data.length });
+
+                                            // Fusión de segmentos solapados por el padding
+                                            var activeSegments = [];
+                                            if (rawSegments.length > 0) {
+                                                var current = rawSegments[0];
+                                                for (var k = 1; k < rawSegments.length; k++) {
+                                                    if (rawSegments[k].start < current.end) {
+                                                        current.end = Math.max(current.end, rawSegments[k].end);
+                                                    } else {
+                                                        activeSegments.push(current);
+                                                        current = rawSegments[k];
+                                                    }
+                                                }
+                                                activeSegments.push(current);
+                                            }
 
                                             if (activeSegments.length === 0) {
                                                 if(window.dispatch_replay_empty) window.dispatch_replay_empty();
                                                 return;
                                             }
 
-                                            // Re-ensamblado de audio sin silencios
+                                            // Re-ensamblado con Crossfade de 20ms
                                             var totalLength = 0;
                                             activeSegments.forEach(function(s) { totalLength += (s.end - s.start); });
                                             
@@ -637,12 +655,11 @@ object RadioCore {
                                                 var segmentData = data.subarray(s.start, s.end);
                                                 newData.set(segmentData, offset);
                                                 
-                                                // Crossfade/Padding de 10ms para evitar chasquidos en la unión
-                                                var fadeLen = Math.floor(sampleRate * 0.01); 
-                                                if (segmentData.length > fadeLen * 2) {
-                                                    for (var f = 0; f < fadeLen; f++) {
-                                                        newData[offset + f] *= (f / fadeLen);
-                                                        newData[offset + segmentData.length - 1 - f] *= (f / fadeLen);
+                                                if (segmentData.length > crossfadeLen * 2) {
+                                                    for (var f = 0; f < crossfadeLen; f++) {
+                                                        var gain = f / crossfadeLen;
+                                                        newData[offset + f] *= gain;
+                                                        newData[offset + segmentData.length - 1 - f] *= gain;
                                                     }
                                                 }
                                                 offset += segmentData.length;

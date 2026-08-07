@@ -885,7 +885,6 @@ fun App(
                             },
                             radarActivo = radarActivo,
                             radarNivel = nivelPerturbacion,
-                            isPttLive = isPttLive,
                             onHertzSentinelRequest = { showActivityRadar = true },
                             onActivityPanelRequest = { showActivityMap = true }
                         )

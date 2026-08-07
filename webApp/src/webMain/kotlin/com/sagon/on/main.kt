@@ -750,8 +750,7 @@ object RadioCore {
                             // 🛡️ REPARACIÓN QUIRÚRGICA: LIBERAR MICROFONO PARA OTRAS APPS (WHATSAPP/GEMINI)
                             // Si otra app pide el foco, soltamos el hardware para evitar bloqueos
                             if (window.app.rawStream) {
-                                window.app.rawStream.getTracks().forEach(function(t) { t.stop(); });
-                                window.app.rawStream = null;
+                                window.app.rawStream.getTracks().forEach(function(t) { t.enabled = false; });
                             }
 
                             // Cortar PTT si estaba activo para liberar el micro
@@ -1547,6 +1546,9 @@ object RadioCore {
                     }
                     
                     window.initAudio();
+                    if (typeof window.requestMicPermission === 'function') {
+                        window.requestMicPermission();
+                    }
                     
                     if (window.app.db) {
                         // --- 🧹 BARRIDO DE SEGURIDAD (ANTI-ZOMBIS) ---
@@ -1771,13 +1773,8 @@ object RadioCore {
                     };
 
                     window.releaseMic = function() {
-                        if (window.app && window.app.rawStream) {
-                            window.app.rawStream.getTracks().forEach(function(track) { track.stop(); });
-                            window.app.rawStream = null;
-                            window.app.micAnalyser = null;
-                            window.app.micReady = false;
-                            console.log("🎙️ Micrófono liberado (Modo Privacidad Activo).");
-                        }
+                        // En Modo Radio Real, no liberamos el hardware para latencia cero.
+                        console.log("🎙️ Micro en reposo (Latencia Cero).");
                     };
 
                     // --- 🛡️ MOTOR DE VISIBILIDAD (CONSOLIDADO) ---
@@ -2033,20 +2030,15 @@ object RadioSignaling {
                 window.app.pttStateInternal = active;
 
                 if (active) {
-                    // --- 🔒 INTERRUPCIÓN DE BEEP ---
+                    // --- 📻 MOTOR INSTANTÁNEO (RADIO REAL) ---
                     if (window.app.isBeeping) {
-                        if (window.app.activeRogerOsc) {
-                            try { window.app.activeRogerOsc.stop(); } catch(e) {}
-                            window.app.activeRogerOsc = null;
-                        }
+                        if (window.app.activeRogerOsc) { try { window.app.activeRogerOsc.stop(); } catch(e) {} window.app.activeRogerOsc = null; }
                         window.app.isBeeping = false;
                         if(window.dispatch_beeping) window.dispatch_beeping(false);
                     }
-
                     if (window.speechSynthesis) window.speechSynthesis.cancel();
                     if(window.updateBgDucking) window.updateBgDucking();
 
-                    // --- 🛡️ ANTI-COLLISION SYSTEM ---
                     if (window.app.rxActiveInternal) {
                         if (typeof window.playBusyTone === 'function') window.playBusyTone();
                         if (window.dispatch_ptt_blocked) window.dispatch_ptt_blocked();
@@ -2054,98 +2046,64 @@ object RadioSignaling {
                         return;
                     }
 
-                    var executeEmission = function() {
-                        if (!window.app.pttStateInternal) return; // Cancelado
+                    // Marcamos TX inmediatamente para feedback de aguja y UI
+                    window.app.isTransmittingInternal = true;
+                    if(window.dispatch_ptt_live) window.dispatch_ptt_live(true);
 
-                        window.app.isTransmittingInternal = true;
+                    // Sincronización Firebase instantánea
+                    var currentSub = localStorage.getItem("lastSubtone") || "0000";
+                    var updates = { tx: true, subtone: currentSub };
+                    if (power !== undefined) updates.pwr = power;
+                    window.app.db.ref("users/" + window.app.sessionID).update(updates);
+
+                    if (window.app.ctx) {
+                        if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                        if (isNewPress && typeof window.playUiSound === 'function') window.playUiSound('ptt_on');
                         
-                        if (window.AndroidApp && typeof window.AndroidApp.checkNetworkCritical === 'function') {
-                            if (window.AndroidApp.checkNetworkCritical()) {
-                                window.AndroidApp.setNativePtt(true);
-                            }
+                        // --- 🔓 GATE INSTANTÁNEO (SIN ESPERAS) ---
+                        if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.01);
+                        if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.01);
+                        
+                        if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.05);
+                        if (window.app.noise) {
+                            window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
+                            window.app.noise.gain.setTargetAtTime(0.0001, window.app.ctx.currentTime, 0.01); 
                         }
+                        if (typeof window.updateMoniGain === 'function') window.updateMoniGain();
+                    }
 
-                        // --- 🛡️ SINCRONIZACIÓN ATÓMICA EN FIREBASE (Solo tras confirmar micro) ---
-                        var currentSub = localStorage.getItem("lastSubtone") || "0000";
-                        var updates = { tx: true, subtone: currentSub };
-                        if (power !== undefined) updates.pwr = power;
-                        window.app.db.ref("users/" + window.app.sessionID).update(updates);
-
-                        if (window.app.ctx) {
-                            if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
-                            if (isNewPress && typeof window.playUiSound === 'function') {
-                                window.playUiSound('ptt_on');
-                            }
-                            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-                            
-                            if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.02);
-                            
-                            // txGrab solo tras micro verificado
-                            if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.02);
-                            
-                            if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.05);
-                            if (window.app.noise) {
-                                window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
-                                window.app.noise.gain.setTargetAtTime(0.0001, window.app.ctx.currentTime, 0.01); 
-                            }
-                            if (typeof window.updateMoniGain === 'function') window.updateMoniGain();
-
-                            if(window.dispatch_ptt_live) window.dispatch_ptt_live(true);
-                            
-                            window.app.db.ref("users").once('value', function(snap) {
-                                var users = snap.val();
-                                var myCity = localStorage.getItem("lastCity") || "SEVILLA";
-                                var myChannel = localStorage.getItem("lastChannel") || "GENERAL";
-                                var mySubtone = localStorage.getItem("lastSubtone") || "0000";
-                                var now = Date.now();
-                                var connectedCount = 0;
-                                for(var id in users) { 
-                                    if(id !== window.app.sessionID && users[id].city === myCity && users[id].channel === myChannel && users[id].subtone === mySubtone) {
-                                        if (connectedCount >= 25) break;
-                                        if (now - (users[id].lastSeen || 0) < 300000) { 
-                                            if (!window.app.activeCalls[id] || !window.app.activeCalls[id].open) {
-                                                window.app.activeCalls[id] = window.app.peer.call(id, window.getStream());
-                                                connectedCount++;
-                                            } else { connectedCount++; }
-                                        }
+                    // Asegurar llamadas a pares
+                    window.app.db.ref("users").once('value', function(snap) {
+                        var users = snap.val();
+                        var myCity = localStorage.getItem("lastCity") || "SEVILLA";
+                        var myChannel = localStorage.getItem("lastChannel") || "GENERAL";
+                        var mySubtone = localStorage.getItem("lastSubtone") || "0000";
+                        var now = Date.now();
+                        for(var id in users) { 
+                            if(id !== window.app.sessionID && users[id].city === myCity && users[id].channel === myChannel && users[id].subtone === mySubtone) {
+                                if (now - (users[id].lastSeen || 0) < 300000) { 
+                                    if (!window.app.activeCalls[id] || !window.app.activeCalls[id].open) {
+                                        window.app.activeCalls[id] = window.app.peer.call(id, window.getStream());
                                     }
                                 }
-                            });
-                        }
-                    };
-
-                    if (!window.app.rawStream || !window.app.micReady) {
-                        window.requestMicPermission().then(function(success) {
-                            if (success) executeEmission();
-                            else {
-                                if (window.dispatch_mic_failure) window.dispatch_mic_failure();
-                                window.app.pttStateInternal = false;
                             }
-                        });
-                    } else {
-                        executeEmission();
+                        }
+                    });
+
+                    // Calentamiento silencioso del micro si no estaba listo
+                    if (!window.app.rawStream || !window.app.micReady) {
+                        window.requestMicPermission();
                     }
                 } else {
-                    // --- SOLTANDO PTT ---
-                    var wasConfirmedTx = window.app.isTransmittingInternal;
+                    // --- 📻 SOLTANDO PTT (INSTANTÁNEO) ---
                     window.app.isTransmittingInternal = false;
                     if(window.dispatch_ptt_live) window.dispatch_ptt_live(false);
 
-                    if (window.AndroidApp && typeof window.AndroidApp.setNativePtt === 'function') {
-                        window.AndroidApp.setNativePtt(false);
-                    }
-                    
-                    if (!window.app.voxActive && window.app.rawStream) {
-                        window.app.rawStream.getTracks().forEach(function(t) { t.stop(); });
-                        window.app.rawStream = null;
-                        window.app.micReady = false;
-                    }
-
-                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.02);
-                    if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.02);
+                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
+                    if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
                     if (typeof window.updateMoniGain === 'function') window.updateMoniGain();
                     
-                    if (!roger || !wasConfirmedTx) {
+                    if (!roger) {
                         if (typeof window.playUiSound === 'function') window.playUiSound('ptt_off');
                         window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
                         if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.0, window.app.ctx.currentTime, 0.05);
@@ -2155,7 +2113,7 @@ object RadioSignaling {
                         }
                         if(window.updateBgDucking) window.updateBgDucking();
                     } else {
-                        // Roger Beep (Confirmed emission)
+                        // Roger Beep Incondicional (Radio Real)
                         if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
                         if (window.app.isBeeping) return;
 
@@ -2197,21 +2155,14 @@ object RadioSignaling {
                                 window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
                                 window.app.noise.gain.setTargetAtTime(Math.max(0.0001, window.app.lastNoiseLevel), window.app.ctx.currentTime, 0.05);
                             }
-                            if (!window.app.isTransmittingInternal) {
-                                window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
-                                if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
-                            }
+                            window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
+                            if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
                             window.app.voxHangTimer = 0;
                             window.app.voxLockoutTimestamp = Date.now() + 1000;
                             if(window.updateBgDucking) window.updateBgDucking();
                         };
 
                         oscLocal.onended = cleanupBeep;
-                        if (window.app._beepSecurityTimeout) clearTimeout(window.app._beepSecurityTimeout);
-                        window.app._beepSecurityTimeout = setTimeout(function() {
-                            if (window.app.isBeeping) cleanupBeep();
-                        }, 500);
-
                         oscRemote.start(now); oscRemote.stop(now + 0.3);
                         oscLocal.start(now); oscLocal.stop(now + 0.3);
                     }

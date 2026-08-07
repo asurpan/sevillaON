@@ -1144,14 +1144,31 @@ fun RadioDialogs(
 
             // --- 🛰️ MOTOR DE RADAR EN VIVO: Sincronizar todos los usuarios con posición ---
             LaunchedEffect(users) {
-                val participants = users.filter { it.lat != null && it.lon != null && it.nick != nick }
-                // Incluimos a nosotros mismos (azul) y al resto (verde/rojo)
-                val me = """{"nick":"${nick} (YO)","lat":${state.motoLatitude ?: "null"},"lon":${state.motoLongitude ?: "null"},"isTransmitting":false,"isMe":true}"""
+                // Incluimos a todos los usuarios. Si no tienen lat/lon, usamos el centro de su ciudad.
+                val participants = users.filter { it.nick != nick }.map { user ->
+                    val coords = if (user.lat != null && user.lon != null) {
+                        Pair(user.lat!!, user.lon!!)
+                    } else {
+                        CityCoordinates.get(user.city) ?: Pair(40.4637, -3.7492) // Fallback a centro de España
+                    }
+                    
+                    // Añadimos un pequeño jitter (desviación) si vienen de centro de ciudad para que no se solapen
+                    val jitter = if (user.lat == null) ( (user.id.hashCode() % 100) / 5000.0 ) else 0.0
+                    val lat = coords.first + jitter
+                    val lon = coords.second + jitter
 
-                val json = "[" + (listOf(me) + participants.map { 
-                    """{"nick":"${it.nick}","lat":${it.lat},"lon":${it.lon},"isTransmitting":${it.isTransmitting},"isMe":false}""" 
-                }).joinToString(",") + "]"
+                    """{"nick":"${user.nick}","lat":$lat,"lon":$lon,"isTransmitting":${user.isTransmitting},"isMe":false}"""
+                }
+
+                val myCoords = if (state.motoLatitude != null && state.motoLongitude != null) {
+                    Pair(state.motoLatitude!!, state.motoLongitude!!)
+                } else {
+                    CityCoordinates.get(state.city) ?: Pair(40.4637, -3.7492)
+                }
                 
+                val me = """{"nick":"${nick} (YO)","lat":${myCoords.first},"lon":${myCoords.second},"isTransmitting":false,"isMe":true}"""
+
+                val json = "[" + (listOf(me) + participants).joinToString(",") + "]"
                 onExecuteEngineeringAction("UPDATE_MAP_MARKERS|$json")
             }
             

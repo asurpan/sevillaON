@@ -4358,7 +4358,6 @@ fun main() {
             dgtText = dgtTextState.value,
             dgtImageUrl = dgtImageUrlState.value,
             voxActive = voxActiveState.value,
-            isPttLive = isPttLiveState.value,
             wifiVerificationResult = wifiVerificationResultState.value,
             onRouteSuggestionsReceived = { callback ->
                 win.dispatch_route_suggestions_to_app = callback

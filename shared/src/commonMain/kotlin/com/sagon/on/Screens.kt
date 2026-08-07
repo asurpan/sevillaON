@@ -346,7 +346,6 @@ fun RadioPanel(
     rx: Boolean,
     transmitterNick: String?,
     isBeeping: Boolean,
-    isPttLive: Boolean,
     isCodedRx: Boolean,
     voxActiveExternal: Boolean,
     onNoise: (Float) -> Unit,
@@ -699,17 +698,14 @@ fun RadioPanel(
                                 modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                val isPttLoading = isTransmitting && !isPttLive && !isBeeping
                                 val statusText = when {
                                     rx -> "RECIBIENDO..."
-                                    isBeeping || (isTransmitting && isPttLive) -> "ON AIR"
-                                    isPttLoading -> "CARGANDO MICRO..."
+                                    isTransmitting || isBeeping -> "ON AIR"
                                     else -> "EN ESPERA"
                                 }
                                 val statusColor = when {
                                     rx -> LuxeColors.Gold
-                                    isBeeping || (isTransmitting && isPttLive) -> Color.Red
-                                    isPttLoading -> Color(0xFFF97316)
+                                    isTransmitting || isBeeping -> Color.Red
                                     else -> Color.White.copy(0.2f)
                                 }
                                 
@@ -801,7 +797,7 @@ fun RadioPanel(
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Black,
                                             maxLines = 1,
-                                            modifier = Modifier.basicMarquee()
+                                            modifier = Modifier.weight(1f).basicMarquee()
                                         )
                                     }
                                 }
@@ -961,10 +957,8 @@ fun RadioPanel(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val isPttLoading = isTransmitting && !isPttLive && !isBeeping
                 val pttMainColor = when {
-                    isBeeping || (isTransmitting && isPttLive) -> Color.Red
-                    isPttLoading -> Color(0xFFF97316)
+                    isTransmitting || isBeeping -> Color.Red
                     rx -> Color.Green
                     else -> Color.White
                 }
@@ -1022,8 +1016,7 @@ fun RadioPanel(
                             Spacer(Modifier.width(16.dp))
                             Text(
                                 when {
-                                    isBeeping || (isTransmitting && isPttLive) -> "ON AIR"
-                                    isPttLoading -> "CARGANDO MICRO..."
+                                    isTransmitting || isBeeping -> "ON AIR"
                                     rx -> "AIRE: RECIBIENDO"
                                     else -> "PULSAR PARA HABLAR"
                                 },
@@ -1381,8 +1374,7 @@ fun ActivityPanel(
     isReplayReady: Boolean,
     onReplay: () -> Unit,
     onClose: () -> Unit,
-    onFinish: () -> Unit,
-    isPttLive: Boolean = false
+    onFinish: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -1967,10 +1959,8 @@ fun ActivityPanel(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val isPttLoading = isTransmittingState && !isPttLive && !isBeeping
                 val pttMainColor = when {
-                    isBeeping || (isTransmittingState && isPttLive) -> Color.Red
-                    isPttLoading -> Color(0xFFF97316)
+                    isTransmittingState || isBeeping -> Color.Red
                     rx -> Color.Green
                     else -> Color.White
                 }
@@ -2014,8 +2004,7 @@ fun ActivityPanel(
                             Spacer(Modifier.width(12.dp))
                             Text(
                                 when {
-                                    isBeeping || (isTransmittingState && isPttLive) -> "AIRE"
-                                    isPttLoading -> "CARGANDO..."
+                                    isTransmittingState || isBeeping -> "AIRE"
                                     rx -> "RX"
                                     else -> "HABLAR"
                                 }, 

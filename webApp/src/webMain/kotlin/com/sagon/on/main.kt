@@ -181,7 +181,7 @@ object RadioCore {
                 if (typeof firebase !== 'undefined' && firebase.initializeApp && !firebase.apps.length) firebase.initializeApp(cfg);
                 
                 window.app = {
-                    nick: "", sessionID: "", peer: null,
+                    nick: "", sessionID: "", peer: null, micReady: false, isRequestingMic: false,
                     instanceID: Math.random().toString(36).substring(2, 11), // ID único para esta pestaña/instancia
                     db: (typeof firebase !== 'undefined' && typeof firebase.database === 'function') ? firebase.database() : null,
                     ctx: null, noise: null, stream: null, rawStream: null, activeCalls: {}, 
@@ -357,7 +357,7 @@ object RadioCore {
                                     // Reset de permisos en sesión para evitar bloqueos del navegador
                                     sessionStorage.removeItem('mic_denied');
                                     
-                                    if (typeof window.requestMicPermission === 'function') {
+                                    if (typeof window.requestMicPermission === 'function' && !window.app.isRequestingMic && !window.app.pttStateInternal) {
                                         window.requestMicPermission();
                                     }
                                     
@@ -539,7 +539,7 @@ object RadioCore {
                                     } else {
                                         window.app.replayChunks.push(e.data);
                                         if (window.dispatch_replay_available) window.dispatch_replay_available(true);
-                                        if (window.app.replayChunks.length > 15) window.app.replayChunks.shift();
+                                        if (window.app.replayChunks.length > 30) window.app.replayChunks.shift();
                                     }
                                 }
                             };
@@ -549,7 +549,7 @@ object RadioCore {
                                 setTimeout(window.startReplayRecording, 2000);
                             };
 
-                            window.app.replayRecorder.start(2000); // Bloques más cortos (2s) para mayor agilidad
+                            window.app.replayRecorder.start(1000); // Bloques de 1s para mayor precisión (Total 30s)
                         } catch(e) { console.error("Error Replay:", e); }
                     }, 500);
                 };
@@ -588,33 +588,70 @@ object RadioCore {
                                                 try { window.app.currentReplaySource.stop(); } catch(e) {}
                                             }
 
-                                            // --- 🧠 MOTOR DE REPLAY INTELIGENTE (ANTI-SILENCIO) ---
+                                            // --- 🧠 MOTOR DE REPLAY INTELIGENTE (SKIP SILENCES) ---
                                             var data = audioBuffer.getChannelData(0);
+                                            var sampleRate = audioBuffer.sampleRate;
                                             var threshold = 0.005; /* Umbral de detección de voz ultrasensible */
-                                            var firstVoiceIndex = -1;
+                                            var padding = Math.floor(sampleRate * 0.1); // 100ms padding
                                             
-                                            // Escaneamos el buffer buscando el primer pico de señal real
-                                            for (var i = 0; i < data.length; i += 100) { // Salto de 100 para eficiencia
-                                                if (Math.abs(data[i]) > threshold) {
-                                                    firstVoiceIndex = i;
-                                                    break;
+                                            var activeSegments = [];
+                                            var inVoice = false;
+                                            var start = 0;
+                                            
+                                            // Escaneamos el buffer buscando segmentos de voz
+                                            for (var i = 0; i < data.length; i += 100) {
+                                                var magnitude = Math.abs(data[i]);
+                                                if (!inVoice && magnitude > threshold) {
+                                                    inVoice = true;
+                                                    start = Math.max(0, i - padding);
+                                                } else if (inVoice && magnitude < threshold / 2) {
+                                                    var isStillSilent = true;
+                                                    for (var j = i; j < i + 500 && j < data.length; j += 100) {
+                                                        if (Math.abs(data[j]) > threshold) {
+                                                            isStillSilent = false;
+                                                            break;
+                                                        }
+                                                    }
+                                                    if (isStillSilent) {
+                                                        inVoice = false;
+                                                        activeSegments.push({ start: start, end: Math.min(data.length, i + padding) });
+                                                    }
                                                 }
                                             }
+                                            if (inVoice) activeSegments.push({ start: start, end: data.length });
 
-                                            if (firstVoiceIndex === -1) {
-                                                // Si todo el buffer es silencio, informamos y salimos
+                                            if (activeSegments.length === 0) {
                                                 if(window.dispatch_replay_empty) window.dispatch_replay_empty();
                                                 return;
                                             }
 
-                                            var startTimeOffset = firstVoiceIndex / audioBuffer.sampleRate;
-                                            // Dejamos 0.2s de margen previo para no cortar la primera palabra
-                                            startTimeOffset = Math.max(0, startTimeOffset - 0.2);
+                                            // Re-ensamblado de audio sin silencios
+                                            var totalLength = 0;
+                                            activeSegments.forEach(function(s) { totalLength += (s.end - s.start); });
                                             
+                                            var newBuffer = window.app.ctx.createBuffer(1, totalLength, sampleRate);
+                                            var newData = newBuffer.getChannelData(0);
+                                            var offset = 0;
+                                            
+                                            activeSegments.forEach(function(s) {
+                                                var segmentData = data.subarray(s.start, s.end);
+                                                newData.set(segmentData, offset);
+                                                
+                                                // Crossfade/Padding de 10ms para evitar chasquidos en la unión
+                                                var fadeLen = Math.floor(sampleRate * 0.01); 
+                                                if (segmentData.length > fadeLen * 2) {
+                                                    for (var f = 0; f < fadeLen; f++) {
+                                                        newData[offset + f] *= (f / fadeLen);
+                                                        newData[offset + segmentData.length - 1 - f] *= (f / fadeLen);
+                                                    }
+                                                }
+                                                offset += segmentData.length;
+                                            });
+
                                             if(window.dispatch_replay_start) window.dispatch_replay_start();
                                             
                                             var source = window.app.ctx.createBufferSource();
-                                            source.buffer = audioBuffer;
+                                            source.buffer = newBuffer;
                                             source.connect(window.app.masterOut);
                                             window.app.currentReplaySource = source;
                                             
@@ -634,9 +671,9 @@ object RadioCore {
                                                 window.app.currentReplaySource = null;
                                             };
                                             
-                                            source.start(0, startTimeOffset);
+                                            source.start(0);
                                             var startTime = window.app.ctx.currentTime;
-                                            var duration = audioBuffer.duration - startTimeOffset;
+                                            var duration = newBuffer.duration;
                                             
                                             if (window.app.replayProgressInterval) clearInterval(window.app.replayProgressInterval);
                                             window.app.replayProgressInterval = setInterval(function() {
@@ -647,7 +684,6 @@ object RadioCore {
                                             }, 100);
                                         }, function(err) {
                                     console.error("Decode error:", err);
-                                    // Si falla el decodificador por cabeceras corruptas, reiniciamos el ciclo
                                     window.app.headerChunk = null;
                                     window.app.replayChunks = [];
                                 });
@@ -1614,116 +1650,124 @@ object RadioCore {
 
                     /* --- 🎙️ GESTIÓN DE MICRO INTELIGENTE (PRIVACIDAD & RENDIMIENTO) --- */
                     window.requestMicPermission = function() {
-                        if (!window.app || window.app.rawStream || window.app.isRequestingMic) return;
+                        if (!window.app) return Promise.resolve(false);
+                        if (window.app.rawStream && window.app.micReady) return Promise.resolve(true);
                         
-                        if (sessionStorage.getItem("mic_denied") === "true") return;
-
-                        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                            window.app.isRequestingMic = true;
-                            var constraints = {
-                                audio: { 
-                                    echoCancellation: true, 
-                                    autoGainControl: true, 
-                                    noiseSuppression: true
-                                }
-                            };
-                            navigator.mediaDevices.getUserMedia(constraints).then(function(s) {
-                                window.app.rawStream = s;
-                                window.app.isRequestingMic = false;
-                                if (window.app.ctx && window.app.ctx.state === 'suspended') window.app.ctx.resume();
-                                
-                                var micSrc = window.app.ctx.createMediaStreamSource(s);
-                                
-                                /* --- 🎙️ TX DSP: PROCESADOR DE VOZ PROFESIONAL (PUNCH) --- */
-                                /* 1. Filtro de Corte (Elimina ruidos sordos de fondo) */
-                                var txFilter = window.app.ctx.createBiquadFilter();
-                                txFilter.type = "highpass";
-                                
-                                /* --- 🏍️ MODO MOTO: FILTRO DE VIENTO AGRESIVO --- */
-                                /* Si está en modo moto, subimos el corte a 300Hz para matar el ruido de motor/viento */
-                                var cutoff = window.app.motoActive ? 300 : 80;
-                                txFilter.frequency.value = cutoff;
-                                window.app.txFilter = txFilter; /* Guardar referencia para cambios en caliente */
-
-                                /* 2. Filtro de Cuerpo (Calidez de locutor) */
-                                var txBody = window.app.ctx.createBiquadFilter();
-                                txBody.type = "peaking";
-                                txBody.frequency.value = 250;
-                                txBody.Q.value = 0.8;
-                                txBody.gain.value = 2.0; /* Calidez natural de locutor */
-                                
-                                /* 3. Enhancer de Presencia (Claridad y Brillo) */
-                                var txEnhancer = window.app.ctx.createBiquadFilter();
-                                txEnhancer.type = "peaking";
-                                txEnhancer.frequency.value = 3200; /* Subimos frecuencia para brillo cristalino */
-                                txEnhancer.Q.value = 1.0;          
-                                txEnhancer.gain.value = 2.5;       // Brillo elegante
-
-                                /* 4. Compresor de Emisora (Voz constante y potente) */
-                                /* --- 🚀 AJUSTE BROADCAST PROFESIONAL --- */
-                                var txCompressor = window.app.ctx.createDynamicsCompressor();
-                                txCompressor.threshold.value = -24; /* Umbral pro: menos ruido de fondo, más dinámica */
-                                txCompressor.knee.value = 30;       
-                                txCompressor.ratio.value = 6;       // Ratio pro: voz firme pero sin distorsión
-                                txCompressor.attack.value = 0.005;  // Ataque suave para transitorios naturales
-                                txCompressor.release.value = 0.20;  
-
-                                micSrc.connect(txFilter);
-                                txFilter.connect(txBody);
-                                txBody.connect(txEnhancer);
-                                txEnhancer.connect(txCompressor);
-
-                                window.app.micAnalyser = window.app.ctx.createAnalyser(); 
-                                window.app.micAnalyser.fftSize = 256; 
-                                txCompressor.connect(window.app.micAnalyser);
-
-                                var makeupGain = window.app.ctx.createGain();
-                                makeupGain.gain.value = 0.8; /* Ajuste fino: 0.8 para una voz de cristal en la red. */
-                                txCompressor.connect(makeupGain);
-
-                                /* --- 🛡️ TRANSMISOR DE RED (LIMPIEZA Y CONEXIÓN ABSOLUTA) --- */
-                                if (window.app.txGate) {
-                                    try { makeupGain.disconnect(window.app.txGate); } catch(e) {}
-                                    makeupGain.connect(window.app.txGate);
-                                }
-                                
-                                // --- 🛡️ MONITOR ZERO-LATENCY BYPASS ---
-                                var moniDirect = window.app.ctx.createGain();
-                                moniDirect.gain.value = 0; 
-                                makeupGain.connect(moniDirect);
-                                moniDirect.connect(window.app.masterOut); 
-                                window.app.moniGainNode = moniDirect; 
-
-                                // --- 🎸 CONEXIÓN DSP DE EFECTOS ---
-                                makeupGain.connect(window.app.echoDelay);
-
-                                // Conectamos la salida del efecto (Wet) a los destinos críticos con limpieza
-                                if (window.app.txGate) {
-                                    try { window.app.echoWet.disconnect(window.app.txGate); } catch(e) {}
-                                    window.app.echoWet.connect(window.app.txGate);
-                                }
-                                try { window.app.echoWet.disconnect(moniDirect); } catch(e) {}
-                                window.app.echoWet.connect(moniDirect);
-                                
-                                var txGrab = window.app.ctx.createGain();
-                                txGrab.gain.value = 0;
-                                makeupGain.connect(txGrab);
-                                window.app.echoWet.connect(txGrab);
-                                if (window.app.replayDest) txGrab.connect(window.app.replayDest);
-                                window.app.txGrab = txGrab;
-                                
-                                // Forzar activación de tracks a nivel de hardware
-                                s.getAudioTracks().forEach(function(t) { 
-                                    t.enabled = true; 
-                                    if (t.contentHint) t.contentHint = "speech";
-                                });
-                                
-                                console.log("🎙️ Voz vinculada al transmisor de red (Modo Potencia Máxima).");
-                            }).catch(function(err) {
-                                window.app.isRequestingMic = false;
-                                console.warn("Fallo micro:", err);
+                        if (window.app.isRequestingMic) {
+                            return new Promise(function(resolve) {
+                                var interval = setInterval(function() {
+                                    if (!window.app.isRequestingMic) {
+                                        clearInterval(interval);
+                                        resolve(!!window.app.rawStream && window.app.micReady);
+                                    }
+                                }, 100);
                             });
                         }
+
+                        if (sessionStorage.getItem("mic_denied") === "true") return Promise.resolve(false);
+
+                        return new Promise(function(resolve) {
+                            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                                window.app.isRequestingMic = true;
+                                window.app.micReady = false;
+                                var constraints = {
+                                    audio: { 
+                                        echoCancellation: true, 
+                                        autoGainControl: true, 
+                                        noiseSuppression: true
+                                    }
+                                };
+                                navigator.mediaDevices.getUserMedia(constraints).then(function(s) {
+                                    window.app.rawStream = s;
+                                    if (window.app.ctx && window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                                    
+                                    var micSrc = window.app.ctx.createMediaStreamSource(s);
+                                    
+                                    /* --- 🎙️ TX DSP: PROCESADOR DE VOZ PROFESIONAL (PUNCH) --- */
+                                    var txFilter = window.app.ctx.createBiquadFilter();
+                                    txFilter.type = "highpass";
+                                    var cutoff = window.app.motoActive ? 300 : 80;
+                                    txFilter.frequency.value = cutoff;
+                                    window.app.txFilter = txFilter;
+
+                                    var txBody = window.app.ctx.createBiquadFilter();
+                                    txBody.type = "peaking";
+                                    txBody.frequency.value = 250;
+                                    txBody.Q.value = 0.8;
+                                    txBody.gain.value = 2.0;
+                                    
+                                    var txEnhancer = window.app.ctx.createBiquadFilter();
+                                    txEnhancer.type = "peaking";
+                                    txEnhancer.frequency.value = 3200;
+                                    txEnhancer.Q.value = 1.0;          
+                                    txEnhancer.gain.value = 2.5;
+
+                                    var txCompressor = window.app.ctx.createDynamicsCompressor();
+                                    txCompressor.threshold.value = -24;
+                                    txCompressor.knee.value = 30;       
+                                    txCompressor.ratio.value = 6;
+                                    txCompressor.attack.value = 0.005;
+                                    txCompressor.release.value = 0.20;  
+
+                                    micSrc.connect(txFilter);
+                                    txFilter.connect(txBody);
+                                    txBody.connect(txEnhancer);
+                                    txEnhancer.connect(txCompressor);
+
+                                    window.app.micAnalyser = window.app.ctx.createAnalyser(); 
+                                    window.app.micAnalyser.fftSize = 256; 
+                                    txCompressor.connect(window.app.micAnalyser);
+
+                                    var makeupGain = window.app.ctx.createGain();
+                                    makeupGain.gain.value = 0.8;
+                                    txCompressor.connect(makeupGain);
+
+                                    if (window.app.txGate) {
+                                        try { makeupGain.disconnect(window.app.txGate); } catch(e) {}
+                                        makeupGain.connect(window.app.txGate);
+                                    }
+                                    
+                                    var moniDirect = window.app.ctx.createGain();
+                                    moniDirect.gain.value = 0; 
+                                    makeupGain.connect(moniDirect);
+                                    moniDirect.connect(window.app.masterOut); 
+                                    window.app.moniGainNode = moniDirect; 
+
+                                    makeupGain.connect(window.app.echoDelay);
+
+                                    if (window.app.txGate) {
+                                        try { window.app.echoWet.disconnect(window.app.txGate); } catch(e) {}
+                                        window.app.echoWet.connect(window.app.txGate);
+                                    }
+                                    try { window.app.echoWet.disconnect(moniDirect); } catch(e) {}
+                                    window.app.echoWet.connect(moniDirect);
+                                    
+                                    var txGrab = window.app.ctx.createGain();
+                                    txGrab.gain.value = 0;
+                                    makeupGain.connect(txGrab);
+                                    window.app.echoWet.connect(txGrab);
+                                    if (window.app.replayDest) txGrab.connect(window.app.replayDest);
+                                    window.app.txGrab = txGrab;
+                                    
+                                    s.getAudioTracks().forEach(function(t) { 
+                                        t.enabled = true; 
+                                        if (t.contentHint) t.contentHint = "speech";
+                                    });
+                                    
+                                    window.app.isRequestingMic = false;
+                                    window.app.micReady = true;
+                                    console.log("🎙️ Voz vinculada al transmisor de red (Micro Live).");
+                                    resolve(true);
+                                }).catch(function(err) {
+                                    window.app.isRequestingMic = false;
+                                    window.app.micReady = false;
+                                    console.warn("Fallo micro:", err);
+                                    resolve(false);
+                                });
+                            } else {
+                                resolve(false);
+                            }
+                        });
                     };
 
                     window.releaseMic = function() {
@@ -1731,6 +1775,7 @@ object RadioCore {
                             window.app.rawStream.getTracks().forEach(function(track) { track.stop(); });
                             window.app.rawStream = null;
                             window.app.micAnalyser = null;
+                            window.app.micReady = false;
                             console.log("🎙️ Micrófono liberado (Modo Privacidad Activo).");
                         }
                     };
@@ -1973,25 +2018,23 @@ object RadioSignaling {
             };
 
             window.broadcastPTT = function(active, roger, power) {
-                    if(!window.app || !window.app.peer || !window.app.db || window.app.isTerminated) return;
-                    
-                    /* --- 🔒 DETECCIÓN DE CAMBIO REAL: Blindaje contra bucles de sonido --- */
-                    var isNewPress = (active === true) && (window.app.pttStateInternal !== true);
-                    var isRelease = (active === false) && (window.app.pttStateInternal === true);
-                    
-                    /* Si no hay cambio de estado físico, solo actualizamos potencia en red y salimos */
-                    if (window.app.pttStateInternal === active) {
-                        if (active && power !== undefined) {
-                            window.app.db.ref("users/" + window.app.sessionID).update({ pwr: power });
-                        }
-                        return;
+                if(!window.app || !window.app.peer || !window.app.db || window.app.isTerminated) return;
+                
+                var isNewPress = (active === true) && (window.app.pttStateInternal !== true);
+                var isRelease = (active === false) && (window.app.pttStateInternal === true);
+                
+                if (window.app.pttStateInternal === active) {
+                    if (active && power !== undefined) {
+                        window.app.db.ref("users/" + window.app.sessionID).update({ pwr: power });
                     }
-                    
-                    /* Guardamos el nuevo estado físico */
-                    window.app.pttStateInternal = active;
+                    return;
+                }
+                
+                window.app.pttStateInternal = active;
 
-                    /* --- 🔒 INTERRUPCIÓN DE BEEP --- */
-                    if (active && window.app.isBeeping) {
+                if (active) {
+                    // --- 🔒 INTERRUPCIÓN DE BEEP ---
+                    if (window.app.isBeeping) {
                         if (window.app.activeRogerOsc) {
                             try { window.app.activeRogerOsc.stop(); } catch(e) {}
                             window.app.activeRogerOsc = null;
@@ -2000,198 +2043,177 @@ object RadioSignaling {
                         if(window.dispatch_beeping) window.dispatch_beeping(false);
                     }
 
-                    window.app.isTransmittingInternal = active;
-
-                    if (active && window.speechSynthesis) window.speechSynthesis.cancel();
+                    if (window.speechSynthesis) window.speechSynthesis.cancel();
                     if(window.updateBgDucking) window.updateBgDucking();
 
-                    if (active && !window.app.rawStream) {
-                        if (sessionStorage.getItem("mic_denied") === "true") {
-                            if (window.dispatch_mic_failure) window.dispatch_mic_failure();
-                            return;
-                        }
-                        if (typeof window.requestMicPermission === 'function') {
-                            window.requestMicPermission();
-                        }
+                    // --- 🛡️ ANTI-COLLISION SYSTEM ---
+                    if (window.app.rxActiveInternal) {
+                        if (typeof window.playBusyTone === 'function') window.playBusyTone();
+                        if (window.dispatch_ptt_blocked) window.dispatch_ptt_blocked();
+                        window.app.pttStateInternal = false;
+                        return;
                     }
 
-                /* --- 🛡️ ANTI-COLLISION SYSTEM --- */
-                if (active && window.app.rxActiveInternal && !isNewPress) {
-                     /* Ya gestionado por Compose o bloqueo previo */
-                }
+                    var executeEmission = function() {
+                        if (!window.app.pttStateInternal) return; // Cancelado
 
-                if (active && window.app.rxActiveInternal && isNewPress) {
-                    if (typeof window.playBusyTone === 'function') window.playBusyTone();
-                    if (window.dispatch_ptt_blocked) window.dispatch_ptt_blocked();
-                    window.app.isTransmittingInternal = false;
-                    window.app.pttStateInternal = false;
-                    return;
-                }
-
-                /* --- 🛡️ SINCRONIZACIÓN ATÓMICA DE ESTADOS --- */
-                if (active) {
-                    if (window.AndroidApp && typeof window.AndroidApp.checkNetworkCritical === 'function') {
-                        if (window.AndroidApp.checkNetworkCritical()) {
-                            window.AndroidApp.setNativePtt(true);
-                        }
-                    }
-                    window.app.isBeeping = false;
-                    if(window.dispatch_beeping) window.dispatch_beeping(false);
-                }
-
-                try {
-                    var currentSub = localStorage.getItem("lastSubtone") || "0000";
-                    var updates = { tx: active, subtone: currentSub };
-                    if (active && power !== undefined) updates.pwr = power;
-                    
-                    if (!active && roger) {
-                        delete updates.tx;
-                        window.app.db.ref("users/" + window.app.sessionID).update(updates);
-                    } else {
-                        window.app.db.ref("users/" + window.app.sessionID).update(updates);
-                    }
-                } catch(e) {}
-
-                if (window.app.ctx) {
-                    if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
-                    
-                    if (active) {
-                        /* --- 🔊 FEEDBACK TÁCTICO: SOLO EN EL MOMENTO DEL CLIC --- */
-                        if (isNewPress && typeof window.playUiSound === 'function') {
-                            window.playUiSound('ptt_on');
-                        }
-
-                        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-                        if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.02);
-                        if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.02);
-                        if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.05);
-                        if (window.app.noise) {
-                            window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
-                            window.app.noise.gain.setTargetAtTime(0.0001, window.app.ctx.currentTime, 0.01); 
-                        }
-                        if (typeof window.updateMoniGain === 'function') window.updateMoniGain();
+                        window.app.isTransmittingInternal = true;
                         
-                        /* Conectar con otros bajo demanda */
-                        window.app.db.ref("users").once('value', function(snap) {
-                            var users = snap.val();
-                            var myCity = localStorage.getItem("lastCity") || "SEVILLA";
-                            var myChannel = localStorage.getItem("lastChannel") || "GENERAL";
-                            var mySubtone = localStorage.getItem("lastSubtone") || "0000";
-                            var now = Date.now();
-                            var connectedCount = 0;
-                            for(var id in users) { 
-                                if(id !== window.app.sessionID && users[id].city === myCity && users[id].channel === myChannel && users[id].subtone === mySubtone) {
-                                    if (connectedCount >= 25) break;
-                                    var lastSeen = users[id].lastSeen || 0;
-                                    if (now - lastSeen < 300000) { 
-                                        if (!window.app.activeCalls[id] || !window.app.activeCalls[id].open) {
-                                            window.app.activeCalls[id] = window.app.peer.call(id, window.getStream());
-                                            connectedCount++;
-                                        } else { connectedCount++; }
+                        if (window.AndroidApp && typeof window.AndroidApp.checkNetworkCritical === 'function') {
+                            if (window.AndroidApp.checkNetworkCritical()) {
+                                window.AndroidApp.setNativePtt(true);
+                            }
+                        }
+
+                        // --- 🛡️ SINCRONIZACIÓN ATÓMICA EN FIREBASE (Solo tras confirmar micro) ---
+                        var currentSub = localStorage.getItem("lastSubtone") || "0000";
+                        var updates = { tx: true, subtone: currentSub };
+                        if (power !== undefined) updates.pwr = power;
+                        window.app.db.ref("users/" + window.app.sessionID).update(updates);
+
+                        if (window.app.ctx) {
+                            if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                            if (isNewPress && typeof window.playUiSound === 'function') {
+                                window.playUiSound('ptt_on');
+                            }
+                            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                            
+                            if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.02);
+                            
+                            // txGrab solo tras micro verificado
+                            if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.02);
+                            
+                            if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.05);
+                            if (window.app.noise) {
+                                window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
+                                window.app.noise.gain.setTargetAtTime(0.0001, window.app.ctx.currentTime, 0.01); 
+                            }
+                            if (typeof window.updateMoniGain === 'function') window.updateMoniGain();
+
+                            if(window.dispatch_ptt_live) window.dispatch_ptt_live(true);
+                            
+                            window.app.db.ref("users").once('value', function(snap) {
+                                var users = snap.val();
+                                var myCity = localStorage.getItem("lastCity") || "SEVILLA";
+                                var myChannel = localStorage.getItem("lastChannel") || "GENERAL";
+                                var mySubtone = localStorage.getItem("lastSubtone") || "0000";
+                                var now = Date.now();
+                                var connectedCount = 0;
+                                for(var id in users) { 
+                                    if(id !== window.app.sessionID && users[id].city === myCity && users[id].channel === myChannel && users[id].subtone === mySubtone) {
+                                        if (connectedCount >= 25) break;
+                                        if (now - (users[id].lastSeen || 0) < 300000) { 
+                                            if (!window.app.activeCalls[id] || !window.app.activeCalls[id].open) {
+                                                window.app.activeCalls[id] = window.app.peer.call(id, window.getStream());
+                                                connectedCount++;
+                                            } else { connectedCount++; }
+                                        }
                                     }
                                 }
+                            });
+                        }
+                    };
+
+                    if (!window.app.rawStream || !window.app.micReady) {
+                        window.requestMicPermission().then(function(success) {
+                            if (success) executeEmission();
+                            else {
+                                if (window.dispatch_mic_failure) window.dispatch_mic_failure();
+                                window.app.pttStateInternal = false;
                             }
                         });
                     } else {
-                        /* --- SOLTANDO PTT --- */
-                        if (window.AndroidApp && typeof window.AndroidApp.setNativePtt === 'function') {
-                            window.AndroidApp.setNativePtt(false);
+                        executeEmission();
+                    }
+                } else {
+                    // --- SOLTANDO PTT ---
+                    var wasConfirmedTx = window.app.isTransmittingInternal;
+                    window.app.isTransmittingInternal = false;
+                    if(window.dispatch_ptt_live) window.dispatch_ptt_live(false);
+
+                    if (window.AndroidApp && typeof window.AndroidApp.setNativePtt === 'function') {
+                        window.AndroidApp.setNativePtt(false);
+                    }
+                    
+                    if (!window.app.voxActive && window.app.rawStream) {
+                        window.app.rawStream.getTracks().forEach(function(t) { t.stop(); });
+                        window.app.rawStream = null;
+                        window.app.micReady = false;
+                    }
+
+                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.02);
+                    if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.02);
+                    if (typeof window.updateMoniGain === 'function') window.updateMoniGain();
+                    
+                    if (!roger || !wasConfirmedTx) {
+                        if (typeof window.playUiSound === 'function') window.playUiSound('ptt_off');
+                        window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
+                        if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.0, window.app.ctx.currentTime, 0.05);
+                        if (window.app.noise) {
+                            window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
+                            window.app.noise.gain.setTargetAtTime(Math.max(0.0001, window.app.lastNoiseLevel), window.app.ctx.currentTime, 0.05);
                         }
+                        if(window.updateBgDucking) window.updateBgDucking();
+                    } else {
+                        // Roger Beep (Confirmed emission)
+                        if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                        if (window.app.isBeeping) return;
+
+                        window.app.isBeeping = true;
+                        if(window.dispatch_beeping) window.dispatch_beeping(true);
                         
-                        if (!window.app.voxActive && window.app.rawStream) {
-                            window.app.rawStream.getTracks().forEach(function(t) { t.stop(); });
-                            window.app.rawStream = null;
-                        }
+                        var now = window.app.ctx.currentTime;
+                        var oscRemote = window.app.ctx.createOscillator();
+                        var gRemote = window.app.ctx.createGain();
+                        oscRemote.type = 'sine';
+                        oscRemote.frequency.setValueAtTime(1955, now);
+                        var remoteVol = (window.app.rfGain || 0.5) * 0.15;
+                        gRemote.gain.setValueAtTime(0.0001, now);
+                        gRemote.gain.linearRampToValueAtTime(remoteVol, now + 0.005);
+                        gRemote.gain.setValueAtTime(remoteVol, now + 0.28);
+                        gRemote.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+                        oscRemote.connect(gRemote);
+                        if (window.app.txBus) gRemote.connect(window.app.txBus);
 
-                        if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.02);
-                        if (window.app.txGrab) window.app.txGrab.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.02);
-                        if (typeof window.updateMoniGain === 'function') window.updateMoniGain();
-                        
-                        if (!roger) {
-                            if (typeof window.playUiSound === 'function') window.playUiSound('ptt_off');
-                        }
-                        
-                        if (roger) {
-                            if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
-                            if (window.app.isBeeping) return;
+                        var oscLocal = window.app.ctx.createOscillator();
+                        window.app.activeRogerOsc = oscLocal;
+                        var gLocal = window.app.ctx.createGain();
+                        oscLocal.type = 'sine';
+                        oscLocal.frequency.setValueAtTime(1955, now);
+                        gLocal.gain.setValueAtTime(0.0001, now);
+                        gLocal.gain.linearRampToValueAtTime(0.18, now + 0.005);
+                        gLocal.gain.setValueAtTime(0.18, now + 0.28);
+                        gLocal.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+                        oscLocal.connect(gLocal);
+                        gLocal.connect(window.app.ctx.destination);
 
-                            if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
-                            window.app.isBeeping = true;
-                            if(window.dispatch_beeping) window.dispatch_beeping(true);
-                            
-                            var now = window.app.ctx.currentTime;
-
-                            /* --- 🔒 HARD-LOCK: PROTECTED CORE - MOTOR DE ROGER BEEP --- */
-                            /* --- 🔒 ROGER BEEP: EMISIÓN A RED (NORMALIZADA) --- */
-                            var oscRemote = window.app.ctx.createOscillator();
-                            var gRemote = window.app.ctx.createGain();
-                            oscRemote.type = 'sine';
-                            oscRemote.frequency.setValueAtTime(1955, now);
-                            var remoteVol = (window.app.rfGain || 0.5) * 0.15;
-                            gRemote.gain.setValueAtTime(0.0001, now);
-                            gRemote.gain.linearRampToValueAtTime(remoteVol, now + 0.005);
-                            gRemote.gain.setValueAtTime(remoteVol, now + 0.28);
-                            gRemote.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
-                            oscRemote.connect(gRemote);
-                            if (window.app.txBus) gRemote.connect(window.app.txBus);
-
-                            /* --- 🎙️ ROGER BEEP: FEEDBACK LOCAL (PURO Y LIMPIO) --- */
-                            var oscLocal = window.app.ctx.createOscillator();
-                            window.app.activeRogerOsc = oscLocal;
-                            var gLocal = window.app.ctx.createGain();
-                            oscLocal.type = 'sine';
-                            oscLocal.frequency.setValueAtTime(1955, now);
-                            gLocal.gain.setValueAtTime(0.0001, now);
-                            gLocal.gain.linearRampToValueAtTime(0.18, now + 0.005);
-                            gLocal.gain.setValueAtTime(0.18, now + 0.28);
-                            gLocal.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
-                            oscLocal.connect(gLocal);
-                            gLocal.connect(window.app.ctx.destination);
-
-                            var cleanupBeep = function() {
-                                if (window.app.activeRogerOsc === oscLocal) window.app.activeRogerOsc = null;
-                                if (!window.app.isBeeping) return;
-                                window.app.isBeeping = false;
-                                if(window.dispatch_beeping) window.dispatch_beeping(false);
-                                if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.0, window.app.ctx.currentTime, 0.05);
-                                if (window.app.noise) {
-                                    window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
-                                    window.app.noise.gain.setTargetAtTime(Math.max(0.0001, window.app.lastNoiseLevel), window.app.ctx.currentTime, 0.05);
-                                }
-                                if (!window.app.isTransmittingInternal) {
-                                    window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
-                                    if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
-                                }
-                                window.app.voxHangTimer = 0;
-                                window.app.voxLockoutTimestamp = Date.now() + 1000;
-                                if(window.updateBgDucking) window.updateBgDucking();
-                            };
-
-                            oscLocal.onended = cleanupBeep;
-                            
-                            // --- 🛡️ SEGURO DE VIDA (FORZADO): Blindaje total del fin de Roger Beep ---
-                            // Si por algún motivo el navegador no dispara el evento 'onended',
-                            // este temporizador asegura que la radio se resetee en 500ms (el beep dura 300ms).
-                            if (window.app._beepSecurityTimeout) clearTimeout(window.app._beepSecurityTimeout);
-                            window.app._beepSecurityTimeout = setTimeout(function() {
-                                if (window.app.isBeeping) {
-                                    console.warn("🛡️ Roger Beep: Disparo de seguridad ejecutado.");
-                                    cleanupBeep();
-                                }
-                            }, 500);
-
-                            oscRemote.start(now); oscRemote.stop(now + 0.3);
-                            oscLocal.start(now); oscLocal.stop(now + 0.3);
-                        }
-else {
+                        var cleanupBeep = function() {
+                            if (window.app.activeRogerOsc === oscLocal) window.app.activeRogerOsc = null;
+                            if (!window.app.isBeeping) return;
+                            window.app.isBeeping = false;
+                            if(window.dispatch_beeping) window.dispatch_beeping(false);
                             if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.0, window.app.ctx.currentTime, 0.05);
                             if (window.app.noise) {
                                 window.app.noise.gain.cancelScheduledValues(window.app.ctx.currentTime);
                                 window.app.noise.gain.setTargetAtTime(Math.max(0.0001, window.app.lastNoiseLevel), window.app.ctx.currentTime, 0.05);
                             }
-                            window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
+                            if (!window.app.isTransmittingInternal) {
+                                window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
+                                if(window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
+                            }
+                            window.app.voxHangTimer = 0;
+                            window.app.voxLockoutTimestamp = Date.now() + 1000;
                             if(window.updateBgDucking) window.updateBgDucking();
-                        }
+                        };
+
+                        oscLocal.onended = cleanupBeep;
+                        if (window.app._beepSecurityTimeout) clearTimeout(window.app._beepSecurityTimeout);
+                        window.app._beepSecurityTimeout = setTimeout(function() {
+                            if (window.app.isBeeping) cleanupBeep();
+                        }, 500);
+
+                        oscRemote.start(now); oscRemote.stop(now + 0.3);
+                        oscLocal.start(now); oscLocal.stop(now + 0.3);
                     }
                 }
             };
@@ -2742,7 +2764,8 @@ object RadioBridge {
         onRouteSuggestions: (String) -> Unit,
         onPoiResults: (String) -> Unit,
         onRouteInfo: (String?, String?, String?) -> Unit,
-        onNavigationStep: (String?) -> Unit
+        onNavigationStep: (String?) -> Unit,
+        onPttLive: (Boolean) -> Unit
     ) {
         win.dispatch_mic = onMic
         win.dispatch_beeping = onBeep
@@ -2768,6 +2791,7 @@ object RadioBridge {
         win.dispatch_engineering_finished = onEngineeringFinished
         win.dispatch_route_suggestions = onRouteSuggestions
         win.dispatch_poi_results = onPoiResults
+        win.dispatch_ptt_live = onPttLive
         win.dispatch_route_info = { dist: String?, dur: String?, dest: String? ->
             onRouteInfo(dist, dur, dest)
         }
@@ -2896,6 +2920,7 @@ fun main() {
         val routeDurationState = remember { mutableStateOf<String?>(null) }
         val routeDestinationNameState = remember { mutableStateOf<String?>(null) }
         val routeNavigationStepState = remember { mutableStateOf<String?>(null) }
+        val isPttLiveState = remember { mutableStateOf(false) }
 
         val win: dynamic = js("window")
         
@@ -2916,7 +2941,7 @@ fun main() {
             onReplayStart = {
                 notificationState.value = AppNotification(
                     title = "REPLAY ACTIVO",
-                    message = "Escuchando los últimos 15 segundos del barrio.",
+                    message = "Escuchando los últimos 30 segundos del barrio.",
                     type = NotificationType.Success
                 )
             },
@@ -3268,7 +3293,8 @@ fun main() {
             },
             onNavigationStep = { step ->
                 routeNavigationStepState.value = step
-            }
+            },
+            onPttLive = { isPttLiveState.value = it }
         )
 
         // Listener para PWA Installation (SOLO GUARDAR PROMPT, NO MOSTRAR)
@@ -4364,6 +4390,7 @@ fun main() {
             dgtText = dgtTextState.value,
             dgtImageUrl = dgtImageUrlState.value,
             voxActive = voxActiveState.value,
+            isPttLive = isPttLiveState.value,
             wifiVerificationResult = wifiVerificationResultState.value,
             onRouteSuggestionsReceived = { callback ->
                 win.dispatch_route_suggestions_to_app = callback

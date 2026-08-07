@@ -119,6 +119,7 @@ fun App(
     dgtText: String? = null,
     dgtImageUrl: String? = null,
     voxActive: Boolean = false,
+    isPttLive: Boolean = false,
     wifiVerificationResult: String? = null,
     nasaImageUrl: String? = null,
     nasaImageTitle: String? = null,
@@ -338,6 +339,7 @@ fun App(
         }
     }
     var backPressCount by remember { mutableStateOf(0) }
+    var isPttLive by remember { mutableStateOf(false) }
 
     var lastBackPressTime by remember { mutableStateOf(0L) }
     
@@ -810,6 +812,7 @@ fun App(
                                 rx = remoteTransmitterName != null, 
                                 transmitterNick = remoteTransmitterName,
                                 isBeeping = isBeeping,
+                                isPttLive = isPttLive,
                                 isCodedRx = isCodedRx,
                                 voxActiveExternal = voxActive,
                                 onNoise = onNoiseVolumeChange, 
@@ -882,6 +885,7 @@ fun App(
                             },
                             radarActivo = radarActivo,
                             radarNivel = nivelPerturbacion,
+                            isPttLive = isPttLive,
                             onHertzSentinelRequest = { showActivityRadar = true },
                             onActivityPanelRequest = { showActivityMap = true }
                         )
@@ -1165,7 +1169,8 @@ fun App(
                                 channel = "GENERAL",
                                 subtone = "0000"
                             )
-                        }
+                        },
+                        isPttLive = isPttLive
                     )
                 }
 

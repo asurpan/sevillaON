@@ -346,6 +346,7 @@ fun RadioPanel(
     rx: Boolean,
     transmitterNick: String?,
     isBeeping: Boolean,
+    isPttLive: Boolean,
     isCodedRx: Boolean,
     voxActiveExternal: Boolean,
     onNoise: (Float) -> Unit,
@@ -698,8 +699,19 @@ fun RadioPanel(
                                 modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                val statusText = if (rx) "RECIBIENDO..." else if(isTransmitting) "EMITIENDO..." else "EN ESPERA"
-                                val statusColor = if (rx) LuxeColors.Gold else if(isTransmitting) Color.Red else Color.White.copy(0.2f)
+                                val isPttLoading = isTransmitting && !isPttLive && !isBeeping
+                                val statusText = when {
+                                    rx -> "RECIBIENDO..."
+                                    isBeeping || (isTransmitting && isPttLive) -> "ON AIR"
+                                    isPttLoading -> "CARGANDO MICRO..."
+                                    else -> "EN ESPERA"
+                                }
+                                val statusColor = when {
+                                    rx -> LuxeColors.Gold
+                                    isBeeping || (isTransmitting && isPttLive) -> Color.Red
+                                    isPttLoading -> Color(0xFFF97316)
+                                    else -> Color.White.copy(0.2f)
+                                }
                                 
                                 Text(
                                     text = statusText,
@@ -949,6 +961,14 @@ fun RadioPanel(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val isPttLoading = isTransmitting && !isPttLive && !isBeeping
+                val pttMainColor = when {
+                    isBeeping || (isTransmitting && isPttLive) -> Color.Red
+                    isPttLoading -> Color(0xFFF97316)
+                    rx -> Color.Green
+                    else -> Color.White
+                }
+
                 Surface(
                     modifier = Modifier
                         .weight(1f)
@@ -980,12 +1000,12 @@ fun RadioPanel(
                             )
                         },
                     shape = RoundedCornerShape(40.dp), // Aumentado radio
-                    color = if (isTransmitting) Color.Red.copy(0.2f) else if (rx) Color.Green.copy(0.15f) else Color.White.copy(0.05f),
-                    border = BorderStroke(3.dp, if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White.copy(0.1f))
+                    color = if (pttMainColor != Color.White) pttMainColor.copy(0.2f) else Color.White.copy(0.05f),
+                    border = BorderStroke(3.dp, if (pttMainColor != Color.White) pttMainColor else Color.White.copy(0.1f))
                 ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         if (isTransmitting || rx) {
-                            val waveColor = if (isTransmitting) Color.Red else Color.Green
+                            val waveColor = pttMainColor
                             repeat(3) { i ->
                                 val scale by infiniteTransition.animateFloat(initialValue = 1f, targetValue = 1.8f, animationSpec = infiniteRepeatable(tween(1200, delayMillis = i * 400), RepeatMode.Restart), label = "Wave")
                                 val alpha by infiniteTransition.animateFloat(initialValue = 0.4f, targetValue = 0f, animationSpec = infiniteRepeatable(tween(1200, delayMillis = i * 400), RepeatMode.Restart), label = "WaveAlpha")
@@ -996,13 +1016,18 @@ fun RadioPanel(
                             Icon(
                                 Icons.Rounded.Mic, 
                                 null, 
-                                tint = if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White.copy(0.3f), 
+                                tint = if (pttMainColor != Color.White) pttMainColor else Color.White.copy(0.3f), 
                                 modifier = Modifier.size(36.dp) // Aumentado de 28 a 36
                             )
                             Spacer(Modifier.width(16.dp))
                             Text(
-                                if (isTransmitting) "ON AIR" else if (rx) "AIRE: RECIBIENDO" else "PULSAR PARA HABLAR",
-                                color = if (isTransmitting) Color.Red else if (rx) Color.Green else Color.White, 
+                                when {
+                                    isBeeping || (isTransmitting && isPttLive) -> "ON AIR"
+                                    isPttLoading -> "CARGANDO MICRO..."
+                                    rx -> "AIRE: RECIBIENDO"
+                                    else -> "PULSAR PARA HABLAR"
+                                },
+                                color = if (pttMainColor != Color.White) pttMainColor else Color.White, 
                                 fontWeight = FontWeight.Black, 
                                 fontSize = 18.sp, // Aumentado de 15 a 18
                                 letterSpacing = 1.sp
@@ -1356,7 +1381,8 @@ fun ActivityPanel(
     isReplayReady: Boolean,
     onReplay: () -> Unit,
     onClose: () -> Unit,
-    onFinish: () -> Unit
+    onFinish: () -> Unit,
+    isPttLive: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -1941,6 +1967,14 @@ fun ActivityPanel(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val isPttLoading = isTransmittingState && !isPttLive && !isBeeping
+                val pttMainColor = when {
+                    isBeeping || (isTransmittingState && isPttLive) -> Color.Red
+                    isPttLoading -> Color(0xFFF97316)
+                    rx -> Color.Green
+                    else -> Color.White
+                }
+
                 Surface(
                     modifier = Modifier
                         .weight(1f)
@@ -1971,14 +2005,24 @@ fun ActivityPanel(
                             }
                         }, 
                     shape = RoundedCornerShape(20.dp), 
-                    color = if (isTransmittingState) Color.Red.copy(0.2f) else if (rx) Color.Green.copy(0.15f) else Color.White.copy(0.08f), 
-                    border = BorderStroke(2.dp, if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White.copy(0.2f))
+                    color = if (pttMainColor != Color.White) pttMainColor.copy(0.2f) else Color.White.copy(0.08f), 
+                    border = BorderStroke(2.dp, if (pttMainColor != Color.White) pttMainColor else Color.White.copy(0.2f))
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = if (isTransmittingState) Icons.Rounded.Mic else if (rx) Icons.Rounded.VolumeUp else Icons.Rounded.MicNone, contentDescription = null, tint = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, modifier = Modifier.size(32.dp))
+                            Icon(imageVector = if (pttMainColor == Color.Red || pttMainColor == Color(0xFFF97316)) Icons.Rounded.Mic else if (rx) Icons.Rounded.VolumeUp else Icons.Rounded.MicNone, contentDescription = null, tint = if (pttMainColor != Color.White) pttMainColor else Color.White, modifier = Modifier.size(32.dp))
                             Spacer(Modifier.width(12.dp))
-                            Text(if (isTransmittingState) "AIRE" else if (rx) "RX" else "HABLAR", color = if (isTransmittingState) Color.Red else if (rx) Color.Green else Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+                            Text(
+                                when {
+                                    isBeeping || (isTransmittingState && isPttLive) -> "AIRE"
+                                    isPttLoading -> "CARGANDO..."
+                                    rx -> "RX"
+                                    else -> "HABLAR"
+                                }, 
+                                color = if (pttMainColor != Color.White) pttMainColor else Color.White, 
+                                fontSize = 16.sp, 
+                                fontWeight = FontWeight.Black
+                            )
                         }
                     }
                 }

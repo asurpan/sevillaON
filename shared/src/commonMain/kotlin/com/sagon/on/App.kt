@@ -1023,32 +1023,36 @@ fun App(
                         onDismissRequest = { showWebHelpDialog = false },
                         containerColor = LuxeColors.Slate900,
                         modifier = Modifier.padding(16.dp).border(1.dp, LuxeColors.Gold.copy(0.2f), RoundedCornerShape(28.dp)),
-                        title = { Text("CENTRO DE AYUDA Y ESTABILIDAD", fontWeight = FontWeight.Black, color = LuxeColors.Gold, fontSize = 16.sp) },
+                        title = { 
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Info, null, tint = LuxeColors.Gold)
+                                Spacer(Modifier.width(12.dp))
+                                Text("GUÍA ANTI-CORTE", fontWeight = FontWeight.Black, color = LuxeColors.Gold, fontSize = 16.sp)
+                            }
+                        },
                         text = {
                             Column(Modifier.verticalScroll(rememberScrollState())) {
-                                Text("Para que la radio no se detenga al apagar la pantalla, sigue la guía según tu caso:", fontSize = 13.sp, color = Color.White.copy(0.8f))
+                                Text("Para usar la radio con la pantalla apagada y manos libres sin que se detenga:", fontSize = 13.sp, color = Color.White.copy(0.8f))
                                 
                                 Spacer(Modifier.height(20.dp))
-                                Text("📱 APP NATIVA (ANDROID):", fontWeight = FontWeight.Bold, color = LuxeColors.ElectricBlue, fontSize = 12.sp)
-                                Text("1. Sal de la radio y busca el icono de la app.\n2. Mantén pulsado el icono y dale a 'Información' (i).\n3. Busca 'Ahorro de batería' y selecciona 'SIN RESTRICCIONES'.", fontSize = 12.sp, color = Color.White.copy(0.6f))
+                                Text("🤖 ANDROID (Chrome / PWA):", fontWeight = FontWeight.Black, color = LuxeColors.ElectricBlue, fontSize = 12.sp)
+                                Surface(color = LuxeColors.ElectricBlue.copy(0.1f), shape = RoundedCornerShape(12.dp), modifier = Modifier.padding(vertical = 8.dp)) {
+                                    Text("1. Ajustes del móvil > Aplicaciones > Chrome.\n2. Pulsa en 'BATERÍA'.\n3. Selecciona 'SIN RESTRICCIONES'.", modifier = Modifier.padding(12.dp), fontSize = 12.sp, color = Color.White.copy(0.9f))
+                                }
+                                Text("💡 TIP: Instala la app (Añadir a inicio) para mayor estabilidad.", fontSize = 11.sp, color = LuxeColors.Gold.copy(0.7f))
 
                                 Spacer(Modifier.height(20.dp))
-                                Text("🍏 IPHONE (SAFARI):", fontWeight = FontWeight.Bold, color = LuxeColors.Gold, fontSize = 12.sp)
-                                Text("1. Pulsa el botón COMPARTIR (cuadrado con flecha ↑).\n2. Busca y pulsa 'Añadir a la pantalla de inicio'.\n3. Entra desde el nuevo icono de tu escritorio.", fontSize = 12.sp, color = Color.White.copy(0.6f))
-                                
-                                Spacer(Modifier.height(20.dp))
-                                Text("🤖 ANDROID (CHROME):", fontWeight = FontWeight.Bold, color = LuxeColors.Gold, fontSize = 12.sp)
-                                Text("1. Pulsa los 3 PUNTOS arriba a la derecha.\n2. Pulsa 'Instalar aplicación' o 'Añadir a pantalla de inicio'.\n3. Entra desde el nuevo icono de tu escritorio.", fontSize = 12.sp, color = Color.White.copy(0.6f))
-
-                                Spacer(Modifier.height(20.dp))
-                                Text("⚠️ NOTA PARA WEB:", fontWeight = FontWeight.Bold, color = Color.Red, fontSize = 11.sp)
-                                Text("En navegadores, asegúrate de que el ahorro de batería de Chrome/Safari esté en 'SIN RESTRICCIONES'.", fontSize = 10.sp, color = Color.White.copy(0.5f))
+                                Text("🍏 IPHONE (Safari):", fontWeight = FontWeight.Black, color = LuxeColors.Gold, fontSize = 12.sp)
+                                Surface(color = LuxeColors.Gold.copy(0.1f), shape = RoundedCornerShape(12.dp), modifier = Modifier.padding(vertical = 8.dp)) {
+                                    Text("1. Pulsa el botón COMPARTIR (cuadrado con flecha ↑).\n2. Selecciona 'AÑADIR A PANTALLA DE INICIO'.\n3. Abre la radio SIEMPRE desde el nuevo icono de tu escritorio.", modifier = Modifier.padding(12.dp), fontSize = 12.sp, color = Color.White.copy(0.9f))
+                                }
+                                Text("⚠️ NOTA: En iPhone, el micro puede cortarse por privacidad de Apple si bloqueas. Usa el manos libres para reactivarlo.", fontSize = 11.sp, color = Color.Red.copy(0.7f))
                                 
                                 Spacer(Modifier.height(24.dp))
                                 HorizontalDivider(color = Color.White.copy(0.1f))
                                 Spacer(Modifier.height(16.dp))
 
-                                // --- ⚡ INFO DE POTENCIA (SOLICITADO POR USUARIO PARA AYUDA) ---
+                                // --- ⚡ INFO DE POTENCIA ---
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
@@ -1061,27 +1065,13 @@ fun App(
                                     Spacer(Modifier.width(16.dp))
                                     Column {
                                         Text("POTENCIA Y WATTS (W)", fontWeight = FontWeight.Bold, color = LuxeColors.Gold, fontSize = 13.sp)
-                                        Text("Tu indicativo gana potencia cuanto más usas la radio. Al emitir verás tus vatios (W) reales en el vúmetro digital.", fontSize = 11.sp, color = Color.White.copy(0.7f))
+                                        Text("Tu indicativo gana potencia cuanto más usas la radio. Al emitir verás tus vatios (W) reales.", fontSize = 11.sp, color = Color.White.copy(0.7f))
                                     }
-                                }
-
-                                Spacer(Modifier.height(16.dp))
-                                
-                                TextButton(
-                                    onClick = { 
-                                        showWebHelpDialog = false
-                                        showOnboarding = true 
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(Icons.Rounded.Info, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(12.dp))
-                                    Text("VER TUTORIAL DE FUNCIONES", color = LuxeColors.Gold, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
                             }
                         },
                         confirmButton = {
-                            LuxeButton("ENTENDIDO", { showWebHelpDialog = false }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+                            LuxeButton("¡VALE, ENTENDIDO!", { showWebHelpDialog = false }, true, Modifier.fillMaxWidth().height(54.dp), LuxeColors.Gold, Color.Black)
                         }
                     )
                 }

@@ -77,7 +77,7 @@ data class RadioState(
     val isRogerBeepEnabled: Boolean = true,
     val isScanning: Boolean = false,
     val city: String = "SEVILLA",
-    val channel: String = "GENERAL",
+    val channel: String = "SEVILLA",
     val subtone: String = "0000",
     val bass: Float = 0.5f,
     val mid: Float = 0.5f,

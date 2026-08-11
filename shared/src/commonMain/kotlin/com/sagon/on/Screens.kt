@@ -1056,14 +1056,14 @@ fun RadioPanel(
             Spacer(Modifier.height(32.dp))
 
             val activeRooms = remember(users, state.city, state.channel) {
-                val rooms = users.filter { it.city == state.city && it.channel != "GENERAL" }
+                val rooms = users.filter { it.city == state.city && it.channel != state.city }
                     .groupBy { it.channel }
                     .mapValues { it.value.size }
                     .toList()
                     .sortedByDescending { it.second }
                 
-                if (state.channel != "GENERAL") {
-                    listOf("GENERAL" to 0) + rooms
+                if (state.channel != state.city) {
+                    listOf(state.city to 0) + rooms
                 } else {
                     rooms
                 }
@@ -1077,23 +1077,23 @@ fun RadioPanel(
                     ) {
                         items(activeRooms) { (room, count) ->
                             val isCurrent = state.channel == room
-                            val isGeneral = room == "GENERAL"
+                            val isDefault = room == state.city
                             
                             Surface(
                                 onClick = { if (!state.isInterfaceLocked) onStateChange(state.copy(channel = room)) },
-                                modifier = Modifier.height(56.dp), // Aumentado de 44 a 56
+                                modifier = Modifier.height(56.dp), 
                                 shape = RoundedCornerShape(16.dp),
-                                color = if (isCurrent) LuxeColors.Gold.copy(0.15f) else if (isGeneral) LuxeColors.ElectricBlue.copy(0.1f) else Color.White.copy(0.05f),
-                                border = BorderStroke(1.5.dp, if (isCurrent) LuxeColors.Gold else if (isGeneral) LuxeColors.ElectricBlue.copy(0.4f) else Color.White.copy(0.1f))
+                                color = if (isCurrent) LuxeColors.Gold.copy(0.15f) else if (isDefault) LuxeColors.ElectricBlue.copy(0.1f) else Color.White.copy(0.05f),
+                                border = BorderStroke(1.5.dp, if (isCurrent) LuxeColors.Gold else if (isDefault) LuxeColors.ElectricBlue.copy(0.4f) else Color.White.copy(0.1f))
                             ) {
                                 Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    if (isGeneral) Icon(Icons.Rounded.Home, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(20.dp))
-                                    if (isGeneral) Spacer(Modifier.width(10.dp))
+                                    if (isDefault) Icon(Icons.Rounded.Home, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(20.dp))
+                                    if (isDefault) Spacer(Modifier.width(10.dp))
                                     
                                     Text(
-                                        text = if (isGeneral) "SALIR AL CANAL PÚBLICO" else room, 
-                                        color = if (isGeneral) LuxeColors.ElectricBlue else Color.White, 
-                                        fontSize = 14.sp, // Aumentado de 11 a 14
+                                        text = if (isDefault) "SALIR AL CANAL DE CIUDAD" else room, 
+                                        color = if (isDefault) LuxeColors.ElectricBlue else Color.White, 
+                                        fontSize = 14.sp, 
                                         fontWeight = FontWeight.Black
                                     )
                                     
@@ -1107,7 +1107,7 @@ fun RadioPanel(
                             }
                         }
                     }
-                } else if (state.channel == "GENERAL") {
+                } else if (state.channel == state.city) {
                     Text(
                         "No hay barrios activos. Toca aquí para crear uno.",
                         color = Color.White.copy(0.2f),
@@ -1119,7 +1119,7 @@ fun RadioPanel(
             }
             Spacer(Modifier.height(20.dp))
 
-            Text(if (state.channel == "GENERAL") "CANAL PÚBLICO EN ${state.city}" else "OPERADORES EN BARRIO ${state.channel}", color = Color.White.copy(0.3f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.fillMaxWidth())
+            Text(if (state.channel == state.city) "CANAL CIUDAD EN ${state.city}" else "OPERADORES EN BARRIO ${state.channel}", color = Color.White.copy(0.3f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.fillMaxWidth())
             
             val allToShow = remember(nick, isTransmitting, state.city, state.channel, state.subtone, mappedUsers) {
                 (listOf(

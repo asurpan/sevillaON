@@ -1016,25 +1016,25 @@ object RadioCore {
                         var now = window.app.ctx.currentTime;
                         
                         if (enabled) {
-                            // MODO ÉLITE: Procesado avanzado para claridad máxima
-                            window.app.filter.frequency.setTargetAtTime(1600, now, 0.1);
-                            window.app.filter.Q.setTargetAtTime(0.8, now, 0.1);
+                            // MODO ÉLITE: Procesado avanzado para claridad máxima (PUNCH REAL)
+                            window.app.filter.frequency.setTargetAtTime(1800, now, 0.1);
+                            window.app.filter.Q.setTargetAtTime(1.2, now, 0.1);
                             
-                            window.app.compressor.threshold.setTargetAtTime(-28, now, 0.1);
-                            window.app.compressor.ratio.setTargetAtTime(8, now, 0.1);
-                            window.app.compressor.attack.setTargetAtTime(0.003, now, 0.1);
-                            window.app.compressor.release.setTargetAtTime(0.150, now, 0.1);
+                            window.app.compressor.threshold.setTargetAtTime(-18, now, 0.1); // Más alto para ignorar ruidos bajos
+                            window.app.compressor.ratio.setTargetAtTime(12, now, 0.1);    // Más compresión para "pegada"
+                            window.app.compressor.attack.setTargetAtTime(0.001, now, 0.1); // Ataque ultra-rápido
+                            window.app.compressor.release.setTargetAtTime(0.100, now, 0.1); // Liberación más rápida
                             
-                            window.app.masterRxGain.gain.setTargetAtTime(2.2, now, 0.1); /* Nivel de escucha pro */
+                            window.app.masterRxGain.gain.setTargetAtTime(2.5, now, 0.1);
                         } else {
                             // MODO ESTÁNDAR: Sonido natural
                             window.app.filter.frequency.setTargetAtTime(1200, now, 0.1);
-                            window.app.filter.Q.setTargetAtTime(0.4, now, 0.1);
+                            window.app.filter.Q.setTargetAtTime(0.5, now, 0.1);
                             
-                            window.app.compressor.threshold.setTargetAtTime(-20, now, 0.1);
-                            window.app.compressor.ratio.setTargetAtTime(4, now, 0.1);
+                            window.app.compressor.threshold.setTargetAtTime(-22, now, 0.1);
+                            window.app.compressor.ratio.setTargetAtTime(6, now, 0.1);
                             window.app.compressor.attack.setTargetAtTime(0.010, now, 0.1);
-                            window.app.compressor.release.setTargetAtTime(0.250, now, 0.1);
+                            window.app.compressor.release.setTargetAtTime(0.200, now, 0.1);
                             
                             window.app.masterRxGain.gain.setTargetAtTime(1.8, now, 0.1);
                         }
@@ -1718,15 +1718,17 @@ object RadioCore {
                                     var txEnhancer = window.app.ctx.createBiquadFilter();
                                     txEnhancer.type = "peaking";
                                     txEnhancer.frequency.value = 3200;
-                                    txEnhancer.Q.value = 1.0;          
+                                       txEnhancer.Q.value = 1.0;          
                                     txEnhancer.gain.value = 2.5;
 
+                                    /* 4. Compresor de Emisora (Voz constante y potente) */
+                                    /* --- 🚀 AJUSTE BROADCAST PROFESIONAL (PUNCH) --- */
                                     var txCompressor = window.app.ctx.createDynamicsCompressor();
-                                    txCompressor.threshold.value = -24;
-                                    txCompressor.knee.value = 30;       
-                                    txCompressor.ratio.value = 6;
-                                    txCompressor.attack.value = 0.005;
-                                    txCompressor.release.value = 0.20;  
+                                    txCompressor.threshold.value = -18; /* Umbral más alto: ignora ruidos sutiles, enfoca la voz */
+                                    txCompressor.knee.value = 10;       /* Knee más duro para efecto "apretado" */
+                                    txCompressor.ratio.value = 12;      /* Ratio alto: voz de radio profesional */
+                                    txCompressor.attack.value = 0.002;  /* Ataque rápido para silabas iniciales */
+                                    txCompressor.release.value = 0.10;  /* Liberación rápida para evitar "bombeo" lento */
 
                                     micSrc.connect(txFilter);
                                     txFilter.connect(txBody);
@@ -1738,7 +1740,7 @@ object RadioCore {
                                     txCompressor.connect(window.app.micAnalyser);
 
                                     var makeupGain = window.app.ctx.createGain();
-                                    makeupGain.gain.value = 0.8;
+                                    makeupGain.gain.value = 1.2; /* Aumentamos la potencia final de salida */
                                     txCompressor.connect(makeupGain);
 
                                     if (window.app.txGate) {
@@ -2386,7 +2388,7 @@ object RadioBridge {
                     var finalShareUrl = shareUrl + "&pro=true";
                     text = "💼 RADAR PROFESIONAL: " + city + "\n\nEstamos conectando ofertas y profesionales por voz en tiempo real. Entra aquí:\n" + finalShareUrl;
                 } else {
-                    var salaText = (channel === 'GENERAL') ? "SALA GENERAL" : "SALA " + channel;
+                    var salaText = (channel === city) ? "SALA PÚBLICA" : "SALA " + channel;
                     text = "📻 ¡ENTRA EN MI FRECUENCIA!\n\nTe espero en " + city + " [" + salaText + "]. Música, noticias y voz en directo. ¡Pínchale! 👇\n" + shareUrl;
                 }
                 
@@ -2930,7 +2932,7 @@ fun main() {
                     var channelUsersCount = 0
                     var isAnyRemoteTx = false
                     val myCity = localStorage.getItem("lastCity") ?: "SEVILLA"
-                    val myCh = localStorage.getItem("lastChannel") ?: "GENERAL"
+                    val myCh = localStorage.getItem("lastChannel") ?: myCity
                     val mySub = localStorage.getItem("lastSubtone") ?: "0000"
                     val mySessionID = if (win.app != null) win.app.sessionID as? String else null
                     val now = Date.now()
@@ -3310,11 +3312,22 @@ fun main() {
                 val urlImg = params.get("img")?.toString()
 
                 val savedCity = localStorage.getItem("lastCity")
-                val finalCity = urlCity ?: (savedCity ?: "")
+                val finalCity = urlCity ?: (savedCity ?: "SEVILLA")
+                
+                // --- 🛡️ POLÍTICA DE CANAL POR DEFECTO DINÁMICO: LA CIUDAD ---
+                val defaultChannel = finalCity
+                val savedChannel = localStorage.getItem("lastChannel")
+                val initialChannel = if (urlChannel != null) {
+                    urlChannel
+                } else if (savedChannel == null || savedChannel == "GENERAL") {
+                    defaultChannel
+                } else {
+                    savedChannel
+                }
 
                 RadioState(
                     city = finalCity,
-                    channel = urlChannel ?: (localStorage.getItem("lastChannel") ?: "GENERAL"),
+                    channel = initialChannel,
                     subtone = urlSubtone ?: (localStorage.getItem("lastSubtone") ?: "0000"),
                     isWorkModeActive = urlPro == "true",
                     forceShowNasa = urlNasa == "true",
@@ -3621,7 +3634,14 @@ fun main() {
                 }
             },
             onCityChange = { city ->
-                try { localStorage.setItem("lastCity", city) } catch(e: Exception) {}
+                try { 
+                    localStorage.setItem("lastCity", city)
+                    // --- 🛡️ POLÍTICA DE CANAL DINÁMICO: Si el canal era el nombre de la ciudad antigua o GENERAL, lo movemos ---
+                    val lastCh = localStorage.getItem("lastChannel")
+                    if (lastCh == null || lastCh == "GENERAL" || lastCh.startsWith("ESPAÑA")) {
+                        localStorage.setItem("lastChannel", city)
+                    }
+                } catch(e: Exception) {}
                 // 🛡️ SYNC NATIVO: Guardar ciudad en el sistema Android para filtrado de notificaciones
                 js("if(window.AndroidApp && typeof window.AndroidApp.onCityChange === 'function') window.AndroidApp.onCityChange(city);")
 

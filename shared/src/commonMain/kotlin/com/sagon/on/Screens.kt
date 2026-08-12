@@ -748,7 +748,7 @@ fun RadioPanel(
 
                                 Spacer(Modifier.height(6.dp))
                                 
-                                val displayChannel = if (state.channel == "GENERAL") "SELECCIONAR BARRIO O LUGAR" else state.channel
+                                val displayChannel = if (state.channel == state.city) "SELECCIONAR BARRIO O LUGAR" else state.channel
                                 Text(
                                     text = state.city,
                                     color = if(rx) LuxeColors.Gold else Color.White,
@@ -1247,7 +1247,7 @@ fun EliteChatOverlay(
                     }
                     Spacer(Modifier.width(16.dp))
                     Column {
-                        Text(text = if (target != null) "TERMINAL PRIVADA" else "SALA GENERAL", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                        Text(text = if (target != null) "TERMINAL PRIVADA" else "SALA CIUDAD", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
                         Text(text = target ?: "TODOS LOS OPERADORES", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
                     }
                 }

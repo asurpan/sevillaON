@@ -910,7 +910,7 @@ fun RadioDialogs(
                 confirmButton = {
                     Button(onClick = {
                         val newState = state.copy(favoriteChannels = state.favoriteChannels - channelToDelete)
-                        onStateChange(if (state.channel == channelToDelete) newState.copy(channel = "GENERAL") else newState)
+                        onStateChange(if (state.channel == channelToDelete) newState.copy(channel = state.city) else newState)
                         onNotification(AppNotification("SALA ELIMINADA", "Has vuelto al Canal Público", NotificationType.Info))
                         onDismiss()
                     }, colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Red)) { Text("ELIMINAR") }
@@ -989,8 +989,7 @@ fun RadioDialogs(
         RadioDialogType.CREATE_CHANNEL -> {
             var newChannelName by remember { mutableStateOf("") }
             var newChannelSubtone by remember { mutableStateOf("") }
-            
-            val activeRooms = users.filter { it.city == state.city && it.channel != "GENERAL" }
+            val activeRooms = users.filter { it.city == state.city && it.channel != state.city }
                 .groupBy { it.channel }
                 .map { (name, uInRoom) ->
                     val activity = uInRoom.map { it.activity }.find { it != ActivityProfile.NORMAL } ?: ActivityProfile.NORMAL
@@ -1048,7 +1047,7 @@ fun RadioDialogs(
                             filteredCities.forEach { cityName ->
                                 Surface(
                                     onClick = { 
-                                        onStateChange(state.copy(city = cityName, channel = "GENERAL", subtone = "0000"))
+                                        onStateChange(state.copy(city = cityName, channel = cityName, subtone = "0000"))
                                         onDismiss()
                                         onNotification(AppNotification("SINTONIZANDO CIUDAD", "Has entrado en $cityName", NotificationType.Success))
                                     },
@@ -1261,7 +1260,7 @@ fun RadioDialogs(
                                 val isCurrent = cityName == state.city
                                 Surface(
                                     onClick = { 
-                                        onStateChange(state.copy(city = cityName, channel = "GENERAL", subtone = "0000"))
+                                        onStateChange(state.copy(city = cityName, channel = cityName, subtone = "0000"))
                                         onDismiss()
                                     },
                                     color = if(isCurrent) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.04f),
@@ -1285,8 +1284,8 @@ fun RadioDialogs(
                 },
                 confirmButton = {
                     if (SPAIN_CITIES.contains(searchText)) {
-                        LuxeButton("SINTONIZAR", {
-                            onStateChange(state.copy(city = searchText, channel = "GENERAL", subtone = "0000"))
+                        LuxeButton("SINTONIZAR",                        {
+                            onStateChange(state.copy(city = searchText, channel = searchText, subtone = "0000"))
                             onDismiss()
                         }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
                     } else {
@@ -1581,7 +1580,7 @@ fun RadioDialogs(
                     onStateChange(state.copy(
                         activeProfile = ActivityProfile.NORMAL,
                         isMotoModeEnabled = false,
-                        channel = "GENERAL",
+                        channel = state.city,
                         subtone = "0000"
                     ))
                     onDismiss()

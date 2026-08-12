@@ -1152,7 +1152,7 @@ fun App(
                             radioState = radioState.copy(
                                 activeProfile = ActivityProfile.NORMAL,
                                 isMotoModeEnabled = false,
-                                channel = "GENERAL",
+                                channel = radioState.city,
                                 subtone = "0000"
                             )
                         }
@@ -1216,7 +1216,7 @@ fun App(
                             onPublicChat = onPublicChatRequest,
                             onBgRadioScan = onBgRadioScan,
                             onBgRadioStop = onBgRadioStop,
-                            onShare = { c, s, u, g -> onShareRequest(c, s, nick, u, g, radioState.routeImage) },
+                            onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g, radioState.routeImage) },
                             onNotification = { localNotification = it },
                             onPlaySound = onPlaySound,
                             onLogoutConfirm = onLogout,

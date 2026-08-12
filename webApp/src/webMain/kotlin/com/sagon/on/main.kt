@@ -190,7 +190,7 @@ object RadioCore {
                     moniVolume: parseFloat(localStorage.getItem("moniVol")) || 0.5, 
                     moniActive: localStorage.getItem("moniActive") === "true",
                     currentCity: localStorage.getItem("lastCity") || "ESPAÑA (NACIONAL)",
-                    currentChannel: localStorage.getItem("lastChannel") || "GENERAL", 
+                    currentChannel: localStorage.getItem("lastChannel") || (localStorage.getItem("lastCity") || "SEVILLA"), 
                     currentSubtone: localStorage.getItem("lastSubtone") || "0000",
                     voxActive: localStorage.getItem("voxActive") === "true", 
                     voxSens: parseFloat(localStorage.getItem("voxSens")) || 0.5,
@@ -1886,11 +1886,11 @@ object RadioCore {
                         if (window.app.isTerminated) return;
                         if (window.app.db && window.app.sessionID) {
                             var currentCity = "ESPAÑA (NACIONAL)";
-                            var currentCh = "GENERAL";
+                            var currentCh = localStorage.getItem("lastCity") || "SEVILLA";
                             var currentGenre = null;
                             try { 
                                 currentCity = localStorage.getItem("lastCity") || "ESPAÑA (NACIONAL)";
-                                currentCh = localStorage.getItem("lastChannel") || "GENERAL"; 
+                                currentCh = localStorage.getItem("lastChannel") || (localStorage.getItem("lastCity") || "SEVILLA"); 
                                 // --- 📻 INFORMAR DEL GÉNERO SI LA RADIO ESTÁ ON ---
                                 if (window.fmEngine && window.fmEngine.currentStation) {
                                     currentGenre = window.app.bgGenre || "MIX";
@@ -1944,7 +1944,7 @@ object RadioCore {
                             if (!window.app || !window.app.db) return;
                             
                             var city = localStorage.getItem("lastCity") || "SEVILLA";
-                            var channel = localStorage.getItem("lastChannel") || "GENERAL";
+                            var channel = localStorage.getItem("lastChannel") || (localStorage.getItem("lastCity") || "SEVILLA");
                             var nick = localStorage.getItem("indicativo") || localStorage.getItem("last_indicativo") || "ANÓNIMO";
                             
                             var chatPath = "";
@@ -2095,7 +2095,7 @@ object RadioSignaling {
                     window.app.db.ref("users").once('value', function(snap) {
                         var users = snap.val();
                         var myCity = localStorage.getItem("lastCity") || "SEVILLA";
-                        var myChannel = localStorage.getItem("lastChannel") || "GENERAL";
+                        var myChannel = localStorage.getItem("lastChannel") || (localStorage.getItem("lastCity") || "SEVILLA");
                         var mySubtone = localStorage.getItem("lastSubtone") || "0000";
                         var now = Date.now();
                         for(var id in users) { 
@@ -2958,7 +2958,7 @@ fun main() {
                             if (userNick.isNotEmpty() && (now - lastSeen) < 15000.0) {
                                 val isTransmitting = u.tx == true
                                 val userCity = u.city as? String ?: "SEVILLA"
-                                val userChannel = u.channel as? String ?: "GENERAL"
+                                val userChannel = u.channel as? String ?: (u.city as? String ?: "SEVILLA")
                                 
                                 // --- 🎙️ DETECCIÓN DE NUEVOS PARA SALUDO ---
                                 if (userCity == myCity && userChannel == myCh) {
@@ -2990,7 +2990,7 @@ fun main() {
                                 if (isTransmitting && currentFriends.contains(userNick)) {
                                     if (transmittingFriends[userNick] != true) {
                                         if (userCity != myCity || userChannel != myCh) {
-                                            val displayChannel = if (userChannel == "GENERAL") "CREAR/ENTRAR" else userChannel
+                                            val displayChannel = if (userChannel == (u.city as? String ?: "SEVILLA")) "ENTRAR" else userChannel
                                             notificationState.value = AppNotification(
                                                 title = "FAVORITO AL AIRE",
                                                 message = "$userNick está emitiendo en $userCity - $displayChannel",
@@ -3319,7 +3319,7 @@ fun main() {
                 val savedChannel = localStorage.getItem("lastChannel")
                 val initialChannel = if (urlChannel != null) {
                     urlChannel
-                } else if (savedChannel == null || savedChannel == "GENERAL") {
+                } else if (savedChannel == null || savedChannel == "GENERAL" || savedChannel == "") {
                     defaultChannel
                 } else {
                     savedChannel
@@ -3541,7 +3541,7 @@ fun main() {
                         "🏍️ ¡VAMOS DE RUTA! ($activityName)\n\nHe activado mi Radio en Modo Actividad para compartir mi posición en tiempo real con el grupo.\n\nÚnete a la ruta y sígueme en el mapa aquí:\n👉 https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&activity=true&type=$activityName$imgParam"
                     }
                     else -> {
-                        val salaText = if (channel == "GENERAL") "SALA GENERAL" else "CANAL PRIVADO: $channel"
+                        val salaText = if (channel == city) "SALA PÚBLICA" else "SALA: $channel"
                         val extraSub = if (subtone != "0000") "\n\n🔑 CÓDIGO DE ACCESO: $subtone" else ""
                         val imgParam = if (imageUrl != null) "&img=${js("encodeURIComponent")(imageUrl)}" else ""
                         "📻 ¡BREICO, BREICO!\n\nTe invito a mi canal en la Radio ON AIR SPAIN.\n\n📍 CIUDAD: $city\n💬 CANAL: $channel$extraSub\n\nEntra directo a la frecuencia aquí:\n👇 https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone$imgParam"
@@ -3638,7 +3638,7 @@ fun main() {
                     localStorage.setItem("lastCity", city)
                     // --- 🛡️ POLÍTICA DE CANAL DINÁMICO: Si el canal era el nombre de la ciudad antigua o GENERAL, lo movemos ---
                     val lastCh = localStorage.getItem("lastChannel")
-                    if (lastCh == null || lastCh == "GENERAL" || lastCh.startsWith("ESPAÑA")) {
+                    if (lastCh == null || lastCh == "GENERAL" || lastCh == "" || lastCh.startsWith("ESPAÑA")) {
                         localStorage.setItem("lastChannel", city)
                     }
                 } catch(e: Exception) {}
@@ -3691,7 +3691,7 @@ fun main() {
             onSendMessage = { text, target ->
                 js("console.log('Intentando enviar mensaje: ' + text + (target ? ' a ' + target : ' al canal publico'));")
                 val city = localStorage.getItem("lastCity") ?: "SEVILLA"
-                val channel = localStorage.getItem("lastChannel") ?: "GENERAL"
+                val channel = localStorage.getItem("lastChannel") ?: (localStorage.getItem("lastCity") ?: "SEVILLA")
                 var nick = localStorage.getItem("indicativo") ?: localStorage.getItem("last_indicativo") ?: "ANÓNIMO"
                 if (nick.isBlank()) nick = "ANÓNIMO"
 
@@ -3972,7 +3972,7 @@ fun main() {
             },
             onDeleteMessage = { msgId, target ->
                 val city = localStorage.getItem("lastCity") ?: "SEVILLA"
-                val channel = localStorage.getItem("lastChannel") ?: "GENERAL"
+                val channel = localStorage.getItem("lastChannel") ?: (localStorage.getItem("lastCity") ?: "SEVILLA")
                 var nick = localStorage.getItem("indicativo") ?: localStorage.getItem("last_indicativo") ?: "ANÓNIMO"
                 
                 val win: dynamic = js("window")

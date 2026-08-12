@@ -39,7 +39,7 @@ data class RemoteUser(
     val isTransmitting: Boolean = false,
     val subtone: String = "0000",
     val city: String = "SEVILLA",
-    val channel: String = "GENERAL",
+    val channel: String = "SEVILLA",
     val isFriend: Boolean = false,
     val signal: Float = 0.8f,
     val txPower: Float = 0.7f,

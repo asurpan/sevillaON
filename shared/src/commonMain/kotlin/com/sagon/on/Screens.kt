@@ -663,13 +663,25 @@ fun RadioPanel(
                                         }
                                     }
                                     Spacer(Modifier.height(6.dp))
-                                    Text(text = if(rx) (transmitterNick ?: "RECOGIENDO...") else state.city, color = if(rx) LuxeColors.Gold else Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth().basicMarquee().clickable { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY, null) })
-                                    Spacer(Modifier.height(6.dp))
+                                    Text(
+                                        text = when {
+                                            rx -> transmitterNick ?: "RECOGIENDO..."
+                                            state.channel.trim().uppercase() != state.city.trim().uppercase() -> state.city
+                                            else -> "" 
+                                        },
+                                        color = if(rx) LuxeColors.Gold else Color.White,
+                                        fontSize = 26.sp,
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier.fillMaxWidth().basicMarquee().clickable { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
+                                    )
+                                    if (rx || state.channel.trim().uppercase() != state.city.trim().uppercase()) {
+                                        Spacer(Modifier.height(6.dp))
+                                    }
                                     Surface(onClick = { if (!state.isInterfaceLocked) { if (!state.hasAcceptedMicExplain) onPendingDialogChange(RadioDialogType.MIC_REQUEST, null) else onPendingDialogChange(RadioDialogType.CREATE_CHANNEL, null) } }, modifier = Modifier.fillMaxWidth().height(44.dp), color = LuxeColors.Gold.copy(0.15f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f))) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
                                             Icon(Icons.Rounded.Home, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text(text = if (state.channel == state.city) "CANAL PÚBLICO" else state.channel, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, maxLines = 1, modifier = Modifier.weight(1f).basicMarquee())
+                                            Text(text = state.channel, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, maxLines = 1, modifier = Modifier.weight(1f).basicMarquee())
                                         }
                                     }
                                 }

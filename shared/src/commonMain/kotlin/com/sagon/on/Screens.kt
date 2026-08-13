@@ -672,22 +672,25 @@ fun RadioPanel(
                                             Box(modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(if (isActive) ledColor else Color.White.copy(0.04f)).border(1.dp, if (isActive) ledColor.copy(0.2f) else Color.White.copy(0.01f), RoundedCornerShape(2.dp)))
                                         }
                                     }
-                                    Spacer(Modifier.height(6.dp))
-                                    Text(
-                                        text = when {
-                                            rx -> transmitterNick ?: "RECOGIENDO..."
-                                            state.channel.trim().uppercase() != state.city.trim().uppercase() -> state.city
-                                            else -> "" 
-                                        },
-                                        color = if(rx) LuxeColors.Gold else Color.White,
-                                        fontSize = 26.sp,
-                                        fontWeight = FontWeight.Black,
-                                        modifier = Modifier.fillMaxWidth().basicMarquee().clickable { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
-                                    )
-                                    if (rx || state.channel.trim().uppercase() != state.city.trim().uppercase()) {
+                                    val topText = when {
+                                        rx -> transmitterNick ?: "RECOGIENDO..."
+                                        state.channel.trim().uppercase() != state.city.trim().uppercase() -> state.city
+                                        else -> null 
+                                    }
+
+                                    if (topText != null) {
+                                        Spacer(Modifier.height(6.dp))
+                                        Text(
+                                            text = topText,
+                                            color = if(rx) LuxeColors.Gold else Color.White,
+                                            fontSize = 26.sp,
+                                            fontWeight = FontWeight.Black,
+                                            modifier = Modifier.fillMaxWidth().basicMarquee()
+                                        )
                                         Spacer(Modifier.height(6.dp))
                                     }
-                                    Surface(onClick = { if (!state.isInterfaceLocked) { if (!state.hasAcceptedMicExplain) onPendingDialogChange(RadioDialogType.MIC_REQUEST, null) else onPendingDialogChange(RadioDialogType.CREATE_CHANNEL, null) } }, modifier = Modifier.fillMaxWidth().height(44.dp), color = LuxeColors.Gold.copy(0.15f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f))) {
+                                    
+                                    Surface(onClick = { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }, modifier = Modifier.fillMaxWidth().height(44.dp), color = LuxeColors.Gold.copy(0.15f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f))) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
                                             Icon(Icons.Rounded.Home, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
                                             Spacer(Modifier.width(8.dp))

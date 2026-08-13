@@ -63,6 +63,7 @@ fun App(
     onPrivateChatRequest: (String) -> Unit,
     onPublicChatRequest: () -> Unit,
     onStateSave: (RadioState) -> Unit,
+    onConnectRadio: (String) -> Unit = {},
     onMicEnable: (Boolean, Boolean, Float) -> Unit,
     onReport: (String) -> Unit,
     onBlockUser: (String) -> Unit = {},
@@ -143,6 +144,13 @@ fun App(
     var isAppReady by remember { mutableStateOf(true) }
 
     var nick by remember { mutableStateOf(savedNick) }
+
+    LaunchedEffect(nick) {
+        if (nick.isNotBlank()) {
+            onConnectRadio(nick)
+        }
+    }
+
     var radioState by remember { 
         mutableStateOf(
             initialState.copy(
@@ -788,6 +796,7 @@ fun App(
                                 onMicRequest = { active, power -> onMicEnable(active, radioState.isRogerBeepEnabled, power) },
                                 onConnect = { genre ->
                                     if (nick.isNotBlank()) {
+                                        onConnectRadio(nick)
                                         // 🛡️ FIX: Al conectar desde bienvenida, aseguramos entrar en modo radio normal
                                         radioState = radioState.copy(activeProfile = ActivityProfile.NORMAL)
                                         showActivityMap = false

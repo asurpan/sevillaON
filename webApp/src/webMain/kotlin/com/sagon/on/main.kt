@@ -2962,8 +2962,9 @@ fun main() {
             onUsersUpdate = { users ->
                 try {
                     // --- 📡 SISTEMA DE AUDITORÍA DE RED ---
-                    val myCity = (localStorage.getItem("lastCity") ?: "SEVILLA").trim().uppercase()
-                    val myCh = (localStorage.getItem("lastChannel") ?: myCity).trim().uppercase()
+                    val winApp = win.app
+                    val myCity = (if (winApp != null && winApp.currentCity != null) winApp.currentCity else (localStorage.getItem("lastCity") ?: "SEVILLA")).toString().trim().uppercase()
+                    val myCh = (if (winApp != null && winApp.currentChannel != null) winApp.currentChannel else (localStorage.getItem("lastChannel") ?: myCity)).toString().trim().uppercase()
                     js("console.log('📡 AUDIT: [Yo: ' + myCity + ' / ' + myCh + ']')")
 
                     remoteUsersState.clear()
@@ -3852,12 +3853,12 @@ fun main() {
                 }
             },
             onStateSave = { s ->
+                val normCity = s.city.trim().uppercase()
+                var normCh = s.channel.trim().uppercase()
+                
                 try {
-                    val normCity = s.city.trim().uppercase()
-                    var normCh = s.channel.trim().uppercase()
-                    val myNick = (localStorage.getItem("indicativo") ?: "").trim().uppercase()
-
                     // Evitar que el nick se guarde como canal (Sharing Bug Prevention)
+                    val myNick = (localStorage.getItem("indicativo") ?: "").trim().uppercase()
                     if (normCh == myNick || normCh == "GENERAL" || normCh == "") {
                         normCh = normCity
                     }
@@ -3913,6 +3914,10 @@ fun main() {
                 }
                 
                 if (win.app != null) { 
+                    win.app.currentCity = normCity
+                    win.app.currentChannel = normCh
+                    win.app.currentSubtone = s.subtone
+
                     win.app.isDiscreteModeEnabled = s.isDiscreteModeEnabled;
                     js("if(window.updateDiscreteMode) window.updateDiscreteMode();")
 
@@ -3994,6 +3999,7 @@ fun main() {
                     }
                 }
             },
+            onConnectRadio = { n -> win.connectRadio(n) },
             onMicEnable = { a, r, p -> win.broadcastPTT(a, r, p) },
             onReport = { targetID ->
                 val win: dynamic = window

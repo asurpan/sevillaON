@@ -987,7 +987,7 @@ object RadioCore {
                     // --- 🔒 SOFT START SINCRONIZADO (PROHIBIDO TOCAR) ---
                     // Sincronizado con la precarga de la UI para una entrada instantánea
                     var initialRfGain = parseFloat(localStorage.getItem("rfGain")) || 0.5;
-                    var initialSquelch = parseFloat(localStorage.getItem("squelch")) || 0.2;
+                    var initialSquelch = 0.0; // --- 🛡️ SQUELCH A 0% AL ENTRAR POR DEFECTO ---
                     var targetVol = initialRfGain * 6.0; /* Sincronizado con el boost de masterOut */
                     
                     // Pre-calcular ruido inicial (QRM) por si la UI tarda en sincronizar
@@ -3382,7 +3382,7 @@ fun main() {
                     routeImage = urlImg,
                     voxSensitivity = localStorage.getItem("voxSens")?.toFloatOrNull() ?: 0.5f,
                     monitorVolume = localStorage.getItem("moniVol")?.toFloatOrNull() ?: 0.5f,
-                    squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.6f,
+                    squelch = 0.0f, // --- 🛡️ SQUELCH A 0% AL ENTRAR POR DEFECTO ---
                     rfGain = localStorage.getItem("rfGain")?.toFloatOrNull() ?: 0.5f,
                     isRogerBeepEnabled = localStorage.getItem("roger")?.toBoolean() ?: true,
                     isVoxEnabled = localStorage.getItem("voxActive")?.toBoolean() ?: false,

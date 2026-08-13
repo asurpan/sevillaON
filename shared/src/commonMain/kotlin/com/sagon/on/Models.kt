@@ -88,7 +88,7 @@ data class RadioState(
     val blockedUsers: Set<String> = emptySet(), 
     val isPttLatched: Boolean = false,
     val isEcoMode: Boolean = false,
-    val squelch: Float = 0.6f,
+    val squelch: Float = 0.0f,
     val rfGain: Float = 0.5f,
     val veteranPower: Float = 0.7f, 
     val lastActiveTimestamp: Long = 0L, 

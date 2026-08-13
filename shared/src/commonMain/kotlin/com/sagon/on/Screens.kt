@@ -645,7 +645,17 @@ fun RadioPanel(
                         Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Row(modifier = Modifier.fillMaxWidth().weight(1.2f), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.width(80.dp), horizontalAlignment = Alignment.Start) {
-                                    TechLabel("SQUELCH", "${(state.squelch * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.SETTINGS, null) }
+                                    val isQrmAudible = !rx && !isTransmitting && !isBeeping && state.rfGain > state.squelch
+                                    val squelchColor by infiniteTransition.animateColor(
+                                        initialValue = Color.White,
+                                        targetValue = if (isQrmAudible) LuxeColors.Gold else Color.White,
+                                        animationSpec = infiniteRepeatable(tween(300), RepeatMode.Reverse),
+                                        label = "SquelchBlink"
+                                    )
+
+                                    TechLabel("SQUELCH", "${(state.squelch * 100).toInt()}%", valueColor = if (isQrmAudible) squelchColor else Color.White) { 
+                                        onPendingDialogChange(RadioDialogType.SETTINGS, null) 
+                                    }
                                     Spacer(Modifier.height(16.dp))
                                     TechLabel("GANANCIA", "${(state.rfGain * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.SETTINGS, null) }
                                 }

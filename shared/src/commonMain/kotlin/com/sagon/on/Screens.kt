@@ -688,6 +688,9 @@ fun RadioPanel(
                                             modifier = Modifier.fillMaxWidth().basicMarquee()
                                         )
                                         Spacer(Modifier.height(6.dp))
+                                    } else {
+                                        // Espacio de seguridad para que el botón no se pegue a los vúmetros
+                                        Spacer(Modifier.height(14.dp))
                                     }
                                     
                                     Surface(onClick = { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }, modifier = Modifier.fillMaxWidth().height(44.dp), color = LuxeColors.Gold.copy(0.15f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f))) {

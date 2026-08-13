@@ -987,17 +987,8 @@ fun RadioDialogs(
             }
         )
         RadioDialogType.CREATE_CHANNEL -> {
-            var newChannelName by remember { mutableStateOf("") }
             var newChannelSubtone by remember { mutableStateOf("") }
-            val activeRooms = users.filter { it.city == state.city && it.channel != state.city }
-                .groupBy { it.channel }
-                .map { (name, uInRoom) ->
-                    val activity = uInRoom.map { it.activity }.find { it != ActivityProfile.NORMAL } ?: ActivityProfile.NORMAL
-                    val subtone = uInRoom.firstOrNull()?.subtone ?: "0000"
-                    val item: QuadItem<String, Int, ActivityProfile, String> = QuadItem(name, uInRoom.size, activity, subtone)
-                    item
-                }.sortedByDescending { it.second }
-
+            
             AlertDialog(
                 onDismissRequest = onDismiss, 
                 containerColor = LuxeColors.DeepSea, 
@@ -1006,74 +997,23 @@ fun RadioDialogs(
                 modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(12.dp)),
                 title = { 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.AddCircleOutline, null, tint = LuxeColors.Gold)
+                        Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold)
                         Spacer(Modifier.width(12.dp))
-                        Text("CREAR BARRIO O LUGAR", fontWeight = FontWeight.Black, fontSize = 16.sp)
+                        Text("SALA PRIVADA", fontWeight = FontWeight.Black, fontSize = 16.sp)
                     }
                 },
                 text = {
                     Column {
-                        Text("Personaliza tu propia sala privada o pública.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LuxeColors.Gold)
+                        Text("Crea un grupo privado en ${state.city}. Solo quienes tengan tu código podrán oírte.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LuxeColors.Gold)
                         Spacer(Modifier.height(20.dp))
                         
-                        Text("1. NOMBRE DEL LUGAR", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
-                        Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = newChannelName,
-                            onValueChange = { if (it.length <= 20) newChannelName = it.uppercase() },
-                            placeholder = { Text("EJ: PLAZA MAYOR", color = Color.White.copy(0.2f)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = LuxeColors.Gold,
-                                unfocusedBorderColor = Color.White.copy(0.1f)
-                            )
-                        )
-                        
-                        // --- 🏘️ SUGERENCIAS DE CIUDADES (CANALES OFICIALES) ---
-                        val filteredCities = remember(newChannelName) {
-                            if (newChannelName.length >= 1) {
-                                SPAIN_CITIES.filter { 
-                                    it.contains(newChannelName, ignoreCase = true) && it != state.city 
-                                }.take(6)
-                            } else emptyList()
-                        }
-                        
-                        if (filteredCities.isNotEmpty()) {
-                            Spacer(Modifier.height(8.dp))
-                            filteredCities.forEach { cityName ->
-                                Surface(
-                                    onClick = { 
-                                        onStateChange(state.copy(city = cityName, channel = cityName, subtone = "0000"))
-                                        onDismiss()
-                                        onNotification(AppNotification("SINTONIZANDO CIUDAD", "Has entrado en $cityName", NotificationType.Success))
-                                    },
-                                    color = LuxeColors.Gold.copy(0.1f),
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                                    border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f))
-                                ) {
-                                    Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Rounded.LocationCity, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                        Spacer(Modifier.width(12.dp))
-                                        Text(cityName, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(16.dp))
-                        
-                        Text("2. PRIVACIDAD (OPCIONAL)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
-                        Text("Introduce 4 dígitos para que sea privada.", fontSize = 9.sp, color = Color.White.copy(0.4f))
+                        Text("CÓDIGO DE ACCESO (4 DÍGITOS)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
+                        Text("Introduce 4 números. Usa 0000 para volver al canal público.", fontSize = 9.sp, color = Color.White.copy(0.4f))
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(
                             value = newChannelSubtone,
                             onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) newChannelSubtone = it },
-                            placeholder = { Text("0000 (PÚBLICA)", color = Color.White.copy(0.2f)) },
+                            placeholder = { Text("EJ: 1234", color = Color.White.copy(0.2f)) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
                             singleLine = true,
@@ -1085,52 +1025,42 @@ fun RadioDialogs(
                                 unfocusedBorderColor = Color.White.copy(0.1f)
                             )
                         )
-
-                        if (activeRooms.isNotEmpty()) {
-                            Spacer(Modifier.height(24.dp))
-                            Text("SALAS ACTIVAS EN ${state.city}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = LuxeColors.Gold.copy(0.6f))
-                            Spacer(Modifier.height(8.dp))
-                            LazyColumn(modifier = Modifier.heightIn(max = 120.dp)) {
-                                items(activeRooms) { room ->
-                                    Surface(
-                                        onClick = { 
-                                            onStateChange(state.copy(channel = room.first, subtone = room.fourth, activeProfile = room.third))
-                                            onDismiss()
-                                            onNotification(AppNotification("CAMBIO DE LUGAR", "Has entrado en ${room.first}", NotificationType.Info))
-                                        },
-                                        color = Color.White.copy(0.03f),
-                                        shape = RoundedCornerShape(12.dp),
-                                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
-                                    ) {
-                                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(if(room.fourth != "0000") Icons.Rounded.Lock else getActivityIcon(room.third), null, tint = LuxeColors.Gold.copy(0.5f), modifier = Modifier.size(16.dp))
-                                            Spacer(Modifier.width(12.dp))
-                                            Text(room.first, modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                            Text("${room.second}", color = LuxeColors.Gold, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                                            Spacer(Modifier.width(4.dp))
-                                            Icon(Icons.Rounded.Group, null, tint = LuxeColors.Gold.copy(0.5f), modifier = Modifier.size(14.dp))
-                                        }
-                                    }
-                                }
+                        
+                        Spacer(Modifier.height(16.dp))
+                        
+                        if (state.subtone != "0000") {
+                            Surface(
+                                onClick = { 
+                                    onStateChange(state.copy(subtone = "0000"))
+                                    onDismiss()
+                                },
+                                color = LuxeColors.Red.copy(0.1f),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, LuxeColors.Red.copy(0.3f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    "SALIR DE SALA PRIVADA", 
+                                    modifier = Modifier.padding(12.dp), 
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Red,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black
+                                )
                             }
                         }
                     }
                 },
                 confirmButton = {
-                    if (newChannelName.isNotBlank()) {
-                        LuxeButton("CREAR Y ENTRAR", {
-                            val finalSub = newChannelSubtone.padStart(4, '0')
+                    if (newChannelSubtone.length == 4) {
+                        LuxeButton("ENTRAR A SALA", {
                             onStateChange(state.copy(
-                                channel = newChannelName, 
-                                subtone = finalSub,
-                                favoriteChannels = state.favoriteChannels + newChannelName
+                                channel = state.city, 
+                                subtone = newChannelSubtone
                             ))
                             onDismiss()
                         }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = onDismiss) { Text("CANCELAR", color = Color.White.copy(0.4f)) }
                 }
             )
         }

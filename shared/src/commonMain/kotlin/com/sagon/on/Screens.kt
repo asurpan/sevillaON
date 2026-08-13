@@ -623,6 +623,16 @@ fun RadioPanel(
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // --- 🛠️ TOGGLE MODO BÁSICO/PRO ---
+                    IconButton(onClick = { onStateChange(state.copy(isBasicMode = !state.isBasicMode)); triggerUiSound("switch") }) {
+                        Icon(
+                            if (state.isBasicMode) Icons.Rounded.AddCircleOutline else Icons.Rounded.RemoveCircleOutline,
+                            null,
+                            tint = if (state.isBasicMode) Color.White.copy(0.4f) else LuxeColors.Gold,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
                     Surface(
                         onClick = { if (!state.isInterfaceLocked && isReplayReady) onReplay(); triggerUiSound("click") },
                         color = if (isReplayReady) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f),
@@ -656,15 +666,44 @@ fun RadioPanel(
 
             Spacer(Modifier.height(16.dp))
 
-            // --- 📟 PANTALLA DIGITAL ELITE "NEXUS" ---
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(240.dp) 
-                    .clip(RoundedCornerShape(24.dp)),
-                color = Color.Black.copy(0.7f),
-                border = BorderStroke(1.dp, Color.White.copy(0.1f))
-            ) {
+            if (state.isBasicMode) {
+                // --- 📟 PANTALLA BÁSICA (CIUDAD Y CANALES) ---
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = state.city,
+                        color = if(rx) LuxeColors.Gold else Color.White,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Black,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
+                    )
+                    
+                    val displayChannel = if (state.channel == state.city) "CANAL CIUDAD" else state.channel
+                    Surface(
+                        onClick = { onPendingDialogChange(RadioDialogType.CREATE_CHANNEL, null) },
+                        modifier = Modifier.padding(top = 8.dp).height(44.dp),
+                        color = LuxeColors.Gold.copy(0.1f),
+                        shape = RoundedCornerShape(22.dp),
+                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f))
+                    ) {
+                        Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Home, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(displayChannel, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(32.dp))
+            } else {
+                // --- 📟 PANTALLA DIGITAL ELITE "NEXUS" ---
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp) 
+                        .clip(RoundedCornerShape(24.dp)),
+                    color = Color.Black.copy(0.7f),
+                    border = BorderStroke(1.dp, Color.White.copy(0.1f))
+                ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     val qrmIntensity = if (state.rfGain > state.squelch) (state.rfGain - state.squelch) else 0f
                     CentinelMonitor(
@@ -855,97 +894,117 @@ fun RadioPanel(
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
-
-            // --- 🛠️ PANEL DE INSTRUMENTACIÓN ---
-            Text(
-                "INSTRUMENTACIÓN",
-                color = LuxeColors.Gold.copy(0.6f),
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 2.sp,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-            )
+            // --- 🛠️ PANEL DE INSTRUMENTACIÓN (MINIMIZADO) ---
+            var showTools by remember { mutableStateOf(false) }
             
-            val tacticalScrollState = androidx.compose.foundation.lazy.rememberLazyListState()
-            LaunchedEffect(tacticalScrollState) {
-                snapshotFlow { tacticalScrollState.firstVisibleItemIndex }
-                    .collect {
-                        if (tacticalScrollState.isScrollInProgress) {
-                            triggerUiSound("click")
-                        }
-                    }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "HERRAMIENTAS TÁCTICAS",
+                    color = LuxeColors.Gold.copy(0.6f),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 2.sp
+                )
+                
+                IconButton(
+                    onClick = { showTools = !showTools; triggerUiSound("click") },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        if (showTools) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        null,
+                        tint = LuxeColors.Gold
+                    )
+                }
             }
 
-            LazyRow(
-                state = tacticalScrollState,
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 4.dp)
-            ) {
-                // --- BOTONES DINÁMICOS (CONSOLIDADOS) ---
-                item { 
-                    TacticalDockIcon(
-                        icon = Icons.Rounded.Radio, 
-                        label = "RADIO FM", 
-                        isActive = bgStationName != null, 
-                        onClick = { onPendingDialogChange(RadioDialogType.FMSCAN, null); triggerUiSound("click") },
-                        onLongClick = { if (bgStationName != null) onBgRadioStop() else onBgRadioScan(state.city, state.bgRadioGenre); triggerUiSound("switch") }
-                    ) 
-                }
-                item { 
-                    TacticalDockIcon(
-                        icon = if(state.activeProfile != ActivityProfile.NORMAL) Icons.Rounded.Route else Icons.Rounded.Groups, 
-                        label = "RUTA", 
-                        isActive = state.activeProfile != ActivityProfile.NORMAL, 
-                        onClick = { 
-                            if (state.activeProfile == ActivityProfile.NORMAL) onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR, null) 
-                            else onActivityPanelRequest()
-                            triggerUiSound("click")
-                        },
-                        onLongClick = {
-                            if (state.activeProfile != ActivityProfile.NORMAL) {
-                                onPendingDialogChange(RadioDialogType.FINISH_ACTIVITY_CONFIRM, null)
-                                triggerUiSound("click")
+            AnimatedVisibility(visible = showTools) {
+                Column {
+                    val tacticalScrollState = androidx.compose.foundation.lazy.rememberLazyListState()
+                    LaunchedEffect(tacticalScrollState) {
+                        snapshotFlow { tacticalScrollState.firstVisibleItemIndex }
+                            .collect {
+                                if (tacticalScrollState.isScrollInProgress) {
+                                    triggerUiSound("click")
+                                }
                             }
+                    }
+
+                    LazyRow(
+                        state = tacticalScrollState,
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(bottom = 12.dp)
+                    ) {
+                        // --- BOTONES DINÁMICOS (CONSOLIDADOS) ---
+                        item { 
+                            TacticalDockIcon(
+                                icon = Icons.Rounded.Radio, 
+                                label = "RADIO FM", 
+                                isActive = bgStationName != null, 
+                                onClick = { onPendingDialogChange(RadioDialogType.FMSCAN, null); triggerUiSound("click") },
+                                onLongClick = { if (bgStationName != null) onBgRadioStop() else onBgRadioScan(state.city, state.bgRadioGenre); triggerUiSound("switch") }
+                            ) 
                         }
-                    ) 
+                        item { 
+                            TacticalDockIcon(
+                                icon = if(state.activeProfile != ActivityProfile.NORMAL) Icons.Rounded.Route else Icons.Rounded.Groups, 
+                                label = "RUTA", 
+                                isActive = state.activeProfile != ActivityProfile.NORMAL, 
+                                onClick = { 
+                                    if (state.activeProfile == ActivityProfile.NORMAL) onPendingDialogChange(RadioDialogType.ACTIVITY_SELECTOR, null) 
+                                    else onActivityPanelRequest()
+                                    triggerUiSound("click")
+                                },
+                                onLongClick = {
+                                    if (state.activeProfile != ActivityProfile.NORMAL) {
+                                        onPendingDialogChange(RadioDialogType.FINISH_ACTIVITY_CONFIRM, null)
+                                        triggerUiSound("click")
+                                    }
+                                }
+                            ) 
+                        }
+                        item { 
+                            TacticalDockIcon(
+                                icon = Icons.AutoMirrored.Rounded.Chat, 
+                                label = "CHAT", 
+                                isActive = state.unreadCount > 0, 
+                                onClick = { onStateChange(state.copy(isChatVisible = !state.isChatVisible)); if(!state.isChatVisible) onPublicChat(); triggerUiSound("click") }
+                            ) 
+                        }
+                        
+                        // --- AJUSTES SOCIALES / RED ---
+                        item { 
+                            TacticalDockIcon(
+                                icon = Icons.Rounded.Radar, 
+                                label = "RADAR", 
+                                isActive = true, 
+                                onClick = { onPendingDialogChange(RadioDialogType.RADAR_MAP, null); triggerUiSound("click") }
+                            ) 
+                        }
+                        item { 
+                            TacticalDockIcon(
+                                icon = Icons.Rounded.Settings, 
+                                label = "EQUIPO", 
+                                isActive = true, 
+                                onClick = { onPendingDialogChange(RadioDialogType.SETTINGS, null); triggerUiSound("click") }
+                            ) 
+                        }
+                        
+                        // --- AJUSTES TÉCNICOS ---
+                        item { TacticalDockIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) { onStateChange(state.copy(isVoxEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.VOX, null); triggerUiSound("click") } }) }
+                        item { TacticalDockIcon(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)); triggerUiSound("switch") }) }
+                        item { TacticalDockIcon(icon = Icons.Rounded.SettingsInputAntenna, label = "ECO", isActive = state.isReverbEnabled, onClick = { if (state.isReverbEnabled) { onStateChange(state.copy(isReverbEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.REVERB, null); triggerUiSound("click") } }) }
+                        item { TacticalDockIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) { onStateChange(state.copy(isDspEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.DSP, null); triggerUiSound("click") } }) }
+                        item { TacticalDockIcon(icon = Icons.Rounded.Headset, label = "MONI", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) { onStateChange(state.copy(isMonitorEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.MONI, null); triggerUiSound("click") } }) }
+                        item { TacticalDockIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE, null); triggerUiSound("click") }) }
+                        item { TacticalDockIcon(icon = Icons.AutoMirrored.Rounded.Chat, label = "INVITAR", isActive = true, activeColor = LuxeColors.Green, onClick = { onPendingDialogChange(RadioDialogType.INVITE, null); triggerUiSound("click") }) }
+                    }
                 }
-                item { 
-                    TacticalDockIcon(
-                        icon = Icons.AutoMirrored.Rounded.Chat, 
-                        label = "CHAT", 
-                        isActive = state.unreadCount > 0, 
-                        onClick = { onStateChange(state.copy(isChatVisible = !state.isChatVisible)); if(!state.isChatVisible) onPublicChat(); triggerUiSound("click") }
-                    ) 
-                }
-                
-                // --- AJUSTES SOCIALES / RED ---
-                item { 
-                    TacticalDockIcon(
-                        icon = Icons.Rounded.Radar, 
-                        label = "RADAR", 
-                        isActive = true, 
-                        onClick = { onPendingDialogChange(RadioDialogType.RADAR_MAP, null); triggerUiSound("click") }
-                    ) 
-                }
-                item { 
-                    TacticalDockIcon(
-                        icon = Icons.Rounded.Settings, 
-                        label = "EQUIPO", 
-                        isActive = true, 
-                        onClick = { onPendingDialogChange(RadioDialogType.SETTINGS, null); triggerUiSound("click") }
-                    ) 
-                }
-                
-                // --- AJUSTES TÉCNICOS ---
-                item { TacticalDockIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) { onStateChange(state.copy(isVoxEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.VOX, null); triggerUiSound("click") } }) }
-                item { TacticalDockIcon(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)); triggerUiSound("switch") }) }
-                item { TacticalDockIcon(icon = Icons.Rounded.SettingsInputAntenna, label = "ECO", isActive = state.isReverbEnabled, onClick = { if (state.isReverbEnabled) { onStateChange(state.copy(isReverbEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.REVERB, null); triggerUiSound("click") } }) }
-                item { TacticalDockIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { if (state.isDspEnabled) { onStateChange(state.copy(isDspEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.DSP, null); triggerUiSound("click") } }) }
-                item { TacticalDockIcon(icon = Icons.Rounded.Headset, label = "MONI", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) { onStateChange(state.copy(isMonitorEnabled = false)); triggerUiSound("switch") } else { onPendingDialogChange(RadioDialogType.MONI, null); triggerUiSound("click") } }) }
-                item { TacticalDockIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE, null); triggerUiSound("click") }) }
-                item { TacticalDockIcon(icon = Icons.AutoMirrored.Rounded.Chat, label = "INVITAR", isActive = true, activeColor = LuxeColors.Green, onClick = { onPendingDialogChange(RadioDialogType.INVITE, null); triggerUiSound("click") }) }
             }
 
             Spacer(Modifier.height(24.dp))
@@ -1055,68 +1114,8 @@ fun RadioPanel(
 
             Spacer(Modifier.height(32.dp))
 
-            val activeRooms = remember(users, state.city, state.channel) {
-                val rooms = users.filter { it.city == state.city && it.channel != state.city }
-                    .groupBy { it.channel }
-                    .mapValues { it.value.size }
-                    .toList()
-                    .sortedByDescending { it.second }
-                
-                if (state.channel != state.city) {
-                    listOf(state.city to 0) + rooms
-                } else {
-                    rooms
-                }
-            }
-
-            Column(modifier = Modifier.fillMaxWidth()) {
-                if (activeRooms.isNotEmpty()) {
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(activeRooms) { (room, count) ->
-                            val isCurrent = state.channel == room
-                            val isDefault = room == state.city
-                            
-                            Surface(
-                                onClick = { if (!state.isInterfaceLocked) onStateChange(state.copy(channel = room)) },
-                                modifier = Modifier.height(56.dp), 
-                                shape = RoundedCornerShape(16.dp),
-                                color = if (isCurrent) LuxeColors.Gold.copy(0.15f) else if (isDefault) LuxeColors.ElectricBlue.copy(0.1f) else Color.White.copy(0.05f),
-                                border = BorderStroke(1.5.dp, if (isCurrent) LuxeColors.Gold else if (isDefault) LuxeColors.ElectricBlue.copy(0.4f) else Color.White.copy(0.1f))
-                            ) {
-                                Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    if (isDefault) Icon(Icons.Rounded.Home, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(20.dp))
-                                    if (isDefault) Spacer(Modifier.width(10.dp))
-                                    
-                                    Text(
-                                        text = if (isDefault) "SALIR AL CANAL DE CIUDAD" else room, 
-                                        color = if (isDefault) LuxeColors.ElectricBlue else Color.White, 
-                                        fontSize = 14.sp, 
-                                        fontWeight = FontWeight.Black
-                                    )
-                                    
-                                    if (count > 0) {
-                                        Spacer(Modifier.width(10.dp))
-                                        Box(Modifier.background(if (isCurrent) LuxeColors.Gold else Color.White.copy(0.2f), CircleShape).padding(horizontal = 8.dp, vertical = 4.dp)) {
-                                            Text(count.toString(), color = if (isCurrent) Color.Black else Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else if (state.channel == state.city) {
-                    Text(
-                        "No hay barrios activos. Toca aquí para crear uno.",
-                        color = Color.White.copy(0.2f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 12.dp).clickable { if (!state.isInterfaceLocked) onPendingDialogChange(RadioDialogType.CREATE_CHANNEL, null) }
-                    )
-                }
-            }
+            // --- 🏘️ LISTA DE BARRIOS ELIMINADA: SOLO CANALES POR CIUDAD ---
+            Spacer(Modifier.height(8.dp))
             Spacer(Modifier.height(20.dp))
 
             Text(if (state.channel == state.city) "CANAL CIUDAD EN ${state.city}" else "OPERADORES EN BARRIO ${state.channel}", color = Color.White.copy(0.3f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.fillMaxWidth())

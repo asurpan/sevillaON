@@ -140,6 +140,7 @@ data class RadioState(
     val hasSeenMasterIntro: Boolean = false,
     val hasAcceptedMicExplain: Boolean = false,
     val hasMicPermission: Boolean = false,
+    val isBasicMode: Boolean = true, // --- 🛡️ MODO BÁSICO POR DEFECTO ---
     val isSystemVoiceEnabled: Boolean = false, // Control de Red (Apagado por defecto)
     val isDspEnabled: Boolean = true,
     val dspLevel: Float = 0.5f,

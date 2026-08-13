@@ -2,11 +2,11 @@ package com.sagon.on
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - PANTALLAS DE NAVEGACIÓN
- * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 3.0 (ACTIVITY MAP FIX)
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 3.1 (NEXUS ONLY)
  * 
  * Gestiona el renderizado de la pantalla de Bienvenida, Carga y Radio.
- * NIVEL DE PROTECCIÓN 0: PROHIBIDO ALTERAR LÓGICA DE DOCK Y MAPAS.
- * Escalado visual para máxima comodidad y legibilidad (Accesibilidad Pro).
+ * NIVEL DE PROTECCIÓN 0: PROHIBIDO ALTERAR EL DISEÑO NEXUS O LA LÓGICA DE CANALES.
+ * Blindado contra modificaciones en la estructura de la interfaz principal.
  */
 
 import androidx.compose.animation.*

@@ -2,11 +2,11 @@ package com.sagon.on
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - INFRAESTRUCTURA DE AUDIO, BRIDGE Y COMUNICACIONES
- * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 3.0 (DYNAMIC MAP BRIDGE)
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 3.1 (SYNC & DUCKING FIX)
  * 
  * Gestiona el motor de audio, WebRTC, Guardian de Voz, Chat y Bridge de Mapas.
  * Blindado contra alteraciones en la física de aguja y sincronización de capas.
- * ⚠️ NOTA CRÍTICA: PROHIBIDO MODIFICAR EL DISEÑO VISUAL O LOS ICONOS DEL MAPA.
+ * ⚠️ NOTA CRÍTICA: PROHIBIDO MODIFICAR LA LÓGICA DE CANALES, WEBRTC O SINCRONIZACIÓN FIREBASE.
  */
 
 import androidx.compose.foundation.layout.*

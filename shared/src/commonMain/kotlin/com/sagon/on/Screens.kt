@@ -537,6 +537,18 @@ fun RadioPanel(
 
     LaunchedEffect(rx) { if (rx) { while (true) { voiceModulation = ((-5..5).random() / 500f); delay(100) } } else { voiceModulation = 0f } }
 
+    val isQrmAudible = !rx && !isTransmitting && !isBeeping && state.rfGain > state.squelch
+    LaunchedEffect(isQrmAudible) {
+        if (isQrmAudible) {
+            while (true) {
+                meterJitter = ((-3..3).random() / 100f) // Oscilación del QRM (3%)
+                delay(60)
+            }
+        } else {
+            meterJitter = 0f
+        }
+    }
+
     val currentOnMic by rememberUpdatedState(onMic)
     val currentOnNoise by rememberUpdatedState(onNoise)
     
@@ -640,12 +652,11 @@ fun RadioPanel(
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         val qrmIntensity = if (state.rfGain > state.squelch) (state.rfGain - state.squelch) else 0f
-                        CentinelMonitor(state = state, isTransmitting = isTransmitting, rx = rx, level = if (isTransmitting || rx) mic else qrmIntensity, showLeds = false, modifier = Modifier.fillMaxSize().alpha(0.4f))
+                        CentinelMonitor(state = state, isTransmitting = isTransmitting, rx = rx, level = if (isTransmitting || rx) mic else (qrmIntensity + meterJitter).coerceIn(0f, 1f), showLeds = false, modifier = Modifier.fillMaxSize().alpha(0.4f))
 
                         Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Row(modifier = Modifier.fillMaxWidth().weight(1.2f), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.width(80.dp), horizontalAlignment = Alignment.Start) {
-                                    val isQrmAudible = !rx && !isTransmitting && !isBeeping && state.rfGain > state.squelch
                                     val squelchColor by infiniteTransition.animateColor(
                                         initialValue = Color.White,
                                         targetValue = if (isQrmAudible) LuxeColors.Gold else Color.White,
@@ -665,7 +676,7 @@ fun RadioPanel(
                                     Text(text = statusText, color = statusColor, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
                                     Spacer(Modifier.height(6.dp))
                                     Row(modifier = Modifier.fillMaxWidth().height(20.dp).clip(RoundedCornerShape(4.dp)), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                        val activeLevel = if(isTransmitting || rx) mic else qrmIntensity
+                                        val activeLevel = if(isTransmitting || rx) mic else (qrmIntensity + meterJitter).coerceIn(0f, 1f)
                                         repeat(12) { i ->
                                             val isActive = i < (activeLevel * 12)
                                             val ledColor = when { i > 9 -> Color.Red; i > 7 -> Color(0xFFFACC15); else -> LuxeColors.Gold }

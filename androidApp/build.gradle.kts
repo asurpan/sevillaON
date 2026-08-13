@@ -39,8 +39,8 @@ android {
         applicationId = "com.sagon.on"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 48
-        versionName = "48.0"
+        versionCode = 49
+        versionName = "49.full"
     }
     packaging {
         resources {

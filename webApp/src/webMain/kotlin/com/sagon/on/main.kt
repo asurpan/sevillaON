@@ -1539,6 +1539,14 @@ object RadioCore {
             window.connectRadio = function(nick) {
                     var safeNick = nick.replace(/[^a-zA-Z0-9]/g, "");
                     
+                    // --- 🛡️ SYNC DE ARRANQUE Y NORMALIZACIÓN ---
+                    var curCity = (localStorage.getItem("lastCity") || "SEVILLA").trim().toUpperCase();
+                    var curCh = (localStorage.getItem("lastChannel") || curCity).trim().toUpperCase();
+                    // Si el canal es mi nick (posible resto de bug anterior), forzamos ciudad
+                    if (curCh === safeNick.toUpperCase() || curCh === "GENERAL" || curCh === "") curCh = curCity;
+                    localStorage.setItem("lastCity", curCity);
+                    localStorage.setItem("lastChannel", curCh);
+
                     var deviceID = "";
                     if (window.AndroidApp && typeof window.AndroidApp.getAndroidId === 'function') {
                         deviceID = "A_" + window.AndroidApp.getAndroidId();
@@ -1886,11 +1894,11 @@ object RadioCore {
                         if (window.app.isTerminated) return;
                         if (window.app.db && window.app.sessionID) {
                             var currentCity = "ESPAÑA (NACIONAL)";
-                            var currentCh = localStorage.getItem("lastCity") || "SEVILLA";
+                            var currentCh = "SEVILLA";
                             var currentGenre = null;
                             try { 
-                                currentCity = localStorage.getItem("lastCity") || "ESPAÑA (NACIONAL)";
-                                currentCh = localStorage.getItem("lastChannel") || (localStorage.getItem("lastCity") || "SEVILLA"); 
+                                currentCity = (localStorage.getItem("lastCity") || "ESPAÑA (NACIONAL)").trim().toUpperCase();
+                                currentCh = (localStorage.getItem("lastChannel") || currentCity).trim().toUpperCase(); 
                                 // --- 📻 INFORMAR DEL GÉNERO SI LA RADIO ESTÁ ON ---
                                 if (window.fmEngine && window.fmEngine.currentStation) {
                                     currentGenre = window.app.bgGenre || "MIX";
@@ -2374,7 +2382,20 @@ object RadioBridge {
                 var cities = ["ESPAÑA (NACIONAL)", "SEVILLA", "MADRID", "BARCELONA", "VALENCIA", "ALICANTE", "MÁLAGA", "MURCIA", "CÁDIZ", "BIZKAIA", "A CORUÑA", "ISLAS BALEARES", "LAS PALMAS", "STA. CRUZ TENERIFE", "ASTURIAS", "ZARAGOZA", "PONTEVEDRA", "GRANADA", "TARRAGONA", "CÓRDOBA", "GIPUZKOA", "GIRONA", "ALMERÍA", "TOLEDO", "BADAJOZ", "NAVARRA", "JAÉN", "CASTELLÓN", "CANTABRIA", "HUELVA", "VALLADOLID", "CIUDAD REAL", "LEÓN", "LLEIDA", "ALBACETE", "BURGOS / SORIA", "SALAMANCA / ÁVILA", "LOGROÑO / ÁLAVA", "CÁCERES / SEGOVIA", "LUGO / OURENSE / PALENCIA / ZAMORA", "CUENCA / TERUEL / GUADALAJARA / CEUTA / MELILLA"];
                 var canalIdx = cities.indexOf(city); /* Ajustado para que España sea el 0 o 1 según prefieras */
                 var baseUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-                var shareUrl = baseUrl + "?city=" + encodeURIComponent(city) + "&channel=" + encodeURIComponent(channel) + "&subtone=" + encodeURIComponent(subtone);
+                
+                // --- 🛡️ FIX: NICK EN URL Y NORMALIZACIÓN DE CANAL PÚBLICO ---
+                var finalChannel = channel;
+                var myNick = (localStorage.getItem("indicativo") || "").trim().toUpperCase();
+                
+                // Si el canal es mi nick (Sharing Bug), o es "GENERAL", o está vacío, o es igual a la ciudad -> Forzamos ciudad
+                if (finalChannel.trim().toUpperCase() === myNick || 
+                    finalChannel.trim().toUpperCase() === "GENERAL" || 
+                    finalChannel.trim() === "" || 
+                    finalChannel.trim().toUpperCase() === city.trim().toUpperCase()) {
+                    finalChannel = city;
+                }
+
+                var shareUrl = baseUrl + "?city=" + encodeURIComponent(city) + "&channel=" + encodeURIComponent(finalChannel) + "&subtone=" + encodeURIComponent(subtone);
                 
                 var text = "";
                 var isActivity = (window.app && window.app.motoActive);
@@ -2931,8 +2952,9 @@ fun main() {
                     var anyCodedTx = false
                     var channelUsersCount = 0
                     var isAnyRemoteTx = false
-                    val myCity = localStorage.getItem("lastCity") ?: "SEVILLA"
-                    val myCh = localStorage.getItem("lastChannel") ?: myCity
+                    // --- 🛡️ NORMALIZACIÓN DE ENTRADA ---
+                    val myCity = (localStorage.getItem("lastCity") ?: "SEVILLA").trim().uppercase()
+                    val myCh = (localStorage.getItem("lastChannel") ?: myCity).trim().uppercase()
                     val mySub = localStorage.getItem("lastSubtone") ?: "0000"
                     val mySessionID = if (win.app != null) win.app.sessionID as? String else null
                     val now = Date.now()
@@ -2957,9 +2979,15 @@ fun main() {
                             // --- 🛡️ PROTOCOLO DE EXPIRACIÓN ACELERADA (15s) ---
                             if (userNick.isNotEmpty() && (now - lastSeen) < 15000.0) {
                                 val isTransmitting = u.tx == true
-                                val userCity = u.city as? String ?: "SEVILLA"
-                                val userChannel = u.channel as? String ?: userCity
+                                // --- 🛡️ NORMALIZACIÓN DE USUARIO REMOTO ---
+                                val userCity = (u.city as? String ?: "SEVILLA").trim().uppercase()
+                                val userChannel = (u.channel as? String ?: userCity).trim().uppercase()
                                 
+                                // --- 🛡️ LOG DE FILTRADO (DEBUG) ---
+                                if (userCity != myCity || userChannel != myCh) {
+                                    js("console.log('Filtered: ' + userNick + ' (City: ' + userCity + ' vs ' + myCity + ', Ch: ' + userChannel + ' vs ' + myCh + ')')")
+                                }
+
                                 // --- 🎙️ DETECCIÓN DE NUEVOS PARA SALUDO ---
                                 if (userCity == myCity && userChannel == myCh) {
                                     newKnownNicks.add(userNick)
@@ -3312,17 +3340,17 @@ fun main() {
                 val urlImg = params.get("img")?.toString()
 
                 val savedCity = localStorage.getItem("lastCity")
-                val finalCity = urlCity ?: (savedCity ?: "SEVILLA")
+                val finalCity = (urlCity ?: (savedCity ?: "SEVILLA")).trim().uppercase()
                 
                 // --- 🛡️ POLÍTICA DE CANAL POR DEFECTO DINÁMICO: LA CIUDAD ---
                 val defaultChannel = finalCity
                 val savedChannel = localStorage.getItem("lastChannel")
                 val initialChannel = if (urlChannel != null) {
-                    urlChannel
-                } else if (savedChannel == null || savedChannel == "GENERAL" || savedChannel == "") {
+                    urlChannel.trim().uppercase()
+                } else if (savedChannel == null || savedChannel.trim().uppercase() == "GENERAL" || savedChannel.trim() == "") {
                     defaultChannel
                 } else {
-                    savedChannel
+                    savedChannel.trim().uppercase()
                 }
 
                 RadioState(
@@ -3806,8 +3834,17 @@ fun main() {
             },
             onStateSave = { s ->
                 try {
-                    localStorage.setItem("lastCity", s.city)
-                    localStorage.setItem("lastChannel", s.channel)
+                    val normCity = s.city.trim().uppercase()
+                    var normCh = s.channel.trim().uppercase()
+                    val myNick = (localStorage.getItem("indicativo") ?: "").trim().uppercase()
+
+                    // Evitar que el nick se guarde como canal (Sharing Bug Prevention)
+                    if (normCh == myNick || normCh == "GENERAL" || normCh == "") {
+                        normCh = normCity
+                    }
+
+                    localStorage.setItem("lastCity", normCity)
+                    localStorage.setItem("lastChannel", normCh)
                     localStorage.setItem("lastSubtone", s.subtone)
                     localStorage.setItem("voxSens", s.voxSensitivity.toString())
                     localStorage.setItem("moniVol", s.monitorVolume.toString())

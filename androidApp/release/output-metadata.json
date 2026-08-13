@@ -11,8 +11,8 @@
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 48,
-      "versionName": "48.0",
+      "versionCode": 50,
+      "versionName": "50.full",
       "outputFile": "androidApp-release.apk"
     }
   ],

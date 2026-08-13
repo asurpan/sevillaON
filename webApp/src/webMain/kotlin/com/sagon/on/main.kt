@@ -2961,14 +2961,17 @@ fun main() {
             },
             onUsersUpdate = { users ->
                 try {
+                    // --- 📡 SISTEMA DE AUDITORÍA DE RED ---
+                    val myCity = (localStorage.getItem("lastCity") ?: "SEVILLA").trim().uppercase()
+                    val myCh = (localStorage.getItem("lastChannel") ?: myCity).trim().uppercase()
+                    js("console.log('📡 AUDIT: [Yo: ' + myCity + ' / ' + myCh + ']')")
+
                     remoteUsersState.clear()
                     var currentTx: String? = null
                     var anyCodedTx = false
                     var channelUsersCount = 0
                     var isAnyRemoteTx = false
                     // --- 🛡️ NORMALIZACIÓN DE ENTRADA ---
-                    val myCity = (localStorage.getItem("lastCity") ?: "SEVILLA").trim().uppercase()
-                    val myCh = (localStorage.getItem("lastChannel") ?: myCity).trim().uppercase()
                     val mySub = localStorage.getItem("lastSubtone") ?: "0000"
                     val mySessionID = if (win.app != null) win.app.sessionID as? String else null
                     val now = Date.now()
@@ -2990,16 +2993,18 @@ fun main() {
                             val userNick = u.nick as? String ?: ""
                             val lastSeen = try { if (u.lastSeen != null) u.lastSeen.toString().toDouble() else 0.0 } catch(e: Exception) { 0.0 }
                             
-                            // --- 🛡️ PROTOCOLO DE EXPIRACIÓN (60s para compensar desfases horarios) ---
-                            if (userNick.isNotEmpty() && (now - lastSeen) < 60000.0) {
+                            // --- 🛡️ AUDITORÍA TOTAL (24h para asegurar visibilidad en tests) ---
+                            if (userNick.isNotEmpty() && (now - lastSeen) < 86400000.0) {
                                 val isTransmitting = u.tx == true
                                 // --- 🛡️ NORMALIZACIÓN DE USUARIO REMOTO ---
                                 val userCity = (u.city as? String ?: "SEVILLA").trim().uppercase()
                                 val userChannel = (u.channel as? String ?: userCity).trim().uppercase()
                                 
-                                // --- 🛡️ LOG DE FILTRADO (DEBUG) ---
-                                if (userCity != myCity || userChannel != myCh) {
-                                    js("console.log('Filtered: ' + userNick + ' (City: ' + userCity + ' vs ' + myCity + ', Ch: ' + userChannel + ' vs ' + myCh + ')')")
+                                // --- 🛡️ LOG DE AUDITORÍA (DEBUG) ---
+                                if (userCity == myCity && userChannel == myCh) {
+                                    js("console.log('✅ COMPATIBLE: ' + userNick + ' (en ' + userCity + '/' + userChannel + ')')")
+                                } else {
+                                    js("console.log('❌ FILTRADO: ' + userNick + ' (Ciudad: ' + userCity + ' vs ' + myCity + ', Canal: ' + userChannel + ' vs ' + myCh + ')')")
                                 }
 
                                 // --- 🎙️ DETECCIÓN DE NUEVOS PARA SALUDO ---
@@ -3979,7 +3984,13 @@ fun main() {
                         
                         val currentGps = s.myGpsUrl
                         if (currentGps != null) updates.gps = currentGps
-                        ref.update(updates)
+                        
+                        js("console.log('📤 SYNC FIREBASE: Enviando datos...', updates)")
+                        ref.update(updates).then(fun(){
+                            js("console.log('✅ SYNC EXITOSA')")
+                        }).catch(fun(err: dynamic){
+                            js("console.error('❌ ERROR SYNC:', err)")
+                        })
                     }
                 }
             },

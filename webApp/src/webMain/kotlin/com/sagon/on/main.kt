@@ -2076,7 +2076,6 @@ object RadioSignaling {
                         if(window.dispatch_beeping) window.dispatch_beeping(false);
                     }
                     if (window.speechSynthesis) window.speechSynthesis.cancel();
-                    if(window.updateBgDucking) window.updateBgDucking();
 
                     if (window.app.rxActiveInternal) {
                         if (typeof window.playBusyTone === 'function') window.playBusyTone();
@@ -2088,6 +2087,9 @@ object RadioSignaling {
                     // Marcamos TX inmediatamente para feedback de aguja y UI
                     window.app.isTransmittingInternal = true;
                     if(window.dispatch_ptt_live) window.dispatch_ptt_live(true);
+                    
+                    // --- 🦆 DUCKING: Bajar volumen de la música al hablar ---
+                    if(window.updateBgDucking) window.updateBgDucking();
 
                     // Sincronización Firebase instantánea
                     var currentSub = localStorage.getItem("lastSubtone") || "0000";

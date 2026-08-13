@@ -1577,17 +1577,25 @@ object RadioCore {
                     
                     if (window.app.db) {
                         // --- 🧹 BARRIDO DE SEGURIDAD (ANTI-ZOMBIS) ---
-                        // Eliminamos rastro de estaciones que no cerraron limpiamente (más de 45s de silencio)
+                        // Eliminamos rastro de estaciones que no cerraron limpiamente (más de 60s de silencio)
                         window.app.db.ref("users").once('value', function(snap) {
                             var u = snap.val(); if(!u) return;
                             var now = Date.now();
                             for(var id in u) {
-                                if (now - (u[id].lastSeen || 0) > 45000) window.app.db.ref("users/" + id).remove();
+                                if (now - (u[id].lastSeen || 0) > 60000) window.app.db.ref("users/" + id).remove();
                             }
                         });
 
-                        // Limpieza del nodo de usuario
-                        window.app.db.ref("users/" + sessionID).remove();
+                        // --- 🚀 SYNC INMEDIATA: Aparecer en el mapa al instante ---
+                        window.app.db.ref("users/" + sessionID).update({
+                            nick: safeNick,
+                            city: curCity,
+                            channel: curCh,
+                            lastSeen: Date.now(),
+                            subtone: localStorage.getItem("lastSubtone") || "0000",
+                            tx: false
+                        });
+
                         window.app.db.ref("users/" + sessionID).onDisconnect().remove();
 
                         // --- 🛡️ MONITOR DE SESIÓN ACTIVA (TAKEOVER) ---
@@ -1641,11 +1649,10 @@ object RadioCore {
                                 { 'urls': 'stun:stun.l.google.com:19302' },
                                 { 'urls': 'stun:stun1.l.google.com:19302' },
                                 { 'urls': 'stun:stun2.l.google.com:19302' },
-                                { 'urls': 'stun:stun3.l.google.com:19302' },
-                                { 'urls': 'stun:stun4.l.google.com:19302' },
+                                { 'urls': 'stun:stun.l.google.com:19302' },
+                                { 'urls': 'stun:global.stun.twilio.com:3478' },
                                 { 'urls': 'stun:stun.services.mozilla.com' },
                                 { 'urls': 'stun:stun.relay.metered.ca:80' },
-                                { 'urls': 'stun:stun.ekiga.net' },
                                 { 
                                     'urls': 'turn:openrelay.metered.ca:80', 
                                     'username': 'openrelay', 
@@ -1653,6 +1660,11 @@ object RadioCore {
                                 },
                                 { 
                                     'urls': 'turn:openrelay.metered.ca:443', 
+                                    'username': 'openrelay', 
+                                    'credential': 'openrelay' 
+                                },
+                                { 
+                                    'urls': 'turn:openrelay.metered.ca:443?transport=tcp', 
                                     'username': 'openrelay', 
                                     'credential': 'openrelay' 
                                 }
@@ -2976,8 +2988,8 @@ fun main() {
                             val userNick = u.nick as? String ?: ""
                             val lastSeen = try { if (u.lastSeen != null) u.lastSeen.toString().toDouble() else 0.0 } catch(e: Exception) { 0.0 }
                             
-                            // --- 🛡️ PROTOCOLO DE EXPIRACIÓN ACELERADA (15s) ---
-                            if (userNick.isNotEmpty() && (now - lastSeen) < 15000.0) {
+                            // --- 🛡️ PROTOCOLO DE EXPIRACIÓN (60s para compensar desfases horarios) ---
+                            if (userNick.isNotEmpty() && (now - lastSeen) < 60000.0) {
                                 val isTransmitting = u.tx == true
                                 // --- 🛡️ NORMALIZACIÓN DE USUARIO REMOTO ---
                                 val userCity = (u.city as? String ?: "SEVILLA").trim().uppercase()
@@ -3932,12 +3944,18 @@ fun main() {
                     js("if(window.updateMoniGain) window.updateMoniGain();")
                     js("if(window.updateMasterVolume) window.updateMasterVolume();")
                     
-                    // --- 🛠️ SINCRONIZACIÓN DE ESTADO Y GPS ---
-                    if (win.app.db != null && win.app.sessionID != null) {
-                        val ref = win.app.db.ref("users/" + win.app.sessionID)
-                        val updates: dynamic = js("{}")
-                        
-                        // --- 🛡️ PROTECCIÓN DE PRIVACIDAD GPS ---
+                        // --- 🛠️ SINCRONIZACIÓN DE ESTADO Y GPS ---
+                        if (win.app.db != null && win.app.sessionID != null) {
+                            val ref = win.app.db.ref("users/" + win.app.sessionID)
+                            val updates: dynamic = js("{}")
+                            
+                            // Forzar inclusión de campos base para asegurar visibilidad
+                            updates.city = s.city.trim().uppercase()
+                            updates.channel = s.channel.trim().uppercase()
+                            updates.nick = win.app.nick
+                            updates.lastSeen = Date.now()
+                            
+                            // --- 🛡️ PROTECCIÓN DE PRIVACIDAD GPS ---
                         if (s.motoLatitude != null && s.motoLongitude != null) {
                             var finalLat = s.motoLatitude
                             var finalLon = s.motoLongitude

@@ -13,16 +13,16 @@ node_modules/
 package-lock.json
 yarn.lock
 
-# --- 🔒 PROTECTED CORE: CARPETAS DE CÓDIGO FUENTE (SÓLO LOCAL) ---
-shared/
-androidApp/
-webApp/
-.github/
-gradle/
-gradlew
-gradlew.bat
-build.gradle.kts
-settings.gradle.kts
+# --- 🛠️ IDE & SISTEMA ---
+.idea/
+*.iws
+*.out
+local.properties
+.DS_Store
+Thumbs.db
+captures/
+.externalNativeBuild/
+.cxx/
 
 # --- 🛠️ IDE & SISTEMA ---
 .idea/

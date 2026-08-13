@@ -1558,9 +1558,8 @@ object RadioCore {
                         }
                     }
                     
-                    // Restore unique session ID per nick+device to avoid PeerJS conflicts
-                    var sessionID = safeNick + "_" + deviceID;
-                    localStorage.setItem("session_id_" + safeNick, sessionID);
+                    // Restore unique session ID per instance to avoid PeerJS conflicts and identity collisions
+                    var sessionID = safeNick + "_" + Math.random().toString(36).substring(2, 11);
                     
                     window.app.nick = safeNick; 
                     window.app.sessionID = sessionID;
@@ -2959,11 +2958,13 @@ fun main() {
             },
             onUsersUpdate = { users ->
                 try {
-                    // --- 📡 SISTEMA DE AUDITORÍA DE RED ---
+                    // --- 📡 SISTEMA DE AUDITORÍA DE RED (AUTORIDAD ÚNICA) ---
                     val winApp = win.app
-                    val myCity = (if (winApp != null && winApp.currentCity != null) winApp.currentCity else (localStorage.getItem("lastCity") ?: "SEVILLA")).toString().trim().uppercase()
-                    val myCh = (if (winApp != null && winApp.currentChannel != null) winApp.currentChannel else (localStorage.getItem("lastChannel") ?: myCity)).toString().trim().uppercase()
-                    js("console.log('📡 AUDIT: [Yo: ' + myCity + ' / ' + myCh + ']')")
+                    val myCity = (if (winApp != null && winApp.currentCity != null) winApp.currentCity else "ESPAÑA (NACIONAL)").toString().trim().uppercase()
+                    val myCh = (if (winApp != null && winApp.currentChannel != null) winApp.currentChannel else myCity).toString().trim().uppercase()
+                    val mySub = (if (winApp != null && winApp.currentSubtone != null) winApp.currentSubtone else "0000").toString()
+                    
+                    js("console.log('📡 AUDIT [REALTIME]: ' + myCity + ' / ' + myCh + ' / ' + mySub)")
 
                     remoteUsersState.clear()
                     var currentTx: String? = null
@@ -2971,7 +2972,6 @@ fun main() {
                     var channelUsersCount = 0
                     var isAnyRemoteTx = false
                     // --- 🛡️ NORMALIZACIÓN DE ENTRADA ---
-                    val mySub = localStorage.getItem("lastSubtone") ?: "0000"
                     val mySessionID = if (win.app != null) win.app.sessionID as? String else null
                     val now = Date.now()
                     

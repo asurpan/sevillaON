@@ -2958,7 +2958,7 @@ fun main() {
                             if (userNick.isNotEmpty() && (now - lastSeen) < 15000.0) {
                                 val isTransmitting = u.tx == true
                                 val userCity = u.city as? String ?: "SEVILLA"
-                                val userChannel = u.channel as? String ?: (u.city as? String ?: "SEVILLA")
+                                val userChannel = u.channel as? String ?: userCity
                                 
                                 // --- 🎙️ DETECCIÓN DE NUEVOS PARA SALUDO ---
                                 if (userCity == myCity && userChannel == myCh) {

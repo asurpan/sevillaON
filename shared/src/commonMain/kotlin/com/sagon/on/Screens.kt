@@ -669,7 +669,7 @@ fun RadioPanel(
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
                                             Icon(if(rx) Icons.Rounded.Person else Icons.Rounded.Home, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text(text = if(rx) (transmitterNick ?: "ANÓNIMO") else (if (state.channel == state.city) "SALA PÚBLICA" else state.channel), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, maxLines = 1, modifier = Modifier.weight(1f).basicMarquee())
+                                            Text(text = if(rx) (transmitterNick ?: "ANÓNIMO") else (if (state.channel == state.city) "CANAL PÚBLICO" else state.channel), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, maxLines = 1, modifier = Modifier.weight(1f).basicMarquee())
                                         }
                                     }
                                 }
@@ -684,7 +684,7 @@ fun RadioPanel(
                                     Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Icon(if(state.subtone == "0000") Icons.Rounded.LockOpen else Icons.Rounded.Lock, null, tint = if(state.subtone != "0000") LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(14.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text(if (state.subtone != "0000") "PRIVADO: ${state.subtone}" else "CANAL ABIERTO", color = Color.White.copy(0.6f), fontSize = 10.sp, fontWeight = FontWeight.Black)
+                                        Text(if (state.subtone != "0000") "CÓDIGO: ${state.subtone}" else "CANAL ABIERTO", color = Color.White.copy(0.6f), fontSize = 10.sp, fontWeight = FontWeight.Black)
                                     }
                                 }
                             }
@@ -904,8 +904,8 @@ fun EliteChatOverlay(
                     }
                     Spacer(Modifier.width(16.dp))
                     Column {
-                        Text(text = if (target != null) "TERMINAL PRIVADA" else "SALA CIUDAD", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                        Text(text = target ?: "TODOS LOS OPERADORES", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                        Text(text = if (target != null) "TERMINAL PRIVADA" else "CANAL CIUDAD", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                        Text(text = target ?: "CANAL PÚBLICO", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
                     }
                 }
                 IconButton(onClick = onClose, modifier = Modifier.size(48.dp).background(Color.White.copy(0.05f), CircleShape)) { 

@@ -905,13 +905,13 @@ fun RadioDialogs(
                 containerColor = LuxeColors.DeepSea,
                 titleContentColor = LuxeColors.Red,
                 modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(12.dp)),
-                title = { Row { Icon(Icons.Rounded.DeleteSweep, null, tint = LuxeColors.Red); Text(" ELIMINAR SALA") } },
-                text = { Text("¿Eliminar sala $channelToDelete?") },
+                title = { Row { Icon(Icons.Rounded.DeleteSweep, null, tint = LuxeColors.Red); Text(" ELIMINAR CANAL") } },
+                text = { Text("¿Eliminar canal $channelToDelete?") },
                 confirmButton = {
                     Button(onClick = {
                         val newState = state.copy(favoriteChannels = state.favoriteChannels - channelToDelete)
                         onStateChange(if (state.channel == channelToDelete) newState.copy(channel = state.city) else newState)
-                        onNotification(AppNotification("SALA ELIMINADA", "Has vuelto al Canal Público", NotificationType.Info))
+                        onNotification(AppNotification("CANAL ELIMINADO", "Has vuelto al Canal Público", NotificationType.Info))
                         onDismiss()
                     }, colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Red)) { Text("ELIMINAR") }
                 }
@@ -999,7 +999,7 @@ fun RadioDialogs(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold)
                         Spacer(Modifier.width(12.dp))
-                        Text("SALA PRIVADA", fontWeight = FontWeight.Black, fontSize = 16.sp)
+                        Text("CÓDIGO PRIVADO", fontWeight = FontWeight.Black, fontSize = 16.sp)
                     }
                 },
                 text = {
@@ -1040,7 +1040,7 @@ fun RadioDialogs(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    "SALIR DE SALA PRIVADA", 
+                                    "SALIR DEL CÓDIGO PRIVADO", 
                                     modifier = Modifier.padding(12.dp), 
                                     textAlign = TextAlign.Center,
                                     color = Color.Red,
@@ -1053,7 +1053,7 @@ fun RadioDialogs(
                 },
                 confirmButton = {
                     if (newChannelSubtone.length == 4) {
-                        LuxeButton("ENTRAR A SALA", {
+                        LuxeButton("ENTRAR AL CANAL", {
                             onStateChange(state.copy(
                                 channel = state.city, 
                                 subtone = newChannelSubtone

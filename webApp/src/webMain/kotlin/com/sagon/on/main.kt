@@ -2409,7 +2409,7 @@ object RadioBridge {
                     var finalShareUrl = shareUrl + "&pro=true";
                     text = "💼 RADAR PROFESIONAL: " + city + "\n\nEstamos conectando ofertas y profesionales por voz en tiempo real. Entra aquí:\n" + finalShareUrl;
                 } else {
-                    var salaText = (channel === city) ? "SALA PÚBLICA" : "SALA " + channel;
+                    var salaText = (channel === city) ? "CANAL PÚBLICO" : channel;
                     text = "📻 ¡ENTRA EN MI FRECUENCIA!\n\nTe espero en " + city + " [" + salaText + "]. Música, noticias y voz en directo. ¡Pínchale! 👇\n" + shareUrl;
                 }
                 
@@ -3569,7 +3569,7 @@ fun main() {
                         "🏍️ ¡VAMOS DE RUTA! ($activityName)\n\nHe activado mi Radio en Modo Actividad para compartir mi posición en tiempo real con el grupo.\n\nÚnete a la ruta y sígueme en el mapa aquí:\n👉 https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&activity=true&type=$activityName$imgParam"
                     }
                     else -> {
-                        val salaText = if (channel == city) "SALA PÚBLICA" else "SALA: $channel"
+                        val salaText = if (channel == city) "CANAL PÚBLICO" else "CANAL: $channel"
                         val extraSub = if (subtone != "0000") "\n\n🔑 CÓDIGO DE ACCESO: $subtone" else ""
                         val imgParam = if (imageUrl != null) "&img=${js("encodeURIComponent")(imageUrl)}" else ""
                         "📻 ¡BREICO, BREICO!\n\nTe invito a mi canal en la Radio ON AIR SPAIN.\n\n📍 CIUDAD: $city\n💬 CANAL: $channel$extraSub\n\nEntra directo a la frecuencia aquí:\n👇 https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone$imgParam"

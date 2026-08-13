@@ -1084,7 +1084,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                     } else {
                                         val subText = if (subtone != null && subtone != "0000") " (Código: $subtone)" else ""
                                         val proText = if (proRole != null) " [$proRole]" else ""
-                                        "📻 ¡Modulamos! Te espero en ON AIR SPAIN.\n📍 Ciudad: $city\n🔊 Sala: $channel$subText$proText\n\nEntra ahora: https://asurpan.github.io/sevillaON/"
+                                        "📻 ¡Modulamos! Te espero en ON AIR SPAIN.\n📍 Ciudad: $city\n🔊 Canal: $channel$subText$proText\n\nEntra ahora: https://asurpan.github.io/sevillaON/"
                                     }
 
                                     val sendIntent = android.content.Intent().apply {

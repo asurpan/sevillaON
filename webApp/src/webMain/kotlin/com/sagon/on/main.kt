@@ -190,7 +190,7 @@ object RadioCore {
                     moniVolume: parseFloat(localStorage.getItem("moniVol")) || 0.5, 
                     moniActive: localStorage.getItem("moniActive") === "true",
                     currentCity: localStorage.getItem("lastCity") || "ESPAÑA (NACIONAL)",
-                    currentChannel: localStorage.getItem("lastChannel") || (localStorage.getItem("lastCity") || "SEVILLA"), 
+                    currentChannel: localStorage.getItem("lastChannel") || "ESPAÑA (NACIONAL)", 
                     currentSubtone: localStorage.getItem("lastSubtone") || "0000",
                     voxActive: localStorage.getItem("voxActive") === "true", 
                     voxSens: parseFloat(localStorage.getItem("voxSens")) || 0.5,
@@ -1905,12 +1905,10 @@ object RadioCore {
                     window.app.heartbeatInterval = setInterval(function() {
                         if (window.app.isTerminated) return;
                         if (window.app.db && window.app.sessionID) {
-                            var currentCity = "ESPAÑA (NACIONAL)";
-                            var currentCh = "SEVILLA";
+                            var currentCity = window.app.currentCity || "ESPAÑA (NACIONAL)";
+                            var currentCh = window.app.currentChannel || currentCity;
                             var currentGenre = null;
                             try { 
-                                currentCity = (localStorage.getItem("lastCity") || "ESPAÑA (NACIONAL)").trim().toUpperCase();
-                                currentCh = (localStorage.getItem("lastChannel") || currentCity).trim().toUpperCase(); 
                                 // --- 📻 INFORMAR DEL GÉNERO SI LA RADIO ESTÁ ON ---
                                 if (window.fmEngine && window.fmEngine.currentStation) {
                                     currentGenre = window.app.bgGenre || "MIX";
@@ -2116,9 +2114,9 @@ object RadioSignaling {
                     // Asegurar llamadas a pares
                     window.app.db.ref("users").once('value', function(snap) {
                         var users = snap.val();
-                        var myCity = localStorage.getItem("lastCity") || "SEVILLA";
-                        var myChannel = localStorage.getItem("lastChannel") || (localStorage.getItem("lastCity") || "SEVILLA");
-                        var mySubtone = localStorage.getItem("lastSubtone") || "0000";
+                        var myCity = window.app.currentCity || "ESPAÑA (NACIONAL)";
+                        var myChannel = window.app.currentChannel || myCity;
+                        var mySubtone = window.app.currentSubtone || "0000";
                         var now = Date.now();
                         for(var id in users) { 
                             if(id !== window.app.sessionID && users[id].city === myCity && users[id].channel === myChannel && users[id].subtone === mySubtone) {

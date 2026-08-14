@@ -45,8 +45,7 @@ object CityCoordinates {
         "LOGROÑO / ÁLAVA" to Pair(42.4627, -2.4450),
         "CÁCERES / SEGOVIA" to Pair(39.4753, -6.3722),
         "LUGO / OURENSE / PALENCIA / ZAMORA" to Pair(43.0125, -7.5522),
-        "CUENCA / TERUEL / GUADALAJARA / CEUTA / MELILLA" to Pair(40.0704, -2.1374),
-        "ESPAÑA (NACIONAL)" to Pair(40.4637, -3.7492)
+        "CUENCA / TERUEL / GUADALAJARA / CEUTA / MELILLA" to Pair(40.0704, -2.1374)
     )
 
     fun get(city: String): Pair<Double, Double>? {

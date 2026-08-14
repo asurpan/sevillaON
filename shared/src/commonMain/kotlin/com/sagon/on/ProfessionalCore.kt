@@ -20,8 +20,7 @@ val PROFESSIONAL_ROLES = listOf(
     // --- CATEGORÍA: ESTÁNDAR ---
     ProRole("CIUDADANO", "CIUDADANO", Icons.Rounded.Person, "Estación de radio estándar"),
 
-    // --- CATEGORÍA: GENERAL ---
-    ProRole("GENERAL", "SERVICIOS (OTROS)", Icons.Rounded.Person, "Pequeños trabajos, recados o servicios no clasificados"),
+    ProRole("OTROS", "SERVICIOS (VARIOS)", Icons.Rounded.Person, "Pequeños trabajos, recados o servicios no clasificados"),
     
     // --- CATEGORÍA: HOSTELERÍA Y ALIMENTACIÓN ---
     ProRole("CAMARERO", "CAMARERO/A", Icons.Rounded.LocalBar, "Servicio de sala, barra y eventos"),

@@ -38,7 +38,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val message = remoteMessage.data["message"] ?: "¡Nueva actividad en la frecuencia!"
             val targetCity = remoteMessage.data["target_city"]
 
-            if (targetCity != null && targetCity != "ESPAÑA (NACIONAL)") {
+            if (targetCity != null) {
                 val prefs = getSharedPreferences("on_air_prefs", android.content.Context.MODE_PRIVATE)
                 val userCity = prefs.getString("last_city", "") ?: ""
                 
@@ -46,7 +46,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                     sendNotification(title, message)
                 }
             } else {
-                // DESPERTADOR GLOBAL: Sin ciudad o Nacional
+                // DESPERTADOR GLOBAL
                 sendNotification(title, message)
             }
         }

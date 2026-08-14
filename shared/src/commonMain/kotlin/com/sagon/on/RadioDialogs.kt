@@ -186,7 +186,7 @@ fun RadioDialogs(
             }
         )
         RadioDialogType.RADAR -> FeatureHelpDialog(
-            title = "Radar Nacional",
+            title = "Radar de Operadores",
             icon = Icons.Rounded.Radar,
             description = "El radar muestra la actividad en tiempo real en toda España.",
             onDismiss = { 
@@ -1118,7 +1118,7 @@ fun RadioDialogs(
                         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.Radar, null, tint = LuxeColors.Gold)
                             Spacer(Modifier.width(12.dp))
-                            Text("RADAR NACIONAL", color = Color.White, fontWeight = FontWeight.Black)
+                            Text("RADAR TÁCTICO", color = Color.White, fontWeight = FontWeight.Black)
                             Spacer(Modifier.weight(1f))
                             IconButton(onClick = {
                                 onExecuteEngineeringAction("HIDE_MAP_OVERLAY")
@@ -1502,7 +1502,7 @@ fun RadioDialogs(
             title = { Text("¿HAS LLEGADO A TU DESTINO?", color = Color.White, fontWeight = FontWeight.Black, textAlign = TextAlign.Center) },
             text = { 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Al finalizar la ruta, volverás al canal público general y dejarás de compartir tu posición exacta.", textAlign = TextAlign.Center, color = Color.White.copy(0.7f), fontSize = 13.sp)
+                    Text("Al finalizar la ruta, volverás al canal de tu ciudad y dejarás de compartir tu posición exacta.", textAlign = TextAlign.Center, color = Color.White.copy(0.7f), fontSize = 13.sp)
                 }
             },
             confirmButton = {

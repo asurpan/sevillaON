@@ -28,7 +28,7 @@ import on.shared.generated.resources.mapa_nacional
 
 /**
  * 📡 RADAR VISUAL PRO - LA EVOLUCIÓN DE LA RADIO CB
- * Visualización hipnótica y profesional de la actividad nacional.
+ * Visualización hipnótica y profesional de la actividad.
  * Diseñado para cautivar y mostrar una red viva.
  */
 
@@ -302,7 +302,7 @@ fun NationalRadarMap(
 
         Box(Modifier.align(Alignment.BottomEnd).padding(16.dp).clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(0.6f)).padding(horizontal = 8.dp, vertical = 4.dp)) {
             Column(horizontalAlignment = Alignment.End) {
-                Text("RADAR NACIONAL ACTIVO", color = LuxeColors.Gold, fontSize = 7.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                Text("RADAR ESTRATÉGICO ACTIVO", color = LuxeColors.Gold, fontSize = 7.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                 Text("UBICACIÓN GPS PRIVADA", color = Color.White.copy(0.4f), fontSize = 6.sp, fontWeight = FontWeight.Bold)
             }
         }

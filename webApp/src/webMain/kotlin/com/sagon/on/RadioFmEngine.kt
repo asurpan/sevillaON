@@ -24,14 +24,14 @@ object RadioFmEngine {
                 audio: null,
                 announcementTimer: null,
                 currentStation: null,
-                currentCity: "ESPAÑA (NACIONAL)",
+                currentCity: "SEVILLA",
                 currentGenre: "MIX",
                 isUnlocked: false,
                 headlines: [],
                 
                 /* --- 🌍 DETECCIÓN DE UBICACIÓN --- */
                 detectLocalCity: function() {
-                    var current = localStorage.getItem("lastCity") || "ESPAÑA (NACIONAL)";
+                    var current = localStorage.getItem("lastCity") || "SEVILLA";
                     if (current === "ESPAÑA (NACIONAL)") {
                         fetch('https://ipapi.co/json/').then(r => r.json()).then(data => {
                             if (data && data.city) {
@@ -53,7 +53,7 @@ object RadioFmEngine {
                 refreshCache: function(callback) {
                     console.log("📥 Refrescando boletines...");
                     var self = this;
-                    var city = this.currentCity || "ESPAÑA";
+                    var city = this.currentCity || "SEVILLA";
                     
                     var pending = 2; /* Esperamos incidencias y cámaras DGT */
                     var decrementPending = function() {
@@ -152,7 +152,7 @@ object RadioFmEngine {
                     }).catch(e => { console.warn("NASA Fetch Error"); });
 
                     /* El Tiempo */
-                    if (this.currentCity && this.currentCity !== "ESPAÑA (NACIONAL)") {
+                    if (this.currentCity) {
                         fetch('https://wttr.in/' + encodeURIComponent(this.currentCity) + '?format=3')
                             .then(r => r.text())
                             .then(t => localStorage.setItem("cache_weather", "El tiempo: " + t))
@@ -235,7 +235,7 @@ object RadioFmEngine {
                     this.newsAudio.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
                     this.newsAudio.play().catch(function(e){});
 
-                    this.currentCity = city || this.currentCity || "ESPAÑA (NACIONAL)";
+                    this.currentCity = city || this.currentCity || "SEVILLA";
                     this.currentGenre = genre || "MIX";
                     
                     /* --- 🎯 FEEDBACK INMEDIATO --- */
@@ -284,7 +284,7 @@ object RadioFmEngine {
                     
                     var api = apiBase;
                     if (forceName) api += "&name=" + encodeURIComponent(forceName);
-                    else if (this.currentCity !== "ESPAÑA (NACIONAL)") {
+                    else {
                         var cleanCity = this.currentCity.split(" / ")[0].split(" (")[0].trim();
                         api += "&city=" + encodeURIComponent(cleanCity);
                     }
@@ -296,7 +296,7 @@ object RadioFmEngine {
                             if (data && data.length > 0) {
                                 var s = data[Math.floor(Math.random() * Math.min(data.length, 5))];
                                 self.play(s);
-                            } else if (genreTag && self.currentCity !== "ESPAÑA (NACIONAL)") {
+                            } else if (genreTag) {
                                 /* --- 🚀 SMART BROADEN: Si no hay local, buscar el género en toda España --- */
                                 console.log("🔍 Sin emisora local de " + genreTag + ", ampliando búsqueda nacional...");
                                 fetch(apiBase + "&tag=" + genreTag)
@@ -391,7 +391,7 @@ object RadioFmEngine {
                     var texts = [
                         "Saludos para " + nick + " en " + city + ". La antena ON AIR está operativa.",
                         "ON AIR SPAIN: Conectando tu ciudad. Son las " + new Date().getHours() + " horas y " + new Date().getMinutes() + " minutos.",
-                        "Recuerda mantener la cortesía en la frecuencia general."
+                        "Recuerda mantener la cortesía en la frecuencia de tu ciudad."
                     ];
                     
                     if (dgt) texts.push(dgt);

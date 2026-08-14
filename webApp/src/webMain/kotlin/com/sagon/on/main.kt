@@ -2996,18 +2996,9 @@ fun main() {
             },
             onUsersUpdate = { users ->
                 try {
-                    // --- 📡 SISTEMA DE AUDITORÍA DE RED (AUTORIDAD ÚNICA) ---
-                    val winApp = win.app
-                    val myCity = (if (winApp != null && winApp.currentCity != null) winApp.currentCity else (localStorage.getItem("lastCity") ?: "SEVILLA")).toString().trim().uppercase()
-                    val myCh = (if (winApp != null && winApp.currentChannel != null) winApp.currentChannel else (localStorage.getItem("lastChannel") ?: myCity)).toString().trim().uppercase()
-                    val mySub = (if (winApp != null && winApp.currentSubtone != null) winApp.currentSubtone else "0000").toString()
-                    
-                    js("console.log('📡 [NETWORK] AUDIT: ' + myCity + ' / ' + myCh + ' / ' + mySub)")
-
-                    val mySessionID = if (win.app != null) win.app.sessionID as? String else null
-                    val now = Date.now()
-
-                    val newRemoteUsers = mutableListOf<RemoteUser>()
+                    // --- ☢️ PLAN DE EMERGENCIA: CANAL ÚNICO Y VISIBILIDAD TOTAL ---
+                    val mySessionID = if (win.app != null) win.app.sessionID as? String else ""
+                    val localList = mutableListOf<RemoteUser>()
                     var anyRemoteTx = false
 
                     if (users != null && users != undefined) {
@@ -3017,52 +3008,42 @@ fun main() {
                             val u = users[k]
                             if (u == null || u == undefined) continue
                             
-                            val userNick = u.nick as? String ?: "ANÓNIMO"
-                            val userCity = (u.city as? String ?: "SEVILLA").trim().uppercase()
-                            val userChannel = (u.channel as? String ?: userCity).trim().uppercase()
-                            val userSubtone = u.subtone as? String ?: "0000"
-                            val lastSeen = try { if (u.lastSeen != null) u.lastSeen.toString().toDouble() else 0.0 } catch(e: Exception) { 0.0 }
+                            val userNick = u.nick as? String ?: "ESTACIÓN"
+                            val isTransmitting = u.tx == true
+                            val userPwr = try { (u.pwr as? Double ?: 0.7).toFloat() } catch(e: Exception) { 0.7f }
                             
-                            if (i < 5) js("console.log('📡 USER: ' + userNick + ' @ ' + userCity + '/' + userChannel)")
+                            // 🛡️ SIN FILTROS: Ver a todo el mundo que esté en Firebase
+                            localList.add(RemoteUser(
+                                id = k, nick = userNick, isTransmitting = isTransmitting, 
+                                subtone = "0000", city = "FRECUENCIA ÚNICA", channel = "DEBUG", 
+                                txPower = userPwr, proRole = u.proRole as? String ?: "CIUDADANO"
+                            ))
 
-                            if (userNick.isNotEmpty() && (now - lastSeen) < 600000.0) {
-                                val isTransmitting = u.tx == true
-                                val userPwr = try { (u.pwr as? Double ?: 0.7).toFloat() } catch(e: Exception) { 0.7f }
-                                
-                                newRemoteUsers.add(
-                                    RemoteUser(
-                                        id = k, nick = userNick, isTransmitting = isTransmitting, 
-                                        subtone = userSubtone, city = userCity, channel = userChannel, 
-                                        txPower = userPwr, proRole = u.proRole as? String ?: "CIUDADANO"
-                                    )
-                                )
-
-                                if (userCity == myCity && userChannel == myCh) {
-                                    if (k != mySessionID) {
-                                        val winDynamic: dynamic = window
-                                        if (winDynamic.app != null) {
-                                            val calls = winDynamic.app.activeCalls
-                                            if (calls != null && calls[k] == null) {
-                                                val establishOutgoingCall: dynamic = winDynamic.establishOutgoingCall
-                                                if (establishOutgoingCall != null) establishOutgoingCall(k)
-                                            }
-                                        }
+                            // 🎙️ LLAMADA AUTOMÁTICA A TODOS
+                            if (k != mySessionID) {
+                                val winDynamic: dynamic = window
+                                if (winDynamic.app != null) {
+                                    val calls = winDynamic.app.activeCalls
+                                    if (calls != null && calls[k] == null) {
+                                        val establishOutgoingCall: dynamic = winDynamic.establishOutgoingCall
+                                        if (establishOutgoingCall != null) establishOutgoingCall(k)
                                     }
-                                    if (isTransmitting && k != mySessionID) anyRemoteTx = true
                                 }
+                                if (isTransmitting) anyRemoteTx = true
                             }
                         }
                     }
+
                     remoteUsersState.clear()
-                    remoteUsersState.addAll(newRemoteUsers)
+                    remoteUsersState.addAll(localList)
                     if (win.app != null) {
                         win.app.rxActiveInternal = anyRemoteTx
                         js("if(window.updateBgDucking) window.updateBgDucking();")
                     }
                     isCodedRxState.value = false
-                    rxNameState.value = if (anyRemoteTx) "RECIBIENDO" else null
+                    rxNameState.value = if (anyRemoteTx) "AIRE: RECIBIENDO" else null
                 } catch (e: Exception) {
-                    js("console.error('❌ ERROR RECEPCIÓN: ' + e.message)")
+                    js("console.error('❌ EMERGENCIA SYNC ERROR: ' + e.message)")
                 }
             },
 

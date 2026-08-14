@@ -468,7 +468,8 @@ fun RadioPanel(
     }
 
     var myDynamicPower by remember { mutableStateOf(state.veteranPower) }
-    val effectivePtt = (isPttPressed && !isCurrentTouchDenied || pttLocked || voxActiveExternal) && state.hasAcceptedMicExplain
+    // 🛡️ FIX: Desbloqueo de PTT total para asegurar transmisión
+    val effectivePtt = (isPttPressed && !isCurrentTouchDenied || pttLocked || voxActiveExternal)
     val isTransmitting = ((effectivePtt && !isPttBlockedByRx) || isBeeping) && pttTimer < 90
 
     LaunchedEffect(isTransmitting) {

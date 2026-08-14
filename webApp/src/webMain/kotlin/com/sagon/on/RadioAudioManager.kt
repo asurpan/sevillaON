@@ -98,7 +98,10 @@ object RadioAudioManager {
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: true, pwr: power || 0.7 });
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
                 } else {
-                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now, 0.01);
+                    // 🛡️ RETARDO QUIRÚRGICO: Mantener puerta abierta para el Roger Beep
+                    var releaseDelay = roger ? 0.25 : 0.01;
+                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now + releaseDelay, 0.01);
+                    
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
                     if (roger && window.playUiSound) window.playUiSound("ptt_off");
                 }
@@ -151,7 +154,10 @@ private object RadioSignaling {
         js("""
             window.playUiSound = function(type) {
                 if(!window.app.ctx) return;
+                if(window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                
                 var now = window.app.ctx.currentTime;
+                var duration = 0.2; // Duración aumentada para audibilidad
                 
                 if (type === "ptt_off") {
                     window.app.isBeeping = true;
@@ -160,11 +166,17 @@ private object RadioSignaling {
 
                 var o = window.app.ctx.createOscillator();
                 var g = window.app.ctx.createGain();
+                
+                // --- 🔊 TONO CLÁSICO DE RADIO ---
                 o.type = "sine";
-                o.frequency.setValueAtTime(type === "ptt_off" ? 440 : 880, now);
-                g.gain.setValueAtTime(0.04, now);
-                g.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
-                o.connect(g); g.connect(window.app.masterOut);
+                o.frequency.setValueAtTime(type === "ptt_off" ? 880 : 1200, now);
+                
+                g.gain.setValueAtTime(0.15, now); // Volumen aumentado
+                g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                
+                o.connect(g); 
+                g.connect(window.app.masterOut); // Escucha local
+                if (window.app.txGate) g.connect(window.app.txGate); // Envío a la red
                 
                 o.onended = function() {
                     if (type === "ptt_off") {
@@ -172,7 +184,8 @@ private object RadioSignaling {
                         if(window.dispatch_beeping) window.dispatch_beeping(false);
                     }
                 };
-                o.start(); o.stop(now + 0.1);
+                o.start(now); 
+                o.stop(now + duration);
             };
         """)
     }

@@ -112,7 +112,11 @@ object RadioBridge {
         win.dispatch_replay_available = onReplayAvailable
         win.dispatch_chat_open = { target: String? -> 
             onChatOpen(target)
-            js("if(window.app) { window.app.forceChatOpen = true; window.app.forceChatTarget = target; }")
+            val app = win.app
+            if (app != null) {
+                app.forceChatOpen = true
+                app.forceChatTarget = target
+            }
         }
         win.dispatch_mic_failure = onMicFailure
         win.dispatch_integrity_status = onIntegrityStatus
@@ -131,6 +135,6 @@ object RadioBridge {
         win.dispatch_navigation_step = { step: String? -> onNavigationStep(step) }
         win.dispatch_incoming_alert = onIncomingAlert
         
-        js("window.setupSystemListeners();")
+        if (win.setupSystemListeners != null) win.setupSystemListeners();
     }
 }

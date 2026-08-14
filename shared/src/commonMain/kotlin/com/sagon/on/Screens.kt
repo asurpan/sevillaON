@@ -885,8 +885,8 @@ fun RadioPanel(
                         RemoteUser(id = "bot", nick = "CONTROL", city = myCity, channel = myChannel, proRole = "SISTEMA", isWorkAvailable = true)
                     ) + mappedUsers.filter { 
                         it.city.trim().uppercase() == myCity && 
-                        it.channel.trim().uppercase() == myChannel && 
-                        it.nick != nick 
+                        it.channel.trim().uppercase() == myChannel
+                        // 🛡️ ELIMINADO: it.nick != nick (Permitir ver otros dispositivos con el mismo nombre)
                     }).sortedByDescending { it.isTransmitting }
                 }
                 LazyRow(modifier = Modifier.fillMaxWidth().height(180.dp), contentPadding = PaddingValues(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {

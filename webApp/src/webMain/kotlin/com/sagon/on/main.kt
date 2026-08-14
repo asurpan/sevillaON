@@ -3004,200 +3004,65 @@ fun main() {
                     
                     js("console.log('📡 [NETWORK] AUDIT: ' + myCity + ' / ' + myCh + ' / ' + mySub)")
 
-                    remoteUsersState.clear()
-                    var currentTx: String? = null
-                    var anyCodedTx = false
-                    var channelUsersCount = 0
-                    var isAnyRemoteTx = false
-                    // --- 🛡️ NORMALIZACIÓN DE ENTRADA ---
                     val mySessionID = if (win.app != null) win.app.sessionID as? String else null
                     val now = Date.now()
-                    
-                    val currentFriends = (localStorage.getItem("friends") ?: "").split(",").toSet()
-                    val currentBlocked = (localStorage.getItem("blockedUsers") ?: "").split(",").toSet()
 
-                    val newKnownNicks = mutableSetOf<String>()
-                    val arrivalGreetings = mutableListOf<String>()
+                    val newRemoteUsers = mutableListOf<RemoteUser>()
+                    var anyRemoteTx = false
 
                     if (users != null && users != undefined) {
                         val keys = js("Object").keys(users)
                         for (i in 0 until (keys.length as Int)) {
                             val k = keys[i] as String
-                            if (k == mySessionID) continue 
                             val u = users[k]
                             if (u == null || u == undefined) continue
                             
-                            val userNick = u.nick as? String ?: ""
+                            val userNick = u.nick as? String ?: "ANÓNIMO"
+                            val userCity = (u.city as? String ?: "SEVILLA").trim().uppercase()
+                            val userChannel = (u.channel as? String ?: userCity).trim().uppercase()
+                            val userSubtone = u.subtone as? String ?: "0000"
                             val lastSeen = try { if (u.lastSeen != null) u.lastSeen.toString().toDouble() else 0.0 } catch(e: Exception) { 0.0 }
                             
-                            // --- 🛡️ AUDITORÍA TOTAL (Sin filtro de tiempo para evitar errores de reloj) ---
-                            if (userNick.isNotEmpty()) {
+                            if (i < 5) js("console.log('📡 USER: ' + userNick + ' @ ' + userCity + '/' + userChannel)")
+
+                            if (userNick.isNotEmpty() && (now - lastSeen) < 600000.0) {
                                 val isTransmitting = u.tx == true
-                                // --- 🛡️ NORMALIZACIÓN DE USUARIO REMOTO ---
-                                val userCity = (u.city as? String ?: "SEVILLA").trim().uppercase()
-                                val userChannel = (u.channel as? String ?: userCity).trim().uppercase()
-                                
-                                // --- 🛡️ LOG DE AUDITORÍA (DEBUG) ---
-                                js("console.log('📡 [NETWORK] VEO A: ' + userNick + ' en ' + userCity + '/' + userChannel)")
-                                
-                                if (userCity == myCity && userChannel == myCh) {
-                                    js("console.log('📡 [NETWORK] ✅ COMPATIBLE: ' + userNick + ' esta en tu frecuencia.')")
-                                }
-
-                                // --- 🎙️ DETECCIÓN DE NUEVOS PARA SALUDO ---
-                                if (userCity == myCity && userChannel == myCh) {
-                                    newKnownNicks.add(userNick)
-                                    if (!knownNicks.value.contains(userNick) && knownNicks.value.isNotEmpty()) {
-                                        arrivalGreetings.add(userNick)
-                                    }
-                                }
-                                val userSubtone = u.subtone as? String ?: "0000"
                                 val userPwr = try { (u.pwr as? Double ?: 0.7).toFloat() } catch(e: Exception) { 0.7f }
-                                val proRole = u.proRole as? String ?: "CIUDADANO"
-                                val isProSeeking = u.proSeeking == true
-                                val isWorkAvailable = u.workStatus == true
-                                val isSOS = u.isSOS == true
-                                val proRep = try { (u.proRep as? Double ?: 1.0).toFloat() } catch(e: Exception) { 1.0f }
-                                val banned = u.banned == true
-                                val isMotoUser = u.isMoto == true
-                                val userLat = try { u.lat as? Double } catch(e: Exception) { null }
-                                val userLon = try { u.lon as? Double } catch(e: Exception) { null }
-                                val userBgGenre = u.bgGenre as? String // --- 📻 MAPEADO DE GÉNERO MUSICAL ---
                                 
-                                // --- 🛡️ AUTO-BLOQUEO DEL MAL ACTOR ---
-                                if (k == mySessionID && banned) {
-                                    js("window.location.href = 'privacy.html?banned=true';")
-                                }
-
-                                if (currentBlocked.contains(k) || banned) continue
-
-                                if (isTransmitting && currentFriends.contains(userNick)) {
-                                    if (transmittingFriends[userNick] != true) {
-                                        if (userCity != myCity || userChannel != myCh) {
-                                            val displayChannel = if (userChannel == (u.city as? String ?: "SEVILLA")) "ENTRAR" else userChannel
-                                            notificationState.value = AppNotification(
-                                                title = "FAVORITO AL AIRE",
-                                                message = "$userNick está emitiendo en $userCity - $displayChannel",
-                                                type = NotificationType.Success
-                                            )
-                                        }
-                                        transmittingFriends[userNick] = true
-                                    }
-                                } else if (!isTransmitting) {
-                                    transmittingFriends.remove(userNick)
-                                }
-
-                                if (isTransmitting && win.app != null) {
-                                    if (win.app.remotePower == null) win.app.remotePower = js("{}")
-                                    win.app.remotePower[k] = userPwr
-                                    win.app.lastActivity[k] = now
-                                }
-                                
-                                remoteUsersState.add(
+                                newRemoteUsers.add(
                                     RemoteUser(
-                                        id = k, 
-                                        nick = userNick, 
-                                        isTransmitting = isTransmitting, 
-                                        subtone = userSubtone,
-                                        city = userCity, 
-                                        channel = userChannel, 
-                                        isFriend = currentFriends.contains(userNick), 
-                                        txPower = userPwr,
-                                        proRole = proRole,
-                                        isProSeeking = isProSeeking,
-                                        isWorkAvailable = isWorkAvailable,
-                                        isSOS = isSOS,
-                                        isMoto = isMotoUser,
-                                        lat = userLat,
-                                        lon = userLon,
-                                        proReputation = proRep
+                                        id = k, nick = userNick, isTransmitting = isTransmitting, 
+                                        subtone = userSubtone, city = userCity, channel = userChannel, 
+                                        txPower = userPwr, proRole = u.proRole as? String ?: "CIUDADANO"
                                     )
                                 )
+
                                 if (userCity == myCity && userChannel == myCh) {
-                                    if (userSubtone == mySub) {
-                                        channelUsersCount++
+                                    if (k != mySessionID) {
                                         val winDynamic: dynamic = window
                                         if (winDynamic.app != null) {
                                             val calls = winDynamic.app.activeCalls
-                                            // --- 🛡️ SCALABILITY GUARD: Máximo 25 conexiones simultáneas por terminal ---
-                                            val callCount = js("Object.keys(calls).length") as Int
-                                            if (calls != null && calls[k] == null && callCount < 25) {
-                                                // --- 🛡️ FIX CRÍTICO: Llamada segura al motor de voz ---
+                                            if (calls != null && calls[k] == null) {
                                                 val establishOutgoingCall: dynamic = winDynamic.establishOutgoingCall
-                                                if (establishOutgoingCall != null && establishOutgoingCall != undefined) {
-                                                    establishOutgoingCall(k)
-                                                }
+                                                if (establishOutgoingCall != null) establishOutgoingCall(k)
                                             }
                                         }
-                                        if (isTransmitting) {
-                                            val doc: dynamic = document
-                                            if (isAnyRemoteTx == false && doc.hidden == true) {
-                                                val isDis = if(win.app != null) win.app.isDiscreteModeEnabled == true else false
-                                                val t = if(isDis) "🔒 PRIVACIDAD: $userNick" else "🎙️ ENTRANDO VOZ"
-                                                val b = if(isDis) "Toca para abrir la escucha en $userCity" else "$userNick está hablando en $userCity - $userChannel"
-                                                winDynamic.sendSystemNotification(t, b)
-                                            }
-                                            currentTx = userNick
-                                            isAnyRemoteTx = true
-                                        }
-                                    } else if (isTransmitting) {
-                                        anyCodedTx = true
                                     }
+                                    if (isTransmitting && k != mySessionID) anyRemoteTx = true
                                 }
                             }
                         }
                     }
-                    // --- 🎙️ LANZAR SALUDOS SI HAY NUEVOS ---
-                    if (arrivalGreetings.isNotEmpty()) {
-                        knownNicks.value = newKnownNicks
-                        arrivalGreetings.forEach { nick ->
-                            js("if(window.speak) window.speak('Atencion! Nueva antena en frecuencia. Bienvenido ' + nick + '. Estas en el canal ' + myCh + ' de ' + myCity + '.', false, true);")
-                        }
-                    } else if (newKnownNicks != knownNicks.value) {
-                        knownNicks.value = newKnownNicks
-                    }
-
+                    remoteUsersState.clear()
+                    remoteUsersState.addAll(newRemoteUsers)
                     if (win.app != null) {
-                        val wasRx = win.app.rxActiveInternal == true
-                        win.app.rxActiveInternal = isAnyRemoteTx
-                        
-                        // --- 🛡️ SINCRONIZACIÓN SCANNER (DUCKING) ---
+                        win.app.rxActiveInternal = anyRemoteTx
                         js("if(window.updateBgDucking) window.updateBgDucking();")
-
-                        // --- 🔔 BEEP DE ENTRADA (MODO DISCRETO / FONDO) ---
-                        if (!wasRx && isAnyRemoteTx) {
-                            js("""
-                                var isDis = (window.app && window.app.isDiscreteModeEnabled === true);
-                                if ((document.hidden || isDis) && window.playUiSound) {
-                                    // Pitido doble más contundente para aviso discreto
-                                    window.playUiSound('message'); 
-                                    if (navigator.vibrate) navigator.vibrate([100, 100, 100]);
-                                }
-                            """)
-                        }
-
-                        // --- 🛡️ SQUELCH RESET: LIMPIEZA TRAS RECEPCIÓN ---
-                        if (wasRx && !isAnyRemoteTx) {
-                            js("""
-                                if (window.app && window.app.ctx && window.app.noise) {
-                                    var cur = window.app.ctx.currentTime;
-                                    var base = window.app.lastNoiseLevel || 0;
-                                    // Forzamos el retorno al nivel base del usuario tras el fin de la portadora
-                                    window.app.noise.gain.cancelScheduledValues(cur);
-                                    window.app.noise.gain.setTargetAtTime(base, cur, 0.2);
-                                }
-                            """)
-                        }
-
-                        val prevCount = (win.app.lastChCount ?: 0) as Int
-                        // Sonido suave solo si el número de usuarios sube
-                        if (prevCount > 0 && channelUsersCount > prevCount) js("window.playSoftEntrySound();")
-                        win.app.lastChCount = channelUsersCount
                     }
-                    isCodedRxState.value = anyCodedTx
-                    rxNameState.value = currentTx
-                } catch(e: Exception) {
-                    println("Error onUsersUpdate: ${e.message}")
+                    isCodedRxState.value = false
+                    rxNameState.value = if (anyRemoteTx) "RECIBIENDO" else null
+                } catch (e: Exception) {
+                    js("console.error('❌ ERROR RECEPCIÓN: ' + e.message)")
                 }
             },
 

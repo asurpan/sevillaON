@@ -3030,15 +3030,15 @@ fun main() {
                             val userNick = u.nick as? String ?: ""
                             val lastSeen = try { if (u.lastSeen != null) u.lastSeen.toString().toDouble() else 0.0 } catch(e: Exception) { 0.0 }
                             
-                            // --- 🛡️ AUDITORÍA TOTAL (Real-time: 1 minuto de ventana) ---
-                            if (userNick.isNotEmpty() && (now - lastSeen) < 60000.0) {
+                            // --- 🛡️ AUDITORÍA TOTAL (Sin filtro de tiempo para evitar errores de reloj) ---
+                            if (userNick.isNotEmpty()) {
                                 val isTransmitting = u.tx == true
                                 // --- 🛡️ NORMALIZACIÓN DE USUARIO REMOTO ---
                                 val userCity = (u.city as? String ?: "SEVILLA").trim().uppercase()
                                 val userChannel = (u.channel as? String ?: userCity).trim().uppercase()
                                 
                                 // --- 🛡️ LOG DE AUDITORÍA (DEBUG) ---
-                                js("console.log('📡 [NETWORK] USER: ' + userNick + ' [City: ' + userCity + ' | Ch: ' + userChannel + ']')")
+                                js("console.log('📡 [NETWORK] VEO A: ' + userNick + ' en ' + userCity + '/' + userChannel)")
                                 
                                 if (userCity == myCity && userChannel == myCh) {
                                     js("console.log('📡 [NETWORK] ✅ COMPATIBLE: ' + userNick + ' esta en tu frecuencia.')")

@@ -4,6 +4,67 @@ package com.sagon.on
  * 🗺️ RADIO BRIDGE: PUENTE DE EVENTOS ENTRE NÚCLEO JS Y COMPOSE UI
  */
 object RadioBridge {
+    fun install() {
+        js("""
+            window.setupSystemListeners = function() {
+                window.addEventListener('popstate', function(event) {
+                    history.pushState(null, document.title, location.href);
+                    if(window.trigger_back) window.trigger_back();
+                });
+                history.pushState(null, document.title, location.href);
+            };
+
+            window.checkNickAvailability = function(nick, city) {
+                if (!window.app.db) return Promise.resolve(true);
+                var safeNick = nick.replace(/[^a-zA-Z0-9]/g, "").trim().uppercase();
+                return window.app.db.ref("users").once('value').then(function(snapshot) {
+                    var users = snapshot.val();
+                    if (!users) return true;
+                    var keys = Object.keys(users);
+                    for (var i = 0; i < keys.length; i++) {
+                        var u = users[keys[i]];
+                        if (u.nick === safeNick && u.city === city) return false; 
+                    }
+                    return true;
+                });
+            };
+
+            window.shareSocial = function(text, platform) {
+                if (window.AndroidApp && typeof window.AndroidApp.shareText === 'function') {
+                    window.AndroidApp.shareText(text);
+                    return;
+                }
+                if (navigator.share && platform !== 'WhatsApp') {
+                    navigator.share({ title: 'ON AIR SPAIN', text: text, url: 'https://asurpan.github.io/sevillaON/' });
+                } else {
+                    var url = "https://wa.me/?text=" + encodeURIComponent(text);
+                    window.open(url, "_blank");
+                }
+            };
+
+            window.getGpsLink = function() {
+                return new Promise(function(resolve) {
+                    if (!navigator.geolocation) resolve(null);
+                    navigator.geolocation.getCurrentPosition(function(pos) {
+                        resolve("https://www.google.com/maps?q=" + pos.coords.latitude + "," + pos.coords.longitude);
+                    }, function() { resolve(null); }, { timeout: 5000 });
+                });
+            };
+
+            window.detectCityByGps = function() {
+                return new Promise(function(resolve) {
+                    if (!navigator.geolocation) resolve("SEVILLA");
+                    navigator.geolocation.getCurrentPosition(function(pos) {
+                        fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat=" + pos.coords.latitude + "&lon=" + pos.coords.longitude)
+                            .then(r => r.json()).then(data => {
+                                resolve(data.address.city || data.address.town || "SEVILLA");
+                            }).catch(() => resolve("SEVILLA"));
+                    }, function() { resolve("SEVILLA"); }, { timeout: 5000 });
+                });
+            };
+        """)
+    }
+
     fun setupDispatchers(
         win: dynamic,
         onMic: (Float) -> Unit,
@@ -48,7 +109,10 @@ object RadioBridge {
         win.dispatch_chat_update = onChatUpdate
         win.dispatch_replay_progress = onReplayProgress
         win.dispatch_replay_available = onReplayAvailable
-        win.dispatch_chat_open = onChatOpen
+        win.dispatch_chat_open = { target: String? -> 
+            onChatOpen(target)
+            js("if(window.app) { window.app.forceChatOpen = true; window.app.forceChatTarget = target; }")
+        }
         win.dispatch_mic_failure = onMicFailure
         win.dispatch_integrity_status = onIntegrityStatus
         win.dispatch_bg_station = onBgStation
@@ -62,8 +126,8 @@ object RadioBridge {
         win.dispatch_route_suggestions = onRouteSuggestions
         win.dispatch_poi_results = onPoiResults
         win.dispatch_ptt_live = onPttLive
-        win.dispatch_route_info = onRouteInfo
-        win.dispatch_navigation_step = onNavigationStep
+        win.dispatch_route_info = { dist: String?, dur: String?, dest: String? -> onRouteInfo(dist, dur, dest) }
+        win.dispatch_navigation_step = { step: String? -> onNavigationStep(step) }
         win.dispatch_incoming_alert = onIncomingAlert
         
         js("window.setupSystemListeners();")

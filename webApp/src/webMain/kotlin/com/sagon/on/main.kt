@@ -30,6 +30,8 @@ fun main() {
     // 🏗️ INSTALACIÓN DE MOTORES
     RadioNetworkManager.install()
     RadioAudioManager.install()
+    RadioMapsManager.install()
+    RadioBridge.install()
     
     // --- 🛡️ MOTOR DE INFRAESTRUCTURA (JS BRIDGE) ---
     js("""

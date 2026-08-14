@@ -77,21 +77,35 @@ object RadioAudioManager {
                 if (window.app.pttStateInternal === active) return;
                 window.app.pttStateInternal = active;
                 window.app.isTransmittingInternal = active;
-                
                 if(window.dispatch_ptt_live) window.dispatch_ptt_live(active);
-                
                 var now = window.app.ctx.currentTime;
                 if (active) {
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: true, pwr: power || 0.7 });
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
-                    if (window.app.noise) window.app.noise.gain.setTargetAtTime(0.0001, now, 0.01);
                 } else {
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now, 0.01);
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
-                    if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.lastNoiseLevel || 0.05, now, 0.05);
                     if (roger && window.playUiSound) window.playUiSound("ptt_off");
                 }
             };
+
+            window.setupCallStream = function(call) {
+                call.on('stream', function(remoteStream) {
+                    window.initAudio();
+                    var audioTag = document.createElement('audio');
+                    audioTag.srcObject = remoteStream;
+                    audioTag.volume = 0.5;
+                    audioTag.play().catch(function(e){});
+                    document.body.appendChild(audioTag);
+                });
+            };
+
+            window.voiceWatchdog = {
+                check: function() {
+                    if (window.app && window.app.ctx && window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                }
+            };
+            setInterval(function() { if(window.voiceWatchdog) window.voiceWatchdog.check(); }, 3000);
         """)
         
         RadioSignaling.install()

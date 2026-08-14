@@ -91,7 +91,7 @@ object RadioAudioManager {
 
             window.setupCallStream = function(call) {
                 call.on('stream', function(remoteStream) {
-                    window.initAudio();
+                    if (window.initAudio) window.initAudio();
                     var audioTag = document.createElement('audio');
                     audioTag.srcObject = remoteStream;
                     audioTag.volume = 0.5;

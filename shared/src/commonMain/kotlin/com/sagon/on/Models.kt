@@ -25,6 +25,50 @@ val SPAIN_CITIES = listOf(
     "CUENCA / TERUEL / GUADALAJARA / CEUTA / MELILLA"
 )
 
+// --- 📻 DIAL OFICIAL DE BANDA CIUDADANA (1-40) ---
+val CITY_CHANNELS = mapOf(
+    "SEVILLA" to 27,
+    "MADRID" to 19,
+    "BARCELONA" to 9,
+    "VALENCIA" to 14,
+    "ALICANTE" to 12,
+    "MÁLAGA" to 20,
+    "MURCIA" to 15,
+    "CÁDIZ" to 21,
+    "BIZKAIA" to 30,
+    "A CORUÑA" to 35,
+    "ISLAS BALEARES" to 5,
+    "LAS PALMAS" to 3,
+    "STA. CRUZ TENERIFE" to 4,
+    "ASTURIAS" to 31,
+    "ZARAGOZA" to 25,
+    "PONTEVEDRA" to 36,
+    "GRANADA" to 22,
+    "TARRAGONA" to 10,
+    "CÓRDOBA" to 26,
+    "GIPUZKOA" to 32,
+    "GIRONA" to 11,
+    "ALMERÍA" to 23,
+    "TOLEDO" to 18,
+    "BADAJOZ" to 24,
+    "NAVARRA" to 33,
+    "JAÉN" to 28,
+    "CASTELLÓN" to 13,
+    "CANTABRIA" to 34,
+    "HUELVA" to 29,
+    "VALLADOLID" to 17,
+    "CIUDAD REAL" to 16,
+    "LEÓN" to 37,
+    "LLEIDA" to 38,
+    "ALBACETE" to 39,
+    "BURGOS / SORIA" to 40,
+    "SALAMANCA / ÁVILA" to 1,
+    "LOGROÑO / ÁLAVA" to 2,
+    "CÁCERES / SEGOVIA" to 6,
+    "LUGO / OURENSE / PALENCIA / ZAMORA" to 7,
+    "CUENCA / TERUEL / GUADALAJARA / CEUTA / MELILLA" to 8
+)
+
 enum class Screen { Welcome, RadioCB }
 
 data class QuadItem<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)

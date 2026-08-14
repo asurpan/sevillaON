@@ -16,7 +16,7 @@ object RadioBridge {
 
             window.checkNickAvailability = function(nick, city) {
                 if (!window.app.db) return Promise.resolve(true);
-                var safeNick = nick.replace(/[^a-zA-Z0-9]/g, "").trim().uppercase();
+                var safeNick = nick.replace(/[^a-zA-Z0-9]/g, "").trim().toUpperCase();
                 return window.app.db.ref("users").once('value').then(function(snapshot) {
                     var users = snapshot.val();
                     if (!users) return true;

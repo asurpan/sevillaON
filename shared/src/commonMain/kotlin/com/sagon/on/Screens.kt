@@ -417,12 +417,6 @@ fun RadioPanel(
         }
     }
 
-    LaunchedEffect(externalPtt) {
-        if (externalPtt != pttLocked) {
-            pttLocked = externalPtt
-        }
-    }
-
     LaunchedEffect(externalPttBlocked) {
         if (externalPttBlocked) {
             isPttBlockedByRx = true
@@ -470,7 +464,7 @@ fun RadioPanel(
     var myDynamicPower by remember { mutableStateOf(state.veteranPower) }
     // 🛡️ FIX: Desbloqueo de PTT total para asegurar transmisión
     val effectivePtt = (isPttPressed && !isCurrentTouchDenied || pttLocked || voxActiveExternal)
-    val isTransmitting = ((effectivePtt && !isPttBlockedByRx) || isBeeping) && pttTimer < 90
+    val isTransmitting = ((effectivePtt || externalPtt) && !isPttBlockedByRx || isBeeping) && pttTimer < 90
 
     LaunchedEffect(isTransmitting) {
         if (isTransmitting) {
@@ -1112,12 +1106,6 @@ fun ActivityPanel(
         }
     }
 
-    LaunchedEffect(externalPtt) {
-        if (externalPtt != pttLocked) {
-            pttLocked = externalPtt
-        }
-    }
-
     LaunchedEffect(isPttBlockedByRx) {
         if (isPttBlockedByRx) {
             delay(800)
@@ -1205,8 +1193,8 @@ fun ActivityPanel(
     }
 
     // --- 🛡️ FIX AMETRALLADORA: Separar intención de transmisión del pitido ---
-    val effectivePtt = (isPressed || voxActive || externalPtt || pttLocked)
-    val isTransmittingState = (effectivePtt && !isPttBlockedByRx) || isBeeping
+    val effectivePtt = (isPressed || voxActive || pttLocked)
+    val isTransmittingState = ((effectivePtt || externalPtt) && !isPttBlockedByRx) || isBeeping
 
     LaunchedEffect(effectivePtt) { 
         onMic(effectivePtt, state.veteranPower) 

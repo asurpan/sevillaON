@@ -106,6 +106,32 @@ object RadioAudioManager {
         """)
         
         RadioSignaling.install()
+        js("""
+            window.setupCallStream = function(call) {
+                call.on('stream', function(remoteStream) {
+                    if (!window.app.ctx) return;
+                    var source = window.app.ctx.createMediaStreamSource(remoteStream);
+                    var analyser = window.app.ctx.createAnalyser();
+                    analyser.fftSize = 256;
+                    
+                    source.connect(analyser);
+                    source.connect(window.app.filter);
+                    
+                    window.app.remoteSources[call.peer] = source;
+                    window.app.remoteAnalysers[call.peer] = analyser;
+                    window.app.rxActiveInternal = true;
+                    console.log("🔊 [AUDIO] Stream conectado: " + call.peer);
+                });
+                call.on('close', function() {
+                    if (window.app.remoteSources[call.peer]) {
+                        window.app.remoteSources[call.peer].disconnect();
+                        delete window.app.remoteSources[call.peer];
+                    }
+                    delete window.app.remoteAnalysers[call.peer];
+                    window.app.rxActiveInternal = Object.keys(window.app.remoteSources).length > 0;
+                });
+            };
+        """)
         VOXEngine.install()
         MoniGuard.install()
         ReplayEngine.install()
@@ -113,6 +139,10 @@ object RadioAudioManager {
 
     fun setPtt(active: Boolean, roger: Boolean, power: Float?) {
         js("window.broadcastPTT(active, roger, power);")
+    }
+
+    fun playReplay() {
+        js("window.playReplay();")
     }
 }
 
@@ -122,6 +152,12 @@ private object RadioSignaling {
             window.playUiSound = function(type) {
                 if(!window.app.ctx) return;
                 var now = window.app.ctx.currentTime;
+                
+                if (type === "ptt_off") {
+                    window.app.isBeeping = true;
+                    if(window.dispatch_beeping) window.dispatch_beeping(true);
+                }
+
                 var o = window.app.ctx.createOscillator();
                 var g = window.app.ctx.createGain();
                 o.type = "sine";
@@ -129,6 +165,13 @@ private object RadioSignaling {
                 g.gain.setValueAtTime(0.04, now);
                 g.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
                 o.connect(g); g.connect(window.app.masterOut);
+                
+                o.onended = function() {
+                    if (type === "ptt_off") {
+                        window.app.isBeeping = false;
+                        if(window.dispatch_beeping) window.dispatch_beeping(false);
+                    }
+                };
                 o.start(); o.stop(now + 0.1);
             };
         """)

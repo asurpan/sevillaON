@@ -157,7 +157,7 @@ private object RadioSignaling {
                 if(window.app.ctx.state === 'suspended') window.app.ctx.resume();
                 
                 var now = window.app.ctx.currentTime;
-                var duration = 0.2; // Duración aumentada para audibilidad
+                var duration = type === "ptt_off" ? 0.15 : 0.08; 
                 
                 if (type === "ptt_off") {
                     window.app.isBeeping = true;
@@ -167,11 +167,11 @@ private object RadioSignaling {
                 var o = window.app.ctx.createOscillator();
                 var g = window.app.ctx.createGain();
                 
-                // --- 🔊 TONO CLÁSICO DE RADIO ---
-                o.type = "sine";
-                o.frequency.setValueAtTime(type === "ptt_off" ? 880 : 1200, now);
+                // --- 🔊 TONO CB PROFESIONAL (TRIANGLE PARA TEXTURA DE RADIO) ---
+                o.type = "triangle"; 
+                o.frequency.setValueAtTime(type === "ptt_off" ? 1000 : 1800, now);
                 
-                g.gain.setValueAtTime(0.15, now); // Volumen aumentado
+                g.gain.setValueAtTime(0.12, now); 
                 g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
                 
                 o.connect(g); 

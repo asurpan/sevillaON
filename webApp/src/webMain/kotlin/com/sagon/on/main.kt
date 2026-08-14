@@ -27,6 +27,9 @@ fun main() {
     if (win.app_initialized == true) return
     win.app_initialized = true
 
+    // 🛡️ CREACIÓN INMEDIATA DEL OBJETO APP PARA EVITAR "SCRIPT ERRORS"
+    js("window.app = window.app || {};")
+
     // 🏗️ INSTALACIÓN DE MOTORES
     RadioNetworkManager.install()
     RadioAudioManager.install()

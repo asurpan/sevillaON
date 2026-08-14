@@ -204,8 +204,7 @@ private object ReplayEngine {
         js("""
             window.playReplay = function() {
                 if(window.app && window.app.replayChunks && window.app.replayChunks.length > 0) {
-                    console.log("播放 Replay...");
-                    // Lógica simplificada de Replay
+                    console.log("Iniciando Replay...");
                 }
             };
         """)

@@ -1537,8 +1537,12 @@ object RadioCore {
             };
 
             window.connectRadio = function(nick) {
-                    if (!nick || nick.length < 3) return;
-                    var safeNick = nick.replace(/[^a-zA-Z0-9]/g, "");
+                    console.log("🔐 [AUTH] Intentando conectar con nick: " + nick);
+                    if (!nick || nick.length < 3) {
+                        console.log("🔐 [AUTH] Nick inválido o demasiado corto.");
+                        return;
+                    }
+                    var safeNick = nick.replace(/[^a-zA-Z0-9]/g, "").trim().toUpperCase();
 
                     var deviceID = "";
                     if (window.AndroidApp && typeof window.AndroidApp.getAndroidId === 'function') {
@@ -1550,20 +1554,27 @@ object RadioCore {
                             localStorage.setItem("on_device_id", deviceID);
                         }
                     }
+                    console.log("🔐 [AUTH] Device ID identificado: " + deviceID);
 
                     // --- 🛡️ VINCULACIÓN NICK-DEVICE (HARD-LOCK) ---
                     if (window.app && window.app.db && deviceID) {
                         window.app.db.ref("registered_devices/" + deviceID).once('value', function(snap) {
                             var registeredNick = snap.val();
-                            if (registeredNick && registeredNick !== safeNick) {
-                                // Forzamos el indicativo original vinculado a este dispositivo
-                                localStorage.setItem("indicativo", registeredNick);
-                                // Evitamos bucle: si el nick actual ya es el registrado, no re-conectamos
-                                if (window.app.nick !== registeredNick) {
-                                    window.connectRadio(registeredNick);
+                            if (registeredNick) {
+                                registeredNick = registeredNick.trim().toUpperCase();
+                                if (registeredNick !== safeNick) {
+                                    console.log("🔐 [AUTH] Identidad protegida. Forzando nick registrado: " + registeredNick);
+                                    localStorage.setItem("indicativo", registeredNick);
+                                    // Evitamos bucle: si el nick actual ya es el registrado, no re-conectamos
+                                    if (window.app.nick !== registeredNick) {
+                                        window.connectRadio(registeredNick);
+                                        return;
+                                    }
+                                } else {
+                                    console.log("🔐 [AUTH] Identidad verificada: " + registeredNick);
                                 }
-                            } else if (!registeredNick && safeNick) {
-                                // Vinculación inicial (solo si el nick es válido)
+                            } else if (safeNick) {
+                                console.log("🔐 [AUTH] Vinculando nuevo nick al dispositivo: " + safeNick);
                                 window.app.db.ref("registered_devices/" + deviceID).set(safeNick);
                             }
                         });
@@ -1573,7 +1584,7 @@ object RadioCore {
                     var curCity = (localStorage.getItem("lastCity") || "SEVILLA").trim().toUpperCase();
                     var curCh = (localStorage.getItem("lastChannel") || curCity).trim().toUpperCase();
                     // Si el canal es mi nick (posible resto de bug anterior), forzamos ciudad
-                    if (curCh === safeNick.toUpperCase() || curCh === "GENERAL" || curCh === "") curCh = curCity;
+                    if (curCh === safeNick || curCh === "") curCh = curCity;
                     localStorage.setItem("lastCity", curCity);
                     localStorage.setItem("lastChannel", curCh);
                     
@@ -1586,6 +1597,8 @@ object RadioCore {
                     
                     window.app.nick = safeNick; 
                     window.app.sessionID = sessionID;
+                    
+                    console.log("🔐 [AUTH] Sesión generada: " + sessionID);
                     
                     // --- 🛡️ ACTIVAR GUARDIÁN ANDROID ---
                     if (window.AndroidApp && typeof window.AndroidApp.startRadioService === 'function') {
@@ -2089,6 +2102,7 @@ object RadioSignaling {
                 window.app.pttStateInternal = active;
 
                 if (active) {
+                    console.log("🎙️ [PTT] Transmisión iniciada por el usuario (Power: " + (power || 0.7) + ")");
                     // --- 📻 MOTOR INSTANTÁNEO (RADIO REAL) ---
                     if (window.app.isBeeping) {
                         if (window.app.activeRogerOsc) { try { window.app.activeRogerOsc.stop(); } catch(e) {} window.app.activeRogerOsc = null; }
@@ -2136,7 +2150,7 @@ object RadioSignaling {
                     // Asegurar llamadas a pares
                     window.app.db.ref("users").once('value', function(snap) {
                         var users = snap.val();
-                        var myCity = window.app.currentCity || "ESPAÑA (NACIONAL)";
+                        var myCity = (window.app.currentCity || localStorage.getItem("lastCity") || "SEVILLA").trim().toUpperCase();
                         var myChannel = window.app.currentChannel || myCity;
                         var mySubtone = window.app.currentSubtone || "0000";
                         var now = Date.now();
@@ -2156,6 +2170,7 @@ object RadioSignaling {
                         window.requestMicPermission();
                     }
                 } else {
+                    console.log("🎙️ [PTT] Transmisión finalizada por el usuario.");
                     // --- 📻 SOLTANDO PTT (INSTANTÁNEO) ---
                     window.app.isTransmittingInternal = false;
                     if(window.dispatch_ptt_live) window.dispatch_ptt_live(false);
@@ -2421,9 +2436,9 @@ object RadioBridge {
                 var finalChannel = channel;
                 var myNick = (localStorage.getItem("indicativo") || "").trim().toUpperCase();
                 
-                // Si el canal es mi nick (Sharing Bug), o es "GENERAL", o está vacío, o es igual a la ciudad -> Forzamos ciudad
+                // Si el canal es mi nick (Sharing Bug), o está vacío, o es igual a la ciudad -> Forzamos ciudad
                 if (finalChannel.trim().toUpperCase() === myNick || 
-                    finalChannel.trim().toUpperCase() === "GENERAL" || 
+                    finalChannel.trim().toUpperCase() === "" || 
                     finalChannel.trim() === "" || 
                     finalChannel.trim().toUpperCase() === city.trim().toUpperCase()) {
                     finalChannel = city;
@@ -2987,7 +3002,7 @@ fun main() {
                     val myCh = (if (winApp != null && winApp.currentChannel != null) winApp.currentChannel else (localStorage.getItem("lastChannel") ?: myCity)).toString().trim().uppercase()
                     val mySub = (if (winApp != null && winApp.currentSubtone != null) winApp.currentSubtone else "0000").toString()
                     
-                    js("console.log('📡 AUDIT [REALTIME]: ' + myCity + ' / ' + myCh + ' / ' + mySub)")
+                    js("console.log('📡 [NETWORK] AUDIT: ' + myCity + ' / ' + myCh + ' / ' + mySub)")
 
                     remoteUsersState.clear()
                     var currentTx: String? = null
@@ -3023,10 +3038,10 @@ fun main() {
                                 val userChannel = (u.channel as? String ?: userCity).trim().uppercase()
                                 
                                 // --- 🛡️ LOG DE AUDITORÍA (DEBUG) ---
-                                js("console.log('📡 USER DETECTED: ' + userNick + ' [City: ' + userCity + ' | Ch: ' + userChannel + ']')")
+                                js("console.log('📡 [NETWORK] USER: ' + userNick + ' [City: ' + userCity + ' | Ch: ' + userChannel + ']')")
                                 
                                 if (userCity == myCity && userChannel == myCh) {
-                                    js("console.log('✅ COMPATIBLE: ' + userNick + ' esta en tu frecuencia.')")
+                                    js("console.log('📡 [NETWORK] ✅ COMPATIBLE: ' + userNick + ' esta en tu frecuencia.')")
                                 }
 
                                 // --- 🎙️ DETECCIÓN DE NUEVOS PARA SALUDO ---
@@ -3388,7 +3403,7 @@ fun main() {
                 val savedChannel = localStorage.getItem("lastChannel")
                 val initialChannel = if (urlChannel != null) {
                     urlChannel.trim().uppercase()
-                } else if (savedChannel == null || savedChannel.trim().uppercase() == "GENERAL" || savedChannel.trim() == "") {
+                } else if (savedChannel == null || savedChannel.trim() == "") {
                     defaultChannel
                 } else {
                     savedChannel.trim().uppercase()
@@ -3705,9 +3720,9 @@ fun main() {
             onCityChange = { city ->
                 try { 
                     localStorage.setItem("lastCity", city)
-                    // --- 🛡️ POLÍTICA DE CANAL DINÁMICO: Si el canal era el nombre de la ciudad antigua o GENERAL, lo movemos ---
+                    // --- 🛡️ POLÍTICA DE CANAL DINÁMICO: Si el canal era el nombre de la ciudad antigua, lo movemos ---
                     val lastCh = localStorage.getItem("lastChannel")
-                    if (lastCh == null || lastCh == "GENERAL" || lastCh == "" || lastCh.startsWith("ESPAÑA")) {
+                    if (lastCh == null || lastCh == "" || lastCh.startsWith("ESPAÑA")) {
                         localStorage.setItem("lastChannel", city)
                     }
                 } catch(e: Exception) {}
@@ -3883,7 +3898,7 @@ fun main() {
                 try {
                     // Evitar que el nick se guarde como canal (Sharing Bug Prevention)
                     val myNick = (localStorage.getItem("indicativo") ?: "").trim().uppercase()
-                    if (normCh == myNick || normCh == "GENERAL" || normCh == "") {
+                    if (normCh == myNick || normCh == "") {
                         normCh = normCity
                     }
 

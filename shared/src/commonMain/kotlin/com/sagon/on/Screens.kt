@@ -117,7 +117,7 @@ fun LoadingScreen(isNightMode: Boolean = false) {
                 letterSpacing = 2.sp
             )
             Text(
-                "Sincronizando con la red nacional",
+                "Sincronizando red de ciudades",
                 color = Color.White.copy(0.4f),
                 fontSize = 10.sp,
                 modifier = Modifier.padding(top = 8.dp)
@@ -533,7 +533,7 @@ fun RadioPanel(
     }
     
     val noiseVol = if (!rx && !isTransmitting) (if (state.squelch > state.rfGain) 0f else (state.rfGain - state.squelch)).coerceIn(0f, 1f) else 0f
-    val mappedUsers = users.map { it.copy(isFriend = state.friends.contains(it.nick)) }
+    val mappedUsers = remember(users, state.friends) { users.map { it.copy(isFriend = state.friends.contains(it.nick)) } }
 
     LaunchedEffect(rx) { if (rx) { while (true) { voiceModulation = ((-5..5).random() / 500f); delay(100) } } else { voiceModulation = 0f } }
 
@@ -874,10 +874,20 @@ fun RadioPanel(
 
                 Spacer(Modifier.height(32.dp))
 
-                // --- 👥 USUARIOS ---
+                // --- 👥 USUARIOS (Refresco en tiempo real sin bloqueo de memoria) ---
                 Text(if (state.channel == state.city) "ESTACIONES EN EL CANAL ${state.city}" else "OPERADORES EN ${state.channel}", color = Color.White.copy(0.3f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.fillMaxWidth())
+                
                 val allToShow = remember(nick, isTransmitting, state.city, state.channel, mappedUsers) {
-                    (listOf(RemoteUser(id = "me", nick = nick, isTransmitting = isTransmitting, city = state.city, channel = state.channel), RemoteUser(id = "bot", nick = "CONTROL", city = state.city, channel = state.channel, proRole = "SISTEMA", isWorkAvailable = true)) + mappedUsers.filter { it.city == state.city && it.channel == state.channel && it.nick != nick }).sortedByDescending { it.isTransmitting }
+                    val myCity = state.city.trim().uppercase()
+                    val myChannel = state.channel.trim().uppercase()
+                    (listOf(
+                        RemoteUser(id = "me", nick = nick, isTransmitting = isTransmitting, city = myCity, channel = myChannel), 
+                        RemoteUser(id = "bot", nick = "CONTROL", city = myCity, channel = myChannel, proRole = "SISTEMA", isWorkAvailable = true)
+                    ) + mappedUsers.filter { 
+                        it.city.trim().uppercase() == myCity && 
+                        it.channel.trim().uppercase() == myChannel && 
+                        it.nick != nick 
+                    }).sortedByDescending { it.isTransmitting }
                 }
                 LazyRow(modifier = Modifier.fillMaxWidth().height(180.dp), contentPadding = PaddingValues(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     items(allToShow) { user -> UserCard(user = user, isMe = user.id == "me", onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, onPrivateChat = { onPrivateChat(user.nick); onStateChange(state.copy(isChatVisible = true)) }, onReport = { onReport(user.id) }, onBlock = { onBlock(user.id) }, onClick = { if (user.nick == "CONTROL") onVirtualOperatorTrigger() }) }

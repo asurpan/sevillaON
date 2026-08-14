@@ -74,6 +74,9 @@ object RadioAudioManager {
                         }).catch(function(err) { console.error("Fallo de micro:", err); });
                     }
                 };
+                
+                // --- 🚀 AUTO-ACTIVACIÓN AL INICIALIZAR ---
+                window.requestMicPermission();
             };
 
             window.broadcastPTT = function(active, roger, power) {

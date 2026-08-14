@@ -189,8 +189,8 @@ object RadioCore {
                     moniGain: null, 
                     moniVolume: parseFloat(localStorage.getItem("moniVol")) || 0.5, 
                     moniActive: localStorage.getItem("moniActive") === "true",
-                    currentCity: localStorage.getItem("lastCity") || "ESPAÑA (NACIONAL)",
-                    currentChannel: localStorage.getItem("lastChannel") || "ESPAÑA (NACIONAL)", 
+                    currentCity: localStorage.getItem("lastCity") || "SEVILLA",
+                    currentChannel: localStorage.getItem("lastChannel") || "SEVILLA", 
                     currentSubtone: localStorage.getItem("lastSubtone") || "0000",
                     voxActive: localStorage.getItem("voxActive") === "true", 
                     voxSens: parseFloat(localStorage.getItem("voxSens")) || 0.5,
@@ -1577,6 +1577,10 @@ object RadioCore {
                     localStorage.setItem("lastCity", curCity);
                     localStorage.setItem("lastChannel", curCh);
                     
+                    // --- 🛡️ SYNC MOTOR INTERNO ---
+                    window.app.currentCity = curCity;
+                    window.app.currentChannel = curCh;
+                    
                     // Restore unique session ID per instance to avoid PeerJS conflicts and identity collisions
                     var sessionID = safeNick + "_" + Math.random().toString(36).substring(2, 11);
                     
@@ -1923,8 +1927,8 @@ object RadioCore {
                     window.app.heartbeatInterval = setInterval(function() {
                         if (window.app.isTerminated) return;
                         if (window.app.db && window.app.sessionID) {
-                            var currentCity = window.app.currentCity || "ESPAÑA (NACIONAL)";
-                            var currentCh = window.app.currentChannel || currentCity;
+                            var currentCity = (window.app.currentCity || localStorage.getItem("lastCity") || "SEVILLA").trim().uppercase();
+                            var currentCh = (window.app.currentChannel || localStorage.getItem("lastChannel") || currentCity).trim().uppercase();
                             var currentGenre = null;
                             try { 
                                 // --- 📻 INFORMAR DEL GÉNERO SI LA RADIO ESTÁ ON ---
@@ -2979,8 +2983,8 @@ fun main() {
                 try {
                     // --- 📡 SISTEMA DE AUDITORÍA DE RED (AUTORIDAD ÚNICA) ---
                     val winApp = win.app
-                    val myCity = (if (winApp != null && winApp.currentCity != null) winApp.currentCity else "ESPAÑA (NACIONAL)").toString().trim().uppercase()
-                    val myCh = (if (winApp != null && winApp.currentChannel != null) winApp.currentChannel else myCity).toString().trim().uppercase()
+                    val myCity = (if (winApp != null && winApp.currentCity != null) winApp.currentCity else (localStorage.getItem("lastCity") ?: "SEVILLA")).toString().trim().uppercase()
+                    val myCh = (if (winApp != null && winApp.currentChannel != null) winApp.currentChannel else (localStorage.getItem("lastChannel") ?: myCity)).toString().trim().uppercase()
                     val mySub = (if (winApp != null && winApp.currentSubtone != null) winApp.currentSubtone else "0000").toString()
                     
                     js("console.log('📡 AUDIT [REALTIME]: ' + myCity + ' / ' + myCh + ' / ' + mySub)")
@@ -3011,18 +3015,18 @@ fun main() {
                             val userNick = u.nick as? String ?: ""
                             val lastSeen = try { if (u.lastSeen != null) u.lastSeen.toString().toDouble() else 0.0 } catch(e: Exception) { 0.0 }
                             
-                            // --- 🛡️ AUDITORÍA TOTAL (24h para asegurar visibilidad en tests) ---
-                            if (userNick.isNotEmpty() && (now - lastSeen) < 86400000.0) {
+                            // --- 🛡️ AUDITORÍA TOTAL (Real-time: 1 minuto de ventana) ---
+                            if (userNick.isNotEmpty() && (now - lastSeen) < 60000.0) {
                                 val isTransmitting = u.tx == true
                                 // --- 🛡️ NORMALIZACIÓN DE USUARIO REMOTO ---
                                 val userCity = (u.city as? String ?: "SEVILLA").trim().uppercase()
                                 val userChannel = (u.channel as? String ?: userCity).trim().uppercase()
                                 
                                 // --- 🛡️ LOG DE AUDITORÍA (DEBUG) ---
+                                js("console.log('📡 USER DETECTED: ' + userNick + ' [City: ' + userCity + ' | Ch: ' + userChannel + ']')")
+                                
                                 if (userCity == myCity && userChannel == myCh) {
-                                    js("console.log('✅ COMPATIBLE: ' + userNick + ' (en ' + userCity + '/' + userChannel + ')')")
-                                } else {
-                                    js("console.log('❌ FILTRADO: ' + userNick + ' (Ciudad: ' + userCity + ' vs ' + myCity + ', Canal: ' + userChannel + ' vs ' + myCh + ')')")
+                                    js("console.log('✅ COMPATIBLE: ' + userNick + ' esta en tu frecuencia.')")
                                 }
 
                                 // --- 🎙️ DETECCIÓN DE NUEVOS PARA SALUDO ---

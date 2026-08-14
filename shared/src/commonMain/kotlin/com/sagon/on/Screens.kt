@@ -709,7 +709,9 @@ fun RadioPanel(
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
                                             Icon(Icons.Rounded.Home, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text(text = state.channel, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, maxLines = 1, modifier = Modifier.weight(1f).basicMarquee())
+                                            val chNum = CITY_CHANNELS[state.city.trim().uppercase()]
+                                            val chLabel = if (chNum != null) "CH $chNum - ${state.channel}" else state.channel
+                                            Text(text = chLabel, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, maxLines = 1, modifier = Modifier.weight(1f).basicMarquee())
                                         }
                                     }
                                 }
@@ -876,7 +878,9 @@ fun RadioPanel(
                 Spacer(Modifier.height(32.dp))
 
                 // --- 👥 USUARIOS (Refresco en tiempo real sin bloqueo de memoria) ---
-                Text(if (state.channel == state.city) "ESTACIONES EN EL CANAL ${state.city}" else "OPERADORES EN ${state.channel}", color = Color.White.copy(0.3f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.fillMaxWidth())
+                val chNum = CITY_CHANNELS[state.city.trim().uppercase()]
+                val displayCity = if (chNum != null) "CH $chNum - ${state.city}" else state.city
+                Text(if (state.channel == state.city) "ESTACIONES EN EL CANAL $displayCity" else "OPERADORES EN ${state.channel}", color = Color.White.copy(0.3f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, modifier = Modifier.fillMaxWidth())
                 
                 val allToShow = remember(nick, isTransmitting, state.city, state.channel, mappedUsers) {
                     val myCity = state.city.trim().uppercase()
@@ -1264,7 +1268,9 @@ fun ActivityPanel(
                     modifier = Modifier.weight(1f).clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }, 
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = state.city, color = LuxeColors.Gold, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, modifier = Modifier.basicMarquee())
+                    val chNum = CITY_CHANNELS[state.city.trim().uppercase()]
+                    val chLabel = if (chNum != null) "CH $chNum - ${state.city}" else state.city
+                    Text(text = chLabel, color = LuxeColors.Gold, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, modifier = Modifier.basicMarquee())
                     Text(if (state.subtone != "0000") "CÓDIGO: ${state.subtone}" else "CANAL: ${state.channel}", color = Color.White.copy(0.4f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
                 }
                 

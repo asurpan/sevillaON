@@ -27,17 +27,13 @@ fun main() {
     if (win.app_initialized == true) return
     win.app_initialized = true
 
-    // 🛡️ CREACIÓN INMEDIATA DEL OBJETO APP PARA EVITAR "SCRIPT ERRORS"
-    js("window.app = window.app || {};")
-
-    // 🏗️ INSTALACIÓN DE MOTORES
-    RadioNetworkManager.install()
-    RadioAudioManager.install()
-    RadioMapsManager.install()
-    RadioBridge.install()
-    
-    // --- 🛡️ MOTOR DE INFRAESTRUCTURA (JS BRIDGE) ---
+    // 🛡️ CREACIÓN INMEDIATA DEL OBJETO APP Y DEFINICIÓN DE FUNCIONES CRÍTICAS
     js("""
+        window.app = window.app || {
+            activeCalls: {}, remoteSources: {}, remoteAnalysers: {},
+            currentCity: 'SEVILLA', currentChannel: 'SEVILLA'
+        };
+
         window.sanitizePath = function(s) { 
             return (s ? s.toString().replace(/[.${'$'}#[\]/]/g, "_") : "unknown"); 
         };
@@ -46,7 +42,7 @@ fun main() {
             var sessionID = nick + "_" + Math.random().toString(36).substring(2, 11);
             window.app.nick = nick;
             window.app.sessionID = sessionID;
-            window.initAudio();
+            if (window.initAudio) window.initAudio();
             
             if (window.app.db) {
                 window.app.db.ref("users/" + sessionID).set({
@@ -56,19 +52,20 @@ fun main() {
                     tx: false,
                     lastSeen: Date.now()
                 });
-                window.initFirebaseListener();
+                if (window.initFirebaseListener) window.initFirebaseListener();
             }
             
-            window.app.peer = new Peer(sessionID, { secure: true });
-            window.app.peer.on("call", function(call) {
-                call.answer(window.getStream());
-                if (window.setupCallStream) window.setupCallStream(call);
-            });
+            if (typeof Peer !== 'undefined') {
+                window.app.peer = new Peer(sessionID, { secure: true });
+                window.app.peer.on("call", function(call) {
+                    call.answer(window.getStream());
+                    if (window.setupCallStream) window.setupCallStream(call);
+                });
+            }
         };
 
         window.getStream = function() {
-            if (window.app.txBus) return window.app.txBus.stream;
-            return null;
+            return (window.app.txBus) ? window.app.txBus.stream : null;
         };
 
         window.establishOutgoingCall = function(id) {
@@ -79,7 +76,22 @@ fun main() {
                 if (window.setupCallStream) window.setupCallStream(call);
             }
         };
+
+        window.setupSystemListeners = function() {
+            window.addEventListener('popstate', function(event) {
+                history.pushState(null, document.title, location.href);
+                if(window.trigger_back) window.trigger_back();
+            });
+            history.pushState(null, document.title, location.href);
+        };
     """)
+
+    // 🏗️ INSTALACIÓN DE MOTORES (En orden de dependencia)
+    RadioPersistence.loadInitialState() // Carga previa
+    RadioNetworkManager.install()
+    RadioAudioManager.install()
+    RadioMapsManager.install()
+    RadioBridge.install()
 
     ComposeViewport(root) {
         val initialState = remember { RadioPersistence.loadInitialState() }

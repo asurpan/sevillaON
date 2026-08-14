@@ -5,65 +5,7 @@ package com.sagon.on
  */
 object RadioBridge {
     fun install() {
-        js("""
-            window.setupSystemListeners = function() {
-                window.addEventListener('popstate', function(event) {
-                    history.pushState(null, document.title, location.href);
-                    if(window.trigger_back) window.trigger_back();
-                });
-                history.pushState(null, document.title, location.href);
-            };
-
-            window.checkNickAvailability = function(nick, city) {
-                if (!window.app || !window.app.db) return Promise.resolve(true);
-                var safeNick = nick.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-                return window.app.db.ref("users").once('value').then(function(snapshot) {
-                    var users = snapshot.val();
-                    if (!users) return true;
-                    var keys = Object.keys(users);
-                    for (var i = 0; i < keys.length; i++) {
-                        var u = users[keys[i]];
-                        if (u && u.nick === safeNick && u.city === city) return false; 
-                    }
-                    return true;
-                });
-            };
-
-            window.shareSocial = function(text, platform) {
-                if (window.AndroidApp && typeof window.AndroidApp.shareText === 'function') {
-                    window.AndroidApp.shareText(text);
-                    return;
-                }
-                if (navigator.share && platform !== 'WhatsApp') {
-                    navigator.share({ title: 'ON AIR SPAIN', text: text, url: 'https://asurpan.github.io/sevillaON/' });
-                } else {
-                    var url = "https://wa.me/?text=" + encodeURIComponent(text);
-                    window.open(url, "_blank");
-                }
-            };
-
-            window.getGpsLink = function() {
-                return new Promise(function(resolve) {
-                    if (!navigator.geolocation) { resolve(null); return; }
-                    navigator.geolocation.getCurrentPosition(function(pos) {
-                        resolve("https://www.google.com/maps?q=" + pos.coords.latitude + "," + pos.coords.longitude);
-                    }, function() { resolve(null); }, { timeout: 5000 });
-                });
-            };
-
-            window.detectCityByGps = function() {
-                return new Promise(function(resolve) {
-                    if (!navigator.geolocation) { resolve("SEVILLA"); return; }
-                    navigator.geolocation.getCurrentPosition(function(pos) {
-                        fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat=" + pos.coords.latitude + "&lon=" + pos.coords.longitude)
-                            .then(function(r) { return r.json(); })
-                            .then(function(data) {
-                                resolve(data.address.city || data.address.town || "SEVILLA");
-                            }).catch(function() { resolve("SEVILLA"); });
-                    }, function() { resolve("SEVILLA"); }, { timeout: 5000 });
-                });
-            };
-        """)
+        // La lógica de install ha sido movida a main.kt para asegurar el orden de carga y evitar Script Errors
     }
 
     fun setupDispatchers(

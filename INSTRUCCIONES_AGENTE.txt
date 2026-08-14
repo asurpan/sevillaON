@@ -1,0 +1,25 @@
+# 📘 MANUAL DE OPERACIONES - RADIO ON AIR (PROTECTED CORE)
+
+Este manual es de lectura OBLIGATORIA para cualquier IA o Agente que retome este proyecto.
+
+## 🏗️ ARQUITECTURA (CLEAN MODULES)
+El motor web (`webApp/main.kt`) ha sido refactorizado en Managers para evitar errores de estado:
+
+1. **RadioPersistence**: Gestiona localStorage. No añadir lógica de red aquí.
+2. **RadioNetworkManager**: Único punto de contacto con Firebase.
+   - Lógica Nuclear: Actualmente en modo "Frecuencia Única" (Visibilidad Global).
+3. **RadioAudioManager**: Gestiona AudioContext y PeerJS.
+   - CRÍTICO: No modificar el grafo de audio (nodos de ganancia) sin permiso.
+4. **RadioBridge**: Puente de eventos hacia Compose.
+
+## ⚠️ REGLAS DE ORO
+- **SEGURIDAD**: Cada Nick está vinculado al ID del teléfono (Hard-Lock). No permitir el cambio de Nick si ya existe un registro en Firebase.
+- **PTT**: El botón PTT debe ser libre y reactivo. Los LEDs de portadora deben encenderse SIEMPRE al pulsar.
+- **VISIBILIDAD**: Mantener el sistema de "Frecuencia Única" hasta que la comunicación entre WiFi y Datos sea 100% estable.
+- **MÓDULO PROFESIONAL**: La lógica de roles (Camareros, Mecánicos, etc.) debe estar desacoplada de la lógica de transmisión de voz.
+
+## 🚀 DESPLIEGUE
+- El despliegue lo gestiona GitHub Actions automáticamente (tarda 25 min).
+- No intentar compilar localmente si hay conflictos de JAVA_HOME, dejar que GitHub lo haga.
+
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 1.5 (ESTABLE)

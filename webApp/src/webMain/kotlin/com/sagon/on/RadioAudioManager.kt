@@ -98,10 +98,7 @@ object RadioAudioManager {
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: true, pwr: power || 0.7 });
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
                 } else {
-                    // 🛡️ RETARDO QUIRÚRGICO: Mantener puerta abierta para el Roger Beep
-                    var releaseDelay = roger ? 0.25 : 0.01;
-                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now + releaseDelay, 0.01);
-                    
+                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now, 0.01);
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
                     if (roger && window.playUiSound) window.playUiSound("ptt_off");
                 }
@@ -157,7 +154,7 @@ private object RadioSignaling {
                 if(window.app.ctx.state === 'suspended') window.app.ctx.resume();
                 
                 var now = window.app.ctx.currentTime;
-                var duration = type === "ptt_off" ? 0.15 : 0.08; 
+                var duration = 0.1; 
                 
                 if (type === "ptt_off") {
                     window.app.isBeeping = true;

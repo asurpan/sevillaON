@@ -3,23 +3,22 @@
 Este manual es de lectura OBLIGATORIA para cualquier IA o Agente que retome este proyecto.
 
 ## 🏗️ ARQUITECTURA (CLEAN MODULES)
-El motor web (`webApp/main.kt`) ha sido refactorizado en Managers para evitar errores de estado:
+El motor web ha sido refactorizado en archivos independientes para una claridad total:
 
-1. **RadioPersistence**: Gestiona localStorage. No añadir lógica de red aquí.
-2. **RadioNetworkManager**: Único punto de contacto con Firebase.
-   - Lógica Nuclear: Actualmente en modo "Frecuencia Única" (Visibilidad Global).
-3. **RadioAudioManager**: Gestiona AudioContext y PeerJS.
-   - CRÍTICO: No modificar el grafo de audio (nodos de ganancia) sin permiso.
-4. **RadioBridge**: Puente de eventos hacia Compose.
+1. **RadioPersistence.kt**: Gestiona localStorage y carga de estado inicial.
+2. **RadioNetworkManager.kt**: Único punto de contacto con Firebase (Chat, Users, Inbox).
+3. **RadioAudioManager.kt**: Motor de AudioContext, WebRTC (PeerJS) y PTT.
+4. **RadioBridge.kt**: Puente de eventos JS -> Compose UI.
+5. **main.kt**: Punto de entrada y coordinación de la interfaz.
 
 ## ⚠️ REGLAS DE ORO
-- **SEGURIDAD**: Cada Nick está vinculado al ID del teléfono (Hard-Lock). No permitir el cambio de Nick si ya existe un registro en Firebase.
+- **SEGURIDAD**: Cada Nick está vinculado al ID del teléfono (Hard-Lock). No permitir el cambio de Nick si ya existe un registro.
 - **PTT**: El botón PTT debe ser libre y reactivo. Los LEDs de portadora deben encenderse SIEMPRE al pulsar.
-- **VISIBILIDAD**: Mantener el sistema de "Frecuencia Única" hasta que la comunicación entre WiFi y Datos sea 100% estable.
-- **MÓDULO PROFESIONAL**: La lógica de roles (Camareros, Mecánicos, etc.) debe estar desacoplada de la lógica de transmisión de voz.
+- **VISIBILIDAD**: Mantener el sistema de "Frecuencia Única" (Nuclear Option) en `main.kt` hasta que la red sea estable.
+- **DESACOPLAMIENTO**: No mezclar lógica de audio en el NetworkManager ni viceversa.
 
 ## 🚀 DESPLIEGUE
-- El despliegue lo gestiona GitHub Actions automáticamente (tarda 25 min).
-- No intentar compilar localmente si hay conflictos de JAVA_HOME, dejar que GitHub lo haga.
+- El despliegue es automático vía GitHub Actions (25 min).
+- Si se añaden nuevos archivos, incluirlos siempre en el `git commit`.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 1.5 (ESTABLE)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 5.0 (ARQUITECTURA POR ARCHIVOS)

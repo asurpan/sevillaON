@@ -169,7 +169,7 @@ private object RadioSignaling {
                 
                 // --- 🔊 TONO CB PROFESIONAL (TRIANGLE PARA TEXTURA DE RADIO) ---
                 o.type = "triangle"; 
-                o.frequency.setValueAtTime(type === "ptt_off" ? 1000 : 1800, now);
+                o.frequency.setValueAtTime(type === "ptt_off" ? 1955 : 1800, now);
                 
                 g.gain.setValueAtTime(0.12, now); 
                 g.gain.exponentialRampToValueAtTime(0.0001, now + duration);

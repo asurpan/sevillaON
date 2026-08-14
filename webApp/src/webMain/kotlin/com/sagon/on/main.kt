@@ -222,7 +222,7 @@ fun main() {
             micLevel = micLevelState.value,
             isBeeping = isBeepingState.value,
             isCodedRx = false,
-            externalPtt = false,
+            externalPtt = isPttLiveState.value,
             externalPttBlocked = false,
             replayProgress = 0f,
             isReplayReady = false,

@@ -1274,90 +1274,70 @@ fun RadioDialogs(
             modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
             title = { Text("AJUSTES DE EQUIPO", fontWeight = FontWeight.Black) },
             text = {
-                Column {
-                    Text("Configuración de hardware, red y privacidad.", color = Color.White.copy(0.6f), fontSize = 12.sp)
-                    Spacer(Modifier.height(24.dp))
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text("Configuración de audio, modulación y sistema.", color = Color.White.copy(0.6f), fontSize = 12.sp)
+                    Spacer(Modifier.height(20.dp))
                     
-                    // --- 🔔 AJUSTES DE NOTIFICACIÓN ---
-                    Text("PREFERENCIAS", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    // --- 🎙️ CONTROLES DE TRANSMISIÓN ---
+                    Text("AUDIO Y MODULACIÓN", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
                     Spacer(Modifier.height(12.dp))
+                    
+                    // Roger Beep
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Notificaciones de Red", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                            Text("Alertas SOS y mensajes importantes.", color = Color.White.copy(0.4f), fontSize = 10.sp)
-                        }
-                        Switch(
-                            checked = state.notificationsEnabled,
-                            onCheckedChange = { onStateChange(state.copy(notificationsEnabled = it)) },
-                            colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold)
-                        )
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Privacidad GPS", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                            Text("Añadir jitter de 200m a mi zona.", color = Color.White.copy(0.4f), fontSize = 10.sp)
-                        }
-                        Switch(
-                            checked = state.isGpsPrivacyEnabled,
-                            onCheckedChange = { onStateChange(state.copy(isGpsPrivacyEnabled = it)) },
-                            colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold)
-                        )
+                        Text("Roger Beep (Tono Final)", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Switch(checked = state.isRogerBeepEnabled, onCheckedChange = { onStateChange(state.copy(isRogerBeepEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
                     }
                     
-                    Spacer(Modifier.height(24.dp))
-                    
-                    // --- 🎚️ CONTROLES ANALÓGICOS ---
-                    Text("SENSIBILIDAD Y FILTRADO", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    // VOX
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Manos Libres (VOX)", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Switch(checked = state.isVoxEnabled, onCheckedChange = { onStateChange(state.copy(isVoxEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
+                    }
+                    if (state.isVoxEnabled) {
+                        EliteSlider("SENSIBILIDAD VOX", state.voxSensitivity) { onStateChange(state.copy(voxSensitivity = it)) }
+                    }
+
+                    // Monitor
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Monitor (Escucharse)", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Switch(checked = state.isMonitorEnabled, onCheckedChange = { onStateChange(state.copy(isMonitorEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
+                    }
+                    if (state.isMonitorEnabled) {
+                        EliteSlider("VOLUMEN MONITOR", state.monitorVolume) { onStateChange(state.copy(monitorVolume = it)) }
+                    }
+
+                    // DSP
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Procesador DSP (Limpieza)", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Switch(checked = state.isDspEnabled, onCheckedChange = { onStateChange(state.copy(isDspEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // --- 🛡️ SISTEMA ---
+                    Text("SISTEMA", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
                     Spacer(Modifier.height(12.dp))
                     
-                    EliteSlider("SQUELCH (FILTRO)", state.squelch) { onStateChange(state.copy(squelch = it)) }
+                    // Modo Discreto
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Modo Discreto", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Switch(checked = state.isDiscreteModeEnabled, onCheckedChange = { onStateChange(state.copy(isDiscreteModeEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+                    
+                    // --- 🎚️ HARDWARE ---
+                    Text("CALIBRACIÓN ANTENA", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
                     Spacer(Modifier.height(12.dp))
+                    EliteSlider("SQUELCH (FILTRO RUIDO)", state.squelch) { onStateChange(state.copy(squelch = it)) }
                     EliteSlider("GANANCIA DE RF", state.rfGain) { onStateChange(state.copy(rfGain = it)) }
                     
                     Spacer(Modifier.height(24.dp))
-
-                    // --- ⚙️ BOTÓN ACCESO NATIVO ---
-                    LuxeButton(
-                        text = "AJUSTES AVANZADOS ANDROID",
-                        onClick = { onOpenSettings() },
-                        enabled = true,
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                        containerColor = Color.White.copy(0.05f),
-                        contentColor = Color.White,
-                        icon = Icons.Rounded.Settings
-                    )
-                    
-                    Spacer(Modifier.height(16.dp))
-                    
-                    // --- 📶 VERIFICACIÓN WIFI ---
-                    Surface(
-                        color = Color.White.copy(0.03f),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, Color.White.copy(0.1f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(Modifier.padding(12.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.SignalWifiStatusbarConnectedNoInternet4, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("ESTADO DE RED", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
-                            }
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                if (wifiVerificationResult != null) "Diagnóstico: $wifiVerificationResult" else "Verificando integridad de red...",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(24.dp))
                     
                     // --- 🗑️ DERECHO AL OLVIDO ---
-                    Text("SEGURIDAD Y PRIVACIDAD", color = LuxeColors.Red.copy(0.7f), fontSize = 10.sp, fontWeight = FontWeight.Black)
-                    Spacer(Modifier.height(12.dp))
                     Surface(
                         onClick = { onPendingDialogChange(RadioDialogType.DELETE_DATA, null) },
                         color = LuxeColors.Red.copy(0.05f),
@@ -1365,16 +1345,12 @@ fun RadioDialogs(
                         border = BorderStroke(1.dp, LuxeColors.Red.copy(0.2f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                             Icon(Icons.Rounded.DeleteSweep, null, tint = LuxeColors.Red, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text("Derecho al Olvido", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                Text("Borrar permanentemente mis datos locales.", color = Color.White.copy(0.4f), fontSize = 10.sp)
-                            }
+                            Text("BORRAR TODO Y SALIR", color = LuxeColors.Red, fontSize = 11.sp, fontWeight = FontWeight.Black)
                         }
                     }
-                    Spacer(Modifier.height(20.dp))
                 }
             },
             confirmButton = { LuxeButton("CERRAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black) }

@@ -45,15 +45,48 @@ fun main() {
             window.app.sessionID = sessionID;
             if (window.initAudio) window.initAudio();
             
+            var baseCity = localStorage.getItem("lastCity") || "SEVILLA";
+            
             if (window.app.db) {
-                window.app.db.ref("users/" + sessionID).set({
-                    nick: nick,
-                    city: localStorage.getItem("lastCity") || "SEVILLA",
-                    channel: localStorage.getItem("lastChannel") || "SEVILLA",
-                    tx: false,
-                    lastSeen: Date.now()
+                // --- 🛡️ BALANCEO DE CARGA AUTOMÁTICO (PROTECCIÓN DE BATERÍA) ---
+                window.app.db.ref("users").once('value', function(snapshot) {
+                    var users = snapshot.val() || {};
+                    var currentRoomUsers = 0;
+                    var roomSuffix = "";
+                    var subIndex = 1;
+                    
+                    // Contamos usuarios en la sala base
+                    Object.values(users).forEach(function(u) {
+                        if (u.city === baseCity) currentRoomUsers++;
+                    });
+                    
+                    // Si hay 8 o más, buscamos sala libre (-2, -3...)
+                    while (currentRoomUsers >= 8) {
+                        subIndex++;
+                        roomSuffix = "-" + subIndex;
+                        currentRoomUsers = 0;
+                        Object.values(users).forEach(function(u) {
+                            if (u.city === baseCity + roomSuffix) currentRoomUsers++;
+                        });
+                    }
+                    
+                    var finalCityRoom = baseCity + roomSuffix;
+                    window.app.currentCity = finalCityRoom;
+
+                    if (roomSuffix !== "" && window.dispatch_incoming_alert) {
+                        window.dispatch_incoming_alert("📡 SALA SATURADA", "Te hemos movido a la frecuencia " + finalCityRoom + " por optimización.", "warning");
+                    }
+
+                    window.app.db.ref("users/" + sessionID).set({
+                        nick: nick,
+                        city: finalCityRoom,
+                        channel: finalCityRoom,
+                        tx: false,
+                        lastSeen: Date.now()
+                    });
+                    
+                    if (window.initFirebaseListener) window.initFirebaseListener();
                 });
-                if (window.initFirebaseListener) window.initFirebaseListener();
             }
             
             if (typeof Peer !== 'undefined') {
@@ -104,6 +137,7 @@ fun main() {
         val remoteUsersState = remember { mutableStateListOf<RemoteUser>() }
         val chatMessagesState = remember { mutableStateListOf<ChatMessage>() }
         val isPttLiveState = remember { mutableStateOf(false) }
+        val voxActiveState = remember { mutableStateOf(initialState.isVoxEnabled) }
         
         val notificationState = remember { mutableStateOf<AppNotification?>(null) }
 
@@ -127,6 +161,10 @@ fun main() {
                             val k = keys[i] as String
                             val u = users[k] ?: continue
                             
+                            // --- 🛡️ FILTRADO POR CIUDAD/CANAL (BALANCEO ACTIVADO) ---
+                            val myCity = win.app.currentCity as? String ?: ""
+                            if (u.city != myCity) continue
+
                             val isTransmitting = u.tx == true
                             
                             // 📡 DETECCIÓN DE FIN DE TRANSMISIÓN REMOTA (ROGER BEEP ENTRANTE)
@@ -199,12 +237,23 @@ fun main() {
             onInstallRequest = { },
             externalShowExitConfirm = false,
             onExternalExitRequest = { _, _ -> },
-            onShareRequest = { _, _, _, _, _, _ -> },
+            onShareRequest = { city, channel, subtone, _, _, _ -> 
+                val shareText = "📻 ¡Únete a mi frecuencia en ON AIR!\n📍 Ciudad: $city\n📡 Canal: $channel\n🔐 Subtono: $subtone\n\nEntra aquí: https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone"
+                val w = window.asDynamic()
+                val encoded = w.encodeURIComponent(shareText)
+                window.open("https://api.whatsapp.com/send?text=$encoded", "_blank")
+            },
             onNoiseVolumeChange = { vol -> 
-                js("if(window.setNoiseVolume) window.setNoiseVolume(vol);")
+                val w = window.asDynamic()
+                if(w.setNoiseVolume != null) w.setNoiseVolume(vol)
             },
             onMoniVolumeChange = { vol ->
-                js("if(window.app) window.app.moniVolume = vol;")
+                val w = window.asDynamic()
+                if(w.app != null) {
+                    w.app.moniVolume = vol
+                    w.app.moniActive = (vol > 0)
+                }
+                js("if(window.updateMoniGain) window.updateMoniGain();")
                 js("if(window.updateMasterVolume) window.updateMasterVolume();")
             },
             onEchoChange = { _, _ -> },
@@ -215,7 +264,17 @@ fun main() {
             onDeleteMessage = { id, tg -> RadioNetworkManager.deleteMessage(id, tg) },
             onPrivateChatRequest = { },
             onPublicChatRequest = { },
-            onStateSave = { RadioPersistence.saveState(it) },
+            onStateSave = { newState -> 
+                RadioPersistence.saveState(newState)
+                voxActiveState.value = newState.isVoxEnabled
+                // 📡 Sincronización inmediata de VOX y Roger
+                val w = window.asDynamic()
+                if(w.app != null) {
+                    w.app.voxActive = newState.isVoxEnabled
+                    w.app.voxSens = newState.voxSensitivity
+                    w.app.rogerEnabled = newState.isRogerBeepEnabled
+                }
+            },
             onConnectRadio = { RadioNetworkManager.connect(it) },
             onMicEnable = { a, r, p -> RadioAudioManager.setPtt(a, r, p) },
             onReport = { },
@@ -246,9 +305,17 @@ fun main() {
             audioIntegrity = true,
             bgStationName = null,
             onAntennaTest = { },
-            onBgRadioScan = { _, _ -> },
-            onBgRadioStop = { },
-            onBgVolumeChange = { },
+            onBgRadioScan = { city, genre -> 
+                // 📻 CONEXIÓN REAL CON EL MOTOR FM
+                js("if(window.scanBackgroundStation) window.scanBackgroundStation(city, genre);")
+            },
+            onBgRadioStop = { 
+                js("if(window.stopBackgroundRadio) window.stopBackgroundRadio();")
+            },
+            onBgVolumeChange = { vol ->
+                localStorage.setItem("bgVol", vol.toString())
+                js("if(window.fmEngine && window.fmEngine.syncVolume) window.fmEngine.syncVolume();")
+            },
             onGetWifiVariance = { 0f },
             onGetHeading = { 0f },
             onExecuteEngineeringAction = { },
@@ -262,7 +329,7 @@ fun main() {
             onOpenSettings = { },
             onChatOpenConsumed = { },
             onChatTargetConsumed = { },
-            voxActive = false,
+            voxActive = voxActiveState.value,
             wifiVerificationResult = null,
             nasaImageUrl = null,
             nasaImageTitle = null,

@@ -86,8 +86,13 @@ object RadioAudioManager {
                     window.app.txGate = window.app.ctx.createGain();
                     window.app.txGate.gain.value = 0;
                     window.app.txGate.connect(window.app.txBus);
+
+                    // --- 🎙️ MONITOR (MONI) NODE ---
+                    window.app.moniGainNode = window.app.ctx.createGain();
+                    window.app.moniGainNode.gain.value = 0;
+                    window.app.moniGainNode.connect(window.app.masterOut);
                     
-                    console.log("🏗️ [AUDIO] Motor Radioaficionado (Squelch Enabled) listo.");
+                    console.log("🏗️ [AUDIO] Motor Radioaficionado (Squelch & Moni Enabled) listo.");
                 } catch(e) { console.error("Error Audio:", e); }
             };
 
@@ -108,6 +113,9 @@ object RadioAudioManager {
                     
                     micSrc.connect(txFilter);
                     txFilter.connect(txCompressor);
+
+                    // Conectar micro al Monitor (Escucharse a uno mismo)
+                    if (window.app.moniGainNode) txCompressor.connect(window.app.moniGainNode);
                     
                     // --- 🎙️ ANALIZADOR PARA LOS LEDS ---
                     window.app.micAnalyser = window.app.ctx.createAnalyser();
@@ -246,25 +254,55 @@ private object RadioSignaling {
 private object VOXEngine {
     fun install() {
         js("""
+            var voxCounter = 0;
+            var voxTransmitting = false;
+
             function voxLoop() {
                 if(window.app) {
                     var finalLevel = 0;
+                    var currentMicModulation = 0;
                     
+                    if (window.app.micAnalyser) {
+                        var d = new Uint8Array(window.app.micAnalyser.fftSize);
+                        window.app.micAnalyser.getByteTimeDomainData(d);
+                        var max = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>max) max=v; }
+                        currentMicModulation = max / 128;
+                    }
+
+                    // --- 🤖 MOTOR VOX (SIEMPRE VIGILANDO) ---
+                    var isManualPtt = window.app.pttStateInternal && !voxTransmitting;
+                    
+                    if (window.app.voxActive && !window.app.rxActiveInternal && !window.app.isBeeping && !isManualPtt) {
+                        var threshold = (1.05 - (window.app.voxSens || 0.5)) * 0.30; 
+                        if (currentMicModulation > threshold) {
+                            voxCounter = 20; 
+                            if (!voxTransmitting) {
+                                voxTransmitting = true;
+                                window.broadcastPTT(true, window.app.rogerEnabled);
+                            }
+                        } else if (voxTransmitting) {
+                            voxCounter--;
+                            if (voxCounter <= 0) {
+                                voxTransmitting = false;
+                                window.broadcastPTT(false, window.app.rogerEnabled);
+                            }
+                        }
+                    } else if (voxTransmitting) {
+                        voxTransmitting = false;
+                        window.broadcastPTT(false, window.app.rogerEnabled);
+                    }
+
+                    // --- 📟 LÓGICA DE LEDs ---
                     if (window.app.isTransmittingInternal || window.app.isBeeping) {
                         if (window.app.isBeeping) {
                             finalLevel = 1.0;
-                        } else if (window.app.micAnalyser) {
-                            var d = new Uint8Array(window.app.micAnalyser.fftSize);
-                            window.app.micAnalyser.getByteTimeDomainData(d);
-                            var max = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>max) max=v; }
-                            var mod = Math.min(0.25, (max/128)*2.5);
+                        } else {
+                            var mod = Math.min(0.25, currentMicModulation * 2.5);
                             finalLevel = 0.75 + mod;
                         }
                     } else {
-                        // --- 📡 MODO RX / STANDBY: SEÑAL DE ENTRADA PURA ---
                         var rxModulation = 0;
                         var hasIncomingVoice = false;
-                        
                         if (window.app.rxActiveInternal) {
                             var maxRx = 0;
                             Object.values(window.app.remoteAnalysers).forEach(function(ana) {
@@ -279,26 +317,18 @@ private object VOXEngine {
                                 hasIncomingVoice = true;
                             }
                         }
-                        
-                        // Si no hay voz fuerte, mostramos el nivel de QRM (Squelch)
                         if (!hasIncomingVoice) {
-                            // 🌊 QRM METER: Solo 1-2 LEDs (0.05 - 0.12) para realismo analógico
                             var noiseBase = (window.app.currentNoiseTarget || 0);
-                            
                             if (noiseBase < 0.01) {
-                                // 🔒 SILENCIO ABSOLUTO: Squelch cerrado, 0 LEDs para ahorrar batería
                                 finalLevel = 0;
                             } else {
-                                // Squelch abierto: parpadeo sutil en la base
                                 var jitter = (Math.random() * 0.03); 
                                 finalLevel = Math.min(0.12, (noiseBase * 0.4) + jitter);
                             }
                         }
                     }
 
-                    if(window.dispatch_mic) {
-                        window.dispatch_mic(finalLevel);
-                    }
+                    if(window.dispatch_mic) window.dispatch_mic(finalLevel);
                 }
                 requestAnimationFrame(voxLoop);
             }

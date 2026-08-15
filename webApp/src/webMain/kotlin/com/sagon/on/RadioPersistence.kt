@@ -31,9 +31,6 @@ object RadioPersistence {
                 channel = initialChannel,
                 subtone = urlSubtone ?: (localStorage.getItem("lastSubtone") ?: "0000"),
                 isWorkModeActive = urlPro == "true",
-                forceShowNasa = urlNasa == "true",
-                activeProfile = if (urlActivity == "true") ActivityProfile.MOTO else ActivityProfile.NORMAL,
-                routeImage = urlImg,
                 voxSensitivity = localStorage.getItem("voxSens")?.toFloatOrNull() ?: 0.5f,
                 monitorVolume = localStorage.getItem("moniVol")?.toFloatOrNull() ?: 0.5f,
                 rfGain = localStorage.getItem("rfGain")?.toFloatOrNull() ?: 0.5f,
@@ -42,19 +39,10 @@ object RadioPersistence {
                 isMonitorEnabled = localStorage.getItem("moniActive")?.toBoolean() ?: false,
                 isEcoMode = localStorage.getItem("ecoMode")?.toBoolean() ?: false,
                 isInterfaceLocked = localStorage.getItem("isLocked")?.toBoolean() ?: false,
-                isAntennaTesting = localStorage.getItem("antTest")?.toBoolean() ?: false,
-                isSystemVoiceEnabled = localStorage.getItem("systemVoice")?.toBoolean() ?: false,
                 veteranPower = localStorage.getItem("vetPwr")?.toFloatOrNull() ?: 0.7f,
-                isAvoidingHighways = localStorage.getItem("avoid_highways")?.toBoolean() ?: false,
-                favoriteChannels = (localStorage.getItem("favoriteChannels") ?: "").split(",").filter { it.isNotEmpty() }.toSet(),
-                friends = (localStorage.getItem("friends") ?: "").split(",").filter { it.isNotEmpty() }.toSet(),
-                blockedUsers = (localStorage.getItem("blockedUsers") ?: "").split(",").filter { it.isNotEmpty() }.toSet(),
                 isDspEnabled = localStorage.getItem("dspEnabled")?.toBoolean() ?: true,
                 bgRadioGenre = localStorage.getItem("bgGenre") ?: "MIX",
-                isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
-                nasaImageUrl = localStorage.getItem("cache_nasa_img"),
-                nasaImageTitle = localStorage.getItem("cache_nasa_title"),
-                nasaImageExplanation = localStorage.getItem("cache_nasa_desc")
+                isDiscreteModeEnabled = localStorage.getItem("disMode") == "true"
             )
         } catch(e: Exception) { RadioState() }
     }
@@ -92,6 +80,7 @@ object RadioPersistence {
             win.app.moniActive = s.isMonitorEnabled
             win.app.moniVolume = s.monitorVolume
             win.app.rfGain = s.rfGain
+            win.app.rogerEnabled = s.isRogerBeepEnabled
             
             js("if(window.updateMoniGain) window.updateMoniGain();")
             js("if(window.updateMasterVolume) window.updateMasterVolume();")

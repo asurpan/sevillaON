@@ -20,6 +20,10 @@ Queda terminantemente prohibido modificar, alterar o "simplificar" el código en
 4. **Lógica de Canales**: El sistema de filtrado por `city` y `channel` en Firebase.
 5. **Motor WebRTC**: Configuración de `PeerJS` y manejo de llamadas (Full Mesh 10 usuarios).
 6. **Ducking & Silencio**: Silencio absoluto en recepción durante la transmisión (TX).
+7. **VOX (Transmisión por Voz)**: 
+    - El disparador automático debe basarse en la modulación del micro local.
+    - Sensibilidad inversa: A mayor valor de `voxSens`, menor umbral de disparo.
+    - Mantener portadora activa (hang time) para evitar cortes bruscos.
 
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si un agente detecta un error en estas áreas, **DEBE INFORMAR** antes de aplicar cualquier cambio. No se permiten refactorizaciones automáticas ni cambios de diseño en el núcleo funcional.

@@ -285,7 +285,7 @@ fun RadioPanel(
                                 }
                                 Text(
                                     text = statusText, 
-                                    color = if(rx) LuxeColors.Gold else if(isTransmitting) Color.Red else Color.White.copy(0.2f), 
+                                    color = if(rx) LuxeColors.Green else if(isTransmitting) Color.Red else Color.White.copy(0.2f), 
                                     fontSize = 11.sp, 
                                     fontWeight = FontWeight.Black, 
                                     letterSpacing = if(rx) 1.sp else 2.sp,

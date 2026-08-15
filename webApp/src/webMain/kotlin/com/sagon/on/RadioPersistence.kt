@@ -5,6 +5,7 @@ import kotlinx.browser.window
 
 /**
  * 🔒 RADIO PERSISTENCE: GESTIÓN DE PREFERENCIAS Y ESTADO LOCAL
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 7.0 (PURE RADIO)
  */
 object RadioPersistence {
     fun loadInitialState(): RadioState {
@@ -13,10 +14,7 @@ object RadioPersistence {
             val urlCity = params.get("city")?.toString()
             val urlChannel = params.get("channel")?.toString()
             val urlSubtone = params.get("subtone")?.toString()
-            val urlPro = params.get("pro")?.toString()
-            val urlNasa = params.get("nasa")?.toString()
             val urlActivity = params.get("activity")?.toString()
-            val urlImg = params.get("img")?.toString()
 
             val savedCity = localStorage.getItem("lastCity")
             val finalCity = (urlCity ?: (savedCity ?: "SEVILLA")).trim().uppercase()
@@ -33,10 +31,9 @@ object RadioPersistence {
                 city = finalCity,
                 channel = initialChannel,
                 subtone = urlSubtone ?: (localStorage.getItem("lastSubtone") ?: "0000"),
-                isWorkModeActive = urlPro == "true",
                 voxSensitivity = localStorage.getItem("voxSens")?.toFloatOrNull() ?: 0.5f,
                 monitorVolume = localStorage.getItem("moniVol")?.toFloatOrNull() ?: 0.5f,
-                rfGain = localStorage.getItem("rfGain")?.toFloatOrNull() ?: 0.5f, // 📻 QRM al 50% por defecto
+                rfGain = localStorage.getItem("rfGain")?.toFloatOrNull() ?: 0.5f, 
                 isRogerBeepEnabled = localStorage.getItem("roger")?.toBoolean() ?: true,
                 isVoxEnabled = localStorage.getItem("voxActive")?.toBoolean() ?: false,
                 isMonitorEnabled = localStorage.getItem("moniActive")?.toBoolean() ?: false,
@@ -46,10 +43,8 @@ object RadioPersistence {
                 isDspEnabled = localStorage.getItem("dspEnabled")?.toBoolean() ?: true,
                 bgRadioGenre = localStorage.getItem("bgGenre") ?: "MIX",
                 activeProfile = profile,
-                nasaImageUrl = urlImg ?: localStorage.getItem("cache_nasa_img"),
-                nasaImageTitle = urlNasa,
                 isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
-                squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.55f // 🔒 Squelch al 55% por defecto
+                squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.55f 
             )
         } catch(e: Exception) { RadioState() }
     }
@@ -77,7 +72,6 @@ object RadioPersistence {
             localStorage.setItem("disMode", s.isDiscreteModeEnabled.toString())
             localStorage.setItem("activeProfile", s.activeProfile.name)
             localStorage.setItem("squelch", s.squelch.toString())
-            s.nasaImageUrl?.let { localStorage.setItem("cache_nasa_img", it) }
         } catch(e: Exception) {}
 
         if (win.app != null) {
@@ -100,7 +94,7 @@ object RadioPersistence {
                 val updates: dynamic = js("{}")
                 updates.city = normCity
                 updates.channel = normCh
-                updates.roger = s.isRogerBeepEnabled // 📡 Sincronizar preferencia con los demás
+                updates.roger = s.isRogerBeepEnabled 
                 win.app.db.ref("users/" + win.app.sessionID).update(updates)
             }
         }

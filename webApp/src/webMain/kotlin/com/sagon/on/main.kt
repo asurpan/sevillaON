@@ -2,17 +2,11 @@ package com.sagon.on
 
 /**
  * 🔒 WEBAPP ENTRY POINT - ARQUITECTURA MODULAR
- * ESTADO: PROTECTED CORE - VERSIÓN 5.0 (CLEAN SPLIT)
- * 
- * Este archivo inicializa la aplicación y coordina los managers.
+ * ESTADO: PROTECTED CORE - VERSIÓN 7.0 (PURE RADIO)
  */
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeViewport
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -29,13 +23,9 @@ fun main() {
 
     // 🛡️ CREACIÓN INMEDIATA DEL OBJETO APP Y DEFINICIÓN DE FUNCIONES CRÍTICAS
     js("""
-        window.app = window.app || {
-            activeCalls: {}, remoteSources: {}, remoteAnalysers: {},
-            currentCity: 'SEVILLA', currentChannel: 'SEVILLA'
-        };
-
-        window.sanitizePath = function(s) { 
-            return (s ? s.toString().replace(/[.${'$'}#[\]/]/g, "_") : "unknown"); 
+        window.app = window.app || { 
+            activeCalls: {}, remoteSources: {}, remoteAnalysers: {}, 
+            remoteGains: {}, remotePowers: {} 
         };
 
         window.remoteTxStates = {};
@@ -48,19 +38,16 @@ fun main() {
             var baseCity = localStorage.getItem("lastCity") || "SEVILLA";
             
             if (window.app.db) {
-                // --- 🛡️ BALANCEO DE CARGA AUTOMÁTICO (PROTECCIÓN DE BATERÍA) ---
                 window.app.db.ref("users").once('value', function(snapshot) {
                     var users = snapshot.val() || {};
                     var currentRoomUsers = 0;
                     var roomSuffix = "";
                     var subIndex = 1;
                     
-                    // Contamos usuarios en la sala base
                     Object.values(users).forEach(function(u) {
                         if (u.city === baseCity) currentRoomUsers++;
                     });
                     
-                    // Si hay 8 o más, buscamos sala libre (-2, -3...)
                     while (currentRoomUsers >= 8) {
                         subIndex++;
                         roomSuffix = "-" + subIndex;
@@ -75,23 +62,18 @@ fun main() {
                     
                     if (window.dispatch_room_update) window.dispatch_room_update(finalCityRoom);
 
-                    if (roomSuffix !== "" && window.dispatch_incoming_alert) {
-                        window.dispatch_incoming_alert("📡 SALA SATURADA", "Te hemos movido a la frecuencia " + finalCityRoom + " por optimización.", "warning");
-                    }
-
                     window.app.db.ref("users/" + sessionID).set({
                         nick: nick,
                         city: finalCityRoom,
                         channel: finalCityRoom,
                         tx: false,
+                        pwr: 0.7,
                         roger: (localStorage.getItem("roger") === "true"),
                         lastSeen: Date.now()
                     });
                     
-                    // 🛡️ LIMPIEZA AUTOMÁTICA AL CERRAR PESTAÑA (SIN ZOMBIS)
                     window.app.db.ref("users/" + sessionID).onDisconnect().remove();
 
-                    // 💓 HEARTBEAT RÁPIDO (CADA 5S)
                     setInterval(function() {
                         if(window.app.db && window.app.sessionID) {
                             window.app.db.ref("users/" + window.app.sessionID).update({ lastSeen: Date.now() });
@@ -124,18 +106,8 @@ fun main() {
                 if (window.setupCallStream) window.setupCallStream(call);
             }
         };
-
-        window.setupSystemListeners = function() {
-            window.addEventListener('popstate', function(event) {
-                history.pushState(null, document.title, location.href);
-                if(window.trigger_back) window.trigger_back();
-            });
-            history.pushState(null, document.title, location.href);
-        };
     """)
 
-    // 🏗️ INSTALACIÓN DE MOTORES (En orden de dependencia)
-    RadioPersistence.loadInitialState() // Carga previa
     RadioNetworkManager.install()
     RadioAudioManager.install()
     RadioMapsManager.install()
@@ -144,19 +116,16 @@ fun main() {
     ComposeViewport(root) {
         val initialState = remember { RadioPersistence.loadInitialState() }
         
-        // ESTADOS REACTIVOS GLOBALES
         val micLevelState = remember { mutableStateOf(0f) }
         val isBeepingState = remember { mutableStateOf(false) }
         val remoteUsersState = remember { mutableStateListOf<RemoteUser>() }
         val chatMessagesState = remember { mutableStateListOf<ChatMessage>() }
         val isPttLiveState = remember { mutableStateOf(false) }
         val voxActiveState = remember { mutableStateOf(initialState.isVoxEnabled) }
-        
         val notificationState = remember { mutableStateOf<AppNotification?>(null) }
         val radioState = remember { mutableStateOf(initialState) }
         val remoteTransmitterName = remember { mutableStateOf<String?>(null) }
 
-        // --- 📡 CONFIGURACIÓN DEL PUENTE DE EVENTOS ---
         RadioBridge.setupDispatchers(
             win = win,
             onMic = { micLevelState.value = it },
@@ -182,13 +151,11 @@ fun main() {
                             val userNick = (u.nick as? String ?: "ESTACIÓN").trim().uppercase()
                             val lastSeen = (u.lastSeen as? Double ?: 0.0)
                             
-                            // 🛡️ FILTRO FANTASMAS (Nombres cortos o zombis)
                             if (userNick.length < 3) continue
                             if (now - lastSeen > 15000) continue 
                             if (nicksSeen.contains(userNick)) continue
                             nicksSeen.add(userNick)
 
-                            // --- 🛡️ FILTRADO POR CIUDAD (BALANCEO AMIGABLE) ---
                             val myCity = win.app.currentCity as? String ?: ""
                             val userCity = u.city as? String ?: ""
                             val myBase = myCity.split("-")[0]
@@ -197,30 +164,24 @@ fun main() {
 
                             val isTransmitting = u.tx == true
                             val userPwr = (u.pwr as? Double ?: 0.7).toFloat()
-                            
-                            // 📡 ACTUALIZAR POTENCIA PARA EL MOTOR DE RUIDO/PISARSE
                             win.app.remotePowers[k] = userPwr
 
-                            // 📡 DETECCIÓN DE FIN DE TRANSMISIÓN (ROGER BEEP AJENO)
                             val prevState = win.remoteTxStates[k] ?: false
                             if (prevState && !isTransmitting) {
                                 val isMe = (k == win.app.sessionID)
-                                // 🛡️ USAR EL ROGER BEEP DEL EMISOR, NO EL MÍO
                                 val senderRoger = u.roger == true
-                                
-                                if (!isMe && senderRoger && win.playUiSound != null) {
-                                    win.playUiSound("rx_off")
-                                }
+                                if (!isMe && senderRoger && win.playUiSound != null) win.playUiSound("rx_off")
                             }
                             win.remoteTxStates[k] = isTransmitting
 
                             list.add(RemoteUser(
                                 id = k, 
-                                nick = u.nick as? String ?: "ESTACIÓN", 
+                                nick = userNick, 
                                 isTransmitting = isTransmitting,
                                 city = u.city as? String ?: "SEVILLA",
                                 channel = u.channel as? String ?: "SEVILLA",
-                                txPower = (u.pwr as? Double ?: 0.7).toFloat()
+                                txPower = userPwr,
+                                roger = (u.roger == true)
                             ))
                             
                             if (k != win.app.sessionID && win.app.activeCalls[k] == null) {
@@ -230,8 +191,6 @@ fun main() {
                     }
                     remoteUsersState.clear()
                     remoteUsersState.addAll(list)
-                    
-                    // 🔍 IDENTIFICAR TRANSMISOR ACTIVO (Para el panel ON AIR)
                     val activeTx = list.find { it.isTransmitting }
                     remoteTransmitterName.value = activeTx?.nick
                 } catch(e: Exception) { }
@@ -239,9 +198,9 @@ fun main() {
             onChatUpdate = { data ->
                 val nl = mutableListOf<ChatMessage>()
                 if (data != null && data != undefined) {
-                    val ks = js("Object").keys(data)
-                    for (i in 0 until (ks.length as Int)) {
-                        val k = ks[i] as String
+                    val keys = js("Object").keys(data)
+                    for (i in 0 until (keys.length as Int)) {
+                        val k = keys[i] as String
                         val m = data[k] ?: continue
                         nl.add(ChatMessage(k, m.senderNick?.toString() ?: "???", m.text?.toString() ?: "", m.timestamp?.toString()?.toDouble()?.toLong() ?: 0L))
                     }
@@ -254,26 +213,14 @@ fun main() {
             onChatOpen = { },
             onMicFailure = { },
             onIntegrityStatus = { },
-            onBgStation = { },
-            onBgGenreChange = { },
             onIncomingAlert = { _, _, _ -> },
             onVoxSync = { },
             onRoomUpdate = { newRoom ->
                 radioState.value = radioState.value.copy(city = newRoom, channel = newRoom)
             },
-            onNasaImage = { _, _, _ -> },
-            onDgtUpdate = { _, _ -> },
-            onCodeCaptured = { _, _ -> },
-            onWifiListReceived = { },
-            onEngineeringFinished = { },
-            onRouteSuggestions = { },
-            onPoiResults = { },
-            onRouteInfo = { _, _, _ -> },
-            onNavigationStep = { },
             onPttLive = { isPttLiveState.value = it }
         )
 
-        // --- 📻 RENDERIZADO DE LA APP ---
         App(
             savedNick = localStorage.getItem("indicativo") ?: "",
             initialState = radioState.value,
@@ -312,7 +259,6 @@ fun main() {
                     updates.city = newCity
                     updates.channel = newCity
                     w.app.db.ref("users/" + w.app.sessionID).update(updates)
-                    // Forzamos actualización de escucha
                     js("if(window.initFirebaseListener) window.initFirebaseListener();")
                 }
             },
@@ -339,10 +285,7 @@ fun main() {
                     w.app.voxActive = newState.isVoxEnabled
                     w.app.voxSens = newState.voxSensitivity
                     w.app.rogerEnabled = newState.isRogerBeepEnabled
-                    
-                    // 🔒 Sincronización forzada de Roger Beep
                     localStorage.setItem("roger", newState.isRogerBeepEnabled.toString())
-                    
                     js("if(window.broadcastPTT) window.broadcastPTT(window.app.pttStateInternal || false, newState.isRogerBeepEnabled);")
                 }
             },

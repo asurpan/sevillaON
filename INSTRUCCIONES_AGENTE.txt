@@ -15,7 +15,9 @@ El motor web ha sido refactorizado en archivos independientes para una claridad 
 - **SEGURIDAD**: Cada Nick está vinculado al ID del teléfono (Hard-Lock). No permitir el cambio de Nick si ya existe un registro.
 - **PTT (MODO EMISORA REAL)**:
     - Al pulsar PTT, el silencio en la recepción (RX) y el ruido de fondo (QRM) debe ser **ABSOLUTO (0.0)**.
-    - El Roger Beep debe estar configurado **OBLIGATORIAMENTE** a **1955Hz** con una duración de **0.3s** y envolvente de ataque plano.
+    - **TONOS**:
+        - **Roger Beep (PTT/RX OFF)**: OBLIGATORIAMENTE **1955Hz** / **0.3s**.
+        - **UI Sounds (Clicks/Etc)**: OBLIGATORIAMENTE **1800Hz** / **0.08s** (sonido corto y distinto).
 - **SQUELCH & QRM**: El ruido de banda es Brown Noise (Ruido Marrón) filtrado para máxima calidez. Debe pasar siempre por el filtro Bandpass y responder al control `setNoiseVolume`.
 - **METER (LEDs/S-METER)**:
     - **PROHIBIDO RECALCULAR EN UI**: La pantalla (`Screens.kt`) NO debe calcular niveles de ruido ni intensidades. Debe usar UNICAMENTE el valor `mic` reportado por el motor de audio.

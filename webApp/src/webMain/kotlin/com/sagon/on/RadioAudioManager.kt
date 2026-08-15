@@ -204,9 +204,11 @@ private object RadioSignaling {
                 if(window.app.ctx.state === 'suspended') window.app.ctx.resume();
                 
                 var now = window.app.ctx.currentTime;
-                // 📻 ROGER BEEP PERFECTO: 1955Hz - 0.3s
-                var freq = 1955;
-                var duration = 0.3;
+                
+                // 📻 CONFIGURACIÓN DE TONOS
+                var isRoger = (type === "ptt_off" || type === "rx_off");
+                var freq = isRoger ? 1955 : 1800; // 1955Hz para radio, 1800Hz para interfaz
+                var duration = isRoger ? 0.3 : 0.08; // 0.3s para radio, 0.08s para clicks rápidos
 
                 if (type === "ptt_off") {
                     window.app.isBeeping = true;
@@ -219,9 +221,10 @@ private object RadioSignaling {
                 o.type = "triangle"; 
                 o.frequency.setValueAtTime(freq, now);
                 
-                // Envolvente plana para ataque profesional
-                g.gain.setValueAtTime(0.12, now); 
-                g.gain.setValueAtTime(0.12, now + duration - 0.02);
+                // Envolvente optimizada
+                var volume = isRoger ? 0.12 : 0.08;
+                g.gain.setValueAtTime(volume, now); 
+                g.gain.setValueAtTime(volume, now + duration - 0.02);
                 g.gain.linearRampToValueAtTime(0.0, now + duration);
                 
                 o.connect(g); 

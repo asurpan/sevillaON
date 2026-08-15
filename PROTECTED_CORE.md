@@ -7,7 +7,8 @@ Queda terminantemente prohibido modificar, alterar o "simplificar" el código en
 
 1. **Motor de Audio Profesional (`RadioAudioManager.kt`)**: 
     - **Cadena de Audio**: Prohibido alterar el orden de conexión (Señal -> RxGain -> MasterOut). El MasterOut (Volumen) debe ser siempre el último nodo.
-    - **Roger Beep**: Blindado a **1955Hz**, **0.3s** y envolvente de ataque plano.
+    - **Roger Beep**: Blindado a **1955Hz**, **0.3s** y envolvente de ataque plano (usado en `ptt_off` y `rx_off`).
+    - **UI Sounds**: Tonos de interacción (clicks, switches) configurados a **1800Hz** y **0.08s** para diferenciarlos de la radio.
     - **QRM Atmosférico**: Generador de **Brown Noise** filtrado a 1500Hz/Q1.2.
     - **Independencia de Señal**: El volumen maestro **NUNCA** debe afectar al nivel medido por los analizadores de los LEDs.
 2. **Motor de LEDs (`VOXEngine`)**:

@@ -72,6 +72,8 @@ fun main() {
                     
                     var finalCityRoom = baseCity + roomSuffix;
                     window.app.currentCity = finalCityRoom;
+                    
+                    if (window.dispatch_room_update) window.dispatch_room_update(finalCityRoom);
 
                     if (roomSuffix !== "" && window.dispatch_incoming_alert) {
                         window.dispatch_incoming_alert("📡 SALA SATURADA", "Te hemos movido a la frecuencia " + finalCityRoom + " por optimización.", "warning");
@@ -82,9 +84,20 @@ fun main() {
                         city: finalCityRoom,
                         channel: finalCityRoom,
                         tx: false,
+                        roger: (localStorage.getItem("roger") === "true"),
                         lastSeen: Date.now()
                     });
                     
+                    // 🛡️ LIMPIEZA AUTOMÁTICA AL CERRAR PESTAÑA (SIN ZOMBIS)
+                    window.app.db.ref("users/" + sessionID).onDisconnect().remove();
+
+                    // 💓 HEARTBEAT RÁPIDO (CADA 5S)
+                    setInterval(function() {
+                        if(window.app.db && window.app.sessionID) {
+                            window.app.db.ref("users/" + window.app.sessionID).update({ lastSeen: Date.now() });
+                        }
+                    }, 5000);
+
                     if (window.initFirebaseListener) window.initFirebaseListener();
                 });
             }
@@ -140,6 +153,7 @@ fun main() {
         val voxActiveState = remember { mutableStateOf(initialState.isVoxEnabled) }
         
         val notificationState = remember { mutableStateOf<AppNotification?>(null) }
+        val radioState = remember { mutableStateOf(initialState) }
 
         // --- 📡 CONFIGURACIÓN DEL PUENTE DE EVENTOS ---
         RadioBridge.setupDispatchers(
@@ -155,22 +169,42 @@ fun main() {
             onUsersUpdate = { users ->
                 try {
                     val list = mutableListOf<RemoteUser>()
+                    val nicksSeen = mutableSetOf<String>()
+                    val now = Date.now()
+
                     if (users != null && users != undefined) {
                         val keys = js("Object").keys(users)
                         for (i in 0 until (keys.length as Int)) {
                             val k = keys[i] as String
                             val u = users[k] ?: continue
                             
-                            // --- 🛡️ FILTRADO POR CIUDAD/CANAL (BALANCEO ACTIVADO) ---
+                            val userNick = (u.nick as? String ?: "ESTACIÓN").trim().uppercase()
+                            val lastSeen = (u.lastSeen as? Double ?: 0.0)
+                            
+                            // 🛡️ FILTRO ZOMBI AGRESIVO (15s)
+                            if (now - lastSeen > 15000) continue 
+                            if (nicksSeen.contains(userNick)) continue
+                            nicksSeen.add(userNick)
+
+                            // --- 🛡️ FILTRADO POR CIUDAD (BALANCEO AMIGABLE) ---
                             val myCity = win.app.currentCity as? String ?: ""
-                            if (u.city != myCity) continue
+                            val userCity = u.city as? String ?: ""
+                            val myBase = myCity.split("-")[0]
+                            val userBase = userCity.split("-")[0]
+                            if (myBase != userBase) continue
 
                             val isTransmitting = u.tx == true
                             
-                            // 📡 DETECCIÓN DE FIN DE TRANSMISIÓN REMOTA (ROGER BEEP ENTRANTE)
+                            // 📡 DETECCIÓN DE FIN DE TRANSMISIÓN (ROGER BEEP AJENO)
                             val prevState = win.remoteTxStates[k] ?: false
-                            if (prevState == true && isTransmitting == false) {
-                                if (win.playUiSound) win.playUiSound("rx_off")
+                            if (prevState && !isTransmitting) {
+                                val isMe = (k == win.app.sessionID)
+                                // 🛡️ USAR EL ROGER BEEP DEL EMISOR, NO EL MÍO
+                                val senderRoger = u.roger == true
+                                
+                                if (!isMe && senderRoger && win.playUiSound != null) {
+                                    win.playUiSound("rx_off")
+                                }
                             }
                             win.remoteTxStates[k] = isTransmitting
 
@@ -178,8 +212,8 @@ fun main() {
                                 id = k, 
                                 nick = u.nick as? String ?: "ESTACIÓN", 
                                 isTransmitting = isTransmitting,
-                                city = "FRECUENCIA ÚNICA",
-                                channel = "DEBUG",
+                                city = u.city as? String ?: "SEVILLA",
+                                channel = u.channel as? String ?: "SEVILLA",
                                 txPower = (u.pwr as? Double ?: 0.7).toFloat()
                             ))
                             
@@ -214,6 +248,9 @@ fun main() {
             onBgGenreChange = { },
             onIncomingAlert = { _, _, _ -> },
             onVoxSync = { },
+            onRoomUpdate = { newRoom ->
+                radioState.value = radioState.value.copy(city = newRoom, channel = newRoom)
+            },
             onNasaImage = { _, _, _ -> },
             onDgtUpdate = { _, _ -> },
             onCodeCaptured = { _, _ -> },
@@ -229,7 +266,7 @@ fun main() {
         // --- 📻 RENDERIZADO DE LA APP ---
         App(
             savedNick = localStorage.getItem("indicativo") ?: "",
-            initialState = initialState,
+            initialState = radioState.value,
             isFirstTime = false,
             onOnboardingFinish = { },
             onPermissionRequest = { RadioNetworkManager.connect(it) },
@@ -257,22 +294,46 @@ fun main() {
                 js("if(window.updateMasterVolume) window.updateMasterVolume();")
             },
             onEchoChange = { _, _ -> },
-            onCityChange = { },
+            onCityChange = { newCity ->
+                val w = window.asDynamic()
+                if (w.app != null && w.app.db != null && w.app.sessionID != null) {
+                    w.app.currentCity = newCity
+                    val updates: dynamic = js("{}")
+                    updates.city = newCity
+                    updates.channel = newCity
+                    w.app.db.ref("users/" + w.app.sessionID).update(updates)
+                    // Forzamos actualización de escucha
+                    js("if(window.initFirebaseListener) window.initFirebaseListener();")
+                }
+            },
             onSubtoneChange = { },
-            onChannelChange = { },
+            onChannelChange = { newCh ->
+                val w = window.asDynamic()
+                if (w.app != null && w.app.db != null && w.app.sessionID != null) {
+                    val updates: dynamic = js("{}")
+                    updates.channel = newCh
+                    w.app.db.ref("users/" + w.app.sessionID).update(updates)
+                }
+            },
             onSendMessage = { t, tg -> RadioNetworkManager.sendMessage(t, tg) },
             onDeleteMessage = { id, tg -> RadioNetworkManager.deleteMessage(id, tg) },
             onPrivateChatRequest = { },
             onPublicChatRequest = { },
             onStateSave = { newState -> 
                 RadioPersistence.saveState(newState)
+                radioState.value = newState 
                 voxActiveState.value = newState.isVoxEnabled
-                // 📡 Sincronización inmediata de VOX y Roger
+                
                 val w = window.asDynamic()
                 if(w.app != null) {
                     w.app.voxActive = newState.isVoxEnabled
                     w.app.voxSens = newState.voxSensitivity
                     w.app.rogerEnabled = newState.isRogerBeepEnabled
+                    
+                    // 🔒 Sincronización forzada de Roger Beep
+                    localStorage.setItem("roger", newState.isRogerBeepEnabled.toString())
+                    
+                    js("if(window.broadcastPTT) window.broadcastPTT(window.app.pttStateInternal || false, newState.isRogerBeepEnabled);")
                 }
             },
             onConnectRadio = { RadioNetworkManager.connect(it) },
@@ -303,47 +364,12 @@ fun main() {
             chatMessages = chatMessagesState,
             forceInitialScreen = false,
             audioIntegrity = true,
-            bgStationName = null,
-            onAntennaTest = { },
-            onBgRadioScan = { city, genre -> 
-                // 📻 CONEXIÓN REAL CON EL MOTOR FM
-                js("if(window.scanBackgroundStation) window.scanBackgroundStation(city, genre);")
-            },
-            onBgRadioStop = { 
-                js("if(window.stopBackgroundRadio) window.stopBackgroundRadio();")
-            },
-            onBgVolumeChange = { vol ->
-                localStorage.setItem("bgVol", vol.toString())
-                js("if(window.fmEngine && window.fmEngine.syncVolume) window.fmEngine.syncVolume();")
-            },
-            onGetWifiVariance = { 0f },
-            onGetHeading = { 0f },
-            onExecuteEngineeringAction = { },
-            onWifiListReceived = { },
-            onWifiAuthResultReceived = { },
-            onEngineeringFinished = { },
-            onRouteSuggestionsReceived = { },
-            onPoiResultsReceived = { },
-            onWaypointReceived = { },
+            onAntennaTest = { _ -> },
             onRequestLocationPermission = { },
             onOpenSettings = { },
             onChatOpenConsumed = { },
             onChatTargetConsumed = { },
-            voxActive = voxActiveState.value,
-            wifiVerificationResult = null,
-            nasaImageUrl = null,
-            nasaImageTitle = null,
-            nasaImageExplanation = null,
-            routeDistanceKm = null,
-            routeDurationMin = null,
-            routeDestinationName = null,
-            nextNavigationStep = null,
-            routeWaypoints = emptyList(),
-            onBgGenreConsumed = { },
-            onBgGenreChangeExternal = { },
-            onDgtUpdate = { },
-            dgtText = null,
-            dgtImageUrl = null
+            voxActive = voxActiveState.value
         )
     }
 }

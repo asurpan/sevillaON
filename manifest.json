@@ -1,13 +1,13 @@
 {
-  "name": "ON AIR SPAIN | Red Social de Voz Táctica",
+  "name": "ON AIR SPAIN | La Radio Social Pura",
   "short_name": "ON AIR",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#0F172A",
-  "theme_color": "#0F172A",
-  "description": "Radio CB Digital de última generación. Modo Moto con filtrado de viento, Planificador de Misiones y Red Social de Voz en tiempo real.",
-  "categories": ["social", "sports", "utilities", "travel", "navigation"],
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "description": "Emisora de Radio CB Digital centrada en la voz y la privacidad. Comunicación PTT instantánea entre ciudades de España sin GPS ni registros.",
+  "categories": ["social", "sports", "utilities"],
   "dir": "ltr",
   "lang": "es-ES",
   "prefer_related_applications": true,
@@ -29,15 +29,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "https://asurpan.github.io/sevillaON/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "label": "Logo ON AIR SPAIN",
-      "form_factor": "narrow"
     }
   ]
 }

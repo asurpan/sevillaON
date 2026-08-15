@@ -1,125 +1,42 @@
-# 🎙️ ON AIR SPAIN - PROTECTED CORE
+# 📻 ON AIR SPAIN: La Emisora de Radio Social Pura (V5.0)
 
-**Architecture & Engineering by Jose Manuel Gonzalez Lorence**
-*Senior Software Architect & Elite Multiplatform Developer*
+**ON AIR SPAIN** es la evolución digital de la mítica Radio CB (Banda Ciudadana). Una aplicación diseñada para la comunicación de voz directa, sin distracciones, centrada en la privacidad y la calidad técnica.
 
-![Version](https://img.shields.io/badge/Version-Premium_Stable-gold)
-![Platform](https://img.shields.io/badge/Platform-Android_%7C_Web-blue)
-![Stack](https://img.shields.io/badge/Stack-Kotlin_Multiplatform_%7C_WebRTC-orange)
+![Logo](logo.png)
 
-Esta es la infraestructura central de **ON AIR SPAIN**, la red social de voz real líder en España. La plataforma que recupera la **"Mística de la Radio"** y la compañía de la voz humana.
+## 🎯 El Propósito: Esencia Pura
+Hemos eliminado lo irrelevante (chats, fotos, mapas complejos y GPS intrusivo) para centrarnos en lo que importa: **la voz**. Esta es una herramienta para radioaficionados y personas que buscan una comunicación real y humana.
 
----
+## 🚀 Características Principales (Protegidas)
 
-## 📢 DESCRIPCIÓN OFICIAL (PLAY STORE / ASO)
-*Copia este texto para la ficha de la tienda:*
+### 🎙️ Motor de Audio Profesional
+- **Push-To-Talk (PTT):** Protocolo instantáneo de alta fidelidad.
+- **VOX Inteligente:** Transmisión activada por voz con umbral de sensibilidad ajustable.
+- **QRM Atmosférico:** Inyección de **Brown Noise** filtrado para una textura de radio analógica auténtica.
+- **Roger Beep:** Tono de finalización blindado a **1955Hz / 0.3s**.
+- **Procesado DSP:** Filtro Bandpass (1500Hz) y ecualización de voz para máxima claridad.
 
-Red de voz en tiempo real diseñada para conectar personas, grupos de deporte y profesionales con una experiencia de audio premium. 
-ON AIR SPAIN es la plataforma de comunicación que une la mística de la radio banda ciudadana (CB) con la tecnología del futuro.
+### 🛡️ Privacidad Total (Sin GPS)
+- **Sintonización por IP:** Ubicamos tu ciudad automáticamente mediante tu dirección IP. No pedimos ni rastreamos tu GPS exacto.
+- **Sin Registros:** Tu identidad es tu indicativo. No requerimos correos, teléfonos ni datos personales.
+- **Audio Efímero:** Las conversaciones fluyen punto a punto (Full Mesh) y nunca se graban ni se almacenan en servidores.
 
-🚀 **FUNCIONES DESTACADAS:**
-• **RADIO CB DIGITAL (VoIP):** Comunicación por voz real en canales temáticos o por ciudades. Procesamiento DSP para una voz clara y potente, ideal para usar en exteriores o vehículos. 
+### 🏙️ Dial Nacional Completo (1-40)
+- **40 Canales CB:** Cobertura total de todas las provincias de España.
+- **Balanceo de Carga:** Si un canal se satura (más de 8 usuarios), el sistema crea sub-canales automáticamente (Sevilla-2, Sevilla-3...) para proteger el rendimiento y la batería de los terminales.
+- **Rango de Veterano:** Solo los usuarios con potencia acumulada (>= 0.85W) pueden usar códigos de privacidad (Subtonos).
 
-• **RED DE SUPERVIVENCIA (WiFi Auto):** ¿Sin cobertura en la montaña o un túnel? ON AIR activa automáticamente la conexión vía **WiFi Direct**. Sigue hablando con tu equipo a corta distancia (100-300m) **sin necesidad de internet ni datos**.
+## 🛠️ Arquitectura Técnica (Protected Core)
+El proyecto utiliza una arquitectura **KMP (Kotlin Multiplatform)** con un motor web altamente optimizado:
+- **RadioAudioManager.kt:** Gestión de AudioContext y Web Audio API.
+- **RadioPersistence.kt:** Persistencia blindada de vatios y configuraciones.
+- **RadioFmEngine.kt:** Sintonizador de música de fondo HQ.
+- **Screens.kt:** Interfaz NEXUS optimizada (0 recálculo de señal en UI).
 
-• **MODO RUTA Y DEPORTE:** Visualiza la actividad de otros usuarios en tu zona. Perfecto para salidas en grupo, rutas en moto, ciclismo o senderismo, permitiendo saber quién está "en antena" cerca de ti a través del Radar GPS. 
-
-• **RADAR DE ACTIVIDAD (WiFi Sensing):** Tecnología experimental que detecta la presencia de dispositivos y actividad a tu alrededor analizando la estabilidad de las señales WiFi y campos electromagnéticos. 
-
-• **LOCUTOR VIRTUAL E INFORMACIÓN:** Mantente informado sin soltar el manillar o el volante. Boletines horarios, tráfico DGT en tiempo real y curiosidades de la NASA con imágenes diarias.
-
-• **RADIO FM INTEGRADA:** Escucha una selección de las mejores emisoras españolas mientras permaneces a la escucha de la frecuencia CB.
-
-• **COMUNIDAD Y SEGURIDAD:** Crea tu red de amigos, gestiona canales privados y participa en reportes ciudadanos de forma totalmente anónima.
-
-🛠️ **UTILIDAD REAL:** Una herramienta indispensable para motoristas en ruta, deportistas en grupo, transportistas y cualquier aficionado que busque comunicación directa y datos técnicos en tiempo real sobre su entorno.
-
-🔒 **PRIVACIDAD Y LEGALIDAD:** 
-• **Detección Pasiva:** El radar analiza variaciones de señal existentes; no hackea ni accede a datos privados de redes externas. 
-• **Sin Registros Pesados:** Entra en antena solo con tu indicativo (nick).
-• **Procesamiento Local:** Los datos de los sensores se procesan en tu dispositivo para tu seguridad.
-
-**NOTA TÉCNICA:** Esta aplicación utiliza conexión a Internet (Datos/WiFi). Las funciones de radar y detección de actividad se basan en la varianza de señal (WiFi Sensing) y magnetometría; su precisión depende del hardware del dispositivo y las condiciones del entorno.
+## 📥 Instalación y Despliegue
+La aplicación es una PWA (Progressive Web App) de alto rendimiento, optimizada para Android mediante Chrome WebView.
+- El despliegue es automático vía **GitHub Actions**.
+- Compatible con modo manos libres y auriculares.
 
 ---
-
-## 🌟 La Visión: "La Compañía de la Voz"
-En un mundo saturado de textos, **ON AIR** apuesta por el directo. Escuchar a alguien modulando en tiempo real reduce la sensación de soledad de forma mucho más efectiva que cualquier red social tradicional. No buscamos "contenido", buscamos **presencia**.
-
----
-
-## 🚀 Características de la Plataforma
-
-### 💼 Networking y Comunidad
-- **Networking Profesional**: Canales específicos para conductores, hostelería, construcción y servicios.
-- **Terminal Pro**: Herramientas para contacto profesional en tiempo real.
-
-### 📻 Radio CB Digital y Audio Premium
-- **Emulación de Banda Ciudadana**: Experiencia real de CB (27MHz) con cobertura nacional.
-- **Audio de Alta Fidelidad**: Uso de códec Opus para una claridad cristalina.
-- **DSP Radio (Procesador de Voz)**: Hardware simulado para dar pegada y cuerpo de emisora profesional.
-- **Roger Beep & Replay**: Historial inteligente de 15 segundos para no perder ni un mensaje.
-
-### 🏍️ Modo Moto y Multideporte (Elite Gear)
-- **Filtro de Viento Adaptativo**: Procesado DSP agresivo (Corte 300Hz) para eliminar el ruido del aire y motor en cascos Bluetooth.
-- **VOX de Alta Precisión**: Sensibilidad milimétrica ajustable para cada tipo de deporte (Ciclismo, Montaña, Senderismo).
-- **Mapa de Ruta en Tiempo Real**: Visualización de compañeros sobre OpenStreetMap con etiquetas de Nick y estado de TX.
-- **Red de Supervivencia P2P**: Sistema híbrido que activa comunicaciones WiFi Direct (P2P) automáticamente si falla la cobertura 4G/5G. Los móviles actúan como puentes repetidores.
-- **Perfiles Especializados**: Configuraciones preestablecidas para Socorristas, Montañismo y Grupos Ciclistas.
-
-### 📡 Radar de Presencia y Actividad (WiFi Sensing)
-- **Motor de Sensibilidad 80X**: Control de precisión exponencial desde filtrado de ruido máximo hasta escucha absoluta (0.05f).
-- **Detección de Presencia Pro**: Localización de actividad física y movimiento tras muros o en ruta mediante fluctuaciones WiFi con discriminación inteligente.
-- **Modo Ruta & Grupo**: Visualiza la actividad de compañeros cercanos para salidas en moto, ciclismo o rutas 4x4.
-- **Escáner Magnético & Modo Pared**: Localización técnica de cables con tensión y estructuras metálicas.
-- **Modo Misterio (EMF)**: Escáner especializado en energía pura con umbral de 0.15f para investigación de campo.
-- **Auditoría WiFi Proactiva**: Sistema de detección de vulnerabilidades con consola táctica y conexión automática.
-- **Escudo Sónico Ultrasónico**: Bloqueo de privacidad a 21kHz (totalmente silencioso e inaudible).
-- **Protocolos de Ingeniería**: Sistema de ráfagas temporizadas de 10s para Apertura de Barreras (Dual IR/EMF), Bloqueo de Arranque y Vending Master.
-- **Interfaz Táctica Premium**: Jerarquía visual Emerald con iconos dinámicos y mapa 360º de alta persistencia.
-
----
-
-## 🛠️ Especificaciones Técnicas
-- **Despliegue Multiplataforma**: Android Nativo y WebApp PWA de alto rendimiento (KMP).
-- **Bridge Nativo**: Soporte para manos libres, PTT de hardware (Headset/Media) y botones de auriculares. El volumen del sistema se mantiene independiente para máxima compatibilidad.
-- **Eficiencia Energética**: Modo ECO inteligente que reduce el consumo de batería significativamente.
-- **VOX Adaptativo**: Sistema manos libres con aprendizaje de perfil de voz y ruido ambiente.
-- **### Locutor Virtual Inteligente
-- **Información de Tráfico Real**: Integración directa con el portal de Datos Abiertos de la **DGT** para informar sobre accidentes y cortes de carretera verídicos.
-- **Boletines de Servicio**: Datos meteorológicos, efemérides y curiosidades (NASA) para amenizar la ruta.
-- **Ducking Automático**: Sistema de atenuación de la radio FM para priorizar los avisos de seguridad y mensajes del sistema.
-
----
-
-## ⚖️ Seguridad y Cumplimiento (Play Store)
-Esta es una herramienta de comunicación VOIP comunitaria.
-*   **Aviso SOS**: En caso de emergencia real con riesgo vital, contacte siempre con el **112**. La alerta SOS de la app es una herramienta de apoyo vecinal y profesional.
-*   **Aviso DGT**: Los informes de tráfico proceden de fuentes de datos abiertos (DGT). Se ofrecen con carácter informativo y no eximen al conductor de su responsabilidad.
-*   **Seguridad Vial**: **PROHIBIDO** manipular la aplicación manualmente mientras se conduce. El sistema está diseñado para ser escuchado o usado con manos libres/VOX.
-*   **Privacidad**: Cumplimiento estricto de RGPD. Los datos de ubicación (GPS) solo se transmiten bajo activación voluntaria del usuario en situaciones de emergencia.
-
----
-
-## ⚠️ Protocolo de Despliegue y Producción (Play Store)
-Para garantizar la estabilidad en las versiones distribuidas a través de Google Play:
-1. **Ofuscación (R8/ProGuard)**: El archivo `androidApp/proguard-rules.pro` contiene reglas críticas para evitar el borrado de librerías vitales (`WorkManager`, `App Startup`). **NUNCA** eliminar las reglas de `-keep` sin pruebas exhaustivas en modo release.
-2. **Versionado Obligatorio**: Cada subida a producción requiere un incremento del `versionCode` en `androidApp/build.gradle.kts`.
-3. **Compilación Limpia**: Antes de generar el App Bundle (AAB), ejecutar siempre `Build > Clean Project` para evitar artefactos residuales de versiones anteriores.
-
----
-
-## 🔒 PROTOCOLO DE EDICIÓN QUIRÚRGICA (SOLO PARA IA)
-**ESTADO: MANDATORIO ABSOLUTO**
-
-Cualquier asistente de IA que trabaje en este proyecto debe seguir estas reglas sin excepción:
-1. **OBJETIVO ÚNICO**: Haz **solo y exclusivamente** lo que se te pide en la solicitud actual. limitate a reparar el problema quirurgicamente, sin cambios ediciones probando y suponiendo, limitate a reparar directamente el problema siguiendo las indicaciones especificas sin dar tanto rodeo.
-2. **PROHIBIDA LA LECTURA EXTRA**: No analices, leas ni resumas archivos que no sean estrictamente necesarios para la tarea solicitada. Ignora el contexto que no sea relevante al cambio quirúrgico.
-3. **PROHIBIDA LA REFACTORIZACIÓN**: No limpies, optimices ni mejores código por iniciativa propia. No toques nada que no se haya pedido explícitamente.
-4. **MODO SILENCIOSO**: No propongas mejoras estéticas ni arquitecturales. Si funciona, no se toca salvo orden directa.
-5. **CERO PLACEHOLDERS**: Todo código debe ser real y funcional, conectado al sistema actual.
-6. **CONTROL DE SUBIDAS**: No realizar `git push` ni `git commit` de forma automática tras cada cambio. Solo subir cuando el usuario lo indique explícitamente al final de la sesión para evitar fragmentar el historial de commits.
-
----
-
-*© 2024 ON AIR SPAIN - Ingeniería de élite para la comunicación humana.*
+&copy; 2026 **ON AIR SPAIN** - Ingeniería de Radio Profesional.

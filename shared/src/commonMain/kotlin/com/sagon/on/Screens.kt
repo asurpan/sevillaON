@@ -2,15 +2,13 @@ package com.sagon.on
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - PANTALLAS DE NAVEGACIÓN
- * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 5.0 (RADIO PURA Y LIMPIA)
- * 
- * Gestiona el renderizado de la pantalla de Bienvenida, Carga y Radio.
- * NIVEL DE PROTECCIÓN 0: PROHIBIDO ALTERAR EL DISEÑO NEXUS.
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 6.0 (RADIO PURA)
  */
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -20,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,6 +32,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -212,6 +212,7 @@ fun RadioPanel(
     externalPttBlocked: Boolean,
     replayProgress: Float,
     isReplayReady: Boolean,
+    onSendMessage: (String, String?) -> Unit,
     onReport: (String) -> Unit,
     onBlock: (String) -> Unit,
     onReplay: () -> Unit,
@@ -224,12 +225,11 @@ fun RadioPanel(
     LaunchedEffect(externalPttBlocked) { if (externalPttBlocked) isPttBlockedByRx = true }
     LaunchedEffect(isPttBlockedByRx) { if (isPttBlockedByRx) { delay(800); isPttBlockedByRx = false } }
 
-    val effectivePtt = (pttLocked || state.isVoxEnabled)
-    val isTransmitting = ((effectivePtt || externalPtt) && !isPttBlockedByRx || isBeeping)
-
+    val isTransmitting = (pttLocked || externalPtt || isBeeping) && !isPttBlockedByRx
+    
     val noiseVol = if (!rx && !isTransmitting) (if (state.squelch > state.rfGain) 0f else (state.rfGain - state.squelch)).coerceIn(0f, 1f) else 0f
     
-    LaunchedEffect(effectivePtt) { onMic(effectivePtt, state.veteranPower) }
+    LaunchedEffect(pttLocked) { onMic(pttLocked, state.veteranPower) }
     LaunchedEffect(state.squelch, state.rfGain, rx, isTransmitting) { onNoise(noiseVol) }
 
     Box(modifier = Modifier.fillMaxSize().background(EliteTheme.DeepGradient)) {
@@ -280,7 +280,6 @@ fun RadioPanel(
                                 }
                                 Spacer(Modifier.height(6.dp))
                                 
-                                // --- 📡 CANAL Y COMPARTIR ---
                                 Row(modifier = Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Surface(onClick = { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }, modifier = Modifier.weight(1f).fillMaxHeight(), color = LuxeColors.Gold.copy(0.15f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f))) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
@@ -327,7 +326,25 @@ fun RadioPanel(
 
             Row(modifier = Modifier.fillMaxWidth().height(120.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 val pttColor = if(isTransmitting) Color.Red else if(rx) Color.Green else Color.White
-                Surface(modifier = Modifier.weight(1f).fillMaxHeight(), shape = RoundedCornerShape(40.dp), color = pttColor.copy(0.1f), border = BorderStroke(3.dp, pttColor.copy(0.4f))) {
+                Surface(
+                    modifier = Modifier.weight(1f).fillMaxHeight().pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                if (!isPttBlockedByRx) {
+                                    pttLocked = true
+                                    try {
+                                        awaitRelease()
+                                    } finally {
+                                        pttLocked = false
+                                    }
+                                }
+                            }
+                        )
+                    }, 
+                    shape = RoundedCornerShape(40.dp), 
+                    color = pttColor.copy(0.1f), 
+                    border = BorderStroke(3.dp, pttColor.copy(0.4f))
+                ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.Mic, null, tint = pttColor, modifier = Modifier.size(36.dp))
@@ -342,9 +359,19 @@ fun RadioPanel(
             }
 
             Spacer(Modifier.height(32.dp))
-            Text("OPERADORES EN ${state.channel}", color = Color.White.copy(0.3f), fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth())
+            Text("OPERADORES EN ${state.city.split("-")[0]}", color = Color.White.copy(0.3f), fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth())
             LazyRow(modifier = Modifier.fillMaxWidth().height(180.dp), contentPadding = PaddingValues(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                items(users.filter { it.city == state.city && it.channel == state.channel }) { user -> UserCard(user = user, isMe = false, onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, onPrivateChat = { }, onReport = { onReport(user.id) }, onBlock = { onBlock(user.id) }) }
+                // 🛡️ MOSTRAR TODOS LOS USUARIOS DE LA CIUDAD BASE
+                items(users.filter { it.city.split("-")[0] == state.city.split("-")[0] }) { user -> 
+                    UserCard(
+                        user = user, 
+                        isMe = (user.nick.trim().uppercase() == nick.trim().uppercase()), 
+                        onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, 
+                        onPrivateChat = { }, 
+                        onReport = { onReport(user.id) }, 
+                        onBlock = { onBlock(user.id) }
+                    ) 
+                }
             }
         }
     }
@@ -356,12 +383,11 @@ fun TacticalDockIcon(
     label: String,
     isActive: Boolean,
     onClick: () -> Unit,
-    onLongClick: (() -> Unit)? = null,
     activeColor: Color = LuxeColors.Gold
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
-            modifier = Modifier.size(64.dp).clip(RoundedCornerShape(16.dp)).combinedClickable(onClick = onClick, onLongClick = onLongClick),
+            modifier = Modifier.size(64.dp).clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick),
             color = if (isActive) activeColor.copy(0.15f) else Color.White.copy(0.05f),
             shape = RoundedCornerShape(16.dp),
             border = BorderStroke(2.dp, if (isActive) activeColor else Color.White.copy(0.1f))

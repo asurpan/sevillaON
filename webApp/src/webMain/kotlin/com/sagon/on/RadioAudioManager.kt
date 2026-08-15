@@ -1,11 +1,12 @@
 package com.sagon.on
 
-import kotlinx.browser.window
 import kotlinx.browser.localStorage
+import kotlinx.browser.window
 
 /**
  * 🎙️ RADIO AUDIO MANAGER: MOTOR DE SONIDO PROFESIONAL
- * REPARACIÓN CRÍTICA: BARRAS DE LEDS Y MICRÓFONO
+ * 🔒 HARD-LOCK: PROTECTED CORE - NO MODIFICAR LÓGICA DE RUTEO
+ * ⚠️ AVISO: El motor VOX ha sido movido a ManosLibres.kt. MANTENER SEPARADO.
  */
 object RadioAudioManager {
     fun install() {
@@ -36,23 +37,15 @@ object RadioAudioManager {
                     window.app.filter.frequency.value = 1500; 
                     window.app.filter.Q.value = 1.2; 
                     
-                    // --- ⛓️ CADENA DE AUDIO RX (ORDEN CRÍTICO) ---
-                    // Signal -> Filter -> RxGain (PTT Silence) -> Compressor -> MasterOut (Volume) -> Speakers
                     window.app.filter.connect(window.app.masterRxGain);
                     window.app.masterRxGain.connect(window.app.compressor);
                     window.app.compressor.connect(window.app.masterOut);
                     
-                    // --- 🌊 GENERADOR DE RUIDO MARRÓN (QRM REALISTA) ---
+                    // --- 🌊 GENERADOR DE QRM REAL (FILTRADO Y OSCILANTE) ---
                     var bufferSize = 2 * window.app.ctx.sampleRate,
                         noiseBuffer = window.app.ctx.createBuffer(1, bufferSize, window.app.ctx.sampleRate),
                         output = noiseBuffer.getChannelData(0);
-                    var lastOut = 0.0;
-                    for (var i = 0; i < bufferSize; i++) {
-                        var white = Math.random() * 2 - 1;
-                        output[i] = (lastOut + (0.02 * white)) / 1.02;
-                        lastOut = output[i];
-                        output[i] *= 3.5;
-                    }
+                    for (var i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
                     
                     var noiseSource = window.app.ctx.createBufferSource();
                     noiseSource.buffer = noiseBuffer;
@@ -60,24 +53,47 @@ object RadioAudioManager {
                     
                     window.app.noise = window.app.ctx.createGain();
                     window.app.noise.gain.value = 0; 
-                    window.app.currentNoiseTarget = 0;
+
+                    // 📻 FILTRO PASO-BANDA NATURAL (HISS REALISTA, SIN RESONANCIA METÁLICA)
+                    var noiseFilter = window.app.ctx.createBiquadFilter();
+                    noiseFilter.type = "bandpass";
+                    noiseFilter.frequency.value = 1450; 
+                    noiseFilter.Q.value = 1.8; // Más ancho para un siseo suave y natural
+
+                    window.app.lfo = window.app.ctx.createOscillator();
+                    window.app.lfo.frequency.value = 0.05; // Oscilación lentísima
+                    window.app.lfoGain = window.app.ctx.createGain();
+                    window.app.lfoGain.gain.value = 0; // Empieza apagado
                     
-                    noiseSource.connect(window.app.noise);
-                    // 📻 El ruido entra ANTES de los controles de volumen y RX Gain
+                    window.app.lfo.connect(window.app.lfoGain);
+                    window.app.lfoGain.connect(window.app.noise.gain);
+                    window.app.lfo.start();
+
+                    noiseSource.connect(noiseFilter);
+                    noiseFilter.connect(window.app.noise);
                     window.app.noise.connect(window.app.filter); 
                     noiseSource.start();
 
                     window.setNoiseVolume = function(v) {
                         if (!window.app.noise || window.app.isTransmittingInternal) return;
-                        // Escalamos el valor del Squelch para el motor de audio
-                        window.app.currentNoiseTarget = v * 0.25; 
-                        window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, window.app.ctx.currentTime, 0.1);
+                        
+                        var now = window.app.ctx.currentTime;
+                        if (v <= 0) {
+                            // 🔒 SILENCIO TOTAL
+                            window.app.currentNoiseTarget = 0;
+                            window.app.noise.gain.setTargetAtTime(0, now, 0.1);
+                            if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0, now, 0.1);
+                        } else {
+                            // 📻 RUIDO ACTIVO (SUTIL Y METÁLICO)
+                            window.app.currentNoiseTarget = (v * 0.28) + 0.01; 
+                            window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, now, 0.1);
+                            if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0.008, now, 0.1);
+                        }
                     };
 
                     window.updateMasterVolume = function() {
                         if (window.app && window.app.masterOut) {
                             var v = window.app.moniVolume || 0.5;
-                            // 🔒 VOLUMEN FINAL: No afecta a los analizadores porque están al principio de la cadena
                             window.app.masterOut.gain.setTargetAtTime(v * 1.5, window.app.ctx.currentTime, 0.1);
                         }
                     };
@@ -87,53 +103,26 @@ object RadioAudioManager {
                     window.app.txGate.gain.value = 0;
                     window.app.txGate.connect(window.app.txBus);
 
-                    // --- 🎙️ MONITOR (MONI) NODE ---
                     window.app.moniGainNode = window.app.ctx.createGain();
                     window.app.moniGainNode.gain.value = 0;
                     window.app.moniGainNode.connect(window.app.masterOut);
-                    
-                    console.log("🏗️ [AUDIO] Motor Radioaficionado (Squelch & Moni Enabled) listo.");
-                } catch(e) { console.error("Error Audio:", e); }
+                } catch(e) { }
             };
 
             window.requestMicPermission = function() {
-                if (window.app.rawStream) return Promise.resolve(true);
-                window.initAudio();
-                
-                return navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
-                .then(function(stream) {
-                    window.app.rawStream = stream;
-                    var micSrc = window.app.ctx.createMediaStreamSource(stream);
-                    
-                    var txFilter = window.app.ctx.createBiquadFilter();
-                    txFilter.type = "highpass"; txFilter.frequency.value = 120;
-                    
-                    var txCompressor = window.app.ctx.createDynamicsCompressor();
-                    txCompressor.threshold.value = -18; txCompressor.ratio.value = 12;
-                    
-                    micSrc.connect(txFilter);
-                    txFilter.connect(txCompressor);
-
-                    // Conectar micro al Monitor (Escucharse a uno mismo)
-                    if (window.app.moniGainNode) txCompressor.connect(window.app.moniGainNode);
-                    
-                    // --- 🎙️ ANALIZADOR PARA LOS LEDS ---
-                    window.app.micAnalyser = window.app.ctx.createAnalyser();
-                    window.app.micAnalyser.fftSize = 256;
-                    txCompressor.connect(window.app.micAnalyser);
-                    
-                    txCompressor.connect(window.app.txGate);
-                    console.log("🎙️ [MICRO] Activo y vinculado a LEDs.");
-                    return true;
-                }).catch(function(err) { 
-                    console.error("Fallo de micro:", err); 
-                    return false;
-                });
+                // 🔒 REDIRECCIÓN AL NÚCLEO PROTEGIDO DE MANOS LIBRES
+                if (window.manosLibres_requestMic) return window.manosLibres_requestMic();
+                return Promise.resolve(false);
             };
 
             window.broadcastPTT = function(active, roger, power) {
-                if(!window.app || !window.app.db) return;
-                
+                if(!window.app) return;
+                var appRoger = (window.app.rogerEnabled !== undefined) ? window.app.rogerEnabled : true;
+                var effectiveRoger = (roger !== undefined) ? roger : appRoger;
+
+                if (!window.app.ctx && window.initAudio) window.initAudio();
+                if (!window.app.ctx) return; 
+
                 if (active && !window.app.rawStream) {
                     window.requestMicPermission();
                 }
@@ -146,18 +135,21 @@ object RadioAudioManager {
                 
                 var now = window.app.ctx.currentTime;
                 if (active) {
+                    // 🔒 HARD-LOCK: SILENCIO ABSOLUTO DURANTE TRANSMISIÓN
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: true, pwr: power || 0.7 });
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(0, now, 0.01);
+                    if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0, now, 0.01);
                 } else {
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(2.0, now, 0.2);
-                    // Restaurar el ruido al nivel que dicte el Squelch
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.2);
+                    // 🔒 Restaurar LFO de forma ultra-sutil
+                    if (window.app.lfoGain && window.app.currentNoiseTarget > 0) window.app.lfoGain.gain.setTargetAtTime(0.008, now, 0.2);
                     
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
-                    if (roger && window.playUiSound) window.playUiSound("ptt_off");
+                    if (effectiveRoger && window.playUiSound) window.playUiSound("ptt_off");
                 }
             };
         """)
@@ -177,7 +169,6 @@ object RadioAudioManager {
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
                     window.app.rxActiveInternal = true;
-                    console.log("🔊 [AUDIO] Stream conectado: " + call.peer);
                 });
                 call.on('close', function() {
                     if (window.app.remoteSources[call.peer]) {
@@ -190,13 +181,16 @@ object RadioAudioManager {
                 });
             };
         """)
-        VOXEngine.install()
+        ManosLibres.install()
         MoniGuard.install()
         ReplayEngine.install()
     }
 
     fun setPtt(active: Boolean, roger: Boolean, power: Float?) {
-        js("window.broadcastPTT(active, roger, power);")
+        val w = window.asDynamic()
+        if (w.broadcastPTT != null) {
+            w.broadcastPTT(active, roger, power)
+        }
     }
 
     fun playReplay() {
@@ -209,14 +203,11 @@ private object RadioSignaling {
         js("""
             window.playUiSound = function(type) {
                 if(!window.app.ctx) return;
-                if(window.app.ctx.state === 'suspended') window.app.ctx.resume();
-                
                 var now = window.app.ctx.currentTime;
                 
-                // 📻 CONFIGURACIÓN DE TONOS
                 var isRoger = (type === "ptt_off" || type === "rx_off");
-                var freq = isRoger ? 1955 : 1800; // 1955Hz para radio, 1800Hz para interfaz
-                var duration = isRoger ? 0.3 : 0.08; // 0.3s para radio, 0.08s para clicks rápidos
+                var freq = isRoger ? 1955 : 1800;
+                var duration = isRoger ? 0.3 : 0.08;
 
                 if (type === "ptt_off") {
                     window.app.isBeeping = true;
@@ -229,7 +220,6 @@ private object RadioSignaling {
                 o.type = "triangle"; 
                 o.frequency.setValueAtTime(freq, now);
                 
-                // Envolvente optimizada
                 var volume = isRoger ? 0.12 : 0.08;
                 g.gain.setValueAtTime(volume, now); 
                 g.gain.setValueAtTime(volume, now + duration - 0.02);
@@ -247,92 +237,6 @@ private object RadioSignaling {
                 o.start(now); 
                 o.stop(now + duration);
             };
-        """)
-    }
-}
-
-private object VOXEngine {
-    fun install() {
-        js("""
-            var voxCounter = 0;
-            var voxTransmitting = false;
-
-            function voxLoop() {
-                if(window.app) {
-                    var finalLevel = 0;
-                    var currentMicModulation = 0;
-                    
-                    if (window.app.micAnalyser) {
-                        var d = new Uint8Array(window.app.micAnalyser.fftSize);
-                        window.app.micAnalyser.getByteTimeDomainData(d);
-                        var max = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>max) max=v; }
-                        currentMicModulation = max / 128;
-                    }
-
-                    // --- 🤖 MOTOR VOX (SIEMPRE VIGILANDO) ---
-                    var isManualPtt = window.app.pttStateInternal && !voxTransmitting;
-                    
-                    if (window.app.voxActive && !window.app.rxActiveInternal && !window.app.isBeeping && !isManualPtt) {
-                        var threshold = (1.05 - (window.app.voxSens || 0.5)) * 0.30; 
-                        if (currentMicModulation > threshold) {
-                            voxCounter = 20; 
-                            if (!voxTransmitting) {
-                                voxTransmitting = true;
-                                window.broadcastPTT(true, window.app.rogerEnabled);
-                            }
-                        } else if (voxTransmitting) {
-                            voxCounter--;
-                            if (voxCounter <= 0) {
-                                voxTransmitting = false;
-                                window.broadcastPTT(false, window.app.rogerEnabled);
-                            }
-                        }
-                    } else if (voxTransmitting) {
-                        voxTransmitting = false;
-                        window.broadcastPTT(false, window.app.rogerEnabled);
-                    }
-
-                    // --- 📟 LÓGICA DE LEDs ---
-                    if (window.app.isTransmittingInternal || window.app.isBeeping) {
-                        if (window.app.isBeeping) {
-                            finalLevel = 1.0;
-                        } else {
-                            var mod = Math.min(0.25, currentMicModulation * 2.5);
-                            finalLevel = 0.75 + mod;
-                        }
-                    } else {
-                        var rxModulation = 0;
-                        var hasIncomingVoice = false;
-                        if (window.app.rxActiveInternal) {
-                            var maxRx = 0;
-                            Object.values(window.app.remoteAnalysers).forEach(function(ana) {
-                                var d = new Uint8Array(ana.fftSize);
-                                ana.getByteTimeDomainData(d);
-                                var m = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>m) m=v; }
-                                if(m > maxRx) maxRx = m;
-                            });
-                            rxModulation = Math.min(0.85, (maxRx/128)*3.5);
-                            if (rxModulation > 0.05) {
-                                finalLevel = 0.65 + rxModulation;
-                                hasIncomingVoice = true;
-                            }
-                        }
-                        if (!hasIncomingVoice) {
-                            var noiseBase = (window.app.currentNoiseTarget || 0);
-                            if (noiseBase < 0.01) {
-                                finalLevel = 0;
-                            } else {
-                                var jitter = (Math.random() * 0.03); 
-                                finalLevel = Math.min(0.12, (noiseBase * 0.4) + jitter);
-                            }
-                        }
-                    }
-
-                    if(window.dispatch_mic) window.dispatch_mic(finalLevel);
-                }
-                requestAnimationFrame(voxLoop);
-            }
-            voxLoop();
         """)
     }
 }

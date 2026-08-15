@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ON AIR SPAIN | La Red Social de Voz n.º 1</title>
-    <meta name="description" content="Únete a ON AIR SPAIN, la red social de voz líder. Radio CB digital, modo moto, planificación de rutas tácticas y comunicación en tiempo real. ¡Entra en la frecuencia!">
+    <title>ON AIR SPAIN | La Emisora de Radio Social Pura</title>
+    <meta name="description" content="Sintoniza ON AIR SPAIN, la red de radio social definitiva. Comunicación de voz real, PTT profesional y privacidad total sin GPS ni registros. ¡Entra en la frecuencia de tu ciudad!">
     <meta name="google-site-verification" content="9312739a0adb99dd" />
-    <meta name="keywords" content="radio cb, red social voz, walkie talkie app, modo moto, rutas gps, on air spain, comunicacion voz, radio digital">
+    <meta name="keywords" content="radio cb digital, walkie talkie app, radioaficionados españa, comunicación voz pura, ptt online, emisora 27mhz, radio social privada, walkie talkie sin internet, radio sin gps, privacidad voz">
     <meta name="author" content="ON AIR SPAIN">
     <link rel="canonical" href="https://asurpan.github.io/sevillaON/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://asurpan.github.io/sevillaON/">
-    <meta property="og:title" content="ON AIR SPAIN | Red Social de Voz Táctica">
-    <meta property="og:description" content="Radio CB Digital, Planificador de Rutas y Comunicación en Vivo. Sintoniza con tu ciudad y comparte misiones con tu grupo.">
+    <meta property="og:title" content="ON AIR SPAIN | Emisora de Voz Pura">
+    <meta property="og:description" content="Recupera la esencia de la Radio CB. Sin chats, sin fotos, solo voz real con procesado profesional. Privacidad garantizada.">
     <meta property="og:image" content="https://asurpan.github.io/sevillaON/logo.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://asurpan.github.io/sevillaON/">
     <meta property="twitter:title" content="ON AIR SPAIN | Tu Radio Social">
-    <meta property="twitter:description" content="La esencia de la radio CB llevada al siglo XXI. Chat de voz, rutas inteligentes y comunidad en tiempo real.">
+    <meta property="twitter:description" content="La radio de toda la vida llevada al entorno digital. Comunicación instantánea PTT y privacidad por IP.">
     <meta property="twitter:image" content="https://asurpan.github.io/sevillaON/logo.png">
 
     <!-- Favicon & Manifest -->
@@ -35,12 +35,12 @@
 
     <style>
         :root {
-            --pool-blue: #06B6D4;
+            --pool-blue: #0EA5E9;
             --pool-dark: #020617;
             --pool-surface: #0F172A;
             --pool-glass: rgba(255, 255, 255, 0.03);
-            --pool-border: rgba(6, 182, 212, 0.2);
-            --neon-glow: 0 0 20px rgba(6, 182, 212, 0.4);
+            --pool-border: rgba(14, 165, 233, 0.2);
+            --neon-glow: 0 0 20px rgba(14, 165, 233, 0.4);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -53,24 +53,13 @@
             overflow-x: hidden;
         }
 
-        /* 🌊 FONDO FLUIDO TIPO PISCINA */
         .pool-bg {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% 30%, #083344 0%, var(--pool-dark) 70%);
+            background: radial-gradient(circle at 50% 30%, #082f49 0%, var(--pool-dark) 70%);
             z-index: -1;
         }
 
-        .pool-bg::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('data:image/svg+xml,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>');
-            opacity: 0.05;
-            pointer-events: none;
-        }
-
-        /* 📻 LA RADIO (COMPOSE ROOT) */
         #radio-root {
             position: fixed;
             top: 0; left: 0;
@@ -79,36 +68,10 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.8s ease-in-out;
-            /* 🛡️ FIX: No usar display:none para que Compose pueda inicializar el Viewport correctamente */
             visibility: hidden;
         }
         #radio-root > * { pointer-events: auto; }
 
-        /* 🗺️ EL MAPA */
-        #activity-map-container {
-            display: none;
-            position: fixed;
-            z-index: 50;
-            border-radius: 28px;
-            background: #020617;
-            pointer-events: auto;
-            overflow: hidden;
-        }
-
-        .leaflet-container { background: #020617 !important; }
-
-        .leaflet-routing-container {
-            background: rgba(15, 23, 42, 0.9) !important;
-            color: white !important;
-            border-radius: 16px !important;
-            border: 1px solid #D4AF37 !important;
-            font-family: sans-serif !important;
-            font-size: 11px !important;
-            max-width: 200px !important;
-            display: none !important;
-        }
-
-        /* 🚀 LANDING UI */
         #landing-ui {
             position: relative;
             z-index: 10;
@@ -161,7 +124,7 @@
         .badge {
             display: inline-block;
             padding: 8px 16px;
-            background: rgba(6, 182, 212, 0.1);
+            background: rgba(14, 165, 233, 0.1);
             border: 1px solid var(--pool-border);
             border-radius: 50px;
             color: var(--pool-blue);
@@ -191,17 +154,10 @@
             padding: 0 10%;
         }
 
-        .cta-group {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
         .btn-primary {
             padding: 20px 40px;
             background: var(--pool-blue);
-            color: black;
+            color: white;
             font-weight: 900;
             border-radius: 16px;
             text-decoration: none;
@@ -217,28 +173,9 @@
 
         .btn-primary:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 40px rgba(6, 182, 212, 0.6);
+            box-shadow: 0 0 40px rgba(14, 165, 233, 0.6);
         }
 
-        .btn-secondary {
-            padding: 20px 40px;
-            background: var(--pool-glass);
-            color: white;
-            font-weight: 700;
-            border-radius: 16px;
-            text-decoration: none;
-            font-size: 18px;
-            border: 1px solid var(--pool-border);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(6, 182, 212, 0.1);
-            border-color: var(--pool-blue);
-        }
-
-        /* 💎 CARDS DE CARACTERÍSTICAS */
         .features-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -260,14 +197,14 @@
 
         .feature-card:hover {
             transform: translateY(-10px);
-            background: rgba(6, 182, 212, 0.05);
+            background: rgba(14, 165, 233, 0.05);
             border-color: var(--pool-blue);
         }
 
         .feature-icon {
             width: 60px;
             height: 60px;
-            background: rgba(6, 182, 212, 0.1);
+            background: rgba(14, 165, 233, 0.1);
             border-radius: 20px;
             display: flex;
             align-items: center;
@@ -289,15 +226,6 @@
             font-size: 15px;
         }
 
-        /* 📱 MOBILE OPTIMIZATION */
-        @media (max-width: 768px) {
-            h1 { font-size: 45px; }
-            .hero p { padding: 0; font-size: 16px; }
-            header { margin-bottom: 40px; }
-            .feature-card { padding: 30px; }
-        }
-
-        /* 💫 LOADER */
         #app-loader {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -313,7 +241,7 @@
         .spinner {
             width: 40px;
             height: 40px;
-            border: 4px solid rgba(6, 182, 212, 0.1);
+            border: 4px solid rgba(14, 165, 233, 0.1);
             border-top: 4px solid var(--pool-blue);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -321,21 +249,12 @@
         }
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         .hidden { display: none !important; }
-        .fade-out { opacity: 0; pointer-events: none; }
     </style>
 
-    <!-- Librerías Críticas -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-    <!-- 🗺️ MAPAS Y RUTAS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 </head>
 <body>
 
@@ -343,134 +262,97 @@
 
     <div id="app-loader">
         <div class="spinner"></div>
-        <p style="font-weight: 700; letter-spacing: 2px; color: var(--pool-blue); font-size: 10px;">SINTONIZANDO TU CIUDAD...</p>
+        <p style="font-weight: 700; letter-spacing: 2px; color: var(--pool-blue); font-size: 10px;">INICIANDO ESTACIÓN...</p>
     </div>
 
-    <!-- 🚀 LANDING CONTENT -->
     <div id="landing-ui">
         <header>
             <div class="logo-box">
                 <img src="logo.png" class="logo-img" alt="Logo">
                 <span class="logo-text">ON AIR SPAIN</span>
             </div>
-            <div style="color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 700;">V3.0 STABLE</div>
+            <div style="color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 700;">V5.0 PURE RADIO</div>
         </header>
 
         <section class="hero">
-            <div class="badge">Red Social de Voz Táctica</div>
-            <h1>La Red Social <br><span style="color: var(--pool-blue);">de Voz Real</span></h1>
-            <p>Siente la libertad de la Radio CB clásica fusionada con la potencia de la red digital. Contacto directo, sin fronteras y con navegación táctica integrada.</p>
+            <div class="badge">Esencia Radioaficionado CB</div>
+            <h1>Voz Real <br><span style="color: var(--pool-blue);">Sin Fronteras</span></h1>
+            <p>Siente la potencia de la radio CB clásica en tu móvil. Sin chats, sin fotos, sin GPS. Solo tú y tu modulación en directo con el mundo.</p>
 
-            <div class="cta-group">
+            <div style="display: flex; justify-content: center;">
                 <button class="btn-primary" onclick="launchRadio()">
                     <span>📻 ENTRAR EN FRECUENCIA</span>
                 </button>
-                <button class="btn-secondary" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Saber más</button>
             </div>
         </section>
 
-        <section id="features" class="features-grid">
+        <section class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon">🎙️</div>
                 <h3>Audio HD PTT</h3>
-                <p>Comunicación instantánea con protocolo Push-To-Talk. Voz nítida con procesado DSP profesional para una inmersión total.</p>
+                <p>Comunicación instantánea con protocolo Push-To-Talk. Voz nítida filtrada con procesado DSP para una inmersión total.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">🛰️</div>
-                <h3>Radar Táctico</h3>
-                <p>Visualiza a tus compañeros en tiempo real. Localización exacta en el mapa de ruta para grupos y misiones.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🆘</div>
-                <h3>Seguridad SOS</h3>
-                <p>Canal de emergencia prioritario con aviso geolocalizado. La red está lista para ayudarte cuando más lo necesites.</p>
+                <div class="feature-icon">🛡️</div>
+                <h3>Privacidad Total</h3>
+                <p>Sintonizamos tu ciudad automáticamente por IP. Sin acceso a GPS, sin registros y con un modo discreto avanzado.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">🏙️</div>
-                <h3>Red por Ciudades</h3>
-                <p>Emisora pura de radioaficionados organizada por provincias. Sintoniza con tu comunidad local de forma inmediata.</p>
+                <h3>Dial Nacional 1-40</h3>
+                <p>Canales organizados por ciudades y provincias. Sintoniza con tu comunidad local o busca frecuencias libres.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">🔑</div>
-                <h3>Canales Privados</h3>
-                <p>Crea tu propia sala segura con código de acceso. Ideal para grupos de amigos, trabajo o misiones discretas.</p>
+                <div class="feature-icon">⚡</div>
+                <h3>Rangos de Potencia</h3>
+                <p>Gana vatios modulando en la red. Desbloquea códigos de privacidad exclusivos al alcanzar el rango de Veterano.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">🚗</div>
-                <h3>Modo Moto / Ruta</h3>
-                <p>Navegación con mapa en vivo, planificador de paradas y filtro de viento agresivo para cascos y exteriores.</p>
+                <div class="feature-icon">🌊</div>
+                <h3>QRM Atmosférico</h3>
+                <p>Ruido marrón filtrado para una textura de radio real. Siente el soplo de la banda mientras esperas actividad.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">📻</div>
-                <h3>FM Ducking</h3>
-                <p>Escucha la radio de fondo mientras esperas actividad. El volumen baja automáticamente cuando alguien empieza a hablar.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">👁️</div>
-                <h3>Modo Discreto</h3>
-                <p>Control total de privacidad. Decide cuándo escuchar voces externas incluso con la pantalla apagada.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🤖</div>
-                <h3>Locutor Inteligente</h3>
-                <p>IA integrada que te narra curiosidades, historia y avisos de tráfico de los lugares por los que transcurre tu ruta.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">💎</div>
-                <h3>100% Gratis</h3>
-                <p>Todas las funciones tácticas y de comunicación están disponibles sin suscripciones. La radio del pueblo, para el pueblo.</p>
+                <div class="feature-icon">📟</div>
+                <h3>Pantalla NEXUS</h3>
+                <p>Interfaz de alta precisión con LEDs de señal analógicos independientes de tu volumen de escucha.</p>
             </div>
         </section>
 
         <footer style="margin-top: auto; padding: 40px 0; color: rgba(255,255,255,0.2); font-size: 12px; text-align: center;">
-            &copy; 2026 ON AIR SPAIN - Ingeniería de Radio Social Profesional.
+            &copy; 2026 ON AIR SPAIN - Ingeniería de Radio Profesional.
         </footer>
     </div>
 
-    <!-- 📻 EL MOTOR DE LA RADIO -->
-    <div id="activity-map-container"></div>
     <div id="radio-root"></div>
 
     <script>
-        // --- 🚀 LANZADOR DE RADIO ---
         function launchRadio() {
             const landing = document.getElementById('landing-ui');
             const radio = document.getElementById('radio-root');
-
-            // Efecto de transición cinematográfica
             landing.style.transform = 'translateY(-30px)';
             landing.style.opacity = '0';
-
             setTimeout(() => {
                 landing.classList.add('hidden');
                 radio.style.visibility = 'visible';
-                setTimeout(() => {
-                    radio.style.opacity = '1';
-                }, 50);
+                setTimeout(() => { radio.style.opacity = '1'; }, 50);
             }, 600);
-
-            // Gesto de interacción para habilitar audio
-            if (window.app && window.app.ctx) {
-                window.app.ctx.resume();
-            }
+            if (window.app && window.app.ctx) window.app.ctx.resume();
         }
 
-        // --- 📦 CARGA DEL MOTOR KOTLIN/JS ---
         (function() {
             const urlParams = new URLSearchParams(window.location.search);
             const v = urlParams.get('v') || Date.now();
             const script = document.createElement('script');
             script.src = 'webApp.js?v=' + v;
             script.onload = () => {
-                console.log("✅ webApp.js cargado correctamente.");
-                // El loader se quita desde Kotlin (main.kt) o como fallback aquí tras 2s
                 setTimeout(() => {
                     const loader = document.getElementById('app-loader');
                     if (loader) {
                         loader.style.opacity = '0';
                         setTimeout(() => loader.remove(), 600);
                     }
-                }, 2000);
+                }, 1500);
             };
             document.body.appendChild(script);
         })();

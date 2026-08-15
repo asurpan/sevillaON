@@ -29,6 +29,7 @@ object RadioBridge {
         onBgGenreChange: (String) -> Unit,
         onIncomingAlert: (String, String, String) -> Unit,
         onVoxSync: (Boolean) -> Unit,
+        onRoomUpdate: (String) -> Unit,
         onNasaImage: (String?, String?, String?) -> Unit,
         onDgtUpdate: (String?, String?) -> Unit,
         onCodeCaptured: (String, String) -> Unit,
@@ -65,6 +66,7 @@ object RadioBridge {
         win.dispatch_bg_station = onBgStation
         win.dispatch_bg_genre_change = onBgGenreChange
         win.dispatch_vox_sync = onVoxSync
+        win.dispatch_room_update = onRoomUpdate
         win.dispatch_nasa_image = onNasaImage
         win.dispatch_dgt_update = onDgtUpdate
         win.dispatch_code_captured = onCodeCaptured

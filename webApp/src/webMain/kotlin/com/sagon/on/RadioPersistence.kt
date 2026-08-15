@@ -26,6 +26,9 @@ object RadioPersistence {
                                  else if (savedChannel == null || savedChannel == "") finalCity
                                  else savedChannel.trim().uppercase()
 
+            val profileStr = urlActivity ?: localStorage.getItem("activeProfile")
+            val profile = ActivityProfile.entries.find { it.name == profileStr } ?: ActivityProfile.NORMAL
+
             RadioState(
                 city = finalCity,
                 channel = initialChannel,
@@ -33,7 +36,7 @@ object RadioPersistence {
                 isWorkModeActive = urlPro == "true",
                 voxSensitivity = localStorage.getItem("voxSens")?.toFloatOrNull() ?: 0.5f,
                 monitorVolume = localStorage.getItem("moniVol")?.toFloatOrNull() ?: 0.5f,
-                rfGain = localStorage.getItem("rfGain")?.toFloatOrNull() ?: 0.5f,
+                rfGain = localStorage.getItem("rfGain")?.toFloatOrNull() ?: 0.5f, // 📻 QRM al 50% por defecto
                 isRogerBeepEnabled = localStorage.getItem("roger")?.toBoolean() ?: true,
                 isVoxEnabled = localStorage.getItem("voxActive")?.toBoolean() ?: false,
                 isMonitorEnabled = localStorage.getItem("moniActive")?.toBoolean() ?: false,
@@ -42,7 +45,11 @@ object RadioPersistence {
                 veteranPower = localStorage.getItem("vetPwr")?.toFloatOrNull() ?: 0.7f,
                 isDspEnabled = localStorage.getItem("dspEnabled")?.toBoolean() ?: true,
                 bgRadioGenre = localStorage.getItem("bgGenre") ?: "MIX",
-                isDiscreteModeEnabled = localStorage.getItem("disMode") == "true"
+                activeProfile = profile,
+                nasaImageUrl = urlImg ?: localStorage.getItem("cache_nasa_img"),
+                nasaImageTitle = urlNasa,
+                isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
+                squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.55f // 🔒 Squelch al 55% por defecto
             )
         } catch(e: Exception) { RadioState() }
     }
@@ -69,6 +76,7 @@ object RadioPersistence {
             localStorage.setItem("bgGenre", s.bgRadioGenre)
             localStorage.setItem("disMode", s.isDiscreteModeEnabled.toString())
             localStorage.setItem("activeProfile", s.activeProfile.name)
+            localStorage.setItem("squelch", s.squelch.toString())
             s.nasaImageUrl?.let { localStorage.setItem("cache_nasa_img", it) }
         } catch(e: Exception) {}
 
@@ -80,6 +88,7 @@ object RadioPersistence {
             win.app.moniActive = s.isMonitorEnabled
             win.app.moniVolume = s.monitorVolume
             win.app.rfGain = s.rfGain
+            win.app.squelch = s.squelch
             win.app.rogerEnabled = s.isRogerBeepEnabled
             
             js("if(window.updateMoniGain) window.updateMoniGain();")
@@ -91,6 +100,7 @@ object RadioPersistence {
                 val updates: dynamic = js("{}")
                 updates.city = normCity
                 updates.channel = normCh
+                updates.roger = s.isRogerBeepEnabled // 📡 Sincronizar preferencia con los demás
                 win.app.db.ref("users/" + win.app.sessionID).update(updates)
             }
         }

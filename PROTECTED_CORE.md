@@ -24,6 +24,9 @@ Queda terminantemente prohibido modificar, alterar o "simplificar" el código en
     - El disparador automático debe basarse en la modulación del micro local.
     - Sensibilidad inversa: A mayor valor de `voxSens`, menor umbral de disparo.
     - Mantener portadora activa (hang time) para evitar cortes bruscos.
+8. **Rangos de Usuario (Veteranía)**:
+    - Solo usuarios con potencia acumulada **>= 0.85W** pueden acceder a canales privados (Subtonos).
+    - Esto protege la red de la saturación por usuarios temporales y fomenta la participación pública.
 
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si un agente detecta un error en estas áreas, **DEBE INFORMAR** antes de aplicar cualquier cambio. No se permiten refactorizaciones automáticas ni cambios de diseño en el núcleo funcional.

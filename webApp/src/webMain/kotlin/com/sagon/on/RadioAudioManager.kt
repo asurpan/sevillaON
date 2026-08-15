@@ -140,8 +140,10 @@ object RadioAudioManager {
                 if (!window.app.ctx && window.initAudio) window.initAudio();
                 if (!window.app.ctx) return; 
 
-                // --- 🛡️ TOT: TIME-OUT TIMER (60 SEGUNDOS) ---
                 if (active) {
+                    if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+
+                    // --- 🛡️ TOT: TIME-OUT TIMER (60 SEGUNDOS) ---
                     if (window.app.totTimer) clearTimeout(window.app.totTimer);
                     window.app.totTimer = setTimeout(function() {
                         if (window.app.pttStateInternal) {
@@ -168,15 +170,30 @@ object RadioAudioManager {
                 if (active) {
                     // 🔒 HARD-LOCK: SILENCIO ABSOLUTO LOCAL DURANTE TRANSMISIÓN
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: true, pwr: power || 0.7 });
-                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
-                    if (window.app.masterOut) window.app.masterOut.gain.setTargetAtTime(0, now, 0.01);
+                    if (window.app.txGate) {
+                        window.app.txGate.gain.cancelScheduledValues(now);
+                        window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
+                    }
+                    if (window.app.masterOut) {
+                        window.app.masterOut.gain.cancelScheduledValues(now);
+                        window.app.masterOut.gain.setValueAtTime(0, now);
+                    }
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0, now, 0.01);
                 } else {
-                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now, 0.01);
-                    if (window.app.masterOut) window.app.masterOut.gain.setTargetAtTime(1.5, now, 0.1);
+                    // 📻 ROGER BEEP HACK: Mantener la puerta abierta 400ms para que el tono llegue al otro lado
+                    if (window.app.txGate) {
+                        window.app.txGate.gain.cancelScheduledValues(now);
+                        window.app.txGate.gain.setTargetAtTime(0, now + 0.4, 0.01);
+                    }
+                    
+                    if (window.app.masterOut) {
+                        window.app.masterOut.gain.cancelScheduledValues(now);
+                        window.app.masterOut.gain.setValueAtTime(1.5, now);
+                    }
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(2.0, now, 0.2);
+                    // 🔒 Restaurar ruido de fondo de forma suave
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.2);
                     // 🔒 Restaurar LFO de forma ultra-sutil
                     if (window.app.lfoGain && window.app.currentNoiseTarget > 0) window.app.lfoGain.gain.setTargetAtTime(0.008, now, 0.2);
@@ -345,6 +362,7 @@ private object RadioSignaling {
                 
                 o.connect(g); 
                 g.connect(window.app.masterOut);
+                if (window.app.txBus) g.connect(window.app.txBus);
                 
                 o.onended = function() {
                     if (type === "ptt_off") {

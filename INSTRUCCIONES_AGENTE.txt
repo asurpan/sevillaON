@@ -18,8 +18,9 @@ El motor web ha sido refactorizado en archivos independientes para una claridad 
     - El Roger Beep debe estar configurado **OBLIGATORIAMENTE** a **1955Hz** con una duración de **0.3s** y envolvente de ataque plano.
 - **SQUELCH & QRM**: El ruido de banda es Brown Noise (Ruido Marrón) filtrado para máxima calidez. Debe pasar siempre por el filtro Bandpass y responder al control `setNoiseVolume`.
 - **METER (LEDs/S-METER)**:
+    - **PROHIBIDO RECALCULAR EN UI**: La pantalla (`Screens.kt`) NO debe calcular niveles de ruido ni intensidades. Debe usar UNICAMENTE el valor `mic` reportado por el motor de audio.
     - El volumen de salida (Master Volume) **NUNCA** debe afectar a los LEDs. La señal de entrada y el volumen son independientes.
-    - Con Squelch abierto (solo ruido), los LEDs deben oscilar sutilmente entre 0.10 y 0.18 (máximo 1-2 LEDs).
+    - Con Squelch abierto (solo ruido), los LEDs deben oscilar sutilmente entre 0.05 y 0.12 (máximo 1-2 LEDs).
     - En recepción de voz, el medidor debe saltar a la zona de S9 (0.65+).
 - **AUDIO TEXTURE**: Mantener el filtro Bandpass en **1500Hz** con **Q 1.2** para preservar la identidad de Radioaficionado.
 - **NETWORK**: Mantener "Nuclear Fix" (Frecuencia Única) y "Full Mesh" (Auto-call/Auto-answer) para garantizar que los móviles se vean y oigan sin filtros de canal por ahora.

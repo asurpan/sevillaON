@@ -279,12 +279,12 @@ private object VOXEngine {
                         
                         // Si no hay voz fuerte, mostramos el nivel de QRM (Squelch)
                         if (!hasIncomingVoice) {
-                            // 🌊 QRM METER: Solo 1-2 LEDs (0.12 - 0.18) basado en el objetivo de ruido
-                            // Importante: No usamos moniVolume aquí, solo currentNoiseTarget
-                            var noiseBase = (window.app.currentNoiseTarget || 0) * 0.6;
-                            var jitter = (Math.random() * 0.04); 
-                            finalLevel = Math.min(0.18, noiseBase + jitter);
-                            if (finalLevel < 0.02) finalLevel = 0;
+                            // 🌊 QRM METER: Solo 1-2 LEDs (0.05 - 0.12) para realismo analógico
+                            // Escala ajustada para que el Squelch abierto no sature la pantalla
+                            var noiseBase = (window.app.currentNoiseTarget || 0) * 0.4;
+                            var jitter = (Math.random() * 0.03); 
+                            finalLevel = Math.min(0.12, noiseBase + jitter);
+                            if (finalLevel < 0.01) finalLevel = 0;
                         }
                     }
 

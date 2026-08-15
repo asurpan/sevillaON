@@ -646,8 +646,8 @@ fun RadioPanel(
                     border = BorderStroke(1.dp, Color.White.copy(0.1f))
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        val qrmIntensity = if (state.rfGain > state.squelch) (state.rfGain - state.squelch) else 0f
-                        CentinelMonitor(state = state, isTransmitting = isTransmitting, rx = rx, level = if (isTransmitting || rx) mic else (qrmIntensity + meterJitter).coerceIn(0f, 1f), showLeds = false, modifier = Modifier.fillMaxSize().alpha(0.4f))
+                        // 🎙️ SEÑAL DE ENTRADA UNIFICADA: Solo usamos 'mic' (reportado por el motor de audio JS)
+                        CentinelMonitor(state = state, isTransmitting = isTransmitting, rx = rx, level = mic, showLeds = false, modifier = Modifier.fillMaxSize().alpha(0.4f))
 
                         Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Row(modifier = Modifier.fillMaxWidth().weight(1.2f), verticalAlignment = Alignment.CenterVertically) {
@@ -671,10 +671,14 @@ fun RadioPanel(
                                     Text(text = statusText, color = statusColor, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
                                     Spacer(Modifier.height(6.dp))
                                     Row(modifier = Modifier.fillMaxWidth().height(20.dp).clip(RoundedCornerShape(4.dp)), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                        val activeLevel = if(isTransmitting || rx) mic else (qrmIntensity + meterJitter).coerceIn(0f, 1f)
+                                        // 🔒 HARD-LOCK: El nivel visual viene EXCLUSIVAMENTE del motor de audio (mic)
                                         repeat(12) { i ->
-                                            val isActive = i < (activeLevel * 12)
-                                            val ledColor = when { i > 9 -> Color.Red; i > 7 -> Color(0xFFFACC15); else -> LuxeColors.Gold }
+                                            val isActive = i < (mic * 12)
+                                            val ledColor = when { 
+                                                i > 9 -> Color.Red 
+                                                i > 7 -> Color(0xFFFACC15) 
+                                                else -> LuxeColors.ElectricBlue // Estética unificada a ElectricBlue
+                                            }
                                             Box(modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(if (isActive) ledColor else Color.White.copy(0.04f)).border(1.dp, if (isActive) ledColor.copy(0.2f) else Color.White.copy(0.01f), RoundedCornerShape(2.dp)))
                                         }
                                     }

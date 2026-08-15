@@ -260,7 +260,6 @@ fun RadioPanel(
 
             Surface(modifier = Modifier.fillMaxWidth().height(240.dp).clip(RoundedCornerShape(24.dp)), color = Color.Black.copy(0.7f), border = BorderStroke(1.dp, Color.White.copy(0.1f))) {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    CentinelMonitor(state = state, isTransmitting = isTransmitting, rx = rx, level = mic, showLeds = false, modifier = Modifier.fillMaxSize().alpha(0.4f))
                     Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Row(modifier = Modifier.fillMaxWidth().weight(1.2f), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.width(80.dp)) {

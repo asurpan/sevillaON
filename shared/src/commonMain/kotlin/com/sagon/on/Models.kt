@@ -7,9 +7,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - MODELOS DE ESTADO Y DATOS
- * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 6.0 (RADIO PURA)
- * 
- * Define la estructura de datos y estados de la radio.
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 7.0 (PURE RADIO)
  */
 
 val SPAIN_CITIES = listOf(
@@ -52,10 +50,8 @@ data class RemoteUser(
     val isFriend: Boolean = false,
     val signal: Float = 0.8f,
     val txPower: Float = 0.7f,
-    val proRole: String = "CIUDADANO",
-    val isWorkAvailable: Boolean = false,
-    val isSOS: Boolean = false,
-    val isBanned: Boolean = false
+    val roger: Boolean = true,
+    val lastSeen: Long = 0
 )
 
 data class RadioState(
@@ -76,7 +72,7 @@ data class RadioState(
     val blockedUsers: Set<String> = emptySet(), 
     val isPttLatched: Boolean = false,
     val isEcoMode: Boolean = false,
-    val squelch: Float = 0.0f,
+    val squelch: Float = 0.55f,
     val rfGain: Float = 0.5f,
     val veteranPower: Float = 0.7f, 
     val isInterfaceLocked: Boolean = false, 
@@ -90,21 +86,8 @@ data class RadioState(
     val isChatVisible: Boolean = false,
     val unreadCount: Int = 0,
     val isSystemVoiceEnabled: Boolean = false,
-    val dgtText: String? = null,
-    val nasaImageTitle: String? = null,
-    val isWorkModeActive: Boolean = false,
     val bgRadioGenre: String = "MIX",
-    val activeProfile: ActivityProfile = ActivityProfile.NORMAL,
-    val nasaImageUrl: String? = null,
-    val nasaImageExplanation: String? = null,
-    val dgtImageUrl: String? = null,
-    val routeDistanceKm: Float = 0f,
-    val routeDurationMin: Int = 0,
-    val routeDestinationName: String? = null,
-    val nextNavigationStep: String? = null,
-    val routeWaypoints: List<String> = emptyList(),
-    val wifiVerificationResult: String? = null,
-    val bgStationName: String? = null
+    val activeProfile: ActivityProfile = ActivityProfile.NORMAL
 )
 
 data class AppNotification(
@@ -124,18 +107,6 @@ data class ChatMessage(
 )
 
 enum class NotificationType { Info, Warning, Success }
-
-data class WifiNetwork(
-    val ssid: String,
-    val bssid: String = "",
-    val vendor: String = "DESCONOCIDO",
-    val security: String = "OPEN",
-    val signal: Int = -70,
-    val frequency: Int = 2412,
-    val isVulnerable: Boolean = false,
-    val wpsActive: Boolean = false,
-    val defaultPassword: String? = null
-)
 
 enum class ActivityProfile {
     NORMAL, MOTO, CICLISMO, SENDERISMO, PASEO, SOCORRISTAS, CARAVANAS

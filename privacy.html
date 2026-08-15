@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Política de Privacidad - ON AIR SPAIN</title>
-    <meta name="description" content="Política de privacidad de ON AIR SPAIN. Comunicación de voz pura, privada y segura por ciudades de España.">
-    <meta name="keywords" content="Privacidad Radio, Voz Real, Red por Ciudades España, On Air Spain, Comunicación Directa, Sin GPS">
+    <meta name="description" content="Política de privacidad oficial de ON AIR SPAIN. Información sobre permisos de micrófono, ubicación por IP y seguridad de datos para Google Play.">
     <style>
         :root {
             --midnight: #0F172A;
@@ -17,7 +16,7 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             line-height: 1.6;
             color: rgba(255,255,255,0.85);
             background: var(--deep-sea);
@@ -26,7 +25,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 850px;
             margin: 40px auto;
             padding: 40px;
             background: var(--glass);
@@ -34,52 +33,51 @@
             border: 1px solid var(--glass-border);
         }
 
-        h1 { color: #fff; text-align: center; font-weight: 900; }
-        h2 { color: var(--electric-blue); margin-top: 30px; font-size: 1.2em; border-left: 4px solid var(--gold); padding-left: 15px; }
-        p, li { margin-bottom: 15px; color: rgba(255,255,255,0.7); }
+        h1 { color: #fff; text-align: center; font-weight: 900; margin-bottom: 10px; }
+        h2 { color: var(--electric-blue); margin-top: 35px; font-size: 1.3em; border-left: 4px solid var(--gold); padding-left: 15px; }
+        p, li { margin-bottom: 15px; color: rgba(255,255,255,0.7); font-size: 15px; }
         strong { color: #fff; }
-        .footer { text-align: center; margin-top: 50px; font-size: 0.8em; color: rgba(255,255,255,0.3); }
+        .alert { background: rgba(212, 175, 55, 0.1); border: 1px solid var(--gold); padding: 15px; border-radius: 12px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 50px; font-size: 0.85em; color: rgba(255,255,255,0.4); border-top: 1px solid var(--glass-border); padding-top: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>ON AIR SPAIN</h1>
-        <p style="text-align: center; color: var(--gold); font-weight: 800;">PROTOCOLO DE PRIVACIDAD V5.0 (PURE RADIO)</p>
+        <p style="text-align: center; color: var(--gold); font-weight: 800; letter-spacing: 1px;">PROTOCOLO DE PRIVACIDAD V11.0 (PURE RADIO)</p>
 
-        <h2>1. FILOSOFÍA DE DATOS</h2>
-        <p>En <strong>ON AIR SPAIN</strong>, creemos que tu voz es tuya. Nuestra aplicación está diseñada bajo el principio de <strong>Minimización de Datos</strong>:</p>
+        <div class="alert">
+            <strong>Resumen para el usuario:</strong> Nuestra aplicación es una emisora de radio digital. No rastreamos tu identidad real, no pedimos tu número de teléfono y no guardamos grabaciones de voz. Tu privacidad es nuestro núcleo técnico.
+        </div>
+
+        <h2>1. RECOPILACIÓN Y USO DE DATOS</h2>
+        <p>En cumplimiento con las políticas de Google Play, informamos que <strong>ON AIR SPAIN</strong> minimiza la recopilación de datos al máximo estrictamente necesario para la función de radio:</p>
         <ul>
-            <li><strong>Sin Registros:</strong> No solicitamos correos electrónicos, números de teléfono ni vinculación con redes sociales.</li>
-            <li><strong>Identidad Efímera:</strong> Tu identidad en la red es tu "Indicativo", el cual puedes cambiar libremente. No se asocia a ninguna identidad real.</li>
-            <li><strong>Sin GPS:</strong> Hemos eliminado el rastreo por GPS. La ubicación de tu ciudad se estima mediante tu dirección IP de forma técnica para sintonizar el canal local correcto.</li>
+            <li><strong>Ubicación Aproximada (IP):</strong> No solicitamos el permiso de ubicación de grano fino (GPS). Estimamos tu provincia mediante la dirección IP exclusivamente para conectarte de forma automática a la frecuencia local correspondiente.</li>
+            <li><strong>Indicativo de Radio:</strong> Solicitamos un nombre de usuario (Indicativo) para identificarte en la red. Este nombre es efímero y puede ser modificado por el usuario en cualquier momento.</li>
+            <li><strong>Estado de Conexión:</strong> Transmitimos tu estado (en línea/hablando) para que otros usuarios en el mismo canal puedan interactuar contigo.</li>
         </ul>
 
-        <h2>2. COMUNICACIONES DE VOZ</h2>
-        <p>La esencia de nuestra app es la transmisión PTT (Push-To-Talk):</p>
+        <h2>2. PERMISOS DE HARDWARE CRÍTICOS</h2>
+        <p>Para el correcto funcionamiento de la emisora, la aplicación requiere:</p>
         <ul>
-            <li><strong>Audio en Tiempo Real:</strong> Las transmisiones se realizan punto a punto entre usuarios.</li>
-            <li><strong>Sin Grabaciones:</strong> <strong>No grabamos ni almacenamos</strong> tus conversaciones en ningún servidor. Una vez que la voz suena en el altavoz del receptor, desaparece para siempre.</li>
+            <li><strong>Micrófono (RECORD_AUDIO):</strong> Esencial para la transmisión de voz. La aplicación solo accede al micrófono cuando el usuario pulsa voluntariamente el botón PTT o activa la función manos libres (VOX). El audio se procesa en tiempo real y <strong>nunca se almacena en el dispositivo ni en servidores externos</strong>.</li>
+            <li><strong>Internet:</strong> Necesario para la transmisión de datos punto a punto y la sincronización con Firebase.</li>
         </ul>
 
-        <h2>3. PERMISOS DE HARDWARE</h2>
-        <p>Para funcionar correctamente, solicitamos los siguientes permisos técnicos:</p>
-        <ul>
-            <li><strong>Micrófono:</strong> Solo se activa cuando pulsas el botón PTT o utilizas el modo VOX (Manos Libres).</li>
-            <li><strong>Internet:</strong> Necesario para conectar con la red de radioaficionados digital.</li>
-        </ul>
+        <h2>3. SEGURIDAD Y ALMACENAMIENTO</h2>
+        <p>Utilizamos <strong>Google Firebase</strong> para la gestión de la red en tiempo real. Los datos de sesión se eliminan automáticamente cuando el usuario cierra la aplicación o tras un breve periodo de inactividad (15 segundos). No compartimos bases de datos con terceros.</p>
 
-        <h2>4. PUBLICIDAD Y SOSTENIBILIDAD</h2>
-        <p>Utilizamos Google AdMob para mantener el servicio gratuito:</p>
-        <ul>
-            <li>Google puede utilizar identificadores anónimos para mostrar publicidad relevante. Puedes gestionar estos identificadores en los ajustes de tu cuenta de Google.</li>
-        </ul>
+        <h2>4. PUBLICIDAD (Google AdMob)</h2>
+        <p>Para mantener el servicio gratuito y nacional, mostramos anuncios mediante Google AdMob. Google puede utilizar identificadores publicitarios anónimos para la personalización de anuncios, sujetos a la propia política de privacidad de Google.</p>
 
-        <h2>5. RESPONSABILIDAD DEL USUARIO</h2>
-        <p>ON AIR SPAIN es una herramienta técnica de comunicación. El contenido de las conversaciones es responsabilidad exclusiva de los usuarios. Queda prohibido el uso de la red para actividades ilícitas o acoso.</p>
+        <h2>5. DERECHOS DEL USUARIO</h2>
+        <p>Al no existir cuentas de usuario permanentes (correos o contraseñas), el usuario ejerce su derecho al olvido simplemente cerrando la sesión o desinstalando la aplicación. Todos los datos temporales vinculados a su sesión desaparecerán del nodo nacional.</p>
 
         <div class="footer">
-            &copy; 2026 ON AIR SPAIN - Ingeniería de Radio Social Profesional.<br>
-            Contacto para reportes: appsaiber@gmail.com
+            &copy; 2026 ON AIR SPAIN - Ingeniería de Radio Profesional.<br>
+            Responsable técnico: Jose Manuel Gonzalez Lorence<br>
+            Contacto de privacidad: appsaiber@gmail.com
         </div>
     </div>
 </body>

@@ -28,22 +28,42 @@ object RadioAudioManager {
                     window.app.masterRxGain.gain.value = 2.0;
                     
                     window.app.compressor = window.app.ctx.createDynamicsCompressor();
+                    window.app.compressor.threshold.value = -20;
+                    window.app.compressor.ratio.value = 8;
+
+                    // 📻 FILTRO DE RADIOAFICIONADO (Bandpass Estrecho)
                     window.app.filter = window.app.ctx.createBiquadFilter();
-                    window.app.filter.type = "bandpass"; window.app.filter.frequency.value = 1600; window.app.filter.Q.value = 0.5;
+                    window.app.filter.type = "bandpass"; 
+                    window.app.filter.frequency.value = 1500; 
+                    window.app.filter.Q.value = 1.2; 
                     
                     window.app.filter.connect(window.app.masterRxGain);
                     window.app.masterRxGain.connect(window.app.compressor);
                     window.app.compressor.connect(window.app.masterOut);
                     
+                    // --- 🌊 GENERADOR DE RUIDO QRM ---
+                    var bufferSize = 2 * window.app.ctx.sampleRate,
+                        noiseBuffer = window.app.ctx.createBuffer(1, bufferSize, window.app.ctx.sampleRate),
+                        output = noiseBuffer.getChannelData(0);
+                    for (var i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
+                    
+                    var whiteNoise = window.app.ctx.createBufferSource();
+                    whiteNoise.buffer = noiseBuffer;
+                    whiteNoise.loop = true;
+                    
                     window.app.noise = window.app.ctx.createGain();
+                    window.app.noise.gain.value = 0.008; // Ruido de fondo muy sutil
+                    
+                    whiteNoise.connect(window.app.noise);
                     window.app.noise.connect(window.app.compressor);
+                    whiteNoise.start();
                     
                     window.app.txBus = window.app.ctx.createMediaStreamDestination();
                     window.app.txGate = window.app.ctx.createGain();
                     window.app.txGate.gain.value = 0;
                     window.app.txGate.connect(window.app.txBus);
                     
-                    console.log("🏗️ [AUDIO] Motor listo.");
+                    console.log("🏗️ [AUDIO] Motor Radioaficionado listo.");
                 } catch(e) { console.error("Error Audio:", e); }
             };
 
@@ -82,7 +102,6 @@ object RadioAudioManager {
             window.broadcastPTT = function(active, roger, power) {
                 if(!window.app || !window.app.db) return;
                 
-                // Si pulsamos y no hay micro, lo pedimos volando
                 if (active && !window.app.rawStream) {
                     window.requestMicPermission();
                 }
@@ -97,8 +116,15 @@ object RadioAudioManager {
                 if (active) {
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: true, pwr: power || 0.7 });
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
+                    // 🛡️ SILENCIO ABSOLUTO AL TRANSMITIR (COMO RADIO CB REAL)
+                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01);
+                    if (window.app.noise) window.app.noise.gain.setTargetAtTime(0, now, 0.01);
                 } else {
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now, 0.01);
+                    // 🔊 RESTAURAR RECEPCIÓN Y RUIDO DE FONDO
+                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(2.0, now, 0.2);
+                    if (window.app.noise) window.app.noise.gain.setTargetAtTime(0.008, now, 0.2);
+                    
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
                     if (roger && window.playUiSound) window.playUiSound("ptt_off");
                 }
@@ -128,6 +154,7 @@ object RadioAudioManager {
                         delete window.app.remoteSources[call.peer];
                     }
                     delete window.app.remoteAnalysers[call.peer];
+                    delete window.app.activeCalls[call.peer];
                     window.app.rxActiveInternal = Object.keys(window.app.remoteSources).length > 0;
                 });
             };
@@ -154,8 +181,10 @@ private object RadioSignaling {
                 if(window.app.ctx.state === 'suspended') window.app.ctx.resume();
                 
                 var now = window.app.ctx.currentTime;
-                var duration = 0.1; 
-                
+                // 📻 ROGER BEEP UNIFICADO A 1955Hz
+                var freq = 1955;
+                var duration = 0.25;
+
                 if (type === "ptt_off") {
                     window.app.isBeeping = true;
                     if(window.dispatch_beeping) window.dispatch_beeping(true);
@@ -164,16 +193,14 @@ private object RadioSignaling {
                 var o = window.app.ctx.createOscillator();
                 var g = window.app.ctx.createGain();
                 
-                // --- 🔊 TONO CB PROFESIONAL (TRIANGLE PARA TEXTURA DE RADIO) ---
                 o.type = "triangle"; 
-                o.frequency.setValueAtTime(type === "ptt_off" ? 1955 : 1800, now);
+                o.frequency.setValueAtTime(freq, now);
                 
-                g.gain.setValueAtTime(0.12, now); 
-                g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                g.gain.setValueAtTime(0.1, now); 
+                g.gain.linearRampToValueAtTime(0.0, now + duration);
                 
                 o.connect(g); 
-                g.connect(window.app.masterOut); // Escucha local
-                if (window.app.txGate) g.connect(window.app.txGate); // Envío a la red
+                g.connect(window.app.masterOut);
                 
                 o.onended = function() {
                     if (type === "ptt_off") {
@@ -192,30 +219,38 @@ private object VOXEngine {
     fun install() {
         js("""
             function voxLoop() {
-                if(window.app && window.app.micAnalyser) {
-                    var d = new Uint8Array(window.app.micAnalyser.fftSize);
-                    window.app.micAnalyser.getByteTimeDomainData(d);
-                    var max = 0;
-                    for(var i=0; i<d.length; i++) {
-                        var v = Math.abs(d[i]-128);
-                        if(v>max) max=v;
+                if(window.app) {
+                    var modulation = 0;
+                    
+                    if (window.app.isTransmittingInternal || window.app.isBeeping) {
+                        // --- MODULACIÓN PROPIA (TX) ---
+                        if (window.app.micAnalyser) {
+                            var d = new Uint8Array(window.app.micAnalyser.fftSize);
+                            window.app.micAnalyser.getByteTimeDomainData(d);
+                            var max = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>max) max=v; }
+                            modulation = Math.min(0.25, (max/128)*2.5);
+                        }
+                    } else if (window.app.rxActiveInternal) {
+                        // --- MODULACIÓN REMOTA (RX) ---
+                        // Buscamos el analizador que tenga más actividad (el que está hablando)
+                        var maxRx = 0;
+                        Object.values(window.app.remoteAnalysers).forEach(function(ana) {
+                            var d = new Uint8Array(ana.fftSize);
+                            ana.getByteTimeDomainData(d);
+                            var m = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>m) m=v; }
+                            if(m > maxRx) maxRx = m;
+                        });
+                        modulation = Math.min(0.28, (maxRx/128)*2.8);
                     }
-                    
-                    // Modulación de voz pura
-                    var modulation = Math.min(0.25, (max/128)*2.5);
-                    
+
                     if(window.dispatch_mic) {
                         if (window.app.isBeeping) {
-                            // Roger Beep: LEDs al Máximo
                             window.dispatch_mic(1.0);
                         } else if (window.app.isTransmittingInternal) {
-                            // 🚀 PORTADORA TX: Base 0.75 + Voz
                             window.dispatch_mic(0.75 + modulation);
                         } else if (window.app.rxActiveInternal) {
-                            // 📡 PORTADORA RX: Base 0.70 + Voz (simulada o real)
                             window.dispatch_mic(0.70 + modulation);
                         } else {
-                            // Silencio absoluto
                             window.dispatch_mic(0);
                         }
                     }

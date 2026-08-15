@@ -38,6 +38,7 @@ fun main() {
             return (s ? s.toString().replace(/[.${'$'}#[\]/]/g, "_") : "unknown"); 
         };
 
+        window.remoteTxStates = {};
         window.connectRadio = function(nick) {
             var sessionID = nick + "_" + Math.random().toString(36).substring(2, 11);
             window.app.nick = nick;
@@ -58,6 +59,7 @@ fun main() {
             if (typeof Peer !== 'undefined') {
                 window.app.peer = new Peer(sessionID, { secure: true });
                 window.app.peer.on("call", function(call) {
+                    window.app.activeCalls[call.peer] = call;
                     call.answer(window.getStream());
                     if (window.setupCallStream) window.setupCallStream(call);
                 });
@@ -125,8 +127,15 @@ fun main() {
                             val k = keys[i] as String
                             val u = users[k] ?: continue
                             
-                            // ☢️ NUCLEAR FIX: VISIBILIDAD GLOBAL SIN FILTROS (DIAGNÓSTICO)
                             val isTransmitting = u.tx == true
+                            
+                            // 📡 DETECCIÓN DE FIN DE TRANSMISIÓN REMOTA (ROGER BEEP ENTRANTE)
+                            val prevState = win.remoteTxStates[k] ?: false
+                            if (prevState == true && isTransmitting == false) {
+                                if (win.playUiSound) win.playUiSound("rx_off")
+                            }
+                            win.remoteTxStates[k] = isTransmitting
+
                             list.add(RemoteUser(
                                 id = k, 
                                 nick = u.nick as? String ?: "ESTACIÓN", 
@@ -136,7 +145,6 @@ fun main() {
                                 txPower = (u.pwr as? Double ?: 0.7).toFloat()
                             ))
                             
-                            // Llamada automática
                             if (k != win.app.sessionID && win.app.activeCalls[k] == null) {
                                 win.establishOutgoingCall(k)
                             }

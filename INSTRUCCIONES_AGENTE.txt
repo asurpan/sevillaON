@@ -13,8 +13,13 @@ El motor web ha sido refactorizado en archivos independientes para una claridad 
 
 ## ⚠️ REGLAS DE ORO
 - **SEGURIDAD**: Cada Nick está vinculado al ID del teléfono (Hard-Lock). No permitir el cambio de Nick si ya existe un registro.
-- **PTT**: El botón PTT debe ser libre y reactivo. Los LEDs de portadora deben encenderse SIEMPRE al pulsar.
-- **VISIBILIDAD**: Mantener el sistema de "Frecuencia Única" (Nuclear Option) en `main.kt` hasta que la red sea estable.
+- **PTT (MODO EMISORA REAL)**:
+    - Al pulsar PTT, el silencio en la recepción (RX) y el ruido de fondo (QRM) debe ser **ABSOLUTO (0.0)**.
+    - El Roger Beep debe estar configurado **OBLIGATORIAMENTE** a **1955Hz** con una duración de **0.3s** y envolvente de ataque plano.
+- **SQUELCH & QRM**: El ruido de banda es White Noise dinámico. Su volumen debe responder siempre al control `setNoiseVolume`.
+- **AUDIO TEXTURE**: Mantener el filtro Bandpass en **1500Hz** con **Q 1.2** para preservar la identidad de Radioaficionado.
+- **NETWORK**: Mantener "Nuclear Fix" (Frecuencia Única) y "Full Mesh" (Auto-call/Auto-answer) para garantizar que los móviles se vean y oigan sin filtros de canal por ahora.
+- **VISIBILIDAD**: Los LEDs de portadora deben encenderse SIEMPRE al pulsar.
 - **DESACOPLAMIENTO**: No mezclar lógica de audio en el NetworkManager ni viceversa.
 
 ## 🚀 DESPLIEGUE

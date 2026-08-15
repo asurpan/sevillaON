@@ -316,9 +316,63 @@ private object MoniGuard {
 private object ReplayEngine {
     fun install() {
         js("""
-            window.playReplay = function() {
-                console.log("Replay...");
+            var replayChunks = [];
+            var recorder = null;
+            var isRecording = false;
+
+            window.initReplayRecorder = function() {
+                if (!window.app.ctx || recorder) return;
+                
+                var streamDest = window.app.ctx.createMediaStreamDestination();
+                window.app.filter.connect(streamDest);
+                
+                recorder = new MediaRecorder(streamDest.stream);
+                
+                recorder.ondataavailable = function(e) {
+                    if (e.data.size > 0) {
+                        replayChunks.push(e.data);
+                        if (replayChunks.length > 6) replayChunks.shift();
+                        if (window.dispatch_replay_available) window.dispatch_replay_available(true);
+                    }
+                };
+
+                setInterval(function() {
+                    if (recorder.state === "recording") {
+                        recorder.stop();
+                        recorder.start();
+                    } else if (recorder.state === "inactive") {
+                        recorder.start();
+                    }
+                }, 4000);
             };
+
+            window.playReplay = function() {
+                if (replayChunks.length === 0) {
+                    console.log("Replay vacío");
+                    return;
+                }
+                
+                var blob = new Blob(replayChunks, { type: 'audio/ogg; codecs=opus' });
+                var url = URL.createObjectURL(blob);
+                var audio = new Audio(url);
+                
+                if (window.dispatch_replay_progress) window.dispatch_replay_progress(0.1);
+                
+                audio.onplay = function() {
+                   if (window.dispatch_replay_available) window.dispatch_replay_available(false);
+                };
+                
+                audio.onended = function() {
+                    if (window.dispatch_replay_available) window.dispatch_replay_available(true);
+                    if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
+                    URL.revokeObjectURL(url);
+                };
+
+                audio.play().catch(e => console.error("Error replay:", e));
+            };
+            
+            // Iniciar grabador tras un breve delay para asegurar que el audio está listo
+            setTimeout(window.initReplayRecorder, 2000);
         """)
     }
 }

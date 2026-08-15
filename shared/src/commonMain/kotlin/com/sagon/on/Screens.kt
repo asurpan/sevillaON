@@ -273,9 +273,9 @@ fun RadioPanel(
                     Column(modifier = Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Row(modifier = Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.width(60.dp)) {
-                                MiniTechLabel("SQL", "${(state.squelch * 100).toInt()}%")
+                                MiniTechLabel("SQL", "${(state.squelch * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.SETTINGS, null) }
                                 Spacer(Modifier.height(8.dp))
-                                MiniTechLabel("RFG", "${(state.rfGain * 100).toInt()}%")
+                                MiniTechLabel("RFG", "${(state.rfGain * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.SETTINGS, null) }
                             }
                             Column(modifier = Modifier.weight(1f).padding(horizontal = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 val statusText = when { rx -> "RECIBIENDO"; isTransmitting || isBeeping -> "AIRE"; else -> "SQUELCH" }
@@ -291,19 +291,19 @@ fun RadioPanel(
                                 
                                 // CANAL PRINCIPAL
                                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(32.dp)) {
-                                        Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold.copy(0.4f), modifier = Modifier.size(16.dp))
+                                    IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(28.dp)) {
+                                        Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold.copy(0.4f), modifier = Modifier.size(14.dp))
                                     }
-                                    Spacer(Modifier.width(4.dp))
+                                    Spacer(Modifier.width(2.dp))
                                     Text(
                                         text = "CH ${CITY_CHANNELS[state.city.uppercase()] ?: "00"}", 
                                         color = LuxeColors.Gold, 
-                                        fontSize = 32.sp, 
+                                        fontSize = 28.sp, 
                                         fontWeight = FontWeight.Black,
                                         modifier = Modifier.clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
                                     )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(text = state.channel, color = Color.White.copy(0.6f), fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.basicMarquee())
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(text = state.channel, color = Color.White.copy(0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.basicMarquee())
                                 }
                             }
                             Column(modifier = Modifier.width(60.dp), horizontalAlignment = Alignment.End) {
@@ -345,7 +345,8 @@ fun RadioPanel(
                             onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, 
                             onPrivateChat = { }, 
                             onReport = { onReport(user.id) }, 
-                            onBlock = { onBlock(user.id) }
+                            onBlock = { onBlock(user.id) },
+                            onAvatarClick = { onPendingDialogChange(RadioDialogType.USER_ACTIONS, user.id) }
                         ) 
                     }
                 }
@@ -410,10 +411,10 @@ fun RadioPanel(
 }
 
 @Composable
-fun MiniTechLabel(label: String, value: String) {
-    Column {
-        Text(label, color = Color.White.copy(0.5f), fontSize = 8.sp, fontWeight = FontWeight.Bold)
-        Text(value, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
+fun MiniTechLabel(label: String, value: String, onClick: () -> Unit) {
+    Column(modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable(onClick = onClick).padding(2.dp)) {
+        Text(label, color = Color.White.copy(0.5f), fontSize = 7.sp, fontWeight = FontWeight.Black)
+        Text(value, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
     }
 }
 

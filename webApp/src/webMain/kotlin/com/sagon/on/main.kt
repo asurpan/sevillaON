@@ -139,6 +139,9 @@ fun main() {
         val notificationState = remember { mutableStateOf<AppNotification?>(null) }
         val radioState = remember { mutableStateOf(initialState) }
         val remoteTransmitterName = remember { mutableStateOf<String?>(null) }
+        
+        val isReplayReadyState = remember { mutableStateOf(false) }
+        val replayProgressState = remember { mutableStateOf(0f) }
 
         RadioBridge.setupDispatchers(
             win = win,
@@ -168,6 +171,23 @@ fun main() {
                             if (userNick.length < 3) continue
                             if (now - lastSeen > 15000) continue 
                             if (nicksSeen.contains(userNick)) continue
+                            
+                            // 🔒 SISTEMA DE BLOQUEO SIGILOSO (MUTUO)
+                            val myID = win.app.sessionID as? String ?: ""
+                            val remoteBlocks = (u.blocks as? String ?: "").split(",")
+                            val IAmBlockedByThem = remoteBlocks.contains(myID)
+                            val TheyAreBlockedByMe = radioState.value.blockedUsers.contains(k)
+                            
+                            if (IAmBlockedByThem || TheyAreBlockedByMe) {
+                                // Cortar comunicación si existe
+                                val activeCall = win.app.activeCalls[k]
+                                if (activeCall != null && activeCall != undefined) {
+                                    try { js("activeCall.close();") } catch(e: Exception) {}
+                                    js("delete window.app.activeCalls[k];")
+                                }
+                                continue
+                            }
+
                             nicksSeen.add(userNick)
 
                             val myCity = win.app.currentCity as? String ?: ""
@@ -236,8 +256,8 @@ fun main() {
                 chatMessagesState.clear()
                 chatMessagesState.addAll(nl.sortedBy { it.timestamp })
             },
-            onReplayProgress = { },
-            onReplayAvailable = { },
+            onReplayProgress = { replayProgressState.value = it },
+            onReplayAvailable = { isReplayReadyState.value = it },
             onChatOpen = { },
             onMicFailure = { },
             onIntegrityStatus = { },
@@ -341,8 +361,8 @@ fun main() {
             isCodedRx = false,
             externalPtt = isPttLiveState.value,
             externalPttBlocked = false,
-            replayProgress = 0f,
-            isReplayReady = false,
+            replayProgress = replayProgressState.value,
+            isReplayReady = isReplayReadyState.value,
             remoteUsers = remoteUsersState,
             remoteTransmitterName = remoteTransmitterName.value,
             chatMessages = chatMessagesState,

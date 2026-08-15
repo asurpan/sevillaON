@@ -93,6 +93,7 @@ object RadioPersistence {
                 updates.city = normCity
                 updates.channel = normCh
                 updates.roger = s.isRogerBeepEnabled 
+                updates.blocks = s.blockedUsers.joinToString(",")
                 win.app.db.ref("users/" + win.app.sessionID).update(updates)
             }
         }

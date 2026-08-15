@@ -100,7 +100,7 @@ fun UserCard(
     )
 
     Surface(
-        modifier = Modifier.width(90.dp).height(120.dp),
+        modifier = Modifier.width(90.dp).height(120.dp).clickable { if(!isMe) onAvatarClick() },
         color = if (user.isTransmitting) Color.Red.copy(0.1f) else Color.White.copy(0.05f),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, if (user.isTransmitting) Color.Red.copy(0.4f) else Color.White.copy(0.1f))

@@ -38,7 +38,7 @@ enum class RadioDialogType {
     ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, VOX, MONI, ROGER, REVERB, CHAT, 
     INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, 
     BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, DISCRETE, SELECT_NICK, 
-    HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY
+    HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, USER_ACTIONS
 }
 
 @Composable
@@ -553,14 +553,81 @@ fun RadioDialogs(
                 }
             )
         }
-        RadioDialogType.BLACKLIST -> FeatureHelpDialog(
-            title = "Lista de Bloqueados",
-            icon = Icons.Rounded.Block,
-            iconColor = Color.Red,
-            description = "Gestiona a los usuarios que has silenciado.",
-            onDismiss = { 
-                onDismiss()
+        RadioDialogType.USER_ACTIONS -> {
+            val targetUser = users.find { it.id == channelToDelete } // Reusamos channelToDelete como generic payload ID
+            if (targetUser != null) {
+                AlertDialog(
+                    onDismissRequest = onDismiss,
+                    containerColor = LuxeColors.DeepSea,
+                    modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+                    title = {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                            Surface(modifier = Modifier.size(60.dp), shape = CircleShape, color = Color.Black, border = BorderStroke(2.dp, LuxeColors.Gold)) {
+                                Icon(Icons.Rounded.Person, null, tint = LuxeColors.Gold, modifier = Modifier.padding(12.dp))
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            Text(targetUser.nick, fontWeight = FontWeight.Black, color = Color.White, fontSize = 20.sp)
+                            Text("ESTACIÓN EN ZONA", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    text = {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                            Text("¿Qué deseas hacer con esta estación?", color = Color.White.copy(0.7f), fontSize = 13.sp, textAlign = TextAlign.Center)
+                            Spacer(Modifier.height(24.dp))
+                            
+                            LuxeButton(
+                                text = if (state.friends.contains(targetUser.nick)) "QUITAR DE AMIGOS" else "MARCAR COMO AMIGO",
+                                onClick = {
+                                    val newFriends = if (state.friends.contains(targetUser.nick)) state.friends - targetUser.nick else state.friends + targetUser.nick
+                                    onStateChange(state.copy(friends = newFriends))
+                                    onDismiss()
+                                },
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                containerColor = if (state.friends.contains(targetUser.nick)) Color.Gray else LuxeColors.Gold,
+                                contentColor = Color.Black,
+                                icon = Icons.Rounded.Favorite
+                            )
+                            
+                            Spacer(Modifier.height(12.dp))
+                            
+                            LuxeButton(
+                                text = "REPORTAR USUARIO",
+                                onClick = { 
+                                    onNotification(AppNotification("REPORTE ENVIADO", "Tu queja sobre ${targetUser.nick} ha sido recibida por el equipo de control.", NotificationType.Success))
+                                    onDismiss() 
+                                },
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                containerColor = Color.White.copy(0.05f),
+                                contentColor = Color.White,
+                                icon = Icons.Rounded.Report
+                            )
+                            
+                            Spacer(Modifier.height(12.dp))
+                            
+                            LuxeButton(
+                                text = "BLOQUEAR ESTACIÓN",
+                                onClick = { 
+                                    onStateChange(state.copy(blockedUsers = state.blockedUsers + targetUser.id))
+                                    onDismiss() 
+                                },
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                containerColor = Color.Red.copy(0.1f),
+                                contentColor = Color.Red,
+                                icon = Icons.Rounded.Block
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = onDismiss) { Text("CANCELAR", color = Color.White.copy(0.4f)) }
+                    }
+                )
             }
+        }
+        RadioDialogType.BLACKLIST -> BlacklistDialog(
+            blockedUsers = state.blockedUsers,
+            users = users,
+            onUnblock = { id -> onStateChange(state.copy(blockedUsers = state.blockedUsers - id)) },
+            onDismiss = onDismiss
         )
         RadioDialogType.ONBOARDING -> WelcomeOnboarding(
             nick = nick,
@@ -571,10 +638,18 @@ fun RadioDialogs(
         )
         RadioDialogType.SELECT_CITY -> {
             var searchText by remember { mutableStateOf(state.city) }
+            
             val filteredCities = remember(searchText) {
-                if (searchText.length >= 1) {
-                    SPAIN_CITIES.filter { it.contains(searchText, ignoreCase = true) }.take(8)
-                } else SPAIN_CITIES.take(8)
+                val normalizedSearch = searchText.uppercase()
+                    .replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+                
+                if (normalizedSearch.length >= 1) {
+                    SPAIN_CITIES.filter { 
+                        val normalizedCity = it.uppercase()
+                            .replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+                        normalizedCity.contains(normalizedSearch) 
+                    }.take(10)
+                } else SPAIN_CITIES.take(10)
             }
 
             AlertDialog(
@@ -699,7 +774,23 @@ fun RadioDialogs(
                     EliteSlider("SQUELCH", state.squelch) { onStateChange(state.copy(squelch = it)) }
                     EliteSlider("RF GAIN", state.rfGain) { onStateChange(state.copy(rfGain = it)) }
                     
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(16.dp))
+
+                    Surface(
+                        onClick = { onPendingDialogChange(RadioDialogType.BLACKLIST, null) },
+                        color = LuxeColors.Gold.copy(0.05f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.2f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Icon(Icons.Rounded.Block, null, tint = LuxeColors.Gold, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Text("GESTIONAR BLOQUEADOS", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
                     
                     Surface(
                         onClick = { onPendingDialogChange(RadioDialogType.DELETE_DATA, null) },

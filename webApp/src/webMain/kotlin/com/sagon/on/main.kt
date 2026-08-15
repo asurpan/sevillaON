@@ -203,7 +203,10 @@ fun main() {
             onNoiseVolumeChange = { vol -> 
                 js("if(window.setNoiseVolume) window.setNoiseVolume(vol);")
             },
-            onMoniVolumeChange = { },
+            onMoniVolumeChange = { vol ->
+                js("if(window.app) window.app.moniVolume = vol;")
+                js("if(window.updateMasterVolume) window.updateMasterVolume();")
+            },
             onEchoChange = { _, _ -> },
             onCityChange = { },
             onSubtoneChange = { },

@@ -36,6 +36,8 @@ object RadioAudioManager {
                     window.app.filter.frequency.value = 1500; 
                     window.app.filter.Q.value = 1.2; 
                     
+                    // --- ⛓️ CADENA DE AUDIO RX (ORDEN CRÍTICO) ---
+                    // Signal -> Filter -> RxGain (PTT Silence) -> Compressor -> MasterOut (Volume) -> Speakers
                     window.app.filter.connect(window.app.masterRxGain);
                     window.app.masterRxGain.connect(window.app.compressor);
                     window.app.compressor.connect(window.app.masterOut);
@@ -49,7 +51,7 @@ object RadioAudioManager {
                         var white = Math.random() * 2 - 1;
                         output[i] = (lastOut + (0.02 * white)) / 1.02;
                         lastOut = output[i];
-                        output[i] *= 3.5; // Compensación de volumen
+                        output[i] *= 3.5;
                     }
                     
                     var noiseSource = window.app.ctx.createBufferSource();
@@ -61,21 +63,21 @@ object RadioAudioManager {
                     window.app.currentNoiseTarget = 0;
                     
                     noiseSource.connect(window.app.noise);
-                    // 📻 Conectar al filtro para que tenga textura de radio
+                    // 📻 El ruido entra ANTES de los controles de volumen y RX Gain
                     window.app.noise.connect(window.app.filter); 
                     noiseSource.start();
 
                     window.setNoiseVolume = function(v) {
                         if (!window.app.noise || window.app.isTransmittingInternal) return;
+                        // Escalamos el valor del Squelch para el motor de audio
                         window.app.currentNoiseTarget = v * 0.25; 
                         window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, window.app.ctx.currentTime, 0.1);
                     };
 
-                    // --- 🔊 CONTROL DE VOLUMEN MAESTRO (INDEPENDIENTE DE SEÑAL) ---
                     window.updateMasterVolume = function() {
                         if (window.app && window.app.masterOut) {
                             var v = window.app.moniVolume || 0.5;
-                            // El volumen maestro solo afecta a la salida final, no a los analizadores
+                            // 🔒 VOLUMEN FINAL: No afecta a los analizadores porque están al principio de la cadena
                             window.app.masterOut.gain.setTargetAtTime(v * 1.5, window.app.ctx.currentTime, 0.1);
                         }
                     };
@@ -246,7 +248,6 @@ private object VOXEngine {
                     var finalLevel = 0;
                     
                     if (window.app.isTransmittingInternal || window.app.isBeeping) {
-                        // --- 🎙️ MODO TX: LEDs DE POTENCIA ---
                         if (window.app.isBeeping) {
                             finalLevel = 1.0;
                         } else if (window.app.micAnalyser) {
@@ -257,8 +258,10 @@ private object VOXEngine {
                             finalLevel = 0.75 + mod;
                         }
                     } else {
-                        // --- 📡 MODO RX / STANDBY: LEDs DE SEÑAL (S-METER) ---
+                        // --- 📡 MODO RX / STANDBY: SEÑAL DE ENTRADA PURA ---
                         var rxModulation = 0;
+                        var hasIncomingVoice = false;
+                        
                         if (window.app.rxActiveInternal) {
                             var maxRx = 0;
                             Object.values(window.app.remoteAnalysers).forEach(function(ana) {
@@ -267,17 +270,21 @@ private object VOXEngine {
                                 var m = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>m) m=v; }
                                 if(m > maxRx) maxRx = m;
                             });
-                            // La voz remota dispara el S-Meter hacia S9 (0.7+)
                             rxModulation = Math.min(0.85, (maxRx/128)*3.5);
-                            if (rxModulation > 0.05) finalLevel = 0.65 + rxModulation;
+                            if (rxModulation > 0.05) {
+                                finalLevel = 0.65 + rxModulation;
+                                hasIncomingVoice = true;
+                            }
                         }
                         
-                        // Si no hay voz fuerte, mostramos el QRM (Squelch abierto)
-                        if (finalLevel < 0.2) {
-                            // 🌊 QRM METER: Solo 1-2 LEDs (0.10 - 0.18) si el squelch está abierto
-                            var noiseBase = (window.app.currentNoiseTarget || 0) * 0.8;
-                            var jitter = (Math.random() * 0.05); 
-                            finalLevel = Math.max(finalLevel, Math.min(0.18, noiseBase + jitter));
+                        // Si no hay voz fuerte, mostramos el nivel de QRM (Squelch)
+                        if (!hasIncomingVoice) {
+                            // 🌊 QRM METER: Solo 1-2 LEDs (0.12 - 0.18) basado en el objetivo de ruido
+                            // Importante: No usamos moniVolume aquí, solo currentNoiseTarget
+                            var noiseBase = (window.app.currentNoiseTarget || 0) * 0.6;
+                            var jitter = (Math.random() * 0.04); 
+                            finalLevel = Math.min(0.18, noiseBase + jitter);
+                            if (finalLevel < 0.02) finalLevel = 0;
                         }
                     }
 

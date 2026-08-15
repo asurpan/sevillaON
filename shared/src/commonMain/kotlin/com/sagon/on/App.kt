@@ -174,9 +174,20 @@ fun App(
         }
     }
 
+    var sisNotified by remember { mutableStateOf(false) }
+
     LaunchedEffect(screenState) {
         if (screenState == Screen.RadioCB) {
-            delay(3000)
+            if (!sisNotified) {
+                delay(2000)
+                localNotification = AppNotification(
+                    title = "SISTEMA INTELIGENTE ACTIVO",
+                    message = "Modo de eficiencia energética operando. Máximo 6 estaciones por sala para optimizar batería.",
+                    type = NotificationType.Success
+                )
+                sisNotified = true
+            }
+            delay(1000)
             if (!radioState.hasAcceptedMicExplain) {
                 showNotificationConsent = true
             }

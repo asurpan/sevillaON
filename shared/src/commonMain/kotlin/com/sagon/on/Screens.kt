@@ -267,8 +267,8 @@ fun RadioPanel(
                 // Pantalla de la Radio (S-Meter y Canal)
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(20.dp)), 
-                    color = Color.Black, 
-                    border = BorderStroke(2.dp, LuxeColors.Gold.copy(0.4f))
+                    color = if(rx) Color(0xFF064E3B) else Color.Black, 
+                    border = BorderStroke(2.dp, if(rx) Color(0xFF10B981) else LuxeColors.Gold.copy(0.4f))
                 ) {
                     Column(modifier = Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Row(modifier = Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -285,7 +285,7 @@ fun RadioPanel(
                                 }
                                 Text(
                                     text = statusText, 
-                                    color = if(rx) LuxeColors.Green else if(isTransmitting) Color.Red else Color.White.copy(0.2f), 
+                                    color = if(rx) Color(0xFF10B981) else if(isTransmitting) Color.Red else Color.White.copy(0.2f), 
                                     fontSize = 11.sp, 
                                     fontWeight = FontWeight.Black, 
                                     letterSpacing = if(rx) 1.sp else 2.sp,

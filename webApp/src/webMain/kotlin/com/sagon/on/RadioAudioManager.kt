@@ -96,7 +96,8 @@ object RadioAudioManager {
 
                     window.updateMasterVolume = function() {
                         if (window.app && window.app.masterOut) {
-                            // 🔒 HARD-LOCK: El volumen maestro es fijo para garantizar audición
+                            // 🔒 HARD-LOCK: No subir el volumen si estamos transmitiendo
+                            if (window.app.pttStateInternal) return;
                             window.app.masterOut.gain.setTargetAtTime(1.5, window.app.ctx.currentTime, 0.1);
                         }
                     };
@@ -126,6 +127,20 @@ object RadioAudioManager {
                 if (!window.app.ctx && window.initAudio) window.initAudio();
                 if (!window.app.ctx) return; 
 
+                // --- 🛡️ TOT: TIME-OUT TIMER (60 SEGUNDOS) ---
+                if (active) {
+                    if (window.app.totTimer) clearTimeout(window.app.totTimer);
+                    window.app.totTimer = setTimeout(function() {
+                        if (window.app.pttStateInternal) {
+                            console.warn("⚠️ TOT LIMIT REACHED");
+                            window.broadcastPTT(false, false);
+                            if (window.playUiSound) window.playUiSound("error_tot");
+                        }
+                    }, 60000); // 1 Minuto máximo de portadora continua
+                } else {
+                    if (window.app.totTimer) { clearTimeout(window.app.totTimer); window.app.totTimer = null; }
+                }
+
                 if (active && !window.app.rawStream) {
                     window.requestMicPermission();
                 }
@@ -138,14 +153,16 @@ object RadioAudioManager {
                 
                 var now = window.app.ctx.currentTime;
                 if (active) {
-                    // 🔒 HARD-LOCK: SILENCIO ABSOLUTO DURANTE TRANSMISIÓN
+                    // 🔒 HARD-LOCK: SILENCIO ABSOLUTO LOCAL DURANTE TRANSMISIÓN
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: true, pwr: power || 0.7 });
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
+                    if (window.app.masterOut) window.app.masterOut.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0, now, 0.01);
                 } else {
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now, 0.01);
+                    if (window.app.masterOut) window.app.masterOut.gain.setTargetAtTime(1.5, now, 0.1);
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(2.0, now, 0.2);
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.2);
                     // 🔒 Restaurar LFO de forma ultra-sutil
@@ -275,6 +292,22 @@ private object RadioSignaling {
                     g.gain.linearRampToValueAtTime(0, now + 0.12);
                     o.connect(g); g.connect(window.app.masterOut);
                     o.start(now); o.stop(now + 0.12);
+                    return;
+                }
+
+                if (type === "error_tot") {
+                    // 🎵 ERROR TOT: Dos tonos bajos y secos
+                    [220, 220].forEach((f, i) => {
+                        var o = window.app.ctx.createOscillator();
+                        var g = window.app.ctx.createGain();
+                        o.type = "square";
+                        o.frequency.setValueAtTime(f, now + (i * 0.15));
+                        g.gain.setValueAtTime(0, now + (i * 0.15));
+                        g.gain.linearRampToValueAtTime(0.05, now + (i * 0.15) + 0.01);
+                        g.gain.linearRampToValueAtTime(0, now + (i * 0.15) + 0.12);
+                        o.connect(g); g.connect(window.app.masterOut);
+                        o.start(now + (i * 0.15)); o.stop(now + (i * 0.15) + 0.15);
+                    });
                     return;
                 }
 

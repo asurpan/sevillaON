@@ -196,8 +196,8 @@ fun OnboardingDialog(onDismiss: () -> Unit) {
                                 Text("Siente el 'viento' de la radio con el QRM vivo. Los LEDs marcan la portadora real y la potencia de tus compañeros.", fontSize = 13.sp, color = Color.White.copy(0.8f), modifier = Modifier.padding(top = 8.dp))
                             }
                             3 -> {
-                                Text("⚖️ BALANCEO ANTISATURACIÓN", fontWeight = FontWeight.Black, color = LuxeColors.Gold)
-                                Text("Si una sala se llena, el sistema crea sub-canales (-2, -3) automáticamente. Podrás ver y saltar entre ellos desde la lista inferior.", fontSize = 13.sp, color = Color.White.copy(0.8f), modifier = Modifier.padding(top = 8.dp))
+                                Text("⚡ SISTEMA INTELIGENTE Y EFICIENTE", fontWeight = FontWeight.Black, color = LuxeColors.Gold)
+                                Text("Si una sala se llena (máx. 6 estaciones), el sistema escala a sub-canales (-2, -3) automáticamente. Esta tecnología Full-Mesh optimizada evita el calor y protege tu batería.", fontSize = 13.sp, color = Color.White.copy(0.8f), modifier = Modifier.padding(top = 8.dp))
                             }
                             4 -> {
                                 Text("🔋 OPTIMIZACIÓN MÓVIL", fontWeight = FontWeight.Black, color = LuxeColors.Gold)

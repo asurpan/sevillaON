@@ -48,7 +48,7 @@ fun main() {
                         if (u.city === baseCity) currentRoomUsers++;
                     });
                     
-                    while (currentRoomUsers >= 8) {
+                    while (currentRoomUsers >= 6) {
                         subIndex++;
                         roomSuffix = "-" + subIndex;
                         currentRoomUsers = 0;
@@ -97,7 +97,17 @@ fun main() {
                 });
                 window.app.peer.on("call", function(call) {
                     window.app.activeCalls[call.peer] = call;
-                    call.answer(window.getStream());
+                
+                // 🔒 FILTRO DE BLOQUEO SIGILOSO PARA LLAMADAS ENTRANTES
+                var remoteID = call.peer;
+                var currentBlocked = window.app.currentBlockedList || [];
+                if (currentBlocked.indexOf(remoteID) !== -1) {
+                    console.log("🚫 Bloqueando llamada entrante de ID en lista negra:", remoteID);
+                    call.close();
+                    return;
+                }
+
+                call.answer(window.getStream());
                     if (window.setupCallStream) window.setupCallStream(call);
                 });
             }
@@ -157,6 +167,9 @@ fun main() {
             onNickConflict = { },
             onUsersUpdate = { users ->
                 try {
+                    // Actualizar lista global de bloqueados para el motor de audio
+                    window.asDynamic().app.currentBlockedList = radioState.value.blockedUsers.toTypedArray()
+                    
                     val list = mutableListOf<RemoteUser>()
                     val nicksSeen = mutableSetOf<String>()
                     val currentIDs = mutableSetOf<String>()
@@ -196,9 +209,10 @@ fun main() {
 
                             val myCity = win.app.currentCity as? String ?: ""
                             val userCity = u.city as? String ?: ""
-                            val myBase = myCity.split("-")[0]
-                            val userBase = userCity.split("-")[0]
-                            if (myBase != userBase) continue
+                            
+                            // 🔒 FILTRO DE SALA ESTRICTO: Solo conectar con gente en TU misma sub-sala (-2, -3, etc)
+                            // Esto evita que el móvil se caliente intentando gestionar toda la ciudad a la vez.
+                            if (myCity != userCity) continue
 
                             val isTransmitting = u.tx == true
                             val userPwr = (u.pwr as? Double ?: 0.7).toFloat()

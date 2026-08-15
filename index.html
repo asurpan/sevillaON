@@ -330,10 +330,20 @@
 
     <div id="radio-root"></div>
 
+    <!-- 🛡️ MOTOR DE SUPERVIVENCIA IOS (SILENCIO INFINITO) -->
+    <audio id="ios-survival-audio" loop playsinline>
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" type="audio/wav">
+    </audio>
+
     <script>
         function launchRadio() {
             const landing = document.getElementById('landing-ui');
             const radio = document.getElementById('radio-root');
+            const survivalAudio = document.getElementById('ios-survival-audio');
+
+            // Activar audio de supervivencia
+            if (survivalAudio) survivalAudio.play().catch(e => console.log("Survival audio blocked"));
+
             landing.style.transform = 'translateY(-30px)';
             landing.style.opacity = '0';
             setTimeout(() => {

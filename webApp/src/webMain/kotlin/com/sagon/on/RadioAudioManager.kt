@@ -101,6 +101,16 @@ object RadioAudioManager {
                             window.app.masterOut.gain.setTargetAtTime(1.5, window.app.ctx.currentTime, 0.1);
                         }
                     };
+
+                    // 🛡️ WAKE LOCK (PREVENIR SUSPENSIÓN)
+                    if ('wakeLock' in navigator) {
+                        try {
+                            navigator.wakeLock.request('screen').then(lock => {
+                                window.app.screenLock = lock;
+                                console.log("🛡️ Wake Lock Activo");
+                            });
+                        } catch (err) { console.log("Wake Lock fallido"); }
+                    }
                     
                     window.app.txBus = window.app.ctx.createMediaStreamDestination();
                     window.app.txGate = window.app.ctx.createGain();

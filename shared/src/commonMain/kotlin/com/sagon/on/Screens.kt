@@ -239,7 +239,7 @@ fun RadioPanel(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Header Compacto
@@ -262,11 +262,11 @@ fun RadioPanel(
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(20.dp))
 
                 // Pantalla de la Radio (S-Meter y Canal)
                 Surface(
-                    modifier = Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(20.dp)), 
+                    modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(20.dp)), 
                     color = Color.Black, 
                     border = BorderStroke(2.dp, LuxeColors.Gold.copy(0.4f))
                 ) {

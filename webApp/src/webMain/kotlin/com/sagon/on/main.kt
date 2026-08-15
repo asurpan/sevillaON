@@ -140,6 +140,8 @@ fun main() {
         val radioState = remember { mutableStateOf(initialState) }
         val remoteTransmitterName = remember { mutableStateOf<String?>(null) }
         
+        val usersNotified = remember { mutableSetOf<String>() }
+        
         val isReplayReadyState = remember { mutableStateOf(false) }
         val replayProgressState = remember { mutableStateOf(0f) }
 
@@ -157,6 +159,7 @@ fun main() {
                 try {
                     val list = mutableListOf<RemoteUser>()
                     val nicksSeen = mutableSetOf<String>()
+                    val currentIDs = mutableSetOf<String>()
                     val now = Date.now()
 
                     if (users != null && users != undefined) {
@@ -164,6 +167,7 @@ fun main() {
                         for (i in 0 until (keys.length as Int)) {
                             val k = keys[i] as String
                             val u = users[k] ?: continue
+                            currentIDs.add(k)
                             
                             val userNick = (u.nick as? String ?: "ESTACIÓN").trim().uppercase()
                             val lastSeen = (u.lastSeen as? Double ?: 0.0)
@@ -217,6 +221,12 @@ fun main() {
                             
                             win.remoteTxStates[k] = isTransmitting
 
+                            // 🎵 AVISO ENTRADA USUARIO (BEEP GRAVE)
+                            if (k != win.app.sessionID && !usersNotified.contains(k)) {
+                                usersNotified.add(k)
+                                if (win.playUiSound != null) win.playUiSound("user_in")
+                            }
+
                             list.add(RemoteUser(
                                 id = k, 
                                 nick = userNick, 
@@ -232,6 +242,10 @@ fun main() {
                             }
                         }
                     }
+                    
+                    // 🛡️ LIMPIEZA: Si un usuario desaparece, permitir que vuelva a pitar al entrar
+                    usersNotified.retainAll(currentIDs)
+
                     remoteUsersState.clear()
                     remoteUsersState.addAll(list)
                     val activeTx = list.find { it.isTransmitting }

@@ -249,18 +249,32 @@ private object RadioSignaling {
                 var now = window.app.ctx.currentTime;
                 
                 if (type === "incoming") {
-                    // 🎵 PIRIPI: Tres tonos rápidos ascendentes (Modo Discreto / Aviso)
-                    [1800, 2200, 2400].forEach((f, i) => {
+                    // 🎵 PIRIPI POLICÍA NACIONAL: Tres tonos ultra-agudos y rápidos
+                    [2800, 3400, 4000].forEach((f, i) => {
                         var o = window.app.ctx.createOscillator();
                         var g = window.app.ctx.createGain();
                         o.type = "sine";
-                        o.frequency.setValueAtTime(f, now + (i * 0.06));
-                        g.gain.setValueAtTime(0, now + (i * 0.06));
-                        g.gain.linearRampToValueAtTime(0.06, now + (i * 0.06) + 0.01);
-                        g.gain.linearRampToValueAtTime(0, now + (i * 0.06) + 0.05);
+                        o.frequency.setValueAtTime(f, now + (i * 0.04));
+                        g.gain.setValueAtTime(0, now + (i * 0.04));
+                        g.gain.linearRampToValueAtTime(0.08, now + (i * 0.04) + 0.01);
+                        g.gain.linearRampToValueAtTime(0, now + (i * 0.04) + 0.035);
                         o.connect(g); g.connect(window.app.masterOut);
-                        o.start(now + (i * 0.06)); o.stop(now + (i * 0.06) + 0.06);
+                        o.start(now + (i * 0.04)); o.stop(now + (i * 0.04) + 0.04);
                     });
+                    return;
+                }
+                
+                if (type === "user_in") {
+                    // 🎵 BEEP GRAVE: Tono corto y bajo para entrada de usuario
+                    var o = window.app.ctx.createOscillator();
+                    var g = window.app.ctx.createGain();
+                    o.type = "triangle";
+                    o.frequency.setValueAtTime(440, now);
+                    g.gain.setValueAtTime(0, now);
+                    g.gain.linearRampToValueAtTime(0.08, now + 0.01);
+                    g.gain.linearRampToValueAtTime(0, now + 0.12);
+                    o.connect(g); g.connect(window.app.masterOut);
+                    o.start(now); o.stop(now + 0.12);
                     return;
                 }
 

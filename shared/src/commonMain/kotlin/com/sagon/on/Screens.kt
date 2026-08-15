@@ -278,8 +278,19 @@ fun RadioPanel(
                                 MiniTechLabel("MON", "${(state.monitorVolume * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.MONI, null) }
                             }
                             Column(modifier = Modifier.weight(1f).padding(horizontal = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                val statusText = when { rx -> "RECIBIENDO"; isTransmitting || isBeeping -> "AIRE"; else -> "SQUELCH" }
-                                Text(text = statusText, color = if(rx) LuxeColors.Gold else if(isTransmitting) Color.Red else Color.White.copy(0.2f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                                val statusText = when { 
+                                    rx -> transmitterNick?.uppercase() ?: "RECIBIENDO"
+                                    isTransmitting || isBeeping -> "AIRE"
+                                    else -> "SQUELCH" 
+                                }
+                                Text(
+                                    text = statusText, 
+                                    color = if(rx) LuxeColors.Gold else if(isTransmitting) Color.Red else Color.White.copy(0.2f), 
+                                    fontSize = 11.sp, 
+                                    fontWeight = FontWeight.Black, 
+                                    letterSpacing = if(rx) 1.sp else 2.sp,
+                                    maxLines = 1
+                                )
                                 Spacer(Modifier.height(4.dp))
                                 Row(modifier = Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(2.dp)), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                                     repeat(15) { i ->

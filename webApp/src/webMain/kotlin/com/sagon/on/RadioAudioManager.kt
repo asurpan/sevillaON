@@ -280,11 +280,16 @@ private object VOXEngine {
                         // Si no hay voz fuerte, mostramos el nivel de QRM (Squelch)
                         if (!hasIncomingVoice) {
                             // 🌊 QRM METER: Solo 1-2 LEDs (0.05 - 0.12) para realismo analógico
-                            // Escala ajustada para que el Squelch abierto no sature la pantalla
-                            var noiseBase = (window.app.currentNoiseTarget || 0) * 0.4;
-                            var jitter = (Math.random() * 0.03); 
-                            finalLevel = Math.min(0.12, noiseBase + jitter);
-                            if (finalLevel < 0.01) finalLevel = 0;
+                            var noiseBase = (window.app.currentNoiseTarget || 0);
+                            
+                            if (noiseBase < 0.01) {
+                                // 🔒 SILENCIO ABSOLUTO: Squelch cerrado, 0 LEDs para ahorrar batería
+                                finalLevel = 0;
+                            } else {
+                                // Squelch abierto: parpadeo sutil en la base
+                                var jitter = (Math.random() * 0.03); 
+                                finalLevel = Math.min(0.12, (noiseBase * 0.4) + jitter);
+                            }
                         }
                     }
 

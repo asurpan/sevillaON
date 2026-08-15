@@ -21,6 +21,7 @@ El motor web ha sido refactorizado en archivos independientes para una claridad 
     - **PROHIBIDO RECALCULAR EN UI**: La pantalla (`Screens.kt`) NO debe calcular niveles de ruido ni intensidades. Debe usar UNICAMENTE el valor `mic` reportado por el motor de audio.
     - El volumen de salida (Master Volume) **NUNCA** debe afectar a los LEDs. La señal de entrada y el volumen son independientes.
     - Con Squelch abierto (solo ruido), los LEDs deben oscilar sutilmente entre 0.05 y 0.12 (máximo 1-2 LEDs).
+    - Con Squelch cerrado (silencio), el nivel reportado debe ser **0.0 estrictamente** para evitar parpadeos y ahorrar batería.
     - En recepción de voz, el medidor debe saltar a la zona de S9 (0.65+).
 - **AUDIO TEXTURE**: Mantener el filtro Bandpass en **1500Hz** con **Q 1.2** para preservar la identidad de Radioaficionado.
 - **NETWORK**: Mantener "Nuclear Fix" (Frecuencia Única) y "Full Mesh" (Auto-call/Auto-answer) para garantizar que los móviles se vean y oigan sin filtros de canal por ahora.

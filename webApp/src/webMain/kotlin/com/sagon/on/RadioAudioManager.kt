@@ -341,8 +341,7 @@ private object RadioSignaling {
                 
                 var volume = isRoger ? 0.12 : 0.08;
                 g.gain.setValueAtTime(volume, now); 
-                g.gain.setValueAtTime(volume, now + duration - 0.02);
-                g.gain.linearRampToValueAtTime(0.0, now + duration);
+                g.gain.setValueAtTime(0, now + duration);
                 
                 o.connect(g); 
                 g.connect(window.app.masterOut);
@@ -376,60 +375,83 @@ private object MoniGuard {
 private object ReplayEngine {
     fun install() {
         js("""
-            var replayChunks = [];
-            var recorder = null;
-            var isRecording = false;
+            var replayBlobs = [];
+            var currentRecorder = null;
 
             window.initReplayRecorder = function() {
-                if (!window.app.ctx || recorder) return;
-                
+                if (!window.app.ctx) return;
                 var streamDest = window.app.ctx.createMediaStreamDestination();
                 window.app.filter.connect(streamDest);
-                
-                // Intentamos usar un codec compatible con la mayoría de navegadores móviles
-                var options = { mimeType: 'audio/webm;codecs=opus' };
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options = { mimeType: 'audio/ogg;codecs=opus' };
-                }
-                
-                try {
-                    recorder = new MediaRecorder(streamDest.stream, options);
+
+                function captureSegment() {
+                    if (currentRecorder && currentRecorder.state === "recording") {
+                        currentRecorder.stop();
+                    }
                     
-                    recorder.ondataavailable = function(e) {
-                        if (e.data.size > 0) {
-                            replayChunks.push(e.data);
-                            // Mantener los últimos ~15 segundos (aprox 15 trozos de 1s)
-                            if (replayChunks.length > 15) replayChunks.shift();
+                    var chunks = [];
+                    currentRecorder = new MediaRecorder(streamDest.stream);
+                    currentRecorder.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
+                    currentRecorder.onstop = function() {
+                        if (chunks.length > 0) {
+                            var blob = new Blob(chunks, { type: currentRecorder.mimeType });
+                            replayBlobs.push(blob);
+                            // 🕒 Buffer de 30 segundos (6 bloques de 5s)
+                            if (replayBlobs.length > 6) replayBlobs.shift();
                             if (window.dispatch_replay_available) window.dispatch_replay_available(true);
                         }
                     };
+                    currentRecorder.start();
+                }
 
-                    // Grabación continua en trozos de 1 segundo para mayor fluidez
-                    recorder.start(1000); 
-                } catch(e) { console.error("MediaRecorder init error:", e); }
+                // Captura en bloques de 5 segundos para evitar archivos corruptos
+                captureSegment();
+                setInterval(captureSegment, 5000);
             };
 
             window.playReplay = function() {
-                if (replayChunks.length === 0) return;
+                if (replayBlobs.length === 0) return;
                 
-                // Consolidar todos los trozos en un solo Blob
-                var blob = new Blob(replayChunks, { type: recorder.mimeType });
-                var url = URL.createObjectURL(blob);
-                var audio = new Audio(url);
-                
-                audio.onplay = function() {
-                   if (window.dispatch_replay_progress) window.dispatch_replay_progress(0.1);
-                };
-                
-                audio.onended = function() {
-                    if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
-                    URL.revokeObjectURL(url);
-                };
+                // Hacemos una copia de los blobs actuales para la reproducción
+                var playlist = [...replayBlobs];
+                var index = 0;
 
-                audio.play().catch(e => console.error("Error replay playback:", e));
+                function playNext() {
+                    if (index >= playlist.length) {
+                        if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
+                        return;
+                    }
+
+                    var url = URL.createObjectURL(playlist[index]);
+                    var audio = new Audio(url);
+                    
+                    audio.onplay = function() {
+                        if (window.dispatch_replay_progress) {
+                            window.dispatch_replay_progress((index + 1) / playlist.length);
+                        }
+                    };
+
+                    audio.onended = function() {
+                        URL.revokeObjectURL(url);
+                        index++;
+                        playNext();
+                    };
+
+                    audio.onerror = function() {
+                        URL.revokeObjectURL(url);
+                        index++;
+                        playNext();
+                    };
+
+                    audio.play().catch(function(err) {
+                        console.error("Replay segment error:", err);
+                        index++;
+                        playNext();
+                    });
+                }
+
+                playNext();
             };
             
-            // Iniciar grabador tras un breve delay para asegurar que el audio está listo
             setTimeout(window.initReplayRecorder, 2000);
         """)
     }

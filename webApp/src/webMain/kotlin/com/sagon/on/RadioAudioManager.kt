@@ -67,8 +67,17 @@ object RadioAudioManager {
 
                     window.setNoiseVolume = function(v) {
                         if (!window.app.noise || window.app.isTransmittingInternal) return;
-                        window.app.currentNoiseTarget = v * 0.25; // Escala ajustada para Brown Noise
+                        window.app.currentNoiseTarget = v * 0.25; 
                         window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, window.app.ctx.currentTime, 0.1);
+                    };
+
+                    // --- 🔊 CONTROL DE VOLUMEN MAESTRO (INDEPENDIENTE DE SEÑAL) ---
+                    window.updateMasterVolume = function() {
+                        if (window.app && window.app.masterOut) {
+                            var v = window.app.moniVolume || 0.5;
+                            // El volumen maestro solo afecta a la salida final, no a los analizadores
+                            window.app.masterOut.gain.setTargetAtTime(v * 1.5, window.app.ctx.currentTime, 0.1);
+                        }
                     };
                     
                     window.app.txBus = window.app.ctx.createMediaStreamDestination();
@@ -234,39 +243,46 @@ private object VOXEngine {
         js("""
             function voxLoop() {
                 if(window.app) {
-                    var modulation = 0;
+                    var finalLevel = 0;
                     
                     if (window.app.isTransmittingInternal || window.app.isBeeping) {
-                        // --- MODULACIÓN PROPIA (TX) ---
-                        if (window.app.micAnalyser) {
+                        // --- 🎙️ MODO TX: LEDs DE POTENCIA ---
+                        if (window.app.isBeeping) {
+                            finalLevel = 1.0;
+                        } else if (window.app.micAnalyser) {
                             var d = new Uint8Array(window.app.micAnalyser.fftSize);
                             window.app.micAnalyser.getByteTimeDomainData(d);
                             var max = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>max) max=v; }
-                            modulation = Math.min(0.25, (max/128)*2.5);
+                            var mod = Math.min(0.25, (max/128)*2.5);
+                            finalLevel = 0.75 + mod;
                         }
-                    } else if (window.app.rxActiveInternal) {
-                        // --- MODULACIÓN REMOTA (RX) ---
-                        // Buscamos el analizador que tenga más actividad (el que está hablando)
-                        var maxRx = 0;
-                        Object.values(window.app.remoteAnalysers).forEach(function(ana) {
-                            var d = new Uint8Array(ana.fftSize);
-                            ana.getByteTimeDomainData(d);
-                            var m = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>m) m=v; }
-                            if(m > maxRx) maxRx = m;
-                        });
-                        modulation = Math.min(0.28, (maxRx/128)*2.8);
+                    } else {
+                        // --- 📡 MODO RX / STANDBY: LEDs DE SEÑAL (S-METER) ---
+                        var rxModulation = 0;
+                        if (window.app.rxActiveInternal) {
+                            var maxRx = 0;
+                            Object.values(window.app.remoteAnalysers).forEach(function(ana) {
+                                var d = new Uint8Array(ana.fftSize);
+                                ana.getByteTimeDomainData(d);
+                                var m = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>m) m=v; }
+                                if(m > maxRx) maxRx = m;
+                            });
+                            // La voz remota dispara el S-Meter hacia S9 (0.7+)
+                            rxModulation = Math.min(0.85, (maxRx/128)*3.5);
+                            if (rxModulation > 0.05) finalLevel = 0.65 + rxModulation;
+                        }
+                        
+                        // Si no hay voz fuerte, mostramos el QRM (Squelch abierto)
+                        if (finalLevel < 0.2) {
+                            // 🌊 QRM METER: Solo 1-2 LEDs (0.10 - 0.18) si el squelch está abierto
+                            var noiseBase = (window.app.currentNoiseTarget || 0) * 0.8;
+                            var jitter = (Math.random() * 0.05); 
+                            finalLevel = Math.max(finalLevel, Math.min(0.18, noiseBase + jitter));
+                        }
                     }
 
                     if(window.dispatch_mic) {
-                        if (window.app.isBeeping) {
-                            window.dispatch_mic(1.0);
-                        } else if (window.app.isTransmittingInternal) {
-                            window.dispatch_mic(0.75 + modulation);
-                        } else if (window.app.rxActiveInternal) {
-                            window.dispatch_mic(0.70 + modulation);
-                        } else {
-                            window.dispatch_mic(0);
-                        }
+                        window.dispatch_mic(finalLevel);
                     }
                 }
                 requestAnimationFrame(voxLoop);

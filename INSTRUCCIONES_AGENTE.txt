@@ -17,6 +17,10 @@ El motor web ha sido refactorizado en archivos independientes para una claridad 
     - Al pulsar PTT, el silencio en la recepción (RX) y el ruido de fondo (QRM) debe ser **ABSOLUTO (0.0)**.
     - El Roger Beep debe estar configurado **OBLIGATORIAMENTE** a **1955Hz** con una duración de **0.3s** y envolvente de ataque plano.
 - **SQUELCH & QRM**: El ruido de banda es Brown Noise (Ruido Marrón) filtrado para máxima calidez. Debe pasar siempre por el filtro Bandpass y responder al control `setNoiseVolume`.
+- **METER (LEDs/S-METER)**:
+    - El volumen de salida (Master Volume) **NUNCA** debe afectar a los LEDs. La señal de entrada y el volumen son independientes.
+    - Con Squelch abierto (solo ruido), los LEDs deben oscilar sutilmente entre 0.10 y 0.18 (máximo 1-2 LEDs).
+    - En recepción de voz, el medidor debe saltar a la zona de S9 (0.65+).
 - **AUDIO TEXTURE**: Mantener el filtro Bandpass en **1500Hz** con **Q 1.2** para preservar la identidad de Radioaficionado.
 - **NETWORK**: Mantener "Nuclear Fix" (Frecuencia Única) y "Full Mesh" (Auto-call/Auto-answer) para garantizar que los móviles se vean y oigan sin filtros de canal por ahora.
 - **VISIBILIDAD**: Los LEDs de portadora deben encenderse SIEMPRE al pulsar.

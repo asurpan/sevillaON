@@ -85,7 +85,16 @@ fun main() {
             }
             
             if (typeof Peer !== 'undefined') {
-                window.app.peer = new Peer(sessionID, { secure: true });
+                window.app.peer = new Peer(sessionID, { 
+                    secure: true,
+                    config: { 'iceServers': [
+                        { 'urls': 'stun:stun.l.google.com:19302' },
+                        { 'urls': 'stun:stun1.l.google.com:19302' },
+                        { 'urls': 'stun:stun.cloudflare.com:3478' },
+                        { 'urls': 'stun:global.stun.twilio.com:3478' },
+                        { 'urls': 'stun:stun.services.mozilla.com' }
+                    ] }
+                });
                 window.app.peer.on("call", function(call) {
                     window.app.activeCalls[call.peer] = call;
                     call.answer(window.getStream());

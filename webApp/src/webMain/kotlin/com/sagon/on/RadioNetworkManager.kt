@@ -21,10 +21,14 @@ object RadioNetworkManager {
             window.app = window.app || {};
             window.app.db = (typeof firebase !== 'undefined' && typeof firebase.database === 'function') ? firebase.database() : null;
 
+            window.sanitizePath = function(p) {
+                return (p || "").toString().replace(/[.#${'$'}\[\]]/g, "_");
+            };
+
             window.initFirebaseListener = function() {
                 if (window.app.db) {
                     window.app.db.ref("users").on('value', function(s) { 
-                        if(window.update_remote_users) window.update_remote_users(s.val()); 
+                        if(window.dispatch_users_update) window.dispatch_users_update(s.val()); 
                     });
                 }
             };

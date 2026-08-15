@@ -41,7 +41,6 @@ object RadioPersistence {
                 isInterfaceLocked = localStorage.getItem("isLocked")?.toBoolean() ?: false,
                 veteranPower = localStorage.getItem("vetPwr")?.toFloatOrNull() ?: 0.7f,
                 isDspEnabled = localStorage.getItem("dspEnabled")?.toBoolean() ?: true,
-                bgRadioGenre = localStorage.getItem("bgGenre") ?: "MIX",
                 activeProfile = profile,
                 isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
                 squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.55f 
@@ -68,7 +67,6 @@ object RadioPersistence {
             localStorage.setItem("voxActive", s.isVoxEnabled.toString())
             localStorage.setItem("moniActive", s.isMonitorEnabled.toString())
             localStorage.setItem("dspEnabled", s.isDspEnabled.toString())
-            localStorage.setItem("bgGenre", s.bgRadioGenre)
             localStorage.setItem("disMode", s.isDiscreteModeEnabled.toString())
             localStorage.setItem("activeProfile", s.activeProfile.name)
             localStorage.setItem("squelch", s.squelch.toString())

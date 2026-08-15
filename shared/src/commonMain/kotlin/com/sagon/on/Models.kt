@@ -85,8 +85,6 @@ data class RadioState(
     val isNightMode: Boolean = false,
     val isChatVisible: Boolean = false,
     val unreadCount: Int = 0,
-    val isSystemVoiceEnabled: Boolean = false,
-    val bgRadioGenre: String = "MIX",
     val activeProfile: ActivityProfile = ActivityProfile.NORMAL
 )
 

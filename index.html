@@ -361,6 +361,7 @@
                 if (window.app && window.app.ctx && window.app.ctx.state === 'suspended') {
                     window.app.ctx.resume();
                 }
+                if (window.app && window.app.requestWakeLock) window.app.requestWakeLock();
                 const survivalAudio = document.getElementById('ios-survival-audio');
                 if (survivalAudio && survivalAudio.paused) survivalAudio.play().catch(e => {});
             }

@@ -103,14 +103,17 @@ object RadioAudioManager {
                     };
 
                     // 🛡️ WAKE LOCK (PREVENIR SUSPENSIÓN)
-                    if ('wakeLock' in navigator) {
-                        try {
-                            navigator.wakeLock.request('screen').then(lock => {
-                                window.app.screenLock = lock;
-                                console.log("🛡️ Wake Lock Activo");
-                            });
-                        } catch (err) { console.log("Wake Lock fallido"); }
-                    }
+                    window.app.requestWakeLock = function() {
+                        if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+                            navigator.wakeLock.request('screen')
+                                .then(lock => {
+                                    window.app.screenLock = lock;
+                                    console.log("🛡️ Wake Lock Activo");
+                                })
+                                .catch(err => { console.log("Wake Lock fallido:", err.message); });
+                        }
+                    };
+                    window.app.requestWakeLock();
                     
                     window.app.txBus = window.app.ctx.createMediaStreamDestination();
                     window.app.txGate = window.app.ctx.createGain();

@@ -2,7 +2,7 @@ package com.sagon.on
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - PANTALLAS DE NAVEGACIÓN
- * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 6.0 (RADIO PURA)
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 7.0 (PURE RADIO)
  */
 
 import androidx.compose.animation.*
@@ -98,8 +98,6 @@ fun WelcomeScreen(
     val background = if (isNightMode) LuxeColors.NightGradient else LuxeColors.BackgroundGradient
 
     Box(modifier = Modifier.fillMaxSize().background(background)) {
-        StarryBackground(activity = 0.2f)
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -221,6 +219,8 @@ fun RadioPanel(
 ) {
     var pttLocked by remember { mutableStateOf(state.isPttLatched) }
     var isPttBlockedByRx by remember { mutableStateOf(false) }
+    
+    val pttScale by animateFloatAsState(if (pttLocked) 0.94f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "PttSqueeze")
 
     LaunchedEffect(externalPttBlocked) { if (externalPttBlocked) isPttBlockedByRx = true }
     LaunchedEffect(isPttBlockedByRx) { if (isPttBlockedByRx) { delay(800); isPttBlockedByRx = false } }
@@ -232,147 +232,204 @@ fun RadioPanel(
     LaunchedEffect(pttLocked) { onMic(pttLocked, state.veteranPower) }
     LaunchedEffect(state.squelch, state.rfGain, rx, isTransmitting) { onNoise(noiseVol) }
 
-    Box(modifier = Modifier.fillMaxSize().background(EliteTheme.DeepGradient)) {
-        StarryBackground(activity = if (isTransmitting || rx) 0.6f else 0.15f, isEcoMode = state.isEcoMode)
-
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).padding(bottom = 100.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                IconButton(onClick = onExit) { Icon(Icons.Rounded.PowerSettingsNew, null, tint = Color.Red.copy(0.6f)) }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Tu indicativo: ", color = Color.White.copy(0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    Text(nick, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(onClick = { if (isReplayReady) onReplay() }, color = if (isReplayReady) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f), shape = CircleShape, border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.1f)), modifier = Modifier.size(38.dp)) {
-                        Box(contentAlignment = Alignment.Center) {
-                            if (replayProgress > 0f) CircularProgressIndicator(progress = { replayProgress }, modifier = Modifier.fillMaxSize(), color = LuxeColors.Gold, strokeWidth = 2.dp)
-                            Icon(Icons.Rounded.History, null, tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(18.dp))
+    Box(modifier = Modifier.fillMaxSize().background(LuxeColors.DeepSea)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // --- BLOQUE SUPERIOR (Información y S-Meter) ---
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header Compacto
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    IconButton(onClick = onExit, modifier = Modifier.size(32.dp)) { Icon(Icons.Rounded.PowerSettingsNew, null, tint = Color.Red.copy(0.8f), modifier = Modifier.size(20.dp)) }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(nick, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(onClick = { if (isReplayReady) onReplay() }, color = if (isReplayReady) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f), shape = CircleShape, border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.1f)), modifier = Modifier.size(32.dp)) {
+                            Box(contentAlignment = Alignment.Center) {
+                                if (replayProgress > 0f) CircularProgressIndicator(progress = { replayProgress }, modifier = Modifier.fillMaxSize(), color = LuxeColors.Gold, strokeWidth = 2.dp)
+                                Icon(Icons.Rounded.History, null, tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(16.dp))
+                            }
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(Color.White.copy(0.05f)).border(1.dp, Color.White.copy(0.1f), CircleShape).clickable { onPendingDialogChange(RadioDialogType.SETTINGS, null) }, contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.Tune, null, tint = Color.White, modifier = Modifier.size(16.dp))
                         }
                     }
-                    Spacer(Modifier.width(8.dp))
-                    Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(0.05f)).border(1.dp, Color.White.copy(0.1f), CircleShape).clickable { onPendingDialogChange(RadioDialogType.SETTINGS, null) }, contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Tune, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                    }
                 }
-            }
 
-            Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(8.dp))
 
-            Surface(modifier = Modifier.fillMaxWidth().height(240.dp).clip(RoundedCornerShape(24.dp)), color = Color.Black.copy(0.7f), border = BorderStroke(1.dp, Color.White.copy(0.1f))) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Row(modifier = Modifier.fillMaxWidth().weight(1.2f), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.width(80.dp)) {
-                                TechLabel("SQUELCH", "${(state.squelch * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.SETTINGS, null) }
-                                Spacer(Modifier.height(16.dp))
-                                TechLabel("GANANCIA", "${(state.rfGain * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.SETTINGS, null) }
+                // Pantalla de la Radio (S-Meter y Canal)
+                Surface(
+                    modifier = Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(20.dp)), 
+                    color = Color.Black, 
+                    border = BorderStroke(2.dp, LuxeColors.Gold.copy(0.4f))
+                ) {
+                    Column(modifier = Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row(modifier = Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.width(60.dp)) {
+                                MiniTechLabel("SQL", "${(state.squelch * 100).toInt()}%")
+                                Spacer(Modifier.height(8.dp))
+                                MiniTechLabel("RFG", "${(state.rfGain * 100).toInt()}%")
                             }
                             Column(modifier = Modifier.weight(1f).padding(horizontal = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                val statusText = when { rx -> "RECIBIENDO..."; isTransmitting || isBeeping -> "ON AIR"; else -> "EN ESPERA" }
-                                Text(text = statusText, color = if(rx) LuxeColors.Gold else if(isTransmitting) Color.Red else Color.White.copy(0.2f), fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                                Spacer(Modifier.height(6.dp))
-                                Row(modifier = Modifier.fillMaxWidth().height(20.dp).clip(RoundedCornerShape(4.dp)), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                    repeat(12) { i ->
-                                        val isActive = i < (mic * 12)
-                                        Box(modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(if (isActive) (if(i > 9) Color.Red else if(i > 7) Color(0xFFFACC15) else LuxeColors.ElectricBlue) else Color.White.copy(0.04f)))
+                                val statusText = when { rx -> "RECIBIENDO"; isTransmitting || isBeeping -> "AIRE"; else -> "SQUELCH" }
+                                Text(text = statusText, color = if(rx) LuxeColors.Gold else if(isTransmitting) Color.Red else Color.White.copy(0.2f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                                Spacer(Modifier.height(4.dp))
+                                Row(modifier = Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(2.dp)), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    repeat(15) { i ->
+                                        val isActive = i < (mic * 15)
+                                        Box(modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(1.dp)).background(if (isActive) (if(i > 12) Color.Red else if(i > 9) Color(0xFFFACC15) else LuxeColors.Gold) else Color.White.copy(0.05f)))
                                     }
                                 }
-                                Spacer(Modifier.height(6.dp))
+                                Spacer(Modifier.height(8.dp))
                                 
-                                Row(modifier = Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Surface(onClick = { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }, modifier = Modifier.weight(1f).fillMaxHeight(), color = LuxeColors.Gold.copy(0.15f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f))) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
-                                            Icon(Icons.Rounded.Home, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(text = "CH ${CITY_CHANNELS[state.city.uppercase()] ?: ""} - ${state.channel}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, maxLines = 1, modifier = Modifier.weight(1f).basicMarquee())
-                                        }
+                                // CANAL PRINCIPAL
+                                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                                    IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(32.dp)) {
+                                        Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold.copy(0.4f), modifier = Modifier.size(16.dp))
                                     }
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = "CH ${CITY_CHANNELS[state.city.uppercase()] ?: "00"}", 
+                                        color = LuxeColors.Gold, 
+                                        fontSize = 32.sp, 
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier.clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
+                                    )
                                     Spacer(Modifier.width(8.dp))
-                                    Surface(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(44.dp), color = LuxeColors.Gold.copy(0.2f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, LuxeColors.Gold)) {
-                                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp)) }
-                                    }
+                                    Text(text = state.channel, color = Color.White.copy(0.6f), fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.basicMarquee())
                                 }
                             }
-                            Column(modifier = Modifier.width(80.dp), horizontalAlignment = Alignment.End) {
-                                Text("WATTS", color = Color.White.copy(0.3f), fontSize = 9.sp, fontWeight = FontWeight.Black)
-                                Text("${if(isTransmitting) (state.veteranPower * 15f).toInt() else if(rx) 9 else 0}W", color = if(isTransmitting) Color.Red else if(rx) LuxeColors.Gold else Color.White.copy(0.2f), fontSize = 20.sp, fontWeight = FontWeight.Black)
+                            Column(modifier = Modifier.width(60.dp), horizontalAlignment = Alignment.End) {
+                                Text("WATTS", color = Color.White.copy(0.3f), fontSize = 8.sp, fontWeight = FontWeight.Black)
+                                Text("${if(isTransmitting) (state.veteranPower * 15f).toInt() else if(rx) 9 else 0}", color = if(isTransmitting) Color.Red else if(rx) LuxeColors.Gold else Color.White.copy(0.2f), fontSize = 24.sp, fontWeight = FontWeight.Black)
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(12.dp))
 
-            var showTools by remember { mutableStateOf(false) }
-            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("CONFIGURACIÓN", color = LuxeColors.Gold.copy(0.6f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                IconButton(onClick = { showTools = !showTools }) { Icon(if (showTools) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = LuxeColors.Gold) }
-            }
+                // Herramientas (Minimizadas por defecto)
+                var showTools by remember { mutableStateOf(false) }
+                Row(modifier = Modifier.fillMaxWidth().clickable { showTools = !showTools }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    Text("HERRAMIENTAS TÁCTICAS", color = LuxeColors.Gold.copy(0.5f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Icon(if (showTools) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = LuxeColors.Gold.copy(0.5f), modifier = Modifier.size(16.dp))
+                }
 
-            AnimatedVisibility(visible = showTools) {
-                LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
-                    item { TacticalDockIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE, null) }) }
-                    item { TacticalDockIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX, null) }) }
-                    item { TacticalDockIcon(icon = Icons.Rounded.Headset, label = "MONI", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) onStateChange(state.copy(isMonitorEnabled = false)) else onPendingDialogChange(RadioDialogType.MONI, null) }) }
-                    item { TacticalDockIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { onStateChange(state.copy(isDspEnabled = !state.isDspEnabled)) }) }
-                    item { TacticalDockIcon(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) }) }
-                    item { TacticalDockIcon(icon = Icons.Rounded.Tune, label = "EQUIPO", isActive = true, onClick = { onPendingDialogChange(RadioDialogType.SETTINGS, null) }) }
+                AnimatedVisibility(visible = showTools) {
+                    LazyRow(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        item { MiniTacticalIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE, null) }) }
+                        item { MiniTacticalIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX, null) }) }
+                        item { MiniTacticalIcon(icon = Icons.Rounded.Headset, label = "MONI", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) onStateChange(state.copy(isMonitorEnabled = false)) else onPendingDialogChange(RadioDialogType.MONI, null) }) }
+                        item { MiniTacticalIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { onStateChange(state.copy(isDspEnabled = !state.isDspEnabled)) }) }
+                        item { MiniTacticalIcon(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) }) }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+                
+                // Lista de Operadores
+                Text("OPERADORES EN ZONA", color = Color.White.copy(0.3f), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth())
+                LazyRow(modifier = Modifier.fillMaxWidth().height(100.dp), contentPadding = PaddingValues(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(users.filter { it.city.split("-")[0] == state.city.split("-")[0] }) { user -> 
+                        UserCard(
+                            user = user, 
+                            isMe = (user.nick.trim().uppercase() == nick.trim().uppercase()), 
+                            onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, 
+                            onPrivateChat = { }, 
+                            onReport = { onReport(user.id) }, 
+                            onBlock = { onBlock(user.id) }
+                        ) 
+                    }
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
-
-            Row(modifier = Modifier.fillMaxWidth().height(120.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                val pttColor = if(isTransmitting) Color.Red else if(rx) Color.Green else Color.White
-                Surface(
-                    modifier = Modifier.weight(1f).fillMaxHeight().pointerInput(Unit) {
-                        detectTapGestures(
-                            onPress = {
-                                if (!isPttBlockedByRx) {
-                                    pttLocked = true
-                                    try {
-                                        awaitRelease()
-                                    } finally {
-                                        pttLocked = false
-                                    }
-                                }
-                            }
+            // --- BLOQUE INFERIOR FIJO (PTT) ---
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(0.5f))
+                    .drawBehind {
+                        drawLine(
+                            color = Color.White.copy(0.1f),
+                            start = Offset(0f, 0f),
+                            end = Offset(size.width, 0f),
+                            strokeWidth = 1.dp.toPx()
                         )
-                    }, 
-                    shape = RoundedCornerShape(40.dp), 
-                    color = pttColor.copy(0.1f), 
-                    border = BorderStroke(3.dp, pttColor.copy(0.4f))
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Mic, null, tint = pttColor, modifier = Modifier.size(36.dp))
-                            Spacer(Modifier.width(16.dp))
-                            Text(if(isTransmitting) "AIRE" else if(rx) "RECIBIENDO" else "HABLAR", color = pttColor, fontWeight = FontWeight.Black, fontSize = 18.sp)
+                    }
+                    .padding(16.dp)
+                    .padding(bottom = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(modifier = Modifier.fillMaxWidth().height(84.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val pttColor = if(isTransmitting) Color.Red else if(rx) Color.Green else LuxeColors.Gold
+                    Surface(
+                        modifier = Modifier.weight(1.5f).fillMaxHeight().scale(pttScale).pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = {
+                                    if (!isPttBlockedByRx) {
+                                        pttLocked = true
+                                        try { awaitRelease() } finally { pttLocked = false }
+                                    }
+                                }
+                            )
+                        }, 
+                        shape = RoundedCornerShape(20.dp), 
+                        color = pttColor.copy(0.15f), 
+                        border = BorderStroke(3.dp, pttColor.copy(0.5f))
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Mic, null, tint = pttColor, modifier = Modifier.size(28.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Text(if(isTransmitting) "AIRE" else if(rx) "RECIBIENDO" else "HABLAR", color = pttColor, fontWeight = FontWeight.Black, fontSize = 16.sp)
+                            }
                         }
                     }
-                }
-                Surface(onClick = { pttLocked = !pttLocked; onStateChange(state.copy(isPttLatched = pttLocked)) }, modifier = Modifier.size(120.dp), shape = RoundedCornerShape(40.dp), color = if (pttLocked) Color.Red.copy(0.2f) else Color.White.copy(0.05f), border = BorderStroke(3.dp, if (pttLocked) Color.Red else Color.White.copy(0.1f))) {
-                    Box(contentAlignment = Alignment.Center) { Icon(if (pttLocked) Icons.Rounded.Lock else Icons.Rounded.LockOpen, null, tint = if (pttLocked) Color.Red else Color.White.copy(0.3f), modifier = Modifier.size(40.dp)) }
-                }
-            }
-
-            Spacer(Modifier.height(32.dp))
-            Text("OPERADORES EN ${state.city.split("-")[0]}", color = Color.White.copy(0.3f), fontSize = 11.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth())
-            LazyRow(modifier = Modifier.fillMaxWidth().height(180.dp), contentPadding = PaddingValues(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                // 🛡️ MOSTRAR TODOS LOS USUARIOS DE LA CIUDAD BASE
-                items(users.filter { it.city.split("-")[0] == state.city.split("-")[0] }) { user -> 
-                    UserCard(
-                        user = user, 
-                        isMe = (user.nick.trim().uppercase() == nick.trim().uppercase()), 
-                        onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, 
-                        onPrivateChat = { }, 
-                        onReport = { onReport(user.id) }, 
-                        onBlock = { onBlock(user.id) }
-                    ) 
+                    
+                    Surface(
+                        onClick = { pttLocked = !pttLocked; onStateChange(state.copy(isPttLatched = pttLocked)) }, 
+                        modifier = Modifier.size(84.dp), 
+                        shape = RoundedCornerShape(20.dp), 
+                        color = if (pttLocked) Color.Red.copy(0.2f) else Color.White.copy(0.05f), 
+                        border = BorderStroke(3.dp, if (pttLocked) Color.Red else Color.White.copy(0.15f))
+                    ) {
+                        Box(contentAlignment = Alignment.Center) { Icon(if (pttLocked) Icons.Rounded.Lock else Icons.Rounded.LockOpen, null, tint = if (pttLocked) Color.Red else Color.White.copy(0.4f), modifier = Modifier.size(32.dp)) }
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun MiniTechLabel(label: String, value: String) {
+    Column {
+        Text(label, color = Color.White.copy(0.5f), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+        Text(value, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
+    }
+}
+
+@Composable
+fun MiniTacticalIcon(icon: ImageVector, label: String, isActive: Boolean, onClick: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(56.dp)) {
+        Surface(
+            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
+            color = if (isActive) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, if (isActive) LuxeColors.Gold else Color.White.copy(0.1f))
+        ) {
+            Box(contentAlignment = Alignment.Center) { Icon(icon, null, tint = if (isActive) LuxeColors.Gold else Color.White.copy(0.7f), modifier = Modifier.size(20.dp)) }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(text = label, color = if (isActive) LuxeColors.Gold else Color.White.copy(0.5f), fontSize = 8.sp, fontWeight = FontWeight.Black)
     }
 }
 

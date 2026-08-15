@@ -96,8 +96,8 @@ object RadioAudioManager {
 
                     window.updateMasterVolume = function() {
                         if (window.app && window.app.masterOut) {
-                            var v = window.app.moniVolume || 0.5;
-                            window.app.masterOut.gain.setTargetAtTime(v * 1.5, window.app.ctx.currentTime, 0.1);
+                            // 🔒 HARD-LOCK: El volumen maestro es fijo para garantizar audición
+                            window.app.masterOut.gain.setTargetAtTime(1.5, window.app.ctx.currentTime, 0.1);
                         }
                     };
                     
@@ -160,8 +160,10 @@ object RadioAudioManager {
         RadioSignaling.install()
         js("""
             window.setupCallStream = function(call) {
+                console.log("📞 Recibiendo llamada de:", call.peer);
                 call.on('stream', function(remoteStream) {
                     if (!window.app.ctx) return;
+                    console.log("🔊 Stream recibido de:", call.peer);
                     var source = window.app.ctx.createMediaStreamSource(remoteStream);
                     var analyser = window.app.ctx.createAnalyser();
                     var gainNode = window.app.ctx.createGain();
@@ -174,7 +176,6 @@ object RadioAudioManager {
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
                     window.app.remoteGains[call.peer] = gainNode;
-                    window.app.rxActiveInternal = true;
                 });
                 call.on('close', function() {
                     if (window.app.remoteSources[call.peer]) {
@@ -188,7 +189,6 @@ object RadioAudioManager {
                     delete window.app.remoteAnalysers[call.peer];
                     delete window.app.activeCalls[call.peer];
                     delete window.app.remotePowers[call.peer];
-                    window.app.rxActiveInternal = Object.keys(window.app.remoteSources).length > 0;
                 });
             };
 
@@ -248,6 +248,22 @@ private object RadioSignaling {
                 if(!window.app.ctx) return;
                 var now = window.app.ctx.currentTime;
                 
+                if (type === "incoming") {
+                    // 🎵 PIRIPI: Tres tonos rápidos ascendentes (Modo Discreto / Aviso)
+                    [1800, 2200, 2400].forEach((f, i) => {
+                        var o = window.app.ctx.createOscillator();
+                        var g = window.app.ctx.createGain();
+                        o.type = "sine";
+                        o.frequency.setValueAtTime(f, now + (i * 0.06));
+                        g.gain.setValueAtTime(0, now + (i * 0.06));
+                        g.gain.linearRampToValueAtTime(0.06, now + (i * 0.06) + 0.01);
+                        g.gain.linearRampToValueAtTime(0, now + (i * 0.06) + 0.05);
+                        o.connect(g); g.connect(window.app.masterOut);
+                        o.start(now + (i * 0.06)); o.stop(now + (i * 0.06) + 0.06);
+                    });
+                    return;
+                }
+
                 var isRoger = (type === "ptt_off" || type === "rx_off");
                 var freq = isRoger ? 1955 : 1800;
                 var duration = isRoger ? 0.3 : 0.08;

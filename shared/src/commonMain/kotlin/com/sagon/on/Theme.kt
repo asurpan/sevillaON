@@ -13,8 +13,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 object LuxeColors {
-    // Colores Base (REDISEÑO POOL BLUE TÁCTICO)
-    val Gold = Color(0xFF06B6D4) // Azul Piscina
+    // Colores Base (REDISEÑO TURQUESA TÁCTICO)
+    val Gold = Color(0xFF22D3EE) // Turquesa / Cyan vibrante
     val GoldDim = Color(0xFF0891B2).copy(0.6f)
     val Red = Color(0xFFEF4444)
     val Green = Color(0xFF22D3EE) // Cyan Brillante

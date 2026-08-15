@@ -115,6 +115,11 @@ fun main() {
                 if (window.setupCallStream) window.setupCallStream(call);
             }
         };
+
+        // 🛡️ SOLICITUD PROACTIVA DE MICRÓFONO
+        window.ensureMicAccess = function() {
+            if (window.requestMicPermission) window.requestMicPermission();
+        };
     """)
 
     RadioNetworkManager.install()
@@ -181,6 +186,15 @@ fun main() {
                                 val senderRoger = u.roger == true
                                 if (!isMe && senderRoger && win.playUiSound != null) win.playUiSound("rx_off")
                             }
+                            
+                            // 🎵 PIRIPI (Modo Discreto / Inicio Transmisión)
+                            if (!prevState && isTransmitting) {
+                                val isMe = (k == win.app.sessionID)
+                                if (!isMe && radioState.value.isDiscreteModeEnabled && win.playUiSound != null) {
+                                    win.playUiSound("incoming")
+                                }
+                            }
+                            
                             win.remoteTxStates[k] = isTransmitting
 
                             list.add(RemoteUser(
@@ -202,6 +216,11 @@ fun main() {
                     remoteUsersState.addAll(list)
                     val activeTx = list.find { it.isTransmitting }
                     remoteTransmitterName.value = activeTx?.nick
+                    
+                    // 📻 Sincronizar estado de recepción para el motor de audio y VOX
+                    if (win.app) {
+                        win.app.rxActiveInternal = (activeTx != null && activeTx.id != win.app.sessionID)
+                    }
                 } catch(e: Exception) { }
             },
             onChatUpdate = { data ->
@@ -235,7 +254,10 @@ fun main() {
             initialState = radioState.value,
             isFirstTime = false,
             onOnboardingFinish = { },
-            onPermissionRequest = { RadioNetworkManager.connect(it) },
+            onPermissionRequest = { 
+                RadioNetworkManager.connect(it) 
+                js("window.ensureMicAccess()")
+            },
             onLogout = { RadioPersistence.logout() },
             onInstallRequest = { },
             externalShowExitConfirm = false,

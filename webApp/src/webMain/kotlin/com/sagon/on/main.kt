@@ -154,6 +154,7 @@ fun main() {
         
         val notificationState = remember { mutableStateOf<AppNotification?>(null) }
         val radioState = remember { mutableStateOf(initialState) }
+        val remoteTransmitterName = remember { mutableStateOf<String?>(null) }
 
         // --- 📡 CONFIGURACIÓN DEL PUENTE DE EVENTOS ---
         RadioBridge.setupDispatchers(
@@ -195,7 +196,11 @@ fun main() {
                             if (myBase != userBase) continue
 
                             val isTransmitting = u.tx == true
+                            val userPwr = (u.pwr as? Double ?: 0.7).toFloat()
                             
+                            // 📡 ACTUALIZAR POTENCIA PARA EL MOTOR DE RUIDO/PISARSE
+                            win.app.remotePowers[k] = userPwr
+
                             // 📡 DETECCIÓN DE FIN DE TRANSMISIÓN (ROGER BEEP AJENO)
                             val prevState = win.remoteTxStates[k] ?: false
                             if (prevState && !isTransmitting) {
@@ -225,6 +230,10 @@ fun main() {
                     }
                     remoteUsersState.clear()
                     remoteUsersState.addAll(list)
+                    
+                    // 🔍 IDENTIFICAR TRANSMISOR ACTIVO (Para el panel ON AIR)
+                    val activeTx = list.find { it.isTransmitting }
+                    remoteTransmitterName.value = activeTx?.nick
                 } catch(e: Exception) { }
             },
             onChatUpdate = { data ->
@@ -361,7 +370,7 @@ fun main() {
             replayProgress = 0f,
             isReplayReady = false,
             remoteUsers = remoteUsersState,
-            remoteTransmitterName = null,
+            remoteTransmitterName = remoteTransmitterName.value,
             chatMessages = chatMessagesState,
             forceInitialScreen = false,
             audioIntegrity = true,

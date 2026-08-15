@@ -1,13 +1,13 @@
 package com.sagon.on
 
 /**
- * 🔒 HARD-LOCK: MOTOR DE MANOS LIBRES (VOX) PROFESIONAL v10.0
- * ESTADO: SELLADO TOTAL - HIGH-SENSITIVITY & VOICE-PRIORITY
+ * 🔒 HARD-LOCK: MOTOR DE MANOS LIBRES (VOX) PROFESIONAL v11.0
+ * ESTADO: SELLADO TOTAL - CARRIER STRENGTH & MULTI-USER OVERRIDE
  * 
- * ⚠️ ESTE MÓDULO ES EL "ALMA" DEL MICRÓFONO:
- * - Filtro Paso-Alto (150Hz) para conservar toda la energía vocal.
- * - Pre-amplificación del sensor para detección de susurros.
- * - Umbral dinámico ultra-rápido.
+ * ⚠️ ESTE MÓDULO GESTIONA LA MODULACIÓN VISUAL (LEDs):
+ * - Representa la Portadora (Carrier) según la potencia del emisor.
+ * - La voz oscila únicamente en los segmentos rojos finales.
+ * - Soporta el efecto de "pisarse" entre varios usuarios.
  */
 object ManosLibres {
     fun install() {
@@ -28,27 +28,18 @@ object ManosLibres {
                 .then(function(stream) {
                     window.app.rawStream = stream;
                     var micSrc = window.app.ctx.createMediaStreamSource(stream);
-                    
-                    // 🛡️ DSP: FILTRO DE VOZ (Corta solo el retumbe del motor, deja pasar la voz)
                     var voiceFilter = window.app.ctx.createBiquadFilter();
-                    voiceFilter.type = "highpass";
-                    voiceFilter.frequency.value = 150; 
-                    
-                    // Pre-amplificador para el sensor VOX
+                    voiceFilter.type = "highpass"; voiceFilter.frequency.value = 150; 
                     var sensorGain = window.app.ctx.createGain();
-                    sensorGain.gain.value = 2.5; // Aumentar sensibilidad de detección
-                    
+                    sensorGain.gain.value = 2.5; 
                     var compressor = window.app.ctx.createDynamicsCompressor();
                     compressor.threshold.value = -12; compressor.ratio.value = 8;
-                    
                     window.app.micAnalyser = window.app.ctx.createAnalyser();
                     window.app.micAnalyser.fftSize = 256;
-                    
                     micSrc.connect(voiceFilter);
                     voiceFilter.connect(sensorGain);
-                    sensorGain.connect(window.app.micAnalyser); // El sensor recibe señal potente
+                    sensorGain.connect(window.app.micAnalyser);
                     voiceFilter.connect(compressor);
-
                     if (window.app.moniGainNode) compressor.connect(window.app.moniGainNode);
                     if (window.app.txGate) compressor.connect(window.app.txGate);
                     return true;
@@ -74,26 +65,20 @@ object ManosLibres {
                     if (sum > 0) { peakLevel = max / 128; hasValidData = true; }
                 }
 
-                // --- 🤖 MOTOR VOX v10.0 ---
                 var manualPtt = window.app.pttStateInternal && !isTransmitting;
                 var rxActive = window.app.rxActiveInternal || false;
                 
-                // Seguimiento de ruido ambiente ultra-lento
                 if (hasValidData && !isTransmitting && !rxActive) {
                     noiseFloor = (peakLevel * 0.02) + (noiseFloor * 0.98);
                 }
 
                 if (window.app.voxActive && !rxActive && !window.app.isBeeping && !manualPtt && hasValidData) {
-                    
-                    // 🎚️ CURVA DE SENSIBILIDAD PROFESIONAL
                     var sens = (window.app.voxSens !== undefined) ? window.app.voxSens : 0.5;
                     var baseThreshold = 0.55 * Math.pow(0.005, sens); 
-                    
-                    // Umbral inteligente: Solo sube si el ruido es constante
                     var finalThreshold = baseThreshold + (noiseFloor * 0.5);
                     
                     if (peakLevel > finalThreshold) {
-                        counter = 18; // 300ms de mantenimiento
+                        counter = 18; 
                         if (!isTransmitting) {
                             isTransmitting = true;
                             if(window.broadcastPTT) window.broadcastPTT(true, window.app.rogerEnabled);
@@ -110,22 +95,39 @@ object ManosLibres {
                     if(window.broadcastPTT) window.broadcastPTT(false, window.app.rogerEnabled);
                 }
 
-                // --- 📟 LEDs Y QRM ---
+                // --- 📟 LÓGICA DE LEDs PROFESIONAL (CARRIER + MODULACIÓN) ---
                 var finalLevel = 0;
                 if (window.app.isTransmittingInternal || window.app.isBeeping) {
                     finalLevel = window.app.isBeeping ? 1.0 : 0.75 + Math.min(0.25, peakLevel * 0.8);
                 } else {
                     if (rxActive) {
-                        var maxRx = 0;
-                        Object.values(window.app.remoteAnalysers).forEach(function(ana) {
+                        var maxRxMod = 0;
+                        var maxPwr = 0;
+                        
+                        // Encontrar la señal más fuerte
+                        Object.keys(window.app.remoteAnalysers).forEach(function(id) {
+                            var ana = window.app.remoteAnalysers[id];
+                            var pwr = window.app.remotePowers[id] || 0.7;
+                            
                             var d = new Uint8Array(ana.fftSize);
                             ana.getByteTimeDomainData(d);
                             var m = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>m) m=v; }
-                            if(m > maxRx) maxRx = m;
+                            var mod = (m / 128);
+                            
+                            if (pwr > maxPwr) {
+                                maxPwr = pwr;
+                                maxRxMod = mod;
+                            }
                         });
-                        var rxMod = Math.min(0.85, (maxRx/128)*3.5);
-                        if (rxMod > 0.05) finalLevel = 0.65 + rxMod;
+
+                        // 📡 PORTADORA: Los LEDs marcan la potencia base (0.0 a 0.8 aprox)
+                        var carrierLevel = Math.min(0.8, maxPwr); 
+                        // 🎙️ VOZ: La oscilación se suma arriba, llegando a los ROJOS (0.8 a 1.0)
+                        var voiceOscillation = Math.min(0.2, maxRxMod * 0.5);
+                        
+                        finalLevel = carrierLevel + voiceOscillation;
                     }
+                    
                     if (finalLevel == 0) {
                         var noise = (window.app.currentNoiseTarget || 0);
                         if (noise >= 0.02) {

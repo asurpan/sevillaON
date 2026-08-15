@@ -11,7 +11,10 @@ import kotlinx.browser.window
 object RadioAudioManager {
     fun install() {
         js("""
-            window.app = window.app || { activeCalls: {}, remoteSources: {}, remoteAnalysers: {} };
+            window.app = window.app || { 
+                activeCalls: {}, remoteSources: {}, remoteAnalysers: {}, 
+                remoteGains: {}, remotePowers: {} 
+            };
             
             window.initAudio = function() {
                 if (window.app.ctx) {
@@ -161,13 +164,16 @@ object RadioAudioManager {
                     if (!window.app.ctx) return;
                     var source = window.app.ctx.createMediaStreamSource(remoteStream);
                     var analyser = window.app.ctx.createAnalyser();
+                    var gainNode = window.app.ctx.createGain();
                     analyser.fftSize = 256;
                     
                     source.connect(analyser);
-                    source.connect(window.app.filter);
+                    source.connect(gainNode);
+                    gainNode.connect(window.app.filter);
                     
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
+                    window.app.remoteGains[call.peer] = gainNode;
                     window.app.rxActiveInternal = true;
                 });
                 call.on('close', function() {
@@ -175,11 +181,48 @@ object RadioAudioManager {
                         window.app.remoteSources[call.peer].disconnect();
                         delete window.app.remoteSources[call.peer];
                     }
+                    if (window.app.remoteGains[call.peer]) {
+                        window.app.remoteGains[call.peer].disconnect();
+                        delete window.app.remoteGains[call.peer];
+                    }
                     delete window.app.remoteAnalysers[call.peer];
                     delete window.app.activeCalls[call.peer];
+                    delete window.app.remotePowers[call.peer];
                     window.app.rxActiveInternal = Object.keys(window.app.remoteSources).length > 0;
                 });
             };
+
+            // 📻 LÓGICA DE "PISARSE" (POWER PRIORITY)
+            function updateRemotePriorities() {
+                if(!window.app) return;
+                var peers = Object.keys(window.app.remoteSources);
+                if(peers.length <= 1) {
+                    peers.forEach(id => { if(window.app.remoteGains[id]) window.app.remoteGains[id].gain.value = 1.0; });
+                    return;
+                }
+
+                // Encontrar la potencia máxima actual
+                var maxPwr = 0;
+                peers.forEach(id => {
+                    var p = window.app.remotePowers[id] || 0.7;
+                    if(p > maxPwr) maxPwr = p;
+                });
+
+                peers.forEach(id => {
+                    var gain = window.app.remoteGains[id];
+                    if(!gain) return;
+                    var p = window.app.remotePowers[id] || 0.7;
+                    
+                    if(p >= maxPwr) {
+                        gain.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.1);
+                    } else {
+                        // El más débil se oye de fondo con ruido (efecto pisado)
+                        var reduction = Math.max(0.1, 1.0 - (maxPwr - p));
+                        gain.gain.setTargetAtTime(reduction * 0.3, window.app.ctx.currentTime, 0.1);
+                    }
+                });
+            }
+            setInterval(updateRemotePriorities, 200);
         """)
         ManosLibres.install()
         MoniGuard.install()

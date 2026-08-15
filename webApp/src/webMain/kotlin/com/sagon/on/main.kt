@@ -276,12 +276,14 @@ fun main() {
 
                     remoteUsersState.clear()
                     remoteUsersState.addAll(list)
-                    val activeTx = list.find { it.isTransmitting }
-                    remoteTransmitterName.value = activeTx?.nick
+                    
+                    // 🛡️ FIX: Detectar si alguien que NO soy yo está transmitiendo
+                    val activeRemoteTx = list.find { it.isTransmitting && it.id != win.app.sessionID }
+                    remoteTransmitterName.value = activeRemoteTx?.nick
                     
                     // 📻 Sincronizar estado de recepción para el motor de audio y VOX
                     if (win.app) {
-                        win.app.rxActiveInternal = (activeTx != null && activeTx.id != win.app.sessionID)
+                        win.app.rxActiveInternal = (activeRemoteTx != null)
                     }
                 } catch(e: Exception) { }
             },

@@ -1,20 +1,20 @@
 package com.sagon.on
 
 /**
- * 🔒 HARD-LOCK: MOTOR DE MANOS LIBRES (VOX) PROFESIONAL v9.0
- * ESTADO: SELLADO TOTAL - ULTRA-SENSITIVE & ADAPTIVE
+ * 🔒 HARD-LOCK: MOTOR DE MANOS LIBRES (VOX) PROFESIONAL v10.0
+ * ESTADO: SELLADO TOTAL - HIGH-SENSITIVITY & VOICE-PRIORITY
  * 
  * ⚠️ ESTE MÓDULO ES EL "ALMA" DEL MICRÓFONO:
- * - Filtro Vocal optimizado (800Hz) para capturar toda la energía de la voz.
- * - Aprendizaje de ruido de fondo asimétrico (No se bloquea con la voz).
- * - Ataque instantáneo para no perder la primera sílaba.
+ * - Filtro Paso-Alto (150Hz) para conservar toda la energía vocal.
+ * - Pre-amplificación del sensor para detección de susurros.
+ * - Umbral dinámico ultra-rápido.
  */
 object ManosLibres {
     fun install() {
         js("""
             var counter = 0;
             var isTransmitting = false;
-            var noiseFloor = 0.02; // Estimación base más baja
+            var noiseFloor = 0.01; 
 
             window.manosLibres_requestMic = function() {
                 if (window.app.rawStream) return Promise.resolve(true);
@@ -29,11 +29,14 @@ object ManosLibres {
                     window.app.rawStream = stream;
                     var micSrc = window.app.ctx.createMediaStreamSource(stream);
                     
-                    // 🛡️ DSP: FILTRO DE VOZ HUMANA OPTIMIZADO (800Hz)
-                    var cleanFilter = window.app.ctx.createBiquadFilter();
-                    cleanFilter.type = "bandpass";
-                    cleanFilter.frequency.value = 800; // Captura el "cuerpo" de la voz
-                    cleanFilter.Q.value = 0.7; // Filtro más suave y natural
+                    // 🛡️ DSP: FILTRO DE VOZ (Corta solo el retumbe del motor, deja pasar la voz)
+                    var voiceFilter = window.app.ctx.createBiquadFilter();
+                    voiceFilter.type = "highpass";
+                    voiceFilter.frequency.value = 150; 
+                    
+                    // Pre-amplificador para el sensor VOX
+                    var sensorGain = window.app.ctx.createGain();
+                    sensorGain.gain.value = 2.5; // Aumentar sensibilidad de detección
                     
                     var compressor = window.app.ctx.createDynamicsCompressor();
                     compressor.threshold.value = -12; compressor.ratio.value = 8;
@@ -41,9 +44,10 @@ object ManosLibres {
                     window.app.micAnalyser = window.app.ctx.createAnalyser();
                     window.app.micAnalyser.fftSize = 256;
                     
-                    micSrc.connect(cleanFilter);
-                    cleanFilter.connect(window.app.micAnalyser);
-                    cleanFilter.connect(compressor);
+                    micSrc.connect(voiceFilter);
+                    voiceFilter.connect(sensorGain);
+                    sensorGain.connect(window.app.micAnalyser); // El sensor recibe señal potente
+                    voiceFilter.connect(compressor);
 
                     if (window.app.moniGainNode) compressor.connect(window.app.moniGainNode);
                     if (window.app.txGate) compressor.connect(window.app.txGate);
@@ -57,7 +61,6 @@ object ManosLibres {
                     return;
                 }
 
-                var finalLevel = 0;
                 var peakLevel = 0;
                 var hasValidData = false;
                 
@@ -71,31 +74,26 @@ object ManosLibres {
                     if (sum > 0) { peakLevel = max / 128; hasValidData = true; }
                 }
 
-                // --- 🤖 MOTOR VOX ADAPTATIVO v9.0 ---
+                // --- 🤖 MOTOR VOX v10.0 ---
                 var manualPtt = window.app.pttStateInternal && !isTransmitting;
                 var rxActive = window.app.rxActiveInternal || false;
                 
-                // 🔍 SEGUIMIENTO DE RUIDO ASIMÉTRICO:
-                // Baja rápido si hay silencio, sube muy lento para no confundir voz con ruido.
+                // Seguimiento de ruido ambiente ultra-lento
                 if (hasValidData && !isTransmitting && !rxActive) {
-                    if (peakLevel < noiseFloor) {
-                        noiseFloor = (peakLevel * 0.1) + (noiseFloor * 0.9);
-                    } else {
-                        noiseFloor = (peakLevel * 0.001) + (noiseFloor * 0.999);
-                    }
+                    noiseFloor = (peakLevel * 0.02) + (noiseFloor * 0.98);
                 }
 
                 if (window.app.voxActive && !rxActive && !window.app.isBeeping && !manualPtt && hasValidData) {
                     
-                    // 🎚️ CURVA DE SENSIBILIDAD MEJORADA
+                    // 🎚️ CURVA DE SENSIBILIDAD PROFESIONAL
                     var sens = (window.app.voxSens !== undefined) ? window.app.voxSens : 0.5;
-                    var baseThreshold = 0.85 * Math.pow(0.002, sens); 
+                    var baseThreshold = 0.55 * Math.pow(0.005, sens); 
                     
-                    // Umbral dinámico con protección anti-viento/moto
-                    var triggerThreshold = baseThreshold + (noiseFloor * 0.8);
+                    // Umbral inteligente: Solo sube si el ruido es constante
+                    var finalThreshold = baseThreshold + (noiseFloor * 0.5);
                     
-                    if (peakLevel > triggerThreshold) {
-                        counter = 20; // 350ms de sostenido
+                    if (peakLevel > finalThreshold) {
+                        counter = 18; // 300ms de mantenimiento
                         if (!isTransmitting) {
                             isTransmitting = true;
                             if(window.broadcastPTT) window.broadcastPTT(true, window.app.rogerEnabled);
@@ -113,8 +111,9 @@ object ManosLibres {
                 }
 
                 // --- 📟 LEDs Y QRM ---
+                var finalLevel = 0;
                 if (window.app.isTransmittingInternal || window.app.isBeeping) {
-                    finalLevel = window.app.isBeeping ? 1.0 : 0.75 + Math.min(0.25, peakLevel * 2.5);
+                    finalLevel = window.app.isBeeping ? 1.0 : 0.75 + Math.min(0.25, peakLevel * 0.8);
                 } else {
                     if (rxActive) {
                         var maxRx = 0;

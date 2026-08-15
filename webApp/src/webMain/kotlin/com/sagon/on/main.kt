@@ -181,7 +181,8 @@ fun main() {
                             val userNick = (u.nick as? String ?: "ESTACIÓN").trim().uppercase()
                             val lastSeen = (u.lastSeen as? Double ?: 0.0)
                             
-                            // 🛡️ FILTRO ZOMBI AGRESIVO (15s)
+                            // 🛡️ FILTRO FANTASMAS (Nombres cortos o zombis)
+                            if (userNick.length < 3) continue
                             if (now - lastSeen > 15000) continue 
                             if (nicksSeen.contains(userNick)) continue
                             nicksSeen.add(userNick)

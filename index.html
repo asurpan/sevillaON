@@ -330,12 +330,22 @@
 
     <div id="radio-root"></div>
 
-    <!-- 🛡️ MOTOR DE SUPERVIVENCIA IOS (SILENCIO INFINITO) -->
+    <!-- 🛡️ MOTOR DE SUPERVIVENCIA GLOBAL (ANDROID/IOS/CHROME) -->
     <audio id="ios-survival-audio" loop playsinline>
         <source src="data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" type="audio/wav">
     </audio>
 
     <script>
+        // 🔒 RE-ACTIVACIÓN AUTOMÁTICA EN CHROME/ANDROID
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                if (window.app && window.app.ctx && window.app.ctx.state === 'suspended') {
+                    window.app.ctx.resume();
+                }
+                const survivalAudio = document.getElementById('ios-survival-audio');
+                if (survivalAudio && survivalAudio.paused) survivalAudio.play().catch(e => {});
+            }
+        });
         function launchRadio() {
             const landing = document.getElementById('landing-ui');
             const radio = document.getElementById('radio-root');

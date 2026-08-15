@@ -40,27 +40,34 @@ object RadioAudioManager {
                     window.app.masterRxGain.connect(window.app.compressor);
                     window.app.compressor.connect(window.app.masterOut);
                     
+                    // --- 🌊 GENERADOR DE RUIDO MARRÓN (QRM REALISTA) ---
                     var bufferSize = 2 * window.app.ctx.sampleRate,
                         noiseBuffer = window.app.ctx.createBuffer(1, bufferSize, window.app.ctx.sampleRate),
                         output = noiseBuffer.getChannelData(0);
-                    for (var i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
+                    var lastOut = 0.0;
+                    for (var i = 0; i < bufferSize; i++) {
+                        var white = Math.random() * 2 - 1;
+                        output[i] = (lastOut + (0.02 * white)) / 1.02;
+                        lastOut = output[i];
+                        output[i] *= 3.5; // Compensación de volumen
+                    }
                     
-                    var whiteNoise = window.app.ctx.createBufferSource();
-                    whiteNoise.buffer = noiseBuffer;
-                    whiteNoise.loop = true;
+                    var noiseSource = window.app.ctx.createBufferSource();
+                    noiseSource.buffer = noiseBuffer;
+                    noiseSource.loop = true;
                     
                     window.app.noise = window.app.ctx.createGain();
-                    window.app.noise.gain.value = 0; // Empieza en silencio hasta que el squelch mande
+                    window.app.noise.gain.value = 0; 
                     window.app.currentNoiseTarget = 0;
                     
-                    whiteNoise.connect(window.app.noise);
-                    window.app.noise.connect(window.app.compressor);
-                    whiteNoise.start();
+                    noiseSource.connect(window.app.noise);
+                    // 📻 Conectar al filtro para que tenga textura de radio
+                    window.app.noise.connect(window.app.filter); 
+                    noiseSource.start();
 
-                    // --- 🔊 CONTROL DINÁMICO DE SQUELCH ---
                     window.setNoiseVolume = function(v) {
                         if (!window.app.noise || window.app.isTransmittingInternal) return;
-                        window.app.currentNoiseTarget = v * 0.02; // Escala de ruido QRM
+                        window.app.currentNoiseTarget = v * 0.25; // Escala ajustada para Brown Noise
                         window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, window.app.ctx.currentTime, 0.1);
                     };
                     

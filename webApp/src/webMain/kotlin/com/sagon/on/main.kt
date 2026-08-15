@@ -235,10 +235,23 @@ fun main() {
                             
                             win.remoteTxStates[k] = isTransmitting
 
-                            // 🎵 AVISO ENTRADA USUARIO (BEEP GRAVE)
+                            // 🎵 AVISO ENTRADA USUARIO (BEEP O NOTIFICACIÓN AMIGO)
                             if (k != win.app.sessionID && !usersNotified.contains(k)) {
                                 usersNotified.add(k)
-                                if (win.playUiSound != null) win.playUiSound("user_in")
+                                if (radioState.value.friends.contains(userNick)) {
+                                    // Es un amigo: Notificación especial
+                                    if (win.playUiSound != null) win.playUiSound("incoming")
+                                    notificationState.value = AppNotification(
+                                        title = "¡AMIGO EN FRECUENCIA!",
+                                        message = "Tu compañero $userNick acaba de entrar en ${win.app.currentCity}.",
+                                        type = NotificationType.Success
+                                    )
+                                    // Intentar notificación nativa si estamos en Android
+                                    js("if(window.AndroidApp && window.AndroidApp.showNotification) window.AndroidApp.showNotification('AMIGO CONECTADO', 'El operador ' + userNick + ' está en frecuencia.');")
+                                } else {
+                                    // Usuario normal: Solo beep grave
+                                    if (win.playUiSound != null) win.playUiSound("user_in")
+                                }
                             }
 
                             list.add(RemoteUser(
@@ -248,6 +261,7 @@ fun main() {
                                 city = u.city as? String ?: "SEVILLA",
                                 channel = u.channel as? String ?: "SEVILLA",
                                 txPower = userPwr,
+                                isFriend = radioState.value.friends.contains(userNick),
                                 roger = (u.roger == true)
                             ))
                             

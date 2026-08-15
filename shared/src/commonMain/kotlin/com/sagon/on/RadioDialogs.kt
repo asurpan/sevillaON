@@ -38,7 +38,7 @@ enum class RadioDialogType {
     ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, VOX, MONI, ROGER, REVERB, CHAT, 
     INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, 
     BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, DISCRETE, SELECT_NICK, 
-    HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, USER_ACTIONS
+    HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, USER_ACTIONS, SQUELCH_CONTROL, GAIN_CONTROL
 }
 
 @Composable
@@ -808,6 +808,34 @@ fun RadioDialogs(
                 }
             },
             confirmButton = { LuxeButton("CERRAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black) }
+        )
+        RadioDialogType.SQUELCH_CONTROL -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = { Text("NIVEL DE SQUELCH", fontWeight = FontWeight.Black, color = LuxeColors.Gold) },
+            text = {
+                Column {
+                    Text("Filtra el ruido de fondo. A mayor nivel, más limpia la señal pero menos sensibilidad.", fontSize = 12.sp, color = Color.White.copy(0.6f))
+                    Spacer(Modifier.height(24.dp))
+                    EliteSlider("SQUELCH", state.squelch) { onStateChange(state.copy(squelch = it)) }
+                }
+            },
+            confirmButton = { LuxeButton("ACEPTAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp)) }
+        )
+        RadioDialogType.GAIN_CONTROL -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = { Text("GANANCIA DE RF", fontWeight = FontWeight.Black, color = LuxeColors.Gold) },
+            text = {
+                Column {
+                    Text("Ajusta la sensibilidad de recepción de tu antena.", fontSize = 12.sp, color = Color.White.copy(0.6f))
+                    Spacer(Modifier.height(24.dp))
+                    EliteSlider("RF GAIN", state.rfGain) { onStateChange(state.copy(rfGain = it)) }
+                }
+            },
+            confirmButton = { LuxeButton("ACEPTAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp)) }
         )
         RadioDialogType.HELP_SQUELCH -> AlertDialog(
             onDismissRequest = onDismiss,

@@ -200,7 +200,9 @@ fun main() {
             externalShowExitConfirm = false,
             onExternalExitRequest = { _, _ -> },
             onShareRequest = { _, _, _, _, _, _ -> },
-            onNoiseVolumeChange = { },
+            onNoiseVolumeChange = { vol -> 
+                js("if(window.setNoiseVolume) window.setNoiseVolume(vol);")
+            },
             onMoniVolumeChange = { },
             onEchoChange = { _, _ -> },
             onCityChange = { },

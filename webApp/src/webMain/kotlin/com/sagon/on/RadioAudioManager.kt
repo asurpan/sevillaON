@@ -31,7 +31,6 @@ object RadioAudioManager {
                     window.app.compressor.threshold.value = -20;
                     window.app.compressor.ratio.value = 8;
 
-                    // 📻 FILTRO DE RADIOAFICIONADO (Bandpass Estrecho)
                     window.app.filter = window.app.ctx.createBiquadFilter();
                     window.app.filter.type = "bandpass"; 
                     window.app.filter.frequency.value = 1500; 
@@ -41,7 +40,6 @@ object RadioAudioManager {
                     window.app.masterRxGain.connect(window.app.compressor);
                     window.app.compressor.connect(window.app.masterOut);
                     
-                    // --- 🌊 GENERADOR DE RUIDO QRM ---
                     var bufferSize = 2 * window.app.ctx.sampleRate,
                         noiseBuffer = window.app.ctx.createBuffer(1, bufferSize, window.app.ctx.sampleRate),
                         output = noiseBuffer.getChannelData(0);
@@ -52,18 +50,26 @@ object RadioAudioManager {
                     whiteNoise.loop = true;
                     
                     window.app.noise = window.app.ctx.createGain();
-                    window.app.noise.gain.value = 0.008; // Ruido de fondo muy sutil
+                    window.app.noise.gain.value = 0; // Empieza en silencio hasta que el squelch mande
+                    window.app.currentNoiseTarget = 0;
                     
                     whiteNoise.connect(window.app.noise);
                     window.app.noise.connect(window.app.compressor);
                     whiteNoise.start();
+
+                    // --- 🔊 CONTROL DINÁMICO DE SQUELCH ---
+                    window.setNoiseVolume = function(v) {
+                        if (!window.app.noise || window.app.isTransmittingInternal) return;
+                        window.app.currentNoiseTarget = v * 0.02; // Escala de ruido QRM
+                        window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, window.app.ctx.currentTime, 0.1);
+                    };
                     
                     window.app.txBus = window.app.ctx.createMediaStreamDestination();
                     window.app.txGate = window.app.ctx.createGain();
                     window.app.txGate.gain.value = 0;
                     window.app.txGate.connect(window.app.txBus);
                     
-                    console.log("🏗️ [AUDIO] Motor Radioaficionado listo.");
+                    console.log("🏗️ [AUDIO] Motor Radioaficionado (Squelch Enabled) listo.");
                 } catch(e) { console.error("Error Audio:", e); }
             };
 
@@ -116,14 +122,13 @@ object RadioAudioManager {
                 if (active) {
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: true, pwr: power || 0.7 });
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
-                    // 🛡️ SILENCIO ABSOLUTO AL TRANSMITIR (COMO RADIO CB REAL)
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(0, now, 0.01);
                 } else {
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now, 0.01);
-                    // 🔊 RESTAURAR RECEPCIÓN Y RUIDO DE FONDO
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(2.0, now, 0.2);
-                    if (window.app.noise) window.app.noise.gain.setTargetAtTime(0.008, now, 0.2);
+                    // Restaurar el ruido al nivel que dicte el Squelch
+                    if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.2);
                     
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
                     if (roger && window.playUiSound) window.playUiSound("ptt_off");
@@ -181,9 +186,9 @@ private object RadioSignaling {
                 if(window.app.ctx.state === 'suspended') window.app.ctx.resume();
                 
                 var now = window.app.ctx.currentTime;
-                // 📻 ROGER BEEP UNIFICADO A 1955Hz
+                // 📻 ROGER BEEP PERFECTO: 1955Hz - 0.3s
                 var freq = 1955;
-                var duration = 0.25;
+                var duration = 0.3;
 
                 if (type === "ptt_off") {
                     window.app.isBeeping = true;
@@ -196,7 +201,9 @@ private object RadioSignaling {
                 o.type = "triangle"; 
                 o.frequency.setValueAtTime(freq, now);
                 
-                g.gain.setValueAtTime(0.1, now); 
+                // Envolvente plana para ataque profesional
+                g.gain.setValueAtTime(0.12, now); 
+                g.gain.setValueAtTime(0.12, now + duration - 0.02);
                 g.gain.linearRampToValueAtTime(0.0, now + duration);
                 
                 o.connect(g); 

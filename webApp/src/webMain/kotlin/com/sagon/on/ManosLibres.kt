@@ -21,7 +21,12 @@ object ManosLibres {
                 if (window.initAudio) window.initAudio();
                 
                 var constraints = { 
-                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 } 
+                    audio: { 
+                        echoCancellation: true, 
+                        noiseSuppression: false, 
+                        autoGainControl: false, 
+                        channelCount: 1 
+                    } 
                 };
 
                 return navigator.mediaDevices.getUserMedia(constraints)

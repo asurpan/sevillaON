@@ -143,6 +143,17 @@ object RadioAudioManager {
                     window.app.keepAliveGain.connect(window.app.txBus);
                     window.app.keepAlive.start();
 
+                    // 🛡️ DITHER ANTI-GATE: Ruido de confort infinitesimal para evitar que el navegador anule la voz.
+                    // Genera un flujo de datos constante para que el canal WebRTC nunca se cierre por silencio.
+                    var ditherBuffer = window.app.ctx.createBuffer(1, window.app.ctx.sampleRate, window.app.ctx.sampleRate),
+                        ditherData = ditherBuffer.getChannelData(0);
+                    for (var i = 0; i < ditherData.length; i++) { ditherData[i] = (Math.random() * 2 - 1) * 0.0001; }
+                    var ditherSource = window.app.ctx.createBufferSource();
+                    ditherSource.buffer = ditherBuffer;
+                    ditherSource.loop = true;
+                    ditherSource.connect(window.app.txBus);
+                    ditherSource.start();
+
                     window.app.moniGainNode = window.app.ctx.createGain();
                     window.app.moniGainNode.gain.value = 0;
                     window.app.moniGainNode.connect(window.app.masterOut);

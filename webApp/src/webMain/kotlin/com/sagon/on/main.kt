@@ -51,17 +51,21 @@ fun main() {
                     var currentRoomUsers = 0;
                     var roomSuffix = "";
                     var subIndex = 1;
+                    var now = Date.now();
                     
+                    // 🛡️ FILTRO DE SESIONES REALES: Solo contar usuarios activos (vistos hace menos de 30s)
                     Object.values(users).forEach(function(u) {
-                        if (u.city === baseCity) currentRoomUsers++;
+                        var lastSeen = u.lastSeen || 0;
+                        if (u.city === baseCity && (now - lastSeen < 30000)) currentRoomUsers++;
                     });
                     
-                    while (currentRoomUsers >= 10) { // 🚀 CAPACIDAD AUMENTADA: 10 usuarios por sala
+                    while (currentRoomUsers >= 10) { 
                         subIndex++;
                         roomSuffix = "-" + subIndex;
                         currentRoomUsers = 0;
                         Object.values(users).forEach(function(u) {
-                            if (u.city === baseCity + roomSuffix) currentRoomUsers++;
+                            var lastSeen = u.lastSeen || 0;
+                            if (u.city === baseCity + roomSuffix && (now - lastSeen < 30000)) currentRoomUsers++;
                         });
                     }
                     
@@ -368,6 +372,14 @@ fun main() {
             onVoxSync = { },
             onRoomUpdate = { newRoom ->
                 radioState.value = radioState.value.copy(city = newRoom, channel = newRoom)
+                // 🛡️ RE-SINCRONIZACIÓN DE FIREBASE AL CAMBIAR DE CANAL/SALA
+                val w = window.asDynamic()
+                if (w.app != null && w.app.db != null && w.app.sessionID != null) {
+                    val updates: dynamic = js("{}")
+                    updates.city = newRoom
+                    updates.channel = newRoom
+                    w.app.db.ref("users/" + w.app.sessionID).update(updates)
+                }
             },
             onPttLive = { isPttLiveState.value = it },
             onVolumeSync = { newVol ->
@@ -468,7 +480,10 @@ fun main() {
             onIgnoreBatteryOptimizations = { },
             onGpsRequest = { it(null) },
             onGpsCityRequest = { it(null) },
-            onPlaySound = { },
+            onPlaySound = { type ->
+                val w = window.asDynamic()
+                if (w.playUiSound != null) w.playUiSound(type)
+            },
             showInstallPrompt = false,
             onInstallConfirm = { },
             onInstallDismiss = { },

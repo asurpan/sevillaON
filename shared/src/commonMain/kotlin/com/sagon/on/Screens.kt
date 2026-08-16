@@ -215,6 +215,7 @@ fun RadioPanel(
     onBlock: (String) -> Unit,
     onReplay: () -> Unit,
     onNotification: (String, String, NotificationType) -> Unit,
+    onPlaySound: (String) -> Unit = {},
     pendingDialog: RadioDialogType?,
     onPendingDialogChange: (RadioDialogType?, String?) -> Unit
 ) {
@@ -226,45 +227,47 @@ fun RadioPanel(
     LaunchedEffect(externalPttBlocked) { if (externalPttBlocked) isPttBlockedByRx = true }
     LaunchedEffect(isPttBlockedByRx) { if (isPttBlockedByRx) { delay(800); isPttBlockedByRx = false } }
 
-    // 🚀 LÓGICA DE ESCANEO PROFESIONAL
+    val currentOnStateChange by rememberUpdatedState(onStateChange)
+    val currentOnPlaySound by rememberUpdatedState(onPlaySound)
+    val currentRadioState by rememberUpdatedState(state)
+
+    // 🛡️ REGLA DE ORO: EL PTT SIEMPRE DETIENE EL ESCANEO
+    val isTransmitting = (pttLocked || externalPtt || isBeeping) && !isPttBlockedByRx
+    LaunchedEffect(isTransmitting) {
+        if (isTransmitting && state.isScanning) {
+            currentOnStateChange(currentRadioState.copy(isScanning = false))
+        }
+    }
+
+    // 🚀 MOTOR DE ESCANEO PROFESIONAL (ORDEN NUMÉRICO 1-40)
     LaunchedEffect(state.isScanning) {
         if (state.isScanning) {
+            val channelToCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }
+            val currentCityBase = state.city.split("-")[0].uppercase()
+            var currentCh = CITY_CHANNELS[currentCityBase] ?: 1
+            
             while (state.isScanning) {
-                // 🛡️ REGLA DE EMISORA REAL: Si el Squelch está abierto (hay ruido), el escaneo se pausa
-                val isSquelchOpen = state.rfGain > state.squelch
+                val isSquelchOpen = currentRadioState.rfGain > currentRadioState.squelch
                 if (isSquelchOpen && !rx) {
                     delay(500)
                     continue
                 }
 
-                val sortedCities = CITY_CHANNELS.keys.sorted()
-                val currentIdx = sortedCities.indexOf(state.city.split("-")[0].uppercase())
-                val nextIdx = (currentIdx + 1) % sortedCities.size
-                val nextCity = sortedCities[nextIdx]
+                currentCh = if (currentCh >= 40) 1 else currentCh + 1
+                val nextCity = channelToCity[currentCh] ?: "SORIA"
                 
-                onStateChange(state.copy(city = nextCity, channel = nextCity))
+                currentOnStateChange(currentRadioState.copy(city = nextCity, channel = nextCity))
+                currentOnPlaySound("switch")
                 
-                // Esperar a ver si hay portadora activa
-                delay(800) // Tiempo de enganche
+                delay(400) // 🚀 ESCANEO MÁS RÁPIDO (Velocidad de equipo real)
                 
                 if (rx) {
-                    // ¡Señal encontrada! Esperar 3 segundos
-                    delay(3000)
-                    // Si después de 3s sigue habiendo señal y NO hemos pulsado PTT, seguimos
-                    if (!pttLocked) {
-                        continue
-                    } else {
-                        // Si pulsamos PTT, detenemos el escaneo
-                        onStateChange(state.copy(isScanning = false))
-                        break
-                    }
+                    delay(3000) 
+                    if (isTransmitting) break // Ya manejado por el LaunchedEffect superior
                 }
-                delay(200) // Salto rápido si no hay nada
             }
         }
     }
-
-    val isTransmitting = (pttLocked || externalPtt || isBeeping) && !isPttBlockedByRx
     
     val noiseVol = if (!rx && !isTransmitting) (if (state.squelch > state.rfGain) 0f else (state.rfGain - state.squelch)).coerceIn(0f, 1f) else 0f
     
@@ -339,14 +342,18 @@ fun RadioPanel(
                                 Spacer(Modifier.height(8.dp))
                                 
                                 // CANAL PRINCIPAL
-                                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().height(100.dp), 
+                                    verticalAlignment = Alignment.CenterVertically, 
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
                                     val blinkAlpha = remember { Animatable(1f) }
                                     LaunchedEffect(Unit) {
                                         while(true) {
-                                            delay((3000..8000).random().toLong()) // Espera aleatoria entre parpadeos
+                                            delay((3000..8000).random().toLong())
                                             blinkAlpha.animateTo(0.3f, tween(150))
                                             blinkAlpha.animateTo(1f, tween(150))
-                                            if ((0..1).random() == 1) { // A veces hace un doble parpadeo
+                                            if ((0..1).random() == 1) {
                                                 delay(100)
                                                 blinkAlpha.animateTo(0.3f, tween(100))
                                                 blinkAlpha.animateTo(1f, tween(100))
@@ -355,90 +362,103 @@ fun RadioPanel(
                                     }
 
                                     // 🔼 BOTÓN SUBIR CANAL
-                                    IconButton(
-                                        onClick = { 
-                                            val sortedCities = CITY_CHANNELS.keys.sorted()
-                                            val currentIdx = sortedCities.indexOf(state.city.split("-")[0].uppercase())
-                                            if (currentIdx != -1) {
-                                                val nextIdx = (currentIdx + 1) % sortedCities.size
-                                                onStateChange(state.copy(city = sortedCities[nextIdx], channel = sortedCities[nextIdx]))
-                                            }
-                                        },
-                                        modifier = Modifier.size(32.dp).pointerInput(Unit) {
-                                            detectTapGestures(
-                                                onLongPress = { 
+                                    Surface(
+                                        modifier = Modifier.size(54.dp),
+                                        shape = CircleShape,
+                                        color = Color.White.copy(0.05f),
+                                        border = BorderStroke(1.dp, Color.White.copy(0.1f))
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize().combinedClickable(
+                                                onClick = {
+                                                    onPlaySound("switch")
+                                                    val chToCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }
+                                                    val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
+                                                    val nextCh = if (curCh >= 40) 1 else curCh + 1
+                                                    val nextCity = chToCity[nextCh] ?: "SORIA"
+                                                    onStateChange(state.copy(city = nextCity, channel = nextCity))
+                                                },
+                                                onLongClick = {
                                                     if (state.rfGain > state.squelch) {
                                                         onNotification("AVISO ESCANEO", "CIERRA EL SQUELCH PARA PODER ESCANEAR", NotificationType.Warning)
                                                     } else {
+                                                        onPlaySound("switch")
                                                         onStateChange(state.copy(isScanning = true)) 
                                                     }
-                                                },
-                                                onTap = {
-                                                    val sortedCities = CITY_CHANNELS.keys.sorted()
-                                                    val currentIdx = sortedCities.indexOf(state.city.split("-")[0].uppercase())
-                                                    if (currentIdx != -1) {
-                                                        val nextIdx = (currentIdx + 1) % sortedCities.size
-                                                        onStateChange(state.copy(city = sortedCities[nextIdx], channel = sortedCities[nextIdx]))
-                                                    }
                                                 }
-                                            )
+                                            ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Rounded.KeyboardArrowUp, null, tint = LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(36.dp))
                                         }
-                                    ) {
-                                        Icon(Icons.Rounded.KeyboardArrowUp, null, tint = LuxeColors.Gold.copy(0.6f))
                                     }
 
-                                    Spacer(Modifier.width(4.dp))
+                                    Spacer(Modifier.width(12.dp))
 
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    // 🛡️ BLOQUE CENTRAL FIJO (BLINDAJE TOTAL CONTRA MOVIMIENTO)
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally, 
+                                        modifier = Modifier.width(140.dp) 
+                                    ) {
                                         Text(
                                             text = "CH ${CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: "00"}", 
                                             color = LuxeColors.Gold, 
-                                            fontSize = 32.sp, 
+                                            fontSize = 38.sp, 
                                             fontWeight = FontWeight.Black,
                                             modifier = Modifier.clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
                                         )
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically, 
+                                            horizontalArrangement = Arrangement.Center,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
                                             IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(20.dp)) {
                                                 Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold.copy(0.8f), modifier = Modifier.size(12.dp).graphicsLayer { alpha = blinkAlpha.value })
                                             }
                                             Spacer(Modifier.width(4.dp))
-                                            Text(text = state.city.split("-")[0], color = Color.White.copy(0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                            Text(
+                                                text = state.city.split("-")[0], 
+                                                color = Color.White.copy(0.6f), 
+                                                fontSize = 11.sp, 
+                                                fontWeight = FontWeight.Bold, 
+                                                maxLines = 1, 
+                                                modifier = Modifier.basicMarquee()
+                                            )
                                         }
                                     }
 
-                                    Spacer(Modifier.width(4.dp))
+                                    Spacer(Modifier.width(12.dp))
 
                                     // 🔽 BOTÓN BAJAR CANAL
-                                    IconButton(
-                                        onClick = { 
-                                            val sortedCities = CITY_CHANNELS.keys.sorted()
-                                            val currentIdx = sortedCities.indexOf(state.city.split("-")[0].uppercase())
-                                            if (currentIdx != -1) {
-                                                val nextIdx = if (currentIdx - 1 < 0) sortedCities.size - 1 else currentIdx - 1
-                                                onStateChange(state.copy(city = sortedCities[nextIdx], channel = sortedCities[nextIdx]))
-                                            }
-                                        },
-                                        modifier = Modifier.size(32.dp).pointerInput(Unit) {
-                                            detectTapGestures(
-                                                onLongPress = { 
+                                    Surface(
+                                        modifier = Modifier.size(54.dp),
+                                        shape = CircleShape,
+                                        color = Color.White.copy(0.05f),
+                                        border = BorderStroke(1.dp, Color.White.copy(0.1f))
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize().combinedClickable(
+                                                onClick = {
+                                                    onPlaySound("switch")
+                                                    val chToCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }
+                                                    val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
+                                                    val nextCh = if (curCh <= 1) 40 else curCh - 1
+                                                    val nextCity = chToCity[nextCh] ?: "SORIA"
+                                                    onStateChange(state.copy(city = nextCity, channel = nextCity))
+                                                },
+                                                onLongClick = {
                                                     if (state.rfGain > state.squelch) {
                                                         onNotification("AVISO ESCANEO", "CIERRA EL SQUELCH PARA PODER ESCANEAR", NotificationType.Warning)
                                                     } else {
+                                                        onPlaySound("switch")
                                                         onStateChange(state.copy(isScanning = true)) 
                                                     }
-                                                },
-                                                onTap = {
-                                                    val sortedCities = CITY_CHANNELS.keys.sorted()
-                                                    val currentIdx = sortedCities.indexOf(state.city.split("-")[0].uppercase())
-                                                    if (currentIdx != -1) {
-                                                        val nextIdx = if (currentIdx - 1 < 0) sortedCities.size - 1 else currentIdx - 1
-                                                        onStateChange(state.copy(city = sortedCities[nextIdx], channel = sortedCities[nextIdx]))
-                                                    }
                                                 }
-                                            )
+                                            ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Rounded.KeyboardArrowDown, null, tint = LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(36.dp))
                                         }
-                                    ) {
-                                        Icon(Icons.Rounded.KeyboardArrowDown, null, tint = LuxeColors.Gold.copy(0.6f))
                                     }
                                 }
                             }

@@ -116,6 +116,14 @@ fun App(
     var radioState by remember { mutableStateOf(initialState) }
     var localNotification by remember { mutableStateOf<AppNotification?>(null) }
 
+    // 🛡️ AUTO-DISMISS PARA NOTIFICACIONES LOCALES
+    LaunchedEffect(localNotification) {
+        if (localNotification != null) {
+            delay(6000) // 6 segundos de visibilidad
+            localNotification = null
+        }
+    }
+
     LaunchedEffect(Unit) {
         while(true) {
             val hour = getCurrentHour()
@@ -347,6 +355,7 @@ fun App(
                                 onNotification = { t, m, type -> 
                                     localNotification = AppNotification(t, m, type)
                                 },
+                                onPlaySound = onPlaySound,
                                 pendingDialog = pendingDialog,
                                 onPendingDialogChange = { dialog, payload -> 
                                     pendingDialog = dialog

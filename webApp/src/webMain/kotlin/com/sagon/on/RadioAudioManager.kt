@@ -215,16 +215,13 @@ object RadioAudioManager {
                 
                 var now = window.app.ctx.currentTime;
                 if (active) {
-                    // 🔒 HARD-LOCK: SILENCIO ABSOLUTO LOCAL DURANTE TRANSMISIÓN
+                    // 🔒 HARD-LOCK: SILENCIO DE RECEPCIÓN DURANTE TRANSMISIÓN
                     window.app.db.ref("users/" + window.app.sessionID).update({ tx: true, pwr: power || 0.7 });
                     if (window.app.txGate) {
                         window.app.txGate.gain.cancelScheduledValues(now);
                         window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
                     }
-                    if (window.app.masterOut) {
-                        window.app.masterOut.gain.cancelScheduledValues(now);
-                        window.app.masterOut.gain.setValueAtTime(0, now);
-                    }
+                    // 🛡️ FIX MONITOR: No silenciar masterOut (que cortaría el MONI), solo la radio entrante y ruido
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0, now, 0.01);
@@ -235,12 +232,7 @@ object RadioAudioManager {
                         window.app.txGate.gain.setTargetAtTime(0, now + 0.4, 0.01);
                     }
                     
-                    if (window.app.masterOut) {
-                        window.app.masterOut.gain.cancelScheduledValues(now);
-                        var targetVol = (window.app.currentMasterGain !== undefined) ? window.app.currentMasterGain : 1.5;
-                        window.app.masterOut.gain.setValueAtTime(targetVol, now);
-                    }
-                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(2.0, now, 0.2);
+                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, now, 0.2);
                     // 🔒 Restaurar ruido de fondo de forma suave
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.2);
                     // 🔒 Restaurar LFO de forma ultra-sutil
@@ -257,15 +249,19 @@ object RadioAudioManager {
             window.setupCallStream = function(call) {
                 console.log("📞 Recibiendo llamada de:", call.peer);
                 
-                // 🛡️ DOM SINK FIX: Algunos navegadores necesitan un elemento de audio para procesar el flujo WebRTC
+                // 🛡️ DOM SINK FIX: Algunos navegadores necesitan un elemento de audio en el DOM para procesar WebRTC
                 var remoteAudio = document.createElement("audio");
+                remoteAudio.style.display = "none"; 
+                document.body.appendChild(remoteAudio);
                 remoteAudio.autoplay = true;
-                remoteAudio.muted = true; // Silenciado porque lo oiremos vía AudioContext
+                remoteAudio.muted = true; 
                 
                 call.on('stream', function(remoteStream) {
                     if (!window.app.ctx) return;
                     
+                    // 🔒 VÍNCULO FÍSICO: Obligatorio para decodificación WebRTC
                     remoteAudio.srcObject = remoteStream;
+                    remoteAudio.play().catch(function(e) { console.log("Audio play blocked, but stream attached."); });
                     
                     // 🛡️ ACTIVACIÓN CRÍTICA DEL RECEPTOR: Forzar el AudioContext al recibir datos
                     if (window.app.ctx.state === 'suspended') {
@@ -475,12 +471,10 @@ private object ReplayEngine {
 
             window.initReplayRecorder = function() {
                 if (!window.app.ctx || !window.app.rxReplayBus) {
-                    console.log("🕒 Replay waiting for audio context...");
-                    setTimeout(window.initReplayRecorder, 2000);
+                    setTimeout(window.initReplayRecorder, 1000);
                     return;
                 }
                 
-                console.log("🕒 Replay Engine Online");
                 var streamDest = window.app.ctx.createMediaStreamDestination();
                 window.app.rxReplayBus.connect(streamDest);
                 
@@ -488,43 +482,52 @@ private object ReplayEngine {
                 replayAnalyser.fftSize = 256;
                 window.app.rxReplayBus.connect(replayAnalyser);
 
-                var segmentChunks = [];
-                function startNewRecording() {
-                    segmentChunks = [];
+                function startRecording() {
+                    var chunks = [];
                     activityDetected = false;
                     
-                    var mimeType = "audio/webm;codecs=opus";
-                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "";
+                    var options = { mimeType: 'audio/webm;codecs=opus' };
+                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                        options = { mimeType: 'audio/webm' };
+                    }
+                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                        options = {}; 
+                    }
 
                     try {
-                        currentRecorder = new MediaRecorder(streamDest.stream, mimeType ? { mimeType: mimeType } : {});
-                        currentRecorder.ondataavailable = function(e) { if (e.data.size > 0) segmentChunks.push(e.data); };
+                        var recorder = new MediaRecorder(streamDest.stream, options);
+                        var hasVoice = false;
                         
-                        var segmentActivity = false;
-                        var checkInterval = setInterval(function() {
-                            if (activityDetected) segmentActivity = true;
+                        var activityTimer = setInterval(function() {
+                            if (activityDetected) hasVoice = true;
                         }, 100);
 
-                        currentRecorder.onstop = function() {
-                            clearInterval(checkInterval);
-                            if (segmentChunks.length > 0 && segmentActivity) {
-                                var blob = new Blob(segmentChunks, { type: currentRecorder.mimeType || 'audio/webm' });
+                        recorder.ondataavailable = function(e) { 
+                            if (e.data.size > 0) chunks.push(e.data); 
+                        };
+
+                        recorder.onstop = function() {
+                            clearInterval(activityTimer);
+                            if (chunks.length > 0 && hasVoice) {
+                                var blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
                                 replayBlobs.push(blob);
-                                // 🕒 Buffer de 30 segundos (6 bloques de 5s)
                                 if (replayBlobs.length > 6) replayBlobs.shift();
                                 if (window.dispatch_replay_available) window.dispatch_replay_available(true);
                             }
+                            // Reiniciar inmediatamente tras parada
+                            startRecording();
                         };
-                        currentRecorder.start();
-                        
-                        // Rotar cada 5 segundos
+
+                        // Grabar en bloques de 5 segundos
                         setTimeout(function() {
-                            if (currentRecorder && currentRecorder.state === "recording") {
-                                currentRecorder.stop();
-                                startNewRecording();
-                            }
+                            if (recorder.state === "recording") recorder.stop();
                         }, 5000);
-                    } catch(e) { console.error("Replay Error:", e); }
+
+                        recorder.start();
+                    } catch(e) { 
+                        console.error("Replay Recorder Error:", e);
+                        setTimeout(startRecording, 5000); 
+                    }
                 }
 
                 function monitorActivity() {
@@ -541,7 +544,7 @@ private object ReplayEngine {
                     requestAnimationFrame(monitorActivity);
                 }
 
-                startNewRecording();
+                startRecording();
                 monitorActivity();
             };
 

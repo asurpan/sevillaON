@@ -210,6 +210,9 @@ object RadioAudioManager {
                 
                 if(window.dispatch_ptt_live) window.dispatch_ptt_live(active);
                 
+                // 🛡️ SINCRONIZACIÓN DE MONITOR (MONI)
+                if(window.updateMoniGain) window.updateMoniGain();
+                
                 var now = window.app.ctx.currentTime;
                 if (active) {
                     // 🔒 HARD-LOCK: SILENCIO ABSOLUTO LOCAL DURANTE TRANSMISIÓN
@@ -451,8 +454,10 @@ private object MoniGuard {
         js("""
             window.updateMoniGain = function() {
                 if(window.app && window.app.moniGainNode) {
-                    var target = window.app.moniActive ? (window.app.moniVolume * 0.05) : 0;
-                    window.app.moniGainNode.gain.setTargetAtTime(target, window.app.ctx.currentTime, 0.1);
+                    var now = window.app.ctx.currentTime;
+                    // 🛡️ REGLA TÁCTICA: Solo activar si MONI está ON y además el PTT está pulsado
+                    var target = (window.app.moniActive && window.app.pttStateInternal) ? (window.app.moniVolume * 0.18) : 0;
+                    window.app.moniGainNode.gain.setTargetAtTime(target, now, 0.05);
                 }
             };
         """)
@@ -466,56 +471,68 @@ private object ReplayEngine {
             var currentRecorder = null;
             var activityDetected = false;
             var replayAnalyser = null;
+            var isPlaying = false;
 
             window.initReplayRecorder = function() {
-                if (!window.app.ctx || !window.app.rxReplayBus) return;
+                if (!window.app.ctx || !window.app.rxReplayBus) {
+                    console.log("🕒 Replay waiting for audio context...");
+                    setTimeout(window.initReplayRecorder, 2000);
+                    return;
+                }
                 
+                console.log("🕒 Replay Engine Online");
                 var streamDest = window.app.ctx.createMediaStreamDestination();
                 window.app.rxReplayBus.connect(streamDest);
                 
-                // Analizador para detectar silencio/voz
                 replayAnalyser = window.app.ctx.createAnalyser();
                 replayAnalyser.fftSize = 256;
                 window.app.rxReplayBus.connect(replayAnalyser);
 
-                function captureSegment() {
-                    if (currentRecorder && currentRecorder.state === "recording") {
-                        currentRecorder.stop();
-                    }
-                    
+                var segmentChunks = [];
+                function startNewRecording() {
+                    segmentChunks = [];
                     activityDetected = false;
-                    var chunks = [];
                     
-                    // Intentar encontrar el mejor codec soportado
                     var mimeType = "audio/webm;codecs=opus";
-                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/webm";
-                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/ogg;codecs=opus";
                     if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "";
 
                     try {
                         currentRecorder = new MediaRecorder(streamDest.stream, mimeType ? { mimeType: mimeType } : {});
-                        currentRecorder.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
+                        currentRecorder.ondataavailable = function(e) { if (e.data.size > 0) segmentChunks.push(e.data); };
+                        
+                        var segmentActivity = false;
+                        var checkInterval = setInterval(function() {
+                            if (activityDetected) segmentActivity = true;
+                        }, 100);
+
                         currentRecorder.onstop = function() {
-                            // 🛡️ REGLA DE ORO: Solo guardar si hubo actividad real (voz)
-                            if (chunks.length > 0 && activityDetected) {
-                                var blob = new Blob(chunks, { type: currentRecorder.mimeType || 'audio/webm' });
+                            clearInterval(checkInterval);
+                            if (segmentChunks.length > 0 && segmentActivity) {
+                                var blob = new Blob(segmentChunks, { type: currentRecorder.mimeType || 'audio/webm' });
                                 replayBlobs.push(blob);
-                                // 🕒 Buffer de 1 minuto (12 bloques de 5s)
-                                if (replayBlobs.length > 12) replayBlobs.shift();
+                                // 🕒 Buffer de 30 segundos (6 bloques de 5s)
+                                if (replayBlobs.length > 6) replayBlobs.shift();
                                 if (window.dispatch_replay_available) window.dispatch_replay_available(true);
                             }
                         };
                         currentRecorder.start();
-                    } catch(e) { console.error("Replay Recorder Error:", e); }
+                        
+                        // Rotar cada 5 segundos
+                        setTimeout(function() {
+                            if (currentRecorder && currentRecorder.state === "recording") {
+                                currentRecorder.stop();
+                                startNewRecording();
+                            }
+                        }, 5000);
+                    } catch(e) { console.error("Replay Error:", e); }
                 }
 
-                // Monitoreo de actividad (VOX de Replay)
                 function monitorActivity() {
-                    if (replayAnalyser && currentRecorder && currentRecorder.state === "recording") {
+                    if (replayAnalyser) {
                         var d = new Uint8Array(replayAnalyser.fftSize);
                         replayAnalyser.getByteTimeDomainData(d);
                         for(var i=0; i<d.length; i++) {
-                            if (Math.abs(d[i] - 128) > 2) { // 🛡️ SENSIBILIDAD AUMENTADA
+                            if (Math.abs(d[i] - 128) > 2) { 
                                 activityDetected = true;
                                 break;
                             }
@@ -524,9 +541,8 @@ private object ReplayEngine {
                     requestAnimationFrame(monitorActivity);
                 }
 
-                captureSegment();
+                startNewRecording();
                 monitorActivity();
-                setInterval(captureSegment, 5000);
             };
 
             window.playReplay = function() {
@@ -534,20 +550,21 @@ private object ReplayEngine {
                     if (window.dispatch_notification) window.dispatch_notification('REPLAY VACÍO', 'No hay grabaciones con voz reciente.', 'info');
                     return;
                 }
+                if (isPlaying) return;
                 
+                isPlaying = true;
                 var playlist = [...replayBlobs];
                 var index = 0;
 
                 function playNext() {
                     if (index >= playlist.length) {
                         if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
+                        isPlaying = false;
                         return;
                     }
 
                     var url = URL.createObjectURL(playlist[index]);
                     var audio = new Audio(url);
-                    
-                    // 🚀 PASAR RÁPIDO: Reproducción a 1.15x para ganar tiempo
                     audio.playbackRate = 1.15;
                     
                     audio.onplay = function() {
@@ -569,7 +586,7 @@ private object ReplayEngine {
                     };
 
                     audio.play().catch(function(err) {
-                        console.error("Replay segment error:", err);
+                        isPlaying = false;
                         index++;
                         playNext();
                     });

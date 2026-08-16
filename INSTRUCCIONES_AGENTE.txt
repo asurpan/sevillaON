@@ -17,6 +17,8 @@ El sistema está dividido en módulos estancos para evitar regresiones de audio:
 - **Ducking Pro**: Al transmitir (TX), el silencio receptor debe ser **absoluto** para evitar ecos.
 - **Power Priority**: El volumen maestro de la app debe ser **x3.0** superior al nivel normal del sistema.
 - **Beep Sync**: El Roger Beep debe oírse localmente y transmitirse al bus de red. El PTT tiene un retardo de cierre de 400ms para este fin.
+- **MONI (Monitor)**: Solo funciona durante la transmisión (**PTT presionado**) con ganancia de **0.18x**.
+- **Replay**: Grabación aislada de 30s (6 bloques de 5s). Solo guarda segmentos con voz real (Memoria por Segmento). Reproducción a **1.15x**.
 
 ### 📡 SINTONIZACIÓN (MODO EMISORA REAL)
 - **Orden 1-40**: La sintonización recorre los canales numéricamente (Soria -> Salamanca...).

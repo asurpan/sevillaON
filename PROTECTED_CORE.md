@@ -16,10 +16,12 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Potencia Dominante**: El volumen maestro tiene un multiplicador **x3.0** para sonar por encima del volumen del sistema.
     - **Roger Beep**: Blindado a **1955Hz**, **0.3s** y ataque plano. Conectado tanto a salida local como al bus de transmisión (`txBus`).
     - **PTT Tail**: Retardo de **400ms** al soltar el PTT para asegurar que el Roger Beep se transmita completo.
+    - **Monitor (MONI)**: Solo debe funcionar durante la transmisión (**PTT presionado**). Ganancia fijada en **0.18x** para un retorno potente.
 
 3. **Motor de Replay Inteligente**:
     - **Aislamiento RX**: Solo graba el `rxReplayBus` (voz de otros). Prohibido grabar QRM local o pitidos propios.
-    - **Detección de Silencio**: Los bloques sin voz (umbral < 2) deben ser descartados automáticamente.
+    - **Capacidad Táctica**: Buffer de **30 segundos** exactos (6 bloques de 5s).
+    - **Detección de Silencio**: Uso de **Memoria por Segmento**. Los bloques sin voz (umbral < 2) deben ser descartados automáticamente.
     - **Velocidad Táctica**: Reproducción fija a **1.15x** para revisión rápida.
 
 4. **Diseño Visual Nexus (`Screens.kt`)**:

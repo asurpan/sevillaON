@@ -27,6 +27,16 @@ Queda terminantemente prohibido modificar, alterar o "simplificar" el código en
 8. **Rangos de Usuario (Veteranía)**:
     - Solo usuarios con potencia acumulada **>= 0.85W** pueden acceder a canales privados (Subtonos).
     - Esto protege la red de la saturación por usuarios temporales y fomenta la participación pública.
+9. **Diseño Visual Nexus (`Screens.kt`)**:
+    - **ESTADO: CONGELADO**. Queda prohibido modificar el diseño visual de la pantalla Nexus, la disposición de los botones, tamaños o colores.
+    - **Bloque Central**: Debe mantener su anchura fija de 140dp para evitar saltos horizontales.
+    - **Botones de Canal**: Deben flanquear el bloque central con un tamaño de 54dp y forma circular.
+    - **Dúo de Control**: Solo deben aparecer VOL y SQL en la columna técnica principal.
+    - **Efectos Reclamo**: El icono de compartir debe mantener su parpadeo sutil aleatorio.
+10. **Lógica de Sintonización**:
+    - **Sintonía**: Los saltos deben ser siempre en orden numérico (1-40) y circulares.
+    - **Escaneo**: Debe detenerse automáticamente al detectar voz (3s) o al pulsar el PTT.
+    - **Parada Manual**: Un clic simple en las flechas de canal debe detener el escaneo si este se encuentra activo.
 
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si un agente detecta un error en estas áreas, **DEBE INFORMAR** antes de aplicar cualquier cambio. No se permiten refactorizaciones automáticas ni cambios de diseño en el núcleo funcional.

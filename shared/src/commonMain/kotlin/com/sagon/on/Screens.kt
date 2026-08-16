@@ -372,11 +372,16 @@ fun RadioPanel(
                                             modifier = Modifier.fillMaxSize().combinedClickable(
                                                 onClick = {
                                                     onPlaySound("switch")
-                                                    val chToCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }
-                                                    val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
-                                                    val nextCh = if (curCh >= 40) 1 else curCh + 1
-                                                    val nextCity = chToCity[nextCh] ?: "SORIA"
-                                                    onStateChange(state.copy(city = nextCity, channel = nextCity))
+                                                    if (state.isScanning) {
+                                                        // 🛡️ REGLA: UN CLIC DETIENE EL ESCANEO SI ESTÁ ACTIVO
+                                                        onStateChange(state.copy(isScanning = false))
+                                                    } else {
+                                                        val chToCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }
+                                                        val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
+                                                        val nextCh = if (curCh >= 40) 1 else curCh + 1
+                                                        val nextCity = chToCity[nextCh] ?: "SORIA"
+                                                        onStateChange(state.copy(city = nextCity, channel = nextCity))
+                                                    }
                                                 },
                                                 onLongClick = {
                                                     if (state.rfGain > state.squelch) {
@@ -440,11 +445,16 @@ fun RadioPanel(
                                             modifier = Modifier.fillMaxSize().combinedClickable(
                                                 onClick = {
                                                     onPlaySound("switch")
-                                                    val chToCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }
-                                                    val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
-                                                    val nextCh = if (curCh <= 1) 40 else curCh - 1
-                                                    val nextCity = chToCity[nextCh] ?: "SORIA"
-                                                    onStateChange(state.copy(city = nextCity, channel = nextCity))
+                                                    if (state.isScanning) {
+                                                        // 🛡️ REGLA: UN CLIC DETIENE EL ESCANEO SI ESTÁ ACTIVO
+                                                        onStateChange(state.copy(isScanning = false))
+                                                    } else {
+                                                        val chToCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }
+                                                        val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
+                                                        val nextCh = if (curCh <= 1) 40 else curCh - 1
+                                                        val nextCity = chToCity[nextCh] ?: "SORIA"
+                                                        onStateChange(state.copy(city = nextCity, channel = nextCity))
+                                                    }
                                                 },
                                                 onLongClick = {
                                                     if (state.rfGain > state.squelch) {

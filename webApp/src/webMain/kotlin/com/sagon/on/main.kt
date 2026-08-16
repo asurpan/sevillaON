@@ -376,10 +376,13 @@ fun main() {
                             ))
                             
                             if (k != win.app.sessionID && win.app.activeCalls[k] == null) {
-                                // 🛡️ LLAMADA BIDIRECCIONAL (BETA):
-                                // Quitamos la restricción lexicográfica para asegurar conexión en pruebas locales.
-                                console.log("🚀 Intentando conexión WebRTC con:", userNick);
-                                win.establishOutgoingCall(k);
+                                // 🛡️ LLAMADA INTELIGENTE (ANTI-CONFLICTO):
+                                // Solo el dispositivo con la ID lexicográficamente menor inicia la llamada.
+                                // Esto es sagrado para evitar el "Glare" (choque de llamadas) en 4G/WiFi.
+                                if (win.app.sessionID < k) {
+                                    console.log("🚀 Sincronizando túnel WebRTC con:", userNick);
+                                    win.establishOutgoingCall(k);
+                                }
                             }
                         }
                     }

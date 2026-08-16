@@ -1,34 +1,37 @@
-# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO (V12.2 ÉLITE SEO, REPAIR & SECURITY)
+# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO (V12.5 ELITE SUPREME)
 
-Este documento establece las leyes fundamentales de NO MODIFICACIÓN para agentes de IA y desarrolladores. El sistema ha sido optimizado para una experiencia de radio profesional, posicionamiento comercial avanzado y protección activa de la comunidad.
+Este documento establece las LEYES SUPREMAS de NO MODIFICACIÓN para agentes de IA y desarrolladores. El sistema ha sido optimizado tras una auditoría profunda de WebRTC y AudioContext. Cualquier cambio no autorizado romperá la estabilidad de la voz, los LEDs o la jerarquía de potencia.
 
-## 🚫 PROHIBICIÓN TOTAL
+## 🚫 PROHIBICIÓN TOTAL (HARD-LOCK)
 Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el código en las siguientes áreas:
 
-1. **Seguridad y Derecho de Admisión (V12.2)**:
-    - **Política de Disuasión**: El borrado de datos debe mostrar siempre la **Alerta de Seguridad Crítica**. Se debe informar al usuario de que perderá su veteranía y que el cambio reiterado de indicativo conlleva el **BAN-HARDWARE** permanente.
-    - **Protección de Red**: El sistema está facultado para restringir el acceso a terminales que realicen actividades hostiles, suplantaciones o evasión de bloqueos, ejerciendo el **Derecho de Admisión** para preservar el orden en el canal.
+1. **Blindaje de Voz y LEDs (WebRTC Sink)**:
+    - **DOM Sink Fix**: Es OBLIGATORIO crear elementos `<audio>` con `muted=true` y `playsinline`. 
+    - **Decoding Bridge**: Se debe conectar cada stream remoto a un nodo `dummy` de volumen 0 directo a la salida física. Esto engaña al navegador para que mantenga la decodificación activa y los LEDs brillen.
+    - **Hardware Keep-Alive**: Mantener el oscilador ultrasónico de **21kHz** inaudible en la salida física para evitar el modo suspensión del chip de audio.
 
-2. **Estrategia SEO, Marca y Social**:
-    - **Palabras Clave**: Prohibido eliminar términos como *DSELECTRONICA, reparar emisora en sevilla, conocer gente, ligar por radio*.
-    - **Landing Page**: Las secciones de soporte técnico y social son inamovibles.
+2. **Motor de Veteranía y Pisado Real (V12.5)**:
+    - **Progresión de Potencia**: +0.002 pwr por cada 5 segundos de TX. Rango: 0.7 (Novato) a 1.0 (Élite).
+    - **Efecto Pisado (Dynamic Distortion)**: Diferencia > 0.05 activa el `WaveShaper` de distorsión armónica. La voz débil debe sonar "crushed" (rota) y de fondo. Diferencia > 0.25 activa aplastamiento total.
 
-3. **Motor de Veteranía y Potencia (V12.1)**:
-    - **Progresión de Aire**: +0.002 de potencia por cada 5 segundos de TX.
-    - **Efecto Pisado Real**: Distorsión armónica no lineal automática basada en la jerarquía de vatios.
+3. **Gestión de Memoria Replay (One-Shot V4.2)**:
+    - **Vaciado Inmediato**: Al pulsar Replay, la memoria se borra tras pasar a la playlist. No se permite repetir el mismo audio.
+    - **Ducking Táctico**: Durante la reproducción de Replay, la radio en vivo y el ruido bajan al **2%** de forma automática.
 
-4. **Blindaje de Audio y Grabación (Feedback Fix)**:
-    - **Bus de Grabación Maestro**: Uso del `masterRecordBus` (SILENCIOSO) para evitar bucles de eco.
-    - **DOM Sink Fix**: Mantenimiento obligatorio de elementos `<audio>` invisibles con `.play()`.
+4. **Lógica de Red y Conectividad**:
+    - **Llamada Inteligente**: Solo el dispositivo con la ID lexicográficamente menor inicia la llamada (`sessionID < k`). Esto evita el "Glare" (choque de llamadas).
+    - **Identidad Fija**: La `sessionID` debe ser `Nick + DeviceID` para garantizar estabilidad en PeerJS y evitar duplicados.
 
-5. **Motor de Replay Inteligente (V4.2 - One-Shot)**:
-    - **One-Shot**: La memoria se vacía inmediatamente tras pulsar Replay.
+5. **Diseño Visual Nexus (UI FREEZE)**:
+    - **Contenedor de Estado**: Altura fija de **32dp** (prohibido saltos de línea).
+    - **LEDs S-Meter**: 20 diodos con efecto resplandor (Glow) en verde esmeralda táctico.
+    - **RX Tag**: Color esmeralda (`0xFF10B981`) con fundido lateral y resplandor.
 
-6. **Diseño Visual Nexus**:
-    - **ESTADO: CONGELADO TOTAL**. Bloque central 140dp, botones 54dp, contenedor estado 32dp.
-    - **Bordes Élite**: Pantalla con redondeo de 22dp y Soft Glow.
+6. **Estrategia SEO y Seguridad**:
+    - **SEO Marca**: Mantener términos *DSELECTRONICA, reparar emisora Sevilla, ligar radio, conocer gente*.
+    - **Derecho de Admisión**: Mantener el diálogo de borrado de datos con lenguaje disuasorio y advertencia de **BAN-HARDWARE**.
 
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
-Si detectas un fallo, informa al autor. El núcleo está sellado para garantizar la jerarquía de potencia, la seguridad de la red y el éxito del proyecto.
+Si detectas un fallo, informa al autor. NO apliques parches que eliminen los nodos inaudibles o el bridge silencioso, ya que son los pilares que mantienen la voz viva en móviles modernos.
 
-**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y PROTEGIDO CONTRA HOSTILIDAD (V12.2).**
+**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y OPTIMIZADO (V12.5).**

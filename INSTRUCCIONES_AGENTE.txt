@@ -1,35 +1,36 @@
-# 📘 MANUAL DE OPERACIONES V12.2 - RADIO ON AIR SPAIN (ÉLITE SECURITY)
+# 📘 MANUAL DE OPERACIONES V12.5 - RADIO ON AIR SPAIN (ELITE SUPREME)
 
-Este manual contiene las instrucciones técnicas, comerciales y de seguridad activa. Lectura OBLIGATORIA.
+Este manual contiene las instrucciones técnicas, comerciales y de seguridad absoluta. Lectura OBLIGATORIA para cualquier IA.
 
-## 🛑 REGLA DE ORO DEL AGENTE (CRÍTICO)
-- **PROHIBICIÓN DE PUSH**: Queda terminantemente prohibido ejecutar `git push` a GitHub sin el permiso explícito y textual del usuario ("Sube a GitHub"), aunque los cambios estén listos y verificados.
+## 🛑 REGLAS DE ORO DEL AGENTE (CRÍTICO)
+- **PROHIBICIÓN DE PUSH**: Queda terminantemente prohibido ejecutar `git push` sin el permiso explícito y textual del usuario ("Sube a GitHub"), aunque los cambios estén verificados.
+- **MEMORIA DE SESIÓN**: Al entrar en este proyecto, lee primero `PROTECTED_CORE.md`.
 
 ## 🏗️ ARQUITECTURA DE MISIÓN CRÍTICA
-1. **RadioAudioManager.kt**: AudioContext, distorsión por pisado y buses silenciosos.
-2. **RadioDialogs.kt**: Gestión de alertas de seguridad y advertencias de veteranía.
-3. **index.html**: Núcleo de marketing SEO y Social.
-4. **Screens.kt**: Interfaz Nexus blindada.
+1. **RadioAudioManager.kt**: Corazón del AudioContext con marcapasos ultrasónico y puente de decodificación forzada.
+2. **RadioMeshModule.kt**: Clase independiente para comunicación P2P en caso de Blackout total.
+3. **RadioDialogs.kt**: Gestión de seguridad crítica y disuasión de cambios de Nick.
+4. **Screens.kt**: Interfaz Nexus blindada geométricamente.
 
 ## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK)
 
-### 🔊 AUDIO Y TRANSMISIÓN
-- **Eco-Zero**: Micro grabado vía `masterRecordBus`. Prohibido el feedback local.
-- **Voz Blindada**: Mantener DOM Sink con reproducción forzada.
-- **Replay One-Shot**: Memoria volátil tras la primera escucha.
+### 🔊 AUDIO Y VOZ (BLINDAJE TOTAL)
+- **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen 0 vía un nodo Gain `dummy`. Sin esto, los LEDs mueren en Chrome.
+- **Hardware Keep-Alive**: No eliminar el oscilador de **21kHz**. Es el marcapasos que evita que el sistema operativo duerma el chip de audio.
+- **Replay One-Shot**: El botón debe vaciar la memoria al usarse. Una escucha, una limpieza.
+- **Pisado Real**: Usar el motor `WaveShaper` para distorsionar voces débiles cuando hay choque de portadoras.
 
-### 🛡️ SEGURIDAD Y DERECHO DE ADMISIÓN
-- **Disuasión Hostil**: La opción de borrar datos debe ser desalentadora. Se debe usar un lenguaje firme sobre la pérdida de rango y la posibilidad de bloqueo físico del terminal (**BAN-HARDWARE**).
-- **Control de Identidad**: El sistema vincula al equipo con su indicativo. El cambio de nombre no crea un nuevo usuario, sino que actualiza el actual para evitar duplicados.
+### 📡 VETERANÍA Y RED
+- **Progreso de Potencia**: +0.002 pwr / 5s de charla. No regalar veteranía; se gana modulando.
+- **Llamada Inteligente**: Solo el ID más bajo llama al más alto. Sagrado para estabilidad en 4G.
+- **Módulo Mesh**: No integrar en la clase principal. Debe permanecer como un recurso de emergencia independiente.
 
-### 📡 VETERANÍA Y POTENCIA
-- **Progreso**: +0.002 pwr / 5s. La potencia es el único factor de dominio físico del canal.
+### 🖼️ INTERFAZ Y MARKETING
+- **Landing Social/Repair**: Textos optimizados para capturar tráfico de "reparar emisoras" y "conocer gente".
+- **Nexus UI**: Mantener los 20 LEDs verdes esmeralda con resplandor. Altura de estado fija 32dp.
 
-### 🖼️ INTERFAZ Y SEO SOCIAL
-- **Landing Social**: Optimizada para "conocer gente" y "reparar equipos".
-- **Nexus UI**: Bordes Élite fundidos y LEDs verde esmeralda.
+### 🔐 SEGURIDAD
+- **Derecho de Admisión**: Usar lenguaje firme en el borrado de datos para proteger la comunidad.
+- **Hard-Lock ID**: Un equipo físico = una identidad en red.
 
-### 🔐 IDENTIDAD
-- **Hard-Lock ID**: Un equipo = un usuario en Firebase. Prohibido duplicar sesiones.
-
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 12.2 (COMUNIDAD PROTEGIDA)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 12.5 (AUDIO & SEGURIDAD INFALIBLE)

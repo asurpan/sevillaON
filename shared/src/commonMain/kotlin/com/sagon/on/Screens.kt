@@ -490,7 +490,7 @@ fun RadioPanel(
 
                                     // 🔼 BOTÓN SUBIR CANAL
                                     Surface(
-                                        modifier = Modifier.size(54.dp),
+                                        modifier = Modifier.size(46.dp),
                                         shape = CircleShape,
                                         color = if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.05f),
                                         border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.05f) else Color.White.copy(0.1f))
@@ -522,16 +522,16 @@ fun RadioPanel(
                                             ),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(Icons.Rounded.KeyboardArrowUp, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(32.dp))
+                                            Icon(Icons.Rounded.KeyboardArrowUp, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(28.dp))
                                         }
                                     }
 
-                                    Spacer(Modifier.width(12.dp))
+                                    Spacer(Modifier.width(8.dp))
 
                                     // 🛡️ BLOQUE CENTRAL FIJO (BLINDAJE TOTAL CONTRA MOVIMIENTO)
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally, 
-                                        modifier = Modifier.width(140.dp) 
+                                        modifier = Modifier.width(110.dp) 
                                     ) {
                                         Text(
                                             text = "CH ${CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: "00"}", 
@@ -548,10 +548,6 @@ fun RadioPanel(
                                             IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(20.dp)) {
                                                 Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold.copy(0.8f), modifier = Modifier.size(12.dp).graphicsLayer { alpha = blinkAlpha.value })
                                             }
-                                            if (state.isInterfaceLocked) {
-                                                Spacer(Modifier.width(4.dp))
-                                                Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold.copy(0.5f), modifier = Modifier.size(10.dp))
-                                            }
                                             Spacer(Modifier.width(4.dp))
                                             Text(
                                                 text = state.city.split("-")[0], 
@@ -564,11 +560,11 @@ fun RadioPanel(
                                         }
                                     }
 
-                                    Spacer(Modifier.width(12.dp))
+                                    Spacer(Modifier.width(8.dp))
 
                                     // 🔽 BOTÓN BAJAR CANAL
                                     Surface(
-                                        modifier = Modifier.size(54.dp),
+                                        modifier = Modifier.size(46.dp),
                                         shape = CircleShape,
                                         color = if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.05f),
                                         border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.05f) else Color.White.copy(0.1f))
@@ -600,12 +596,20 @@ fun RadioPanel(
                                             ),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(Icons.Rounded.KeyboardArrowDown, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(36.dp))
+                                            Icon(Icons.Rounded.KeyboardArrowDown, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(30.dp))
                                         }
                                     }
                                 }
                             }
                             Column(modifier = Modifier.width(60.dp), horizontalAlignment = Alignment.End) {
+                                Icon(
+                                    imageVector = if (state.isInterfaceLocked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                                    contentDescription = null,
+                                    tint = if (state.isInterfaceLocked) LuxeColors.Gold else Color.White.copy(0.2f),
+                                    modifier = Modifier.size(14.dp).clickable { 
+                                        onStateChange(state.copy(isInterfaceLocked = !state.isInterfaceLocked))
+                                    }
+                                )
                                 Text("WATTS", color = Color.White.copy(0.3f), fontSize = 8.sp, fontWeight = FontWeight.Black)
                                 Text(
                                     text = "${if(isTransmitting) (state.veteranPower * 15f).toInt() else if(rx) 9 else 0}", 
@@ -633,7 +637,6 @@ fun RadioPanel(
 
                 AnimatedVisibility(visible = showTools) {
                     LazyRow(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        item { MiniTacticalIcon(icon = if (state.isInterfaceLocked) Icons.Rounded.Lock else Icons.Rounded.LockOpen, label = "CH LOCK", isActive = state.isInterfaceLocked, onClick = { onStateChange(state.copy(isInterfaceLocked = !state.isInterfaceLocked)) }) }
                         item { MiniTacticalIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE, null) }) }
                         item { MiniTacticalIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX, null) }) }
                         item { MiniTacticalIcon(icon = Icons.Rounded.Headset, label = "MONI", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) onStateChange(state.copy(isMonitorEnabled = false)) else onPendingDialogChange(RadioDialogType.MONI, null) }) }

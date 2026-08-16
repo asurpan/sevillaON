@@ -16,7 +16,19 @@ object RadioAudioManager {
                 remoteGains: {}, remotePowers: {} 
             };
             
+            // 🛡️ MOTOR DE DIAGNÓSTICO WEBRTC
+            window.app.diag = {
+                micPermission: "unknown",
+                ctxState: "none",
+                txPackets: 0,
+                rxPackets: {},
+                lastError: null,
+                inputDevice: "default",
+                outputDevice: "default"
+            };
+
             window.initAudio = function() {
+                console.log("🛡️ AUDITORÍA: Iniciando AudioContext...");
                 if (window.app.ctx) {
                     if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
                     return;
@@ -24,31 +36,54 @@ object RadioAudioManager {
                 var AC = window.AudioContext || window.webkitAudioContext;
                 try {
                     window.app.ctx = new AC({ latencyHint: 'interactive', sampleRate: 48000 });
+                    window.app.diag.ctxState = window.app.ctx.state;
                     
+                    window.app.ctx.onstatechange = function() {
+                        window.app.diag.ctxState = window.app.ctx.state;
+                    };
+
                     window.app.masterOut = window.app.ctx.createGain();
                     window.app.masterOut.connect(window.app.ctx.destination);
                     
                     window.app.masterRxGain = window.app.ctx.createGain();
                     window.app.masterRxGain.gain.value = 3.5; 
                     
-                    window.app.currentMasterGain = 2.1; 
+                    window.app.currentMasterGain = 1.0; 
 
                     window.app.filter = window.app.ctx.createBiquadFilter();
                     window.app.filter.type = "bandpass"; 
                     window.app.filter.frequency.value = 1500; 
                     window.app.filter.Q.value = 1.2; 
                     
-                    // 🛡️ MOTOR DE SUPERVIVENCIA (iOS/ANDROID/CHROME):
-                    // Ruteo simplificado para evitar cortes por algoritmos de ahorro.
                     window.app.filter.connect(window.app.masterRxGain);
                     window.app.masterRxGain.connect(window.app.masterOut);
+
+                    // 🛡️ HARDWARE KEEP-ALIVE
+                    var hwKeepAlive = window.app.ctx.createOscillator();
+                    hwKeepAlive.frequency.value = 21000; 
+                    var hwKeepAliveGain = window.app.ctx.createGain();
+                    hwKeepAliveGain.gain.value = 0.0001; 
+                    hwKeepAlive.connect(hwKeepAliveGain);
+                    hwKeepAliveGain.connect(window.app.ctx.destination);
+                    hwKeepAlive.start();
+                    window.app.mainCompressor.ratio.value = 12;
+
+                    window.app.filter = window.app.ctx.createBiquadFilter();
+                    window.app.filter.type = "bandpass"; 
+                    window.app.filter.frequency.value = 1500; 
+                    window.app.filter.Q.value = 1.2; 
+                    
+                    // 🛡️ CADENA DE SALIDA PROFESIONAL
+                    window.app.filter.connect(window.app.masterRxGain);
+                    window.app.masterRxGain.connect(window.app.mainCompressor);
+                    window.app.mainCompressor.connect(window.app.masterOut);
 
                     // 🛡️ HARDWARE KEEP-ALIVE: Inyectar un tono inaudible directo a la salida física
                     // Esto evita que el sistema operativo duerma el chip de audio.
                     var hwKeepAlive = window.app.ctx.createOscillator();
                     hwKeepAlive.frequency.value = 21000; 
                     var hwKeepAliveGain = window.app.ctx.createGain();
-                    hwKeepAliveGain.gain.value = 0.001; 
+                    hwKeepAliveGain.gain.value = 0.0001; 
                     hwKeepAlive.connect(hwKeepAliveGain);
                     hwKeepAliveGain.connect(window.app.ctx.destination);
                     hwKeepAlive.start();
@@ -267,28 +302,23 @@ object RadioAudioManager {
         RadioSignaling.install()
         js("""
             window.setupCallStream = function(call) {
-                console.log("📞 Iniciando ruteo de audio WebRTC para:", call.peer);
+                console.log("🛡️ AUDITORÍA: Vinculando flujo WebRTC:", call.peer);
                 
-                // 🛡️ DOM SINK (NÚCLEO): Elemento de audio real. 
-                // ALGUNOS NAVEGADORES NO DECODIFICAN SI ESTÁ MUTEADO.
+                // 🛡️ DOM SINK (V12.4): Elemento físico REAL para decodificación forzada
                 var remoteAudio = document.createElement("audio");
                 remoteAudio.setAttribute("autoplay", "true");
                 remoteAudio.setAttribute("playsinline", "true");
-                remoteAudio.muted = false; // 🔒 TRUCO: No mutear para forzar decodificación
-                remoteAudio.volume = 0.0001; // 🔒 Pero volumen inaudible
+                remoteAudio.muted = true; // 🔒 Muted para evitar bloqueos del navegador
                 
-                remoteAudio.style.display = "none";
+                remoteAudio.style.cssText = "position:fixed;width:1px;height:1px;top:0;opacity:0.01;pointer-events:none;z-index:-1";
                 document.body.appendChild(remoteAudio);
                 
                 call.on('stream', function(remoteStream) {
-                    console.log("🔊 Flujo de audio activo y decodificando:", call.peer);
+                    console.log("🔊 VOZ RECIBIDA. Tracks:", remoteStream.getAudioTracks().length);
                     remoteAudio.srcObject = remoteStream;
                     
-                    // 🛡️ RESUME AGRESIVO: Despertar motor en cada ráfaga
-                    if (window.app.ctx.state !== 'running') {
-                        window.app.ctx.resume().then(() => { console.log("Motor reanimado."); });
-                    }
-                    
+                    if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+
                     var source = window.app.ctx.createMediaStreamSource(remoteStream);
                     var analyser = window.app.ctx.createAnalyser();
                     var gainNode = window.app.ctx.createGain();
@@ -297,24 +327,40 @@ object RadioAudioManager {
                     source.connect(analyser);
                     source.connect(gainNode);
                     
-                    // 📻 Ruteo directo al filtro para evitar pérdidas en buses intermedios
-                    gainNode.connect(window.app.filter);
+                    // 📻 Ruteo directo al filtro maestro
+                    if (window.app.filter) {
+                        gainNode.connect(window.app.filter);
+                        if (window.app.rxReplayBus) gainNode.connect(window.app.rxReplayBus);
+                    } else {
+                        console.error("🛡️ AUDITORÍA: Error crítico - Filtro no inicializado.");
+                    }
                     
-                    // Si el bus de replay existe, lo conectamos también
-                    if (window.app.rxReplayBus) gainNode.connect(window.app.rxReplayBus);
-                    
+                    // 🛡️ DECODING BRIDGE: Conexión silenciosa a la salida para asegurar proceso
+                    var dummy = window.app.ctx.createGain();
+                    dummy.gain.value = 0; 
+                    source.connect(dummy);
+                    dummy.connect(window.app.ctx.destination);
+
+                    // 🛡️ AUDITORÍA: Monitor de paquetes recibidos
+                    window.app.diag.rxPackets[call.peer] = 0;
+                    var diagInterval = setInterval(function() {
+                        if (!window.app.peer || call.peer === undefined || !call.peerConnection) { clearInterval(diagInterval); return; }
+                        call.peerConnection.getStats(null).then(stats => {
+                            stats.forEach(report => {
+                                if (report.type === "inbound-rtp" && report.kind === "audio") {
+                                    window.app.diag.rxPackets[call.peer] = report.packetsReceived;
+                                }
+                            });
+                        }).catch(e => {});
+                    }, 2000);
+
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
                     window.app.remoteGains[call.peer] = gainNode;
                     window.app.remoteSinks = window.app.remoteSinks || {};
                     window.app.remoteSinks[call.peer] = remoteAudio;
 
-                    // 🛡️ FORCE REPLAY (AUTO-PLAY RE-TRIAL)
-                    var playOnce = function() {
-                        remoteAudio.play().catch(function(e) { console.log("Play block wait..."); });
-                    };
-                    playOnce();
-                    setTimeout(playOnce, 500);
+                    remoteAudio.play().catch(function(e) { });
                 });
                 call.on('close', function() {
                     if (window.app.remoteSources[call.peer]) {
@@ -354,6 +400,7 @@ object RadioAudioManager {
                 peers.forEach(id => {
                     var gain = window.app.remoteGains[id];
                     var source = window.app.remoteSources[id];
+                    var ana = window.app.remoteAnalysers[id];
                     if(!gain || !source) return;
                     
                     var p = window.app.remotePowers[id] || 0.7;
@@ -366,8 +413,10 @@ object RadioAudioManager {
                         dist.oversample = '4x';
                         window.app.remoteDistortion[id] = dist;
                         
-                        // Ruteo: Source -> Dist -> Gain
+                        // 🔒 RE-CONEXIÓN CRÍTICA: Al desconectar el source para insertar el distorsionador,
+                        // debemos RECONECTAR el analizador de LEDs inmediatamente.
                         source.disconnect();
+                        if (ana) source.connect(ana); 
                         source.connect(dist);
                         dist.connect(gain);
                     }

@@ -44,14 +44,17 @@ fun main() {
                 localStorage.setItem("web_device_id", deviceID);
             }
             
-            // 🔒 IDENTIDAD DE EQUIPO (HARD-LOCK): La sesión es el ID del dispositivo.
-            // Esto impide duplicados: un equipo = una entrada en Firebase, cambies el nombre que cambies.
-            var sessionID = deviceID.toString().replace(/[.#${'$'}\[\]]/g, "_");
+            // 🔒 IDENTIDAD DE EQUIPO (HARD-LOCK TOTAL): La sesión es exclusivamente el ID del dispositivo.
+            // Esto garantiza que el motor de llamadas PeerJS sea estable y no haya duplicados.
+            var sessionID = deviceID.toString().replace(/[.#${'$'}\[\]]/g, "_").trim();
             var cleanNick = (nick || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
             
             window.app.nick = cleanNick;
             window.app.deviceID = deviceID;
             window.app.sessionID = sessionID;
+            localStorage.setItem("indicativo", cleanNick);
+            
+            if (window.initAudio) window.initAudio();
             if (window.initAudio) window.initAudio();
             
             var baseCity = localStorage.getItem("lastCity") || "SEVILLA";
@@ -110,6 +113,22 @@ fun main() {
                         if(window.app.db && window.app.sessionID) {
                             var updates = { lastSeen: Date.now() };
                             
+                            // 🛡️ AUDITORÍA: Estadísticas de Transmisión
+                            if (window.app.peer && window.app.activeCalls) {
+                                Object.keys(window.app.activeCalls).forEach(id => {
+                                    var call = window.app.activeCalls[id];
+                                    if (call && call.peerConnection) {
+                                        call.peerConnection.getStats(null).then(stats => {
+                                            stats.forEach(report => {
+                                                if (report.type === "outbound-rtp" && report.kind === "audio") {
+                                                    window.app.diag.txPackets = report.packetsSent;
+                                                }
+                                            });
+                                        });
+                                    }
+                                });
+                            }
+
                             // 📈 MOTOR DE VETERANÍA (POTENCIA PROGRESIVA)
                             // Si el usuario está transmitiendo, sumamos veteranía (tiempo de aire)
                             if (window.app.isTransmittingInternal) {
@@ -145,6 +164,7 @@ fun main() {
                     ] }
                 });
                 window.app.peer.on("call", function(call) {
+                    console.log("🚀 PeerJS: Llamada entrante de:", call.peer);
                     window.app.activeCalls[call.peer] = call;
                 
                 // 🔒 FILTRO DE BLOQUEO SIGILOSO PARA LLAMADAS ENTRANTES
@@ -156,7 +176,9 @@ fun main() {
                     return;
                 }
 
-                call.answer(window.getStream());
+                var stream = window.getStream();
+                console.log("🚀 PeerJS: Contestando a:", call.peer, "Tracks enviados:", stream ? stream.getAudioTracks().length : 0);
+                call.answer(stream);
                     if (window.setupCallStream) window.setupCallStream(call);
                 });
             }
@@ -168,7 +190,13 @@ fun main() {
 
         window.establishOutgoingCall = function(id) {
             if (!window.app.peer || window.app.activeCalls[id]) return;
-            var call = window.app.peer.call(id, window.getStream());
+            var stream = window.getStream();
+            if (!stream) {
+                console.warn("🛡️ AUDITORÍA: No hay stream local para llamar a:", id);
+                return;
+            }
+            console.log("🚀 PeerJS: Llamando a:", id, "Tracks enviados:", stream.getAudioTracks().length);
+            var call = window.app.peer.call(id, stream);
             if (call) {
                 window.app.activeCalls[id] = call;
                 if (window.setupCallStream) window.setupCallStream(call);
@@ -348,7 +376,10 @@ fun main() {
                             ))
                             
                             if (k != win.app.sessionID && win.app.activeCalls[k] == null) {
-                                win.establishOutgoingCall(k)
+                                // 🛡️ LLAMADA BIDIRECCIONAL (BETA):
+                                // Quitamos la restricción lexicográfica para asegurar conexión en pruebas locales.
+                                console.log("🚀 Intentando conexión WebRTC con:", userNick);
+                                win.establishOutgoingCall(k);
                             }
                         }
                     }
@@ -414,6 +445,29 @@ fun main() {
                 systemVolumeState.value = newVol
                 val w = window.asDynamic()
                 if (w.setMasterVolume != null) w.setMasterVolume(newVol)
+            },
+            onDiagRequest = {
+                val app = window.asDynamic().app
+                val d = if (app != null && app != undefined) app.diag else null
+                val rxMap = mutableMapOf<String, Int>()
+                
+                if (d != null && d != undefined) {
+                    if (d.rxPackets != null && d.rxPackets != undefined) {
+                        val keys = js("Object").keys(d.rxPackets)
+                        for (i in 0 until (keys.length as Int)) {
+                            val k = keys[i] as String
+                            rxMap[k] = d.rxPackets[k] as Int
+                        }
+                    }
+                    RadioDiagData(
+                        micPermission = d.micPermission as? String ?: "unknown",
+                        ctxState = d.ctxState as? String ?: "none",
+                        txPackets = (d.txPackets as? Double ?: 0.0).toInt(),
+                        rxPackets = rxMap
+                    )
+                } else {
+                    RadioDiagData(micPermission = "not_initialized")
+                }
             }
         )
 
@@ -499,6 +553,29 @@ fun main() {
                 }
             },
             onConnectRadio = { RadioNetworkManager.connect(it) },
+            onDiagRequest = {
+                val app = window.asDynamic().app
+                val d = if (app != null && app != undefined) app.diag else null
+                val rxMap = mutableMapOf<String, Int>()
+                
+                if (d != null && d != undefined) {
+                    if (d.rxPackets != null && d.rxPackets != undefined) {
+                        val keys = js("Object").keys(d.rxPackets)
+                        for (i in 0 until (keys.length as Int)) {
+                            val k = keys[i] as String
+                            rxMap[k] = d.rxPackets[k] as Int
+                        }
+                    }
+                    RadioDiagData(
+                        micPermission = d.micPermission as? String ?: "unknown",
+                        ctxState = d.ctxState as? String ?: "none",
+                        txPackets = (d.txPackets as? Double ?: 0.0).toInt(),
+                        rxPackets = rxMap
+                    )
+                } else {
+                    RadioDiagData(micPermission = "not_initialized")
+                }
+            },
             onMicEnable = { a, r, p -> RadioAudioManager.setPtt(a, r, p) },
             onReport = { },
             onBlockUser = { },

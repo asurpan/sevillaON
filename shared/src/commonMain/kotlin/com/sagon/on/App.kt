@@ -68,6 +68,7 @@ fun App(
     onGpsRequest: (callback: (String?) -> Unit) -> Unit = { it(null) },
     onGpsCityRequest: (callback: (String?) -> Unit) -> Unit = { it(null) },
     onPlaySound: (String) -> Unit = {},
+    onDiagRequest: () -> RadioDiagData = { RadioDiagData() },
     showInstallPrompt: Boolean = false,
     onInstallConfirm: () -> Unit = {},
     onInstallDismiss: () -> Unit = {},
@@ -437,7 +438,8 @@ fun App(
                             onNickChange = { nick = it },
                             users = remoteUsers,
                             nick = nick,
-                            channelToDelete = channelToDelete
+                            channelToDelete = channelToDelete,
+                            onDiagRequest = onDiagRequest
                         )
                     }
                 }

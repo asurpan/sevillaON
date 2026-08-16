@@ -31,6 +31,13 @@ object ManosLibres {
 
                 return navigator.mediaDevices.getUserMedia(constraints)
                 .then(function(stream) {
+                    console.log("🛡️ AUDITORÍA: Micrófono concedido. Tracks:", stream.getAudioTracks().length);
+                    if (stream.getAudioTracks().length > 0) {
+                        var track = stream.getAudioTracks()[0];
+                        console.log("🛡️ AUDITORÍA: Track Local:", track.label, "Habilitado:", track.enabled);
+                        window.app.diag.micPermission = "granted";
+                    }
+
                     window.app.rawStream = stream;
                     var micSrc = window.app.ctx.createMediaStreamSource(stream);
                     var voiceFilter = window.app.ctx.createBiquadFilter();

@@ -38,7 +38,8 @@ enum class RadioDialogType {
     ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, VOX, MONI, ROGER, REVERB, CHAT, 
     INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, 
     BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, DISCRETE, SELECT_NICK, 
-    HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, USER_ACTIONS, SQUELCH_CONTROL, GAIN_CONTROL, VOLUME_CONTROL
+    HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, USER_ACTIONS, SQUELCH_CONTROL, GAIN_CONTROL, VOLUME_CONTROL,
+    DIAGNOSTIC
 }
 
 @Composable
@@ -58,11 +59,42 @@ fun RadioDialogs(
     onNickChange: (String) -> Unit = {},
     users: List<RemoteUser>,
     nick: String,
-    channelToDelete: String? = null
+    channelToDelete: String? = null,
+    onDiagRequest: () -> RadioDiagData = { RadioDiagData() }
 ) {
     var tempSubtone by remember(type) { mutableStateOf(state.subtone) }
 
     when (type) {
+        RadioDialogType.DIAGNOSTIC -> {
+            val diag = onDiagRequest()
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                containerColor = LuxeColors.DeepSea,
+                title = { Text("AUDITORÍA WEBRTC V12.4", fontWeight = FontWeight.Black, color = LuxeColors.Gold) },
+                text = {
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        Text("MIC PERMISSION: ${diag.micPermission}", color = if(diag.micPermission == "granted") Color.Green else Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text("CTX STATE: ${diag.ctxState}", color = if(diag.ctxState == "running") Color.Green else Color.Yellow, fontSize = 11.sp)
+                        Text("TX PACKETS: ${diag.txPackets}", color = Color.White, fontSize = 11.sp)
+                        
+                        Spacer(Modifier.height(12.dp))
+                        Text("PEERS CONECTADOS (${diag.rxPackets.size}):", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                        diag.rxPackets.forEach { (peer, count) ->
+                            val shortId = peer.takeLast(6)
+                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("ID: ...$shortId", color = Color.White.copy(0.7f), fontSize = 10.sp)
+                                Text("RX: $count pkt", color = if(count > 0) Color.Green else Color.Red, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        
+                        if (diag.rxPackets.isEmpty()) {
+                            Text("ESPERANDO CONEXIÓN WEBRTC...", color = Color.White.copy(0.3f), fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(10.dp))
+                        }
+                    }
+                },
+                confirmButton = { LuxeButton("CERRAR", onDismiss) }
+            )
+        }
         RadioDialogType.ANTENNA -> FeatureHelpDialog(
             title = "Sistema de Calibración",
             icon = Icons.Rounded.SettingsInputAntenna,

@@ -112,6 +112,13 @@ enum class ActivityProfile {
     NORMAL, MOTO, CICLISMO, SENDERISMO, PASEO, SOCORRISTAS, CARAVANAS
 }
 
+data class RadioDiagData(
+    val micPermission: String = "unknown",
+    val ctxState: String = "none",
+    val txPackets: Int = 0,
+    val rxPackets: Map<String, Int> = emptyMap()
+)
+
 fun getActivityIcon(profile: ActivityProfile): ImageVector {
     return when (profile) {
         ActivityProfile.MOTO -> Icons.Rounded.TwoWheeler

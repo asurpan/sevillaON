@@ -31,7 +31,8 @@ object RadioBridge {
         onVoxSync: (Boolean) -> Unit,
         onRoomUpdate: (String) -> Unit,
         onPttLive: (Boolean) -> Unit,
-        onVolumeSync: (Float) -> Unit
+        onVolumeSync: (Float) -> Unit,
+        onDiagRequest: () -> RadioDiagData
     ) {
         win.dispatch_mic = onMic
         win.dispatch_beeping = onBeep
@@ -54,5 +55,6 @@ object RadioBridge {
         win.dispatch_room_update = onRoomUpdate
         win.dispatch_ptt_live = onPttLive
         win.dispatch_volume_sync = onVolumeSync
+        win.request_diag_data = onDiagRequest
     }
 }

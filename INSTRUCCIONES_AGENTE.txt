@@ -2,6 +2,9 @@
 
 Este manual contiene las instrucciones técnicas, comerciales y de seguridad activa. Lectura OBLIGATORIA.
 
+## 🛑 REGLA DE ORO DEL AGENTE (CRÍTICO)
+- **PROHIBICIÓN DE PUSH**: Queda terminantemente prohibido ejecutar `git push` a GitHub sin el permiso explícito y textual del usuario ("Sube a GitHub"), aunque los cambios estén listos y verificados.
+
 ## 🏗️ ARQUITECTURA DE MISIÓN CRÍTICA
 1. **RadioAudioManager.kt**: AudioContext, distorsión por pisado y buses silenciosos.
 2. **RadioDialogs.kt**: Gestión de alertas de seguridad y advertencias de veteranía.

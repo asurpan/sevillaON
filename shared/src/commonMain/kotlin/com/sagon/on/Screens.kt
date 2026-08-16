@@ -607,7 +607,16 @@ fun RadioPanel(
                             }
                             Column(modifier = Modifier.width(60.dp), horizontalAlignment = Alignment.End) {
                                 Text("WATTS", color = Color.White.copy(0.3f), fontSize = 8.sp, fontWeight = FontWeight.Black)
-                                Text("${if(isTransmitting) (state.veteranPower * 15f).toInt() else if(rx) 9 else 0}", color = if(isTransmitting) Color.Red else if(rx) LuxeColors.Gold else Color.White.copy(0.2f), fontSize = 24.sp, fontWeight = FontWeight.Black)
+                                Text(
+                                    text = "${if(isTransmitting) (state.veteranPower * 15f).toInt() else if(rx) 9 else 0}", 
+                                    color = if(isTransmitting) Color.Red else if(rx) LuxeColors.Gold else Color.White.copy(0.2f), 
+                                    fontSize = 24.sp, 
+                                    fontWeight = FontWeight.Black,
+                                    modifier = Modifier.combinedClickable(
+                                        onClick = { onPendingDialogChange(RadioDialogType.WATTS, null) },
+                                        onLongClick = { onPendingDialogChange(RadioDialogType.DIAGNOSTIC, null) }
+                                    )
+                                )
                             }
                         }
                     }

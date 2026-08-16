@@ -108,6 +108,14 @@ fun App(
     var isAppReady by remember { mutableStateOf(true) }
     var nick by remember { mutableStateOf(savedNick) }
 
+    // 🛡️ CONEXIÓN ÚNICA: Solo conectar al iniciar o cambiar de Nick, no en cada recomposición
+    LaunchedEffect(nick) {
+        if (nick.isNotBlank()) {
+            delay(1000) // Esperar estabilidad
+            onConnectRadio(nick)
+        }
+    }
+
     var radioState by remember { mutableStateOf(initialState) }
     var localNotification by remember { mutableStateOf<AppNotification?>(null) }
 

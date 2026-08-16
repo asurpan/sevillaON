@@ -30,30 +30,27 @@ fun main() {
 
         window.remoteTxStates = {};
         window.connectRadio = function(nick) {
-            // 🛡️ IDENTIFICADOR DE DISPOSITIVO PERSISTENTE (WEB HARDWARE ID + ANDROID ID)
-            var deviceID = localStorage.getItem("web_device_id");
-            if (window.AndroidApp && window.AndroidApp.getAndroidId) {
-                try { 
-                    var aid = window.AndroidApp.getAndroidId(); 
-                    if(aid) deviceID = aid;
-                } catch(e) {}
+            if (window.app.peer && !window.app.peer.destroyed) {
+                console.log("🛡️ AUDITORÍA: Radio ya conectada. Actualizando Nick...");
+                window.app.nick = nick.toUpperCase();
+                return;
             }
-            
+
+            // 🛡️ IDENTIFICADOR DE DISPOSITIVO PERSISTENTE
+            var deviceID = localStorage.getItem("web_device_id");
             if (!deviceID) {
                 deviceID = "web_" + Math.random().toString(36).substring(2, 15);
                 localStorage.setItem("web_device_id", deviceID);
             }
             
-            // 🔒 IDENTIDAD DE EQUIPO (HARD-LOCK TOTAL): La sesión es exclusivamente el ID del dispositivo.
-            // Esto garantiza que el motor de llamadas PeerJS sea estable y no haya duplicados.
-            var sessionID = deviceID.toString().replace(/[.#${'$'}\[\]]/g, "_").trim();
             var cleanNick = (nick || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
+            var sessionID = (cleanNick + "_" + deviceID.substring(0, 8)).trim();
             
             window.app.nick = cleanNick;
             window.app.deviceID = deviceID;
             window.app.sessionID = sessionID;
-            localStorage.setItem("indicativo", cleanNick);
             
+            console.log("🚀 Iniciando conexión Radio: ", sessionID);
             if (window.initAudio) window.initAudio();
             if (window.initAudio) window.initAudio();
             

@@ -18,6 +18,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.util.Log
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -71,11 +72,8 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var isTtsReady = false
 
-    // --- 🛡️ MOTOR DE SUPERVIVENCIA P2P (OFFLINE AUDIO) ---
-    private var meshReceiverThread: Thread? = null
-    private var audioRecord: android.media.AudioRecord? = null
-    private var isMeshRecording = false
-    private val MESH_PORT = 50005
+    // --- 🛡️ MÓDULO DE SUPERVIVENCIA P2P (INDEPENDIENTE) ---
+    private val meshModule: RadioMeshModule by lazy { RadioMeshModule(this) }
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
@@ -525,7 +523,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         when (focusChange) {
             AudioManager.AUDIOFOCUS_LOSS -> {
                 // Pérdida total (ej: llamada entrante): Cortamos todo y liberamos micro
-                stopMeshTransmission()
+                meshModule.setEmergencyPtt(false)
                 webViewInstance?.post {
                     webViewInstance?.evaluateJavascript("if(window.set_external_mute) window.set_external_mute(true);", null)
                 }
@@ -533,7 +531,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                 // Silencio temporal: Otra app (WhatsApp, Gemini) necesita el micro YA
-                stopMeshTransmission()
+                meshModule.setEmergencyPtt(false)
                 webViewInstance?.post {
                     webViewInstance?.evaluateJavascript("if(window.set_external_mute) window.set_external_mute(true);", null)
                 }
@@ -545,72 +543,6 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 }
             }
         }
-    }
-
-    private fun startMeshReceiver() {
-        if (meshReceiverThread != null) return
-        meshReceiverThread = Thread {
-            try {
-                val socket = DatagramSocket(MESH_PORT)
-                val buffer = ByteArray(1024)
-                val track = AudioTrack(
-                    AudioManager.STREAM_MUSIC, 8000,
-                    AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT,
-                    2048, AudioTrack.MODE_STREAM
-                )
-                track.play()
-                while (!Thread.currentThread().isInterrupted) {
-                    val packet = DatagramPacket(buffer, buffer.size)
-                    socket.receive(packet)
-                    track.write(packet.data, 0, packet.length)
-                }
-            } catch (e: Exception) { }
-        }
-        meshReceiverThread?.start()
-    }
-
-    private fun broadcastMeshAudio(data: ByteArray, len: Int) {
-        Thread {
-            try {
-                val socket = DatagramSocket()
-                val address = InetAddress.getByName("255.255.255.255")
-                val packet = DatagramPacket(data, len, address, MESH_PORT)
-                socket.broadcast = true
-                socket.send(packet)
-                socket.close()
-            } catch (e: Exception) {}
-        }.start()
-    }
-
-    private fun startMeshTransmission() {
-        if (isMeshRecording) return
-        val sampleRate = 8000
-        val bufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return
-        
-        try {
-            // USAR VOICE_COMMUNICATION para permitir que el sistema gestione mejor la compartición
-            audioRecord = AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize)
-            audioRecord?.startRecording()
-            isMeshRecording = true
-            
-            Thread {
-                val buffer = ByteArray(1024)
-                while (isMeshRecording) {
-                    val read = audioRecord?.read(buffer, 0, buffer.size) ?: 0
-                    if (read > 0) broadcastMeshAudio(buffer, read)
-                }
-            }.start()
-        } catch (e: Exception) { }
-    }
-
-    private fun stopMeshTransmission() {
-        isMeshRecording = false
-        try {
-            audioRecord?.stop()
-            audioRecord?.release()
-        } catch (e: Exception) { }
-        audioRecord = null
     }
 
     private fun setupAudioManager() {
@@ -903,13 +835,21 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             @JavascriptInterface
                             fun checkNetworkCritical(): Boolean {
                                 val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
-                                val activeNetwork = cm.activeNetwork ?: return true
-                                val caps = cm.getNetworkCapabilities(activeNetwork) ?: return true
-                                val hasInternet = caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                                val activeNetwork = cm.activeNetwork
                                 
-                                if (!hasInternet) this@MainActivity.startMeshReceiver()
+                                // 🛡️ DETECCIÓN DE AISLAMIENTO TOTAL (ESCENARIO BLACKOUT)
+                                // Solo entramos en modo Mesh si no hay NINGUNA red activa (ni WiFi ni Datos)
+                                val isIsolated = (activeNetwork == null)
                                 
-                                return !hasInternet
+                                if (isIsolated) {
+                                    Log.d("ON_AIR_NATIVE", "☢️ AISLAMIENTO DETECTADO: Activando Módulo Mesh...")
+                                    meshModule.startEmergencyDiscovery()
+                                } else {
+                                    // Si vuelve la red, apagamos el módulo de emergencia para ahorrar batería
+                                    meshModule.stopEmergencyMode()
+                                }
+                                
+                                return isIsolated
                             }
 
                             @JavascriptInterface
@@ -1022,7 +962,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             @JavascriptInterface
                             fun setNativePtt(active: Boolean) {
                                 runOnUiThread {
-                                    if (active) this@MainActivity.startMeshTransmission() else this@MainActivity.stopMeshTransmission()
+                                    meshModule.setEmergencyPtt(active)
                                 }
                             }
 

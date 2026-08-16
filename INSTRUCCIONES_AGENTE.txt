@@ -3,40 +3,34 @@
 Este manual contiene las instrucciones técnicas críticas y es de lectura OBLIGATORIA para cualquier agente que intervenga en el código.
 
 ## 🏗️ ARQUITECTURA DE MISIÓN CRÍTICA
-El sistema está dividido en módulos estancos para evitar regresiones de audio:
-1. **RadioAudioManager.kt**: Corazón del AudioContext, WebRTC y blindajes de voz.
-2. **ManosLibres.kt**: Motor VOX y captura de micro con Voice Boost.
-3. **RadioNetworkManager.kt**: Gestión de Firebase y señalización Mesh.
-4. **Screens.kt**: Interfaz Nexus blindada geométricamente con efectos de alta gama.
-5. **main.kt**: Coordinación de puente y persistencia de Hardware ID.
+El sistema está blindado en módulos estancos para evitar regresiones de audio y diseño:
+1. **RadioAudioManager.kt**: Corazón del AudioContext, WebRTC y motor Replay V4.
+2. **ManosLibres.kt**: Motor VOX y Voice Boost (1.8x).
+3. **Screens.kt**: Interfaz Nexus blindada geométricamente con efectos de alta gama.
+4. **main.kt**: Gestión de Hard-Lock ID y coordinación de la red.
 
 ## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK)
 
 ### 🔊 AUDIO Y TRANSMISIÓN
-- **Voz Blindada**: Nunca eliminar el **DOM Sink** (elementos audio ocultos) ni el **Dither Anti-Gate**. Sin ellos, la voz falla en móviles.
-- **Ducking Pro**: Al transmitir (TX), el silencio receptor debe ser **absoluto** para evitar ecos.
-- **Power Priority**: El volumen maestro de la app debe ser **x3.0** superior al nivel normal del sistema.
-- **Beep Sync**: El Roger Beep debe oírse localmente y transmitirse al bus de red. El PTT tiene un retardo de cierre de 400ms para este fin.
-- **MONI (Monitor)**: Solo funciona durante la transmisión (**PTT presionado**) con ganancia de **0.18x**.
-- **Replay**: Grabación aislada de 30s (6 bloques de 5s). Solo guarda segmentos con voz real (Memoria por Segmento). Reproducción a **1.15x**.
+- **Voz Blindada**: Mantener **DOM Sink** con reproducción forzada. Sin esto, fallan los LEDs y la voz en móviles.
+- **MONI (Monitor)**: Solo audible en TX (PTT pulsado). Ganancia x0.18.
+- **Replay V4**: Grabación de 30s con compresión dedicada y ducking automático de radio en vivo. Reproducción acelerada a 1.15x.
+- **Beep Sync**: El Roger Beep debe transmitirse al bus de red (PTT Tail de 400ms).
 
 ### 📡 SINTONIZACIÓN (MODO EMISORA REAL)
-- **Orden 1-40**: La sintonización recorre los canales numéricamente (Soria -> Salamanca...).
-- **Scan Engine**:
-    - Velocidad rítmica (salto cada ~400ms).
-    - Parada automática de 3s al detectar voz.
-    - Squelch-Lock: Si hay ruido (Squelch abierto), el escaneo no arranca y avisa al usuario.
-- **CH LOCK**: Bloqueo total de sintonía para evitar cambios accidentales.
+- **Orden Numérico 1-40**: La sintonización recorre los canales estrictamente por número.
+- **Scan Engine**: Velocidad ~400ms, parada de 3s en voz. Bloqueado si el Squelch está abierto.
 
 ### 🖼️ INTERFAZ NEXUS (UI FREEZE V11.0)
-- **Cero Movimiento**: El bloque de canales central tiene un ancho fijo de **140dp**. La línea de estado tiene altura fija de **32dp**. Prohibido cualquier cambio que cause saltos o desplazamientos.
+- **Cero Movimiento**: Bloque central de **140dp**, línea de estado de **32dp**. Prohibido causar desplazamientos visuales.
 - **Identidad Visual**:
-    - **SQUELCH**: Es la palabra clave para el estado de reposo (puerta cerrada).
-    - **Verde Esmeralda**: Color exclusivo (`0xFF10B981`) para el nombre de quien habla, con efecto fundido y glow.
-    - **S-Meter**: 20 LEDs con halo de luz (glow) dinámico.
-- **Identidad**: El usuario debe verse siempre el primero en la zona como **(YO)**.
+    - **SQUELCH**: Estado de reposo técnico.
+    - **Verde Esmeralda**: Color exclusivo (`0xFF10B981`) para el nombre de quien habla.
+    - **S-Meter**: 20 LEDs con halo de luz dinámico (glow).
+    - **Replay Progress**: El icono se apaga progresivamente durante el uso.
 
-### 🔐 IDENTIDAD
-- **Hardware ID**: Vincular sesiones al ID único del dispositivo (Web/Android). Prohibido basar la identidad solo en nombres efímeros.
+### 🔐 IDENTIDAD Y NICK
+- **Hard-Lock ID**: Un equipo = un usuario. Prohibido duplicar sesiones en Firebase por cambios de Nick.
+- **Indicativos**: Mínimo 2, máximo 32 caracteres. Soporta indicativos largos profesionales.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 11.0 (PROYECTO BLINDADO)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 11.0 (PROYECTO BLINDADO TOTAL)

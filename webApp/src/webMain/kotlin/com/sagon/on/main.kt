@@ -440,7 +440,8 @@ fun main() {
                 }
             },
             onShareRequest = { city, channel, subtone, _, _, _ -> 
-                val shareText = "📻 ¡Únete a mi frecuencia en ON AIR!\n📍 Ciudad: $city\n📡 Canal: $channel\n🔐 Subtono: $subtone\n\nEntra aquí: https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone"
+                val subText = if (subtone != "0000") " | 🔐 *$subtone*" else ""
+                val shareText = "📻 *ON AIR SPAIN*\n📍 *$city* | 🔊 *CH $channel*$subText\n\n¡Modulamos! 🚀\nhttps://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone"
                 val w = window.asDynamic()
                 val encoded = w.encodeURIComponent(shareText)
                 window.open("https://api.whatsapp.com/send?text=$encoded", "_blank")

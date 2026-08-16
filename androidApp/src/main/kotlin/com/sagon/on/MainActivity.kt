@@ -1097,11 +1097,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             fun share(city: String, channel: String, subtone: String?, proRole: String?) {
                                 post {
                                     val shareText = if (city == "RADAR") {
-                                        "📡 ¡Vigilancia Hertz Activa! Estoy analizando la presencia biológica en la red ON AIR SPAIN. Únete a la frecuencia: https://asurpan.github.io/sevillaON/"
+                                        "📡 ¡Vigilancia Hertz Activa! *ON AIR SPAIN*\nAnalizando presencia biológica... 🧬\n\nÚnete: https://asurpan.github.io/sevillaON/"
                                     } else {
-                                        val subText = if (subtone != null && subtone != "0000") " (Código: $subtone)" else ""
-                                        val proText = if (proRole != null) " [$proRole]" else ""
-                                        "📻 ¡Modulamos! Te espero en ON AIR SPAIN.\n📍 Ciudad: $city\n🔊 Canal: $channel$subText$proText\n\nEntra ahora: https://asurpan.github.io/sevillaON/"
+                                        val subText = if (subtone != null && subtone != "0000") " | 🔐 *$subtone*" else ""
+                                        "📻 *ON AIR SPAIN*\n📍 *$city* | 🔊 *CH $channel*$subText\n\n¡Modulamos! 🚀\nhttps://asurpan.github.io/sevillaON/"
                                     }
 
                                     val sendIntent = android.content.Intent().apply {

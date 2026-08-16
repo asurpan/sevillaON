@@ -73,6 +73,7 @@ fun App(
     onInstallDismiss: () -> Unit = {},
     externalNotification: AppNotification?,
     externalBackPressCount: Int = 0,
+    externalVolume: Float = 0.7f,
     micLevel: Float,
     isBeeping: Boolean,
     isCodedRx: Boolean = false,
@@ -141,6 +142,10 @@ fun App(
     var lastBackPressTime by remember { mutableStateOf(0L) }
     var pendingDialog by remember { mutableStateOf<RadioDialogType?>(null) }
 
+    LaunchedEffect(externalVolume) {
+        radioState = radioState.copy(systemVolume = externalVolume)
+    }
+    
     val notificationToShow = externalNotification ?: localNotification
     
     LaunchedEffect(externalBackPressCount) {

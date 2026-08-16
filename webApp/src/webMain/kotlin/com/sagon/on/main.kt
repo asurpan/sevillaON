@@ -137,6 +137,13 @@ fun main() {
     RadioMapsManager.install()
     RadioBridge.install()
 
+    // --- 🛡️ PREVENCIÓN DE CIERRE EN WEB (UNLOAD HACK) ---
+    window.addEventListener("beforeunload", { event ->
+        val e = event.asDynamic()
+        e.preventDefault()
+        e.returnValue = ""
+    })
+
     ComposeViewport(root) {
         val initialState = remember { RadioPersistence.loadInitialState() }
         
@@ -154,6 +161,17 @@ fun main() {
         
         val isReplayReadyState = remember { mutableStateOf(false) }
         val replayProgressState = remember { mutableStateOf(0f) }
+        val systemVolumeState = remember { mutableStateOf(0.7f) }
+        val backPressCount = remember { mutableStateOf(0) }
+
+        // --- 🛡️ VINCULACIÓN DEL BOTÓN ATRÁS DEL NAVEGADOR (WEB) ---
+        LaunchedEffect(Unit) {
+            window.history.pushState(null, "", window.location.href)
+            window.addEventListener("popstate", {
+                backPressCount.value++
+                window.history.pushState(null, "", window.location.href)
+            })
+        }
 
         RadioBridge.setupDispatchers(
             win = win,
@@ -163,7 +181,7 @@ fun main() {
             onPttBlocked = { },
             onReplayEmpty = { },
             onReplayStart = { },
-            onBack = { },
+            onBack = { backPressCount.value++ },
             onNickConflict = { },
             onUsersUpdate = { users ->
                 try {
@@ -310,7 +328,10 @@ fun main() {
             onRoomUpdate = { newRoom ->
                 radioState.value = radioState.value.copy(city = newRoom, channel = newRoom)
             },
-            onPttLive = { isPttLiveState.value = it }
+            onPttLive = { isPttLiveState.value = it },
+            onVolumeSync = { newVol ->
+                systemVolumeState.value = newVol
+            }
         )
 
         App(
@@ -325,7 +346,12 @@ fun main() {
             onLogout = { RadioPersistence.logout() },
             onInstallRequest = { },
             externalShowExitConfirm = false,
-            onExternalExitRequest = { _, _ -> },
+            onExternalExitRequest = { _, _ -> 
+                val w = window.asDynamic()
+                if (w.AndroidApp != null && w.AndroidApp.minimizeApp != null) {
+                    w.AndroidApp.minimizeApp()
+                }
+            },
             onShareRequest = { city, channel, subtone, _, _, _ -> 
                 val shareText = "📻 ¡Únete a mi frecuencia en ON AIR!\n📍 Ciudad: $city\n📡 Canal: $channel\n🔐 Subtono: $subtone\n\nEntra aquí: https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone"
                 val w = window.asDynamic()
@@ -400,6 +426,8 @@ fun main() {
             onInstallConfirm = { },
             onInstallDismiss = { },
             externalNotification = notificationState.value,
+            externalVolume = systemVolumeState.value,
+            externalBackPressCount = backPressCount.value,
             micLevel = micLevelState.value,
             isBeeping = isBeepingState.value,
             isCodedRx = false,

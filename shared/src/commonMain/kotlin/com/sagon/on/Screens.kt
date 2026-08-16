@@ -273,7 +273,7 @@ fun RadioPanel(
                     Column(modifier = Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Row(modifier = Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.width(60.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                MiniTechLabel("SQL", "${(state.squelch * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.SQUELCH_CONTROL, null) }
+                                MiniTechLabel("VOL", "${(state.systemVolume * 100).toInt()}%") { }
                                 MiniTechLabel("RFG", "${(state.rfGain * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.GAIN_CONTROL, null) }
                                 MiniTechLabel("MON", "${(state.monitorVolume * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.MONI, null) }
                             }
@@ -302,8 +302,25 @@ fun RadioPanel(
                                 
                                 // CANAL PRINCIPAL
                                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                    IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(28.dp)) {
-                                        Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold.copy(0.4f), modifier = Modifier.size(14.dp))
+                                    val blinkAlpha = remember { Animatable(1f) }
+                                    LaunchedEffect(Unit) {
+                                        while(true) {
+                                            delay((3000..8000).random().toLong()) // Espera aleatoria entre parpadeos
+                                            blinkAlpha.animateTo(0.3f, tween(150))
+                                            blinkAlpha.animateTo(1f, tween(150))
+                                            if ((0..1).random() == 1) { // A veces hace un doble parpadeo
+                                                delay(100)
+                                                blinkAlpha.animateTo(0.3f, tween(100))
+                                                blinkAlpha.animateTo(1f, tween(100))
+                                            }
+                                        }
+                                    }
+
+                                    IconButton(
+                                        onClick = { onShare(state.channel, state.subtone, null, null) }, 
+                                        modifier = Modifier.size(36.dp).graphicsLayer(alpha = blinkAlpha.value)
+                                    ) {
+                                        Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold.copy(0.8f), modifier = Modifier.size(20.dp))
                                     }
                                     Spacer(Modifier.width(2.dp))
                                     Text(
@@ -349,10 +366,30 @@ fun RadioPanel(
                 // Lista de Operadores
                 Text("OPERADORES EN ZONA", color = Color.White.copy(0.3f), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth())
                 LazyRow(modifier = Modifier.fillMaxWidth().height(100.dp), contentPadding = PaddingValues(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(users.filter { it.city.split("-")[0] == state.city.split("-")[0] }) { user -> 
+                    // Primero mostrarte a ti mismo (si estás en la lista)
+                    val me = users.find { it.nick.trim().uppercase() == nick.trim().uppercase() }
+                    if (me != null) {
+                        item {
+                            UserCard(
+                                user = me,
+                                isMe = true,
+                                onFriendToggle = { },
+                                onPrivateChat = { },
+                                onReport = { },
+                                onBlock = { },
+                                onAvatarClick = { }
+                            )
+                        }
+                    }
+
+                    // Luego el resto de usuarios filtrados, excluyéndote a ti
+                    items(users.filter { 
+                        it.city.split("-")[0] == state.city.split("-")[0] && 
+                        it.nick.trim().uppercase() != nick.trim().uppercase() 
+                    }) { user -> 
                         UserCard(
                             user = user, 
-                            isMe = (user.nick.trim().uppercase() == nick.trim().uppercase()), 
+                            isMe = false, 
                             onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, 
                             onPrivateChat = { }, 
                             onReport = { onReport(user.id) }, 

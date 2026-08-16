@@ -127,6 +127,15 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     private var webViewInstance: WebView? = null
     
+    private fun notifyVolumeChange() {
+        val current = audioManager?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
+        val max = audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
+        val pct = current.toFloat() / max.toFloat()
+        runOnUiThread {
+            webViewInstance?.evaluateJavascript("if(window.dispatch_volume_sync) window.dispatch_volume_sync($pct);", null)
+        }
+    }
+
     private var currentEngineeringThread: Thread? = null
     private var currentAudioTrack: android.media.AudioTrack? = null
     private var originalMusicVolume: Int = -1
@@ -683,6 +692,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 val direction = if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER
                 // Forzamos el ajuste de Multimedia y mostramos la barra correspondiente
                 audioManager?.adjustStreamVolume(AudioManager.STREAM_MUSIC, direction, AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND)
+                notifyVolumeChange()
             }
             return true
         }
@@ -908,6 +918,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                     context.contentResolver, 
                                     android.provider.Settings.Secure.ANDROID_ID
                                 )
+                            }
+
+                            @JavascriptInterface
+                            fun getSystemVolume(): Float {
+                                val current = audioManager?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
+                                val max = audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
+                                return current.toFloat() / max.toFloat()
                             }
 
                             @JavascriptInterface

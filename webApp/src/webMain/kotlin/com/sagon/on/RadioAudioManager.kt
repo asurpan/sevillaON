@@ -120,9 +120,23 @@ object RadioAudioManager {
                     window.app.txGate.gain.value = 0;
                     window.app.txGate.connect(window.app.txBus);
 
+                    // 🛡️ AUDIO KEEP-ALIVE: Oscilador ultrasónico (21kHz) inaudible
+                    // Esto evita que el canal WebRTC se cierre por "inactividad" de audio.
+                    window.app.keepAlive = window.app.ctx.createOscillator();
+                    window.app.keepAlive.frequency.value = 21000;
+                    window.app.keepAliveGain = window.app.ctx.createGain();
+                    window.app.keepAliveGain.gain.value = 0.001; // Amplitud mínima
+                    window.app.keepAlive.connect(window.app.keepAliveGain);
+                    window.app.keepAliveGain.connect(window.app.txBus);
+                    window.app.keepAlive.start();
+
                     window.app.moniGainNode = window.app.ctx.createGain();
                     window.app.moniGainNode.gain.value = 0;
                     window.app.moniGainNode.connect(window.app.masterOut);
+
+                    // 📻 BUS DE RECEPCIÓN (PURO): Sólo voz remota, sin ruido local.
+                    window.app.rxReplayBus = window.app.ctx.createGain();
+                    window.app.rxReplayBus.connect(window.app.filter);
                 } catch(e) { }
             };
 
@@ -218,7 +232,8 @@ object RadioAudioManager {
                     
                     source.connect(analyser);
                     source.connect(gainNode);
-                    gainNode.connect(window.app.filter);
+                    if (window.app.rxReplayBus) gainNode.connect(window.app.rxReplayBus);
+                    else gainNode.connect(window.app.filter);
                     
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
@@ -395,41 +410,77 @@ private object ReplayEngine {
         js("""
             var replayBlobs = [];
             var currentRecorder = null;
+            var activityDetected = false;
+            var replayAnalyser = null;
 
             window.initReplayRecorder = function() {
-                if (!window.app.ctx) return;
+                if (!window.app.ctx || !window.app.rxReplayBus) return;
+                
                 var streamDest = window.app.ctx.createMediaStreamDestination();
-                window.app.filter.connect(streamDest);
+                window.app.rxReplayBus.connect(streamDest);
+                
+                // Analizador para detectar silencio/voz
+                replayAnalyser = window.app.ctx.createAnalyser();
+                replayAnalyser.fftSize = 256;
+                window.app.rxReplayBus.connect(replayAnalyser);
 
                 function captureSegment() {
                     if (currentRecorder && currentRecorder.state === "recording") {
                         currentRecorder.stop();
                     }
                     
+                    activityDetected = false;
                     var chunks = [];
-                    currentRecorder = new MediaRecorder(streamDest.stream);
-                    currentRecorder.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
-                    currentRecorder.onstop = function() {
-                        if (chunks.length > 0) {
-                            var blob = new Blob(chunks, { type: currentRecorder.mimeType });
-                            replayBlobs.push(blob);
-                            // 🕒 Buffer de 30 segundos (6 bloques de 5s)
-                            if (replayBlobs.length > 6) replayBlobs.shift();
-                            if (window.dispatch_replay_available) window.dispatch_replay_available(true);
-                        }
-                    };
-                    currentRecorder.start();
+                    
+                    // Intentar encontrar el mejor codec soportado
+                    var mimeType = "audio/webm;codecs=opus";
+                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/ogg;codecs=opus";
+                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/mp4";
+                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "";
+
+                    try {
+                        currentRecorder = new MediaRecorder(streamDest.stream, mimeType ? { mimeType: mimeType } : {});
+                        currentRecorder.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
+                        currentRecorder.onstop = function() {
+                            // 🛡️ REGLA DE ORO: Solo guardar si hubo actividad real (voz)
+                            if (chunks.length > 0 && activityDetected) {
+                                var blob = new Blob(chunks, { type: currentRecorder.mimeType || 'audio/webm' });
+                                replayBlobs.push(blob);
+                                // 🕒 Buffer de 1 minuto (12 bloques de 5s)
+                                if (replayBlobs.length > 12) replayBlobs.shift();
+                                if (window.dispatch_replay_available) window.dispatch_replay_available(true);
+                            }
+                        };
+                        currentRecorder.start();
+                    } catch(e) { console.error("Replay Recorder Error:", e); }
                 }
 
-                // Captura en bloques de 5 segundos para evitar archivos corruptos
+                // Monitoreo de actividad (VOX de Replay)
+                function monitorActivity() {
+                    if (replayAnalyser && currentRecorder && currentRecorder.state === "recording") {
+                        var d = new Uint8Array(replayAnalyser.fftSize);
+                        replayAnalyser.getByteTimeDomainData(d);
+                        for(var i=0; i<d.length; i++) {
+                            if (Math.abs(d[i] - 128) > 5) { // Umbral de sensibilidad
+                                activityDetected = true;
+                                break;
+                            }
+                        }
+                    }
+                    requestAnimationFrame(monitorActivity);
+                }
+
                 captureSegment();
+                monitorActivity();
                 setInterval(captureSegment, 5000);
             };
 
             window.playReplay = function() {
-                if (replayBlobs.length === 0) return;
+                if (replayBlobs.length === 0) {
+                    if (window.dispatch_notification) window.dispatch_notification('REPLAY VACÍO', 'No hay grabaciones con voz reciente.', 'info');
+                    return;
+                }
                 
-                // Hacemos una copia de los blobs actuales para la reproducción
                 var playlist = [...replayBlobs];
                 var index = 0;
 
@@ -441,6 +492,9 @@ private object ReplayEngine {
 
                     var url = URL.createObjectURL(playlist[index]);
                     var audio = new Audio(url);
+                    
+                    // 🚀 PASAR RÁPIDO: Reproducción a 1.15x para ganar tiempo
+                    audio.playbackRate = 1.15;
                     
                     audio.onplay = function() {
                         if (window.dispatch_replay_progress) {
@@ -470,7 +524,7 @@ private object ReplayEngine {
                 playNext();
             };
             
-            setTimeout(window.initReplayRecorder, 2000);
+            setTimeout(window.initReplayRecorder, 3000);
         """)
     }
 }

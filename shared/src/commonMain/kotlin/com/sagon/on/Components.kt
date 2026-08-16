@@ -106,15 +106,16 @@ fun UserCard(
         border = BorderStroke(1.dp, if (user.isTransmitting) Color.Red.copy(0.4f) else Color.White.copy(0.1f))
     ) {
         Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Box(contentAlignment = Alignment.Center) {
+            // 🛡️ FIX: Tamaño fijo para evitar "saltos" de línea al activar el pulse de transmisión
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 if (user.isTransmitting) {
-                    Box(Modifier.size(44.dp).scale(pulseScale).background(Color.Red.copy(0.2f), CircleShape))
+                    Box(Modifier.size(42.dp).scale(pulseScale).background(Color.Red.copy(0.2f), CircleShape))
                 }
                 Surface(modifier = Modifier.size(36.dp), shape = CircleShape, color = Color.Black) {
                     Icon(Icons.Rounded.Person, null, tint = if (isMe) LuxeColors.Gold else Color.White, modifier = Modifier.padding(6.dp))
                 }
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
             Text(user.nick, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
             if (isMe) Text("(YO)", color = LuxeColors.Gold, fontSize = 9.sp, fontWeight = FontWeight.Bold)
             else Text("${(user.txPower * 10).toInt()}W", color = Color.White.copy(0.4f), fontSize = 9.sp)

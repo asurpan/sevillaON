@@ -27,12 +27,22 @@ object RadioPersistence {
             val profileStr = urlActivity ?: localStorage.getItem("activeProfile")
             val profile = ActivityProfile.entries.find { it.name == profileStr } ?: ActivityProfile.NORMAL
 
+            val win: dynamic = window
+            var initialMoniVol = localStorage.getItem("moniVol")?.toFloatOrNull() ?: 0.5f
+            
+            // 🛡️ SINCRONIZACIÓN CON EL VOLUMEN DEL SISTEMA (SÓLO SI ES LA PRIMERA CARGA)
+            if (win.AndroidApp != null && win.AndroidApp.getSystemVolume != null) {
+                try {
+                    initialMoniVol = win.AndroidApp.getSystemVolume() as Float
+                } catch(e: Exception) {}
+            }
+
             RadioState(
                 city = finalCity,
                 channel = initialChannel,
                 subtone = urlSubtone ?: (localStorage.getItem("lastSubtone") ?: "0000"),
                 voxSensitivity = localStorage.getItem("voxSens")?.toFloatOrNull() ?: 0.5f,
-                monitorVolume = localStorage.getItem("moniVol")?.toFloatOrNull() ?: 0.5f,
+                monitorVolume = initialMoniVol,
                 rfGain = localStorage.getItem("rfGain")?.toFloatOrNull() ?: 0.5f, 
                 isRogerBeepEnabled = localStorage.getItem("roger")?.toBoolean() ?: true,
                 isVoxEnabled = localStorage.getItem("voxActive")?.toBoolean() ?: false,

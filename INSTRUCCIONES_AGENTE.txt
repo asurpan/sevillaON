@@ -1,31 +1,31 @@
-# 📘 MANUAL DE OPERACIONES V12.1 - RADIO ON AIR SPAIN (ÉLITE SEO)
+# 📘 MANUAL DE OPERACIONES V12.2 - RADIO ON AIR SPAIN (ÉLITE SEO & ONE-SHOT)
 
-Este manual contiene las instrucciones técnicas y comerciales críticas. Lectura OBLIGATORIA.
+Este manual contiene las instrucciones técnicas, comerciales y de memoria crítica. Lectura OBLIGATORIA.
 
 ## 🏗️ ARQUITECTURA DE MISIÓN CRÍTICA
-1. **RadioAudioManager.kt**: Corazón del AudioContext, distorsión por pisado y buses de grabación silenciados.
-2. **index.html / robots.txt / sitemap.xml**: Núcleo de marketing e indexación en Google.
+1. **RadioAudioManager.kt**: Corazón del AudioContext, distorsión por pisado y motor Replay V4.2 One-Shot.
+2. **index.html / robots.txt / sitemap.xml**: Núcleo de marketing e indexación SEO Social.
 3. **ManosLibres.kt**: Motor VOX y ruteo de micro local al bus de grabación.
-4. **Screens.kt**: Interfaz Nexus blindada geométricamente.
+4. **Screens.kt**: Interfaz Nexus con bordes Élite (fundidos) y LEDs verdes.
 
 ## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK)
 
 ### 🔊 AUDIO Y TRANSMISIÓN
-- **Eco-Zero**: El micro local se graba vía `masterRecordBus`. NUNCA conectarlo a rutas audibles para el propio usuario fuera del MONI (en TX).
+- **Eco-Zero**: El micro local se graba vía `masterRecordBus`. NUNCA conectarlo a rutas audibles para el propio usuario.
 - **Pisado Real**: Diferencia de potencia > 0.05 activa distorsión; > 0.25 activa aplastamiento total.
-- **Voz Blindada**: Mantener DOM Sink con reproducción forzada.
-- **Replay V4.2**: Graba todo el canal. Compatible con todos los codecs móviles.
+- **Replay One-Shot**: Una vez pulsado, se consume el audio almacenado y la memoria se limpia. No permite repetición del mismo fragmento.
+- **Bordes Élite**: La pantalla Nexus usa bordes fundidos con Soft Glow y degradados verticales.
 
 ### 📡 VETERANÍA Y POTENCIA
 - **Progreso**: +0.002 pwr / 5s de charla. Rango 0.7 a 1.0.
-- **Jerarquía**: Los vatios (W) en pantalla determinan quién domina el canal físicamente.
+- **Jerarquía**: Los vatios (W) determinan el dominio físico del canal.
 
-### 🖼️ INTERFAZ Y SEO
-- **Landing V12.1**: Textos optimizados para búsqueda de "Walkie Talkie" y "Radio CB".
-- **Nexus UI**: Prohibido causar desplazamientos visuales (Contenedor 32dp fijo).
-- **Verde Esmeralda**: Color exclusivo para RX con efecto fundido.
+### 🖼️ INTERFAZ Y SEO SOCIAL
+- **Landing Social**: Textos optimizados para "conocer gente", "ligar por radio" y "reparar emisora".
+- **Verde Esmeralda**: Color exclusivo para RX (Etiqueta de nombre) y LEDs de modulación.
+- **Fondo Turquesa**: El resto de la UI (botones, canales) se mantiene en el turquesa original.
 
 ### 🔐 IDENTIDAD
 - **Hard-Lock ID**: Un equipo = un usuario en Firebase. Prohibido duplicar sesiones.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 12.1 (ÉLITE DISTORTION & SEO)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 12.2 (ONE-SHOT REPLAY & BORDES ÉLITE)

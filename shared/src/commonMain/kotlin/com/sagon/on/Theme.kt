@@ -13,14 +13,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 object LuxeColors {
-    // Colores Base (REDISEÑO TURQUESA TÁCTICO)
-    val Gold = Color(0xFF22D3EE) // Turquesa / Cyan vibrante
+    // Colores Base (EQUILIBRIO TURQUESA + LEDS VERDES)
+    val Gold = Color(0xFF22D3EE) // Turquesa / Cyan vibrante para UI
     val GoldDim = Color(0xFF0891B2).copy(0.6f)
     val Red = Color(0xFFEF4444)
-    val Green = Color(0xFF22D3EE) // Cyan Brillante
+    val Green = Color(0xFF10B981) // Verde Esmeralda exclusivo para LEDs
     
     // Colores Premium "Gama Alta"
-    val DeepSea = Color(0xFF020617) // Azul Profundo
+    val DeepSea = Color(0xFF020617) 
     val ElectricBlue = Color(0xFF0EA5E9)
     val Slate900 = Color(0xFF020617)
     val Slate800 = Color(0xFF0F172A)

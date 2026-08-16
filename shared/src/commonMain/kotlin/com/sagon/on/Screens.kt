@@ -29,8 +29,10 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.TextStyle
@@ -304,11 +306,11 @@ fun RadioPanel(
                         
                         Surface(
                             onClick = { if (isReplayReady && !isPlaying) onReplay() }, 
-                            color = if (isReplayReady) LuxeColors.Gold.copy(alpha = 0.2f * brightnessFactor) else Color.White.copy(0.05f), 
+                            color = if (isReplayReady || isPlaying) LuxeColors.Gold.copy(alpha = 0.2f * brightnessFactor) else Color.White.copy(0.05f), 
                             shape = CircleShape, 
-                            border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold.copy(alpha = brightnessFactor) else Color.White.copy(0.1f)), 
+                            border = BorderStroke(1.dp, if (isReplayReady || isPlaying) LuxeColors.Gold.copy(alpha = brightnessFactor) else Color.White.copy(0.1f)), 
                             modifier = Modifier.size(32.dp).drawBehind {
-                                if (isReplayReady) {
+                                if (isReplayReady || isPlaying) {
                                     // 🛡️ EFECTO RESPLANDOR (GLOW) DINÁMICO
                                     drawCircle(
                                         color = LuxeColors.Gold.copy(alpha = 0.2f * brightnessFactor),
@@ -323,7 +325,7 @@ fun RadioPanel(
                                 Icon(
                                     Icons.Rounded.History, 
                                     null, 
-                                    tint = if (isReplayReady) LuxeColors.Gold.copy(alpha = brightnessFactor) else Color.White.copy(0.2f), 
+                                    tint = if (isReplayReady || isPlaying) LuxeColors.Gold.copy(alpha = brightnessFactor) else Color.White.copy(0.2f), 
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -337,11 +339,31 @@ fun RadioPanel(
 
                 Spacer(Modifier.height(20.dp))
 
-                // Pantalla de la Radio (S-Meter y Canal)
+                // 📺 PANTALLA NEXUS: BORDES FUNDIDOS Y DISEÑO ÉLITE
                 Surface(
-                    modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(20.dp)), 
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .drawBehind {
+                            // 🛡️ EFECTO RESPLANDOR EXTERIOR (SOFT GLOW FUNDIDO)
+                            drawRoundRect(
+                                color = LuxeColors.Gold.copy(alpha = 0.08f),
+                                size = size,
+                                cornerRadius = CornerRadius(22.dp.toPx()),
+                                style = Stroke(width = 6.dp.toPx())
+                            )
+                        }, 
                     color = Color.Black, 
-                    border = BorderStroke(2.dp, LuxeColors.Gold.copy(0.4f))
+                    border = BorderStroke(
+                        width = 1.dp, 
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                LuxeColors.Gold.copy(0.4f),
+                                LuxeColors.Gold.copy(0.05f)
+                            )
+                        )
+                    )
                 ) {
                     Column(modifier = Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Row(modifier = Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -424,7 +446,7 @@ fun RadioPanel(
                                         val ledColor = when {
                                             i > 16 -> Color(0xFFEF4444) // Rojo
                                             i > 12 -> Color(0xFFFACC15) // Amarillo
-                                            else -> LuxeColors.Gold     // Cyan
+                                            else -> LuxeColors.Green    // 🟢 VERDE (Cambio solicitado)
                                         }
                                         Box(
                                             modifier = Modifier

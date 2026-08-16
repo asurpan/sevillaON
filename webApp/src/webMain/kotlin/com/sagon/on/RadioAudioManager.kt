@@ -591,7 +591,13 @@ private object ReplayEngine {
                 if (replayBlobs.length === 0 || isPlaying) return;
                 
                 isPlaying = true;
+                // 🛡️ ONE-SHOT REPLAY: Mover contenido a playlist y vaciar la memoria inmediatamente
                 var playlist = [...replayBlobs];
+                replayBlobs = []; 
+                
+                // Apagar el aviso de "audio disponible"
+                if (window.dispatch_replay_available) window.dispatch_replay_available(false);
+
                 var index = 0;
 
                 // 🛡️ DUCKING TÁCTICO: Bajar la radio en vivo al mínimo absoluto para un audio de Replay perfecto

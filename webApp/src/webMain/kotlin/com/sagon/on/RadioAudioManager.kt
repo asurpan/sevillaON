@@ -29,9 +29,9 @@ object RadioAudioManager {
                     window.app.masterOut.connect(window.app.ctx.destination);
                     
                     window.app.masterRxGain = window.app.ctx.createGain();
-                    window.app.masterRxGain.gain.value = 2.0;
+                    window.app.masterRxGain.gain.value = 3.5; // 🚀 GANANCIA DE RECEPCIÓN EXTRA
                     
-                    window.app.currentMasterGain = 1.4; // 🛡️ INICIO SEGURO: 70% por defecto
+                    window.app.currentMasterGain = 2.1; // 🛡️ INICIO POTENTE (Equivale a 70% con multiplicador x3)
 
                     window.app.compressor = window.app.ctx.createDynamicsCompressor();
                     window.app.compressor.threshold.value = -20;
@@ -99,8 +99,9 @@ object RadioAudioManager {
                     window.setMasterVolume = function(v) {
                         if (!window.app || !window.app.masterOut) return;
                         var now = window.app.ctx.currentTime;
-                        // Mapeo: 0.0 -> 0.0, 1.0 -> 2.0 (para dar un extra de potencia)
-                        window.app.currentMasterGain = v * 2.0;
+                        // 🚀 MOTOR DE POTENCIA: Mapeo agresivo para sonar por encima del sistema
+                        // 0.0 -> 0.0, 0.7 -> 1.8, 1.0 -> 3.0
+                        window.app.currentMasterGain = v * 3.0; 
                         if (!window.app.pttStateInternal) {
                             window.app.masterOut.gain.setTargetAtTime(window.app.currentMasterGain, now, 0.1);
                         }

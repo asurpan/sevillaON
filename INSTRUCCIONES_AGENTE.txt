@@ -1,31 +1,32 @@
-# 📘 MANUAL DE OPERACIONES V12.2 - RADIO ON AIR SPAIN (ÉLITE SEO & ONE-SHOT)
+# 📘 MANUAL DE OPERACIONES V12.2 - RADIO ON AIR SPAIN (ÉLITE SECURITY)
 
-Este manual contiene las instrucciones técnicas, comerciales y de memoria crítica. Lectura OBLIGATORIA.
+Este manual contiene las instrucciones técnicas, comerciales y de seguridad activa. Lectura OBLIGATORIA.
 
 ## 🏗️ ARQUITECTURA DE MISIÓN CRÍTICA
-1. **RadioAudioManager.kt**: Corazón del AudioContext, distorsión por pisado y motor Replay V4.2 One-Shot.
-2. **index.html / robots.txt / sitemap.xml**: Núcleo de marketing e indexación SEO Social.
-3. **ManosLibres.kt**: Motor VOX y ruteo de micro local al bus de grabación.
-4. **Screens.kt**: Interfaz Nexus con bordes Élite (fundidos) y LEDs verdes.
+1. **RadioAudioManager.kt**: AudioContext, distorsión por pisado y buses silenciosos.
+2. **RadioDialogs.kt**: Gestión de alertas de seguridad y advertencias de veteranía.
+3. **index.html**: Núcleo de marketing SEO y Social.
+4. **Screens.kt**: Interfaz Nexus blindada.
 
 ## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK)
 
 ### 🔊 AUDIO Y TRANSMISIÓN
-- **Eco-Zero**: El micro local se graba vía `masterRecordBus`. NUNCA conectarlo a rutas audibles para el propio usuario.
-- **Pisado Real**: Diferencia de potencia > 0.05 activa distorsión; > 0.25 activa aplastamiento total.
-- **Replay One-Shot**: Una vez pulsado, se consume el audio almacenado y la memoria se limpia. No permite repetición del mismo fragmento.
-- **Bordes Élite**: La pantalla Nexus usa bordes fundidos con Soft Glow y degradados verticales.
+- **Eco-Zero**: Micro grabado vía `masterRecordBus`. Prohibido el feedback local.
+- **Voz Blindada**: Mantener DOM Sink con reproducción forzada.
+- **Replay One-Shot**: Memoria volátil tras la primera escucha.
+
+### 🛡️ SEGURIDAD Y DERECHO DE ADMISIÓN
+- **Disuasión Hostil**: La opción de borrar datos debe ser desalentadora. Se debe usar un lenguaje firme sobre la pérdida de rango y la posibilidad de bloqueo físico del terminal (**BAN-HARDWARE**).
+- **Control de Identidad**: El sistema vincula al equipo con su indicativo. El cambio de nombre no crea un nuevo usuario, sino que actualiza el actual para evitar duplicados.
 
 ### 📡 VETERANÍA Y POTENCIA
-- **Progreso**: +0.002 pwr / 5s de charla. Rango 0.7 a 1.0.
-- **Jerarquía**: Los vatios (W) determinan el dominio físico del canal.
+- **Progreso**: +0.002 pwr / 5s. La potencia es el único factor de dominio físico del canal.
 
 ### 🖼️ INTERFAZ Y SEO SOCIAL
-- **Landing Social**: Textos optimizados para "conocer gente", "ligar por radio" y "reparar emisora".
-- **Verde Esmeralda**: Color exclusivo para RX (Etiqueta de nombre) y LEDs de modulación.
-- **Fondo Turquesa**: El resto de la UI (botones, canales) se mantiene en el turquesa original.
+- **Landing Social**: Optimizada para "conocer gente" y "reparar equipos".
+- **Nexus UI**: Bordes Élite fundidos y LEDs verde esmeralda.
 
 ### 🔐 IDENTIDAD
 - **Hard-Lock ID**: Un equipo = un usuario en Firebase. Prohibido duplicar sesiones.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 12.2 (ONE-SHOT REPLAY & BORDES ÉLITE)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 12.2 (COMUNIDAD PROTEGIDA)

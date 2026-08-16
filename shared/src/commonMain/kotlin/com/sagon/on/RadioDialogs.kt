@@ -405,10 +405,48 @@ fun RadioDialogs(
         }
         RadioDialogType.DELETE_DATA -> AlertDialog(
             onDismissRequest = onDismiss,
-            containerColor = LuxeColors.Red,
-            title = { Text("BORRAR RASTRO") },
-            text = { Text("Eliminará permanentemente tus datos en este dispositivo.") },
-            confirmButton = { Button(onClick = { onDismiss(); onLogoutConfirm() }, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = LuxeColors.Red)) { Text("BORRAR TODO") } }
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.border(2.dp, Color.Red.copy(0.6f), RoundedCornerShape(24.dp)),
+            icon = { Icon(Icons.Rounded.GppMaybe, null, tint = Color.Red, modifier = Modifier.size(54.dp)) },
+            title = { Text("☢️ ALERTA DE SEGURIDAD CRÍTICA", fontWeight = FontWeight.Black, color = Color.Red, textAlign = TextAlign.Center) },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "AL BORRAR DATOS PERDERÁS TODA TU POTENCIA (WATTS) ACUMULADA.",
+                        fontSize = 15.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "La veteranía es la única forma de dominar el canal (efecto de pisado) y acceder a funciones Élite. " +
+                        "Tu dispositivo está registrado en la base de datos central; el cambio reiterado de indicativo se detecta como ACTIVIDAD HOSTIL. " +
+                        "El abuso de esta función para evadir bloqueos o suplantar identidades resultará en la RESTRICCIÓN FÍSICA PERMANENTE (BAN-HARDWARE) de tu terminal para proteger la red.",
+                        fontSize = 12.sp,
+                        color = Color.White.copy(0.7f),
+                        lineHeight = 18.sp,
+                        textAlign = TextAlign.Justify
+                    )
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        "¿DESEAS PROCEDER Y DESTRUIR TU RANGO ACTUAL?",
+                        fontSize = 11.sp,
+                        color = Color.Red,
+                        fontWeight = FontWeight.Black,
+                        textAlign = TextAlign.Center,
+                        letterSpacing = 1.sp
+                    )
+                }
+            },
+            confirmButton = { 
+                LuxeButton("SÍ, DESTRUIR VETERANÍA", { onDismiss(); onLogoutConfirm() }, true, Modifier.fillMaxWidth().height(52.dp), Color.Red, Color.White) 
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss, modifier = Modifier.padding(top = 10.dp)) { 
+                    Text("CANCELAR Y MANTENER MIS VATIOS", color = LuxeColors.Gold, fontWeight = FontWeight.Black, fontSize = 12.sp) 
+                }
+            }
         )
         RadioDialogType.SUBTONO -> AlertDialog(
             onDismissRequest = onDismiss,

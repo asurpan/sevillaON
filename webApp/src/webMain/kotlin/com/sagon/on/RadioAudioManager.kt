@@ -164,9 +164,18 @@ object RadioAudioManager {
                     window.app.moniGainNode.gain.value = 0;
                     window.app.moniGainNode.connect(window.app.masterOut);
 
-                    // 📻 BUS DE RECEPCIÓN (PURO): Sólo voz remota, sin ruido local.
+                    // 📻 BUS DE RECEPCIÓN (PURO): Voz remota procesada para Replay.
                     window.app.rxReplayBus = window.app.ctx.createGain();
+                    window.app.rxReplayBus.gain.value = 1.0;
+                    
+                    // Conectamos el bus de Replay al filtro para que también se oiga en vivo
                     window.app.rxReplayBus.connect(window.app.filter);
+
+                    // 🛡️ REPLAY COMPRESSOR: Asegura que la grabación tenga volumen constante y potente
+                    window.app.replayCompressor = window.app.ctx.createDynamicsCompressor();
+                    window.app.replayCompressor.threshold.value = -15;
+                    window.app.replayCompressor.ratio.value = 10;
+                    window.app.rxReplayBus.connect(window.app.replayCompressor);
                 } catch(e) { }
             };
 
@@ -468,24 +477,25 @@ private object ReplayEngine {
             var isPlaying = false;
 
             window.initReplayRecorder = function() {
-                if (!window.app.ctx || !window.app.rxReplayBus) {
+                if (!window.app.ctx || !window.app.rxReplayBus || !window.app.replayCompressor) {
                     setTimeout(window.initReplayRecorder, 1000);
                     return;
                 }
                 
                 var streamDest = window.app.ctx.createMediaStreamDestination();
-                window.app.rxReplayBus.connect(streamDest);
+                window.app.replayCompressor.connect(streamDest);
                 
                 var replayAnalyser = window.app.ctx.createAnalyser();
                 replayAnalyser.fftSize = 256;
-                window.app.rxReplayBus.connect(replayAnalyser);
+                window.app.replayCompressor.connect(replayAnalyser);
 
                 function monitor() {
                     if (replayAnalyser) {
                         var d = new Uint8Array(replayAnalyser.fftSize);
                         replayAnalyser.getByteTimeDomainData(d);
                         for(var i=0; i<d.length; i++) {
-                            if (Math.abs(d[i] - 128) > 2) { 
+                            // 🛡️ UMBRAL TÁCTICO: Filtrar estática para no grabar "vacío"
+                            if (Math.abs(d[i] - 128) > 8) { 
                                 activityDetected = true;
                                 break;
                             }
@@ -498,32 +508,30 @@ private object ReplayEngine {
                 function startChunk() {
                     var chunks = [];
                     var hasVoiceInThisChunk = false;
-                    activityDetected = false; // Reset global activity
+                    activityDetected = false; 
 
                     try {
-                        var recorder = new MediaRecorder(streamDest.stream);
+                        // 🚀 CODEC LOCK: Forzar un formato estándar
+                        var recorder = new MediaRecorder(streamDest.stream, { mimeType: 'audio/webm' });
                         
                         recorder.ondataavailable = function(e) { 
                             if (e.data && e.data.size > 0) chunks.push(e.data); 
                         };
 
                         recorder.onstop = function() {
-                            // 🛡️ REGLA: Si hubo actividad en CUALQUIER momento de estos 5s, guardamos
-                            if (chunks.length > 0 && (hasVoiceInThisChunk || activityDetected)) {
-                                var blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+                            if (chunks.length > 0 && hasVoiceInThisChunk) {
+                                var blob = new Blob(chunks, { type: 'audio/webm' });
                                 replayBlobs.push(blob);
                                 if (replayBlobs.length > 6) replayBlobs.shift();
-                                if (window.dispatch_replay_available) window.dispatch_replay_available(replayBlobs.length > 0);
+                                if (window.dispatch_replay_available) window.dispatch_replay_available(true);
                             }
-                            startChunk(); // Ciclo infinito
+                            startChunk(); 
                         };
 
-                        // Monitoreo local del chunk
                         var checkInterval = setInterval(function() {
                             if (activityDetected) hasVoiceInThisChunk = true;
-                        }, 200);
+                        }, 100);
 
-                        // Cerrar chunk a los 5 segundos
                         setTimeout(function() {
                             clearInterval(checkInterval);
                             if (recorder.state === "recording") recorder.stop();
@@ -544,42 +552,51 @@ private object ReplayEngine {
                 isPlaying = true;
                 var playlist = [...replayBlobs];
                 var index = 0;
-                var player = new Audio();
-                player.playbackRate = 1.15;
+
+                // 🛡️ DUCKING: Silenciar radio en vivo durante el replay
+                var originalRxGain = window.app.masterRxGain.gain.value;
+                var originalNoiseGain = window.app.noise.gain.value;
+                window.app.masterRxGain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.1);
+                window.app.noise.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.1);
+
+                function finishReplay() {
+                    isPlaying = false;
+                    window.app.masterRxGain.gain.setTargetAtTime(originalRxGain, window.app.ctx.currentTime, 0.2);
+                    window.app.noise.gain.setTargetAtTime(originalNoiseGain, window.app.ctx.currentTime, 0.2);
+                    if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
+                }
 
                 function playNext() {
                     if (index >= playlist.length) {
-                        isPlaying = false;
-                        if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
+                        finishReplay();
                         return;
                     }
 
                     var url = URL.createObjectURL(playlist[index]);
-                    player.src = url;
+                    var audio = new Audio(url);
                     
-                    player.onplay = function() {
-                        if (window.dispatch_replay_progress) {
-                            window.dispatch_replay_progress((index + 1) / playlist.length);
-                        }
+                    // 🛡️ SYNC: Conectar el audio de replay a nuestra cadena de salida
+                    var source = window.app.ctx.createMediaElementSource(audio);
+                    source.connect(window.app.masterOut);
+                    
+                    audio.playbackRate = 1.15;
+                    audio.onplay = function() {
+                        if (window.dispatch_replay_available) window.dispatch_replay_available(true);
+                        if (window.dispatch_replay_progress) window.dispatch_replay_progress((index + 1) / playlist.length);
                     };
-
-                    player.onended = function() {
+                    audio.onended = function() {
                         URL.revokeObjectURL(url);
+                        source.disconnect();
                         index++;
                         playNext();
                     };
-
-                    player.onerror = function() {
+                    audio.onerror = function() {
                         URL.revokeObjectURL(url);
+                        source.disconnect();
                         index++;
                         playNext();
                     };
-
-                    player.play().catch(function(err) {
-                        console.error("Replay Playback Error:", err);
-                        index++;
-                        playNext();
-                    });
+                    audio.play().catch(finishReplay);
                 }
 
                 playNext();

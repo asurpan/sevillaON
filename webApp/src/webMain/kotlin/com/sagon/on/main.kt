@@ -154,6 +154,13 @@ fun main() {
 
     ComposeViewport(root) {
         val initialState = remember { RadioPersistence.loadInitialState() }
+
+        var screenState by remember { 
+            mutableStateOf(
+                if ((localStorage.getItem("indicativo") ?: "").isNotEmpty() && initialState.hasAcceptedMicExplain) Screen.RadioCB 
+                else Screen.Welcome
+            ) 
+        }
         
         val micLevelState = remember { mutableStateOf(0f) }
         val isBeepingState = remember { mutableStateOf(false) }
@@ -248,13 +255,17 @@ fun main() {
                             if (prevState && !isTransmitting) {
                                 val isMe = (k == win.app.sessionID)
                                 val senderRoger = u.roger == true
-                                if (!isMe && senderRoger && win.playUiSound != null) win.playUiSound("rx_off")
+                                // 🛡️ SILENCIO EN CARGA: Solo sonar si no estamos en la pantalla de bienvenida/carga
+                                if (!isMe && senderRoger && win.playUiSound != null && screenState != Screen.Welcome) {
+                                    win.playUiSound("rx_off")
+                                }
                             }
                             
                             // 🎵 PIRIPI (Modo Discreto / Inicio Transmisión)
                             if (!prevState && isTransmitting) {
                                 val isMe = (k == win.app.sessionID)
-                                if (!isMe && radioState.value.isDiscreteModeEnabled && win.playUiSound != null) {
+                                // 🛡️ SILENCIO EN CARGA: Solo sonar si no estamos en la pantalla de bienvenida/carga
+                                if (!isMe && radioState.value.isDiscreteModeEnabled && win.playUiSound != null && screenState != Screen.Welcome) {
                                     win.playUiSound("incoming")
                                 }
                             }
@@ -264,19 +275,22 @@ fun main() {
                             // 🎵 AVISO ENTRADA USUARIO (BEEP O NOTIFICACIÓN AMIGO)
                             if (k != win.app.sessionID && !usersNotified.contains(k)) {
                                 usersNotified.add(k)
-                                if (radioState.value.friends.contains(userNick)) {
-                                    // Es un amigo: Notificación especial
-                                    if (win.playUiSound != null) win.playUiSound("incoming")
-                                    notificationState.value = AppNotification(
-                                        title = "¡AMIGO EN FRECUENCIA!",
-                                        message = "Tu compañero $userNick acaba de entrar en ${win.app.currentCity}.",
-                                        type = NotificationType.Success
-                                    )
-                                    // Intentar notificación nativa si estamos en Android
-                                    js("if(window.AndroidApp && window.AndroidApp.showNotification) window.AndroidApp.showNotification('AMIGO CONECTADO', 'El operador ' + userNick + ' está en frecuencia.');")
-                                } else {
-                                    // Usuario normal: Solo beep grave
-                                    if (win.playUiSound != null) win.playUiSound("user_in")
+                                // 🛡️ SILENCIO EN CARGA: Solo sonar si no estamos en la pantalla de bienvenida/carga
+                                if (screenState != Screen.Welcome) {
+                                    if (radioState.value.friends.contains(userNick)) {
+                                        // Es un amigo: Notificación especial
+                                        if (win.playUiSound != null) win.playUiSound("incoming")
+                                        notificationState.value = AppNotification(
+                                            title = "¡AMIGO EN FRECUENCIA!",
+                                            message = "Tu compañero $userNick acaba de entrar en ${win.app.currentCity}.",
+                                            type = NotificationType.Success
+                                        )
+                                        // Intentar notificación nativa si estamos en Android
+                                        js("if(window.AndroidApp && window.AndroidApp.showNotification) window.AndroidApp.showNotification('AMIGO CONECTADO', 'El operador ' + userNick + ' está en frecuencia.');")
+                                    } else {
+                                        // Usuario normal: Solo beep grave
+                                        if (win.playUiSound != null) win.playUiSound("user_in")
+                                    }
                                 }
                             }
 
@@ -339,17 +353,21 @@ fun main() {
             onPttLive = { isPttLiveState.value = it },
             onVolumeSync = { newVol ->
                 systemVolumeState.value = newVol
+                val w = window.asDynamic()
+                if (w.setMasterVolume != null) w.setMasterVolume(newVol)
             }
         )
 
         App(
             savedNick = localStorage.getItem("indicativo") ?: "",
             initialState = radioState.value,
+            forceInitialScreen = (screenState == Screen.Welcome),
             isFirstTime = false,
             onOnboardingFinish = { },
             onPermissionRequest = { 
                 RadioNetworkManager.connect(it) 
                 js("window.ensureMicAccess()")
+                screenState = Screen.RadioCB
             },
             onLogout = { RadioPersistence.logout() },
             onInstallRequest = { },
@@ -446,7 +464,6 @@ fun main() {
             remoteUsers = remoteUsersState,
             remoteTransmitterName = remoteTransmitterName.value,
             chatMessages = chatMessagesState,
-            forceInitialScreen = false,
             audioIntegrity = true,
             onAntennaTest = { _ -> },
             onRequestLocationPermission = { },

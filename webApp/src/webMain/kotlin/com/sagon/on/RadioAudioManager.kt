@@ -332,20 +332,48 @@ object RadioAudioManager {
 
                 peers.forEach(id => {
                     var gain = window.app.remoteGains[id];
-                    if(!gain) return;
+                    var source = window.app.remoteSources[id];
+                    if(!gain || !source) return;
+                    
                     var p = window.app.remotePowers[id] || 0.7;
                     var diff = maxPwr - p;
                     
+                    // 🛡️ MOTOR DE DISTORSIÓN DINÁMICA (EFECTO PISADO REAL)
+                    if (!window.app.remoteDistortion) window.app.remoteDistortion = {};
+                    if (!window.app.remoteDistortion[id]) {
+                        var dist = window.app.ctx.createWaveShaper();
+                        dist.oversample = '4x';
+                        window.app.remoteDistortion[id] = dist;
+                        
+                        // Ruteo: Source -> Dist -> Gain
+                        source.disconnect();
+                        source.connect(dist);
+                        dist.connect(gain);
+                    }
+
+                    var distNode = window.app.remoteDistortion[id];
+                    
                     if(diff <= 0.05) {
-                        // Señales igualadas: Ambos se oyen fuerte
+                        // Señal limpia
                         gain.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.1);
+                        distNode.curve = null; 
                     } else if (diff > 0.25) {
-                        // DIFERENCIA CRÍTICA: Aplastamiento total (Saturación del receptor)
-                        gain.gain.setTargetAtTime(0.0, window.app.ctx.currentTime, 0.1);
+                        // APLASTAMIENTO TOTAL (Distorsión extrema + Casi silencio)
+                        gain.gain.setTargetAtTime(0.01, window.app.ctx.currentTime, 0.1);
+                        distNode.curve = null;
                     } else {
-                        // El más débil se oye de fondo con ruido (efecto pisado)
+                        // PISADO REAL (Voz deformada y de fondo)
                         var reduction = Math.max(0.05, 0.3 - diff);
                         gain.gain.setTargetAtTime(reduction, window.app.ctx.currentTime, 0.1);
+                        
+                        // Generar curva de saturación según la diferencia
+                        var k = diff * 800; // Nivel de "suciedad"
+                        var n_samples = 44100, curve = new Float32Array(n_samples);
+                        for (var i = 0; i < n_samples; ++i ) {
+                            var x = i * 2 / n_samples - 1;
+                            curve[i] = ( 3 + k ) * x / ( Math.PI + k * Math.abs(x) );
+                        }
+                        distNode.curve = curve; 
                     }
                 });
             }

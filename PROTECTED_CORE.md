@@ -1,44 +1,43 @@
-# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO
+# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO (V11.0 PURE RADIO)
 
-Este documento establece las reglas de NO MODIFICACIÓN para agentes de IA y desarrolladores.
+Este documento establece las leyes fundamentales de NO MODIFICACIÓN para agentes de IA y desarrolladores. El sistema ha sido optimizado para una experiencia de radio profesional y cualquier cambio no autorizado romperá la estabilidad del audio o la sintonización.
 
 ## 🚫 PROHIBICIÓN TOTAL
-Queda terminantemente prohibido modificar, alterar o "simplificar" el código en las siguientes áreas sin aprobación explícita del autor:
+Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el código en las siguientes áreas:
 
-1. **Motor de Audio Profesional (`RadioAudioManager.kt`)**: 
-    - **Cadena de Audio**: Prohibido alterar el orden de conexión (Señal -> RxGain -> MasterOut). El MasterOut (Volumen) debe ser siempre el último nodo.
-    - **Roger Beep**: Blindado a **1955Hz**, **0.3s** y envolvente de ataque plano (usado en `ptt_off` y `rx_off`).
-    - **UI Sounds**: Tonos de interacción (clicks, switches) configurados a **1800Hz** y **0.08s** para diferenciarlos de la radio.
-    - **QRM Atmosférico**: Generador de **Brown Noise** filtrado a 1500Hz/Q1.2.
-    - **Independencia de Señal**: El volumen maestro **NUNCA** debe afectar al nivel medido por los analizadores de los LEDs.
-2. **Motor de LEDs (`VOXEngine`)**:
-    - **Escala de Standby**: Limitado a **0.05-0.12** (1-2 segmentos) con Squelch abierto.
-    - **Cero Estricto**: Con Squelch cerrado, el nivel reportado debe ser **0.0 absoluto** (ahorro de batería).
-    - **S-Meter RX**: El nivel de recepción de voz debe saltar a **0.65+ (S9)**.
-3. **Lógica de Interfaz (`Screens.kt`)**:
-    - **Cálculo de LEDs**: La UI tiene **prohibido** calcular intensidades de señal. Debe usar exclusivamente el valor `mic` enviado por el motor de audio.
-4. **Lógica de Canales**: El sistema de filtrado por `city` y `channel` en Firebase.
-5. **Motor WebRTC**: Configuración de `PeerJS` y manejo de llamadas (Full Mesh 10 usuarios).
-6. **Ducking & Silencio**: Silencio absoluto en recepción durante la transmisión (TX).
-7. **VOX (Transmisión por Voz)**: 
-    - El disparador automático debe basarse en la modulación del micro local.
-    - Sensibilidad inversa: A mayor valor de `voxSens`, menor umbral de disparo.
-    - Mantener portadora activa (hang time) para evitar cortes bruscos.
-8. **Rangos de Usuario (Veteranía)**:
-    - Solo usuarios con potencia acumulada **>= 0.85W** pueden acceder a canales privados (Subtonos).
-    - Esto protege la red de la saturación por usuarios temporales y fomenta la participación pública.
-9. **Diseño Visual Nexus (`Screens.kt`)**:
-    - **ESTADO: CONGELADO**. Queda prohibido modificar el diseño visual de la pantalla Nexus, la disposición de los botones, tamaños o colores.
-    - **Bloque Central**: Debe mantener su anchura fija de 140dp para evitar saltos horizontales.
-    - **Botones de Canal**: Deben flanquear el bloque central con un tamaño de 54dp y forma circular.
-    - **Dúo de Control**: Solo deben aparecer VOL y SQL en la columna técnica principal.
-    - **Efectos Reclamo**: El icono de compartir debe mantener su parpadeo sutil aleatorio.
-10. **Lógica de Sintonización**:
-    - **Sintonía**: Los saltos deben ser siempre en orden numérico (1-40) y circulares.
-    - **Escaneo**: Debe detenerse automáticamente al detectar voz (3s) o al pulsar el PTT.
-    - **Parada Manual**: Un clic simple en las flechas de canal debe detener el escaneo si este se encuentra activo.
+1. **Blindaje de Voz y Transmisión (`RadioAudioManager.kt` & `ManosLibres.kt`)**:
+    - **DOM Sink Fix**: Es OBLIGATORIO crear elementos `<audio>` invisibles vinculados a cada stream remoto. Sin esto, los navegadores móviles NO decodifican la voz.
+    - **Audio Keep-Alive**: Mantener el oscilador ultrasónico de **20kHz** en el bus de salida para evitar que el canal de datos entre en suspensión.
+    - **Dither Anti-Gate**: Inyección de ruido rosa infinitesimal (0.001) para que el navegador no anule la voz pensando que es silencio.
+    - **Voice Boost**: El micro local debe tener un multiplicador de ganancia de **1.8x** antes de ser enviado a la red.
+
+2. **Motor de Audio Profesional**: 
+    - **Cadena de Audio**: Prohibido alterar el orden: Señal -> RxGain -> MasterOut (último nodo).
+    - **Potencia Dominante**: El volumen maestro tiene un multiplicador **x3.0** para sonar por encima del volumen del sistema.
+    - **Roger Beep**: Blindado a **1955Hz**, **0.3s** y ataque plano. Conectado tanto a salida local como al bus de transmisión (`txBus`).
+    - **PTT Tail**: Retardo de **400ms** al soltar el PTT para asegurar que el Roger Beep se transmita completo.
+
+3. **Motor de Replay Inteligente**:
+    - **Aislamiento RX**: Solo graba el `rxReplayBus` (voz de otros). Prohibido grabar QRM local o pitidos propios.
+    - **Detección de Silencio**: Los bloques sin voz (umbral < 2) deben ser descartados automáticamente.
+    - **Velocidad Táctica**: Reproducción fija a **1.15x** para revisión rápida.
+
+4. **Diseño Visual Nexus (`Screens.kt`)**:
+    - **ESTADO: CONGELADO TOTAL**. Prohibido mover botones o cambiar tamaños.
+    - **Blindaje Geométrico**: Bloque central fijo a **140dp**, botones laterales a **54dp**. No debe haber saltos horizontales al cambiar de canal.
+    - **Jerarquía Técnica**: Solo **VOL** y **SQL** aparecen en la columna principal. El resto (MON, DISC, DSP...) va al panel desplegable.
+    - **Identidad**: El usuario local siempre aparece el primero como **(YO)** con etiqueta dorada.
+
+5. **Lógica de Sintonización y Escaneo**:
+    - **Orden Numérico**: Los saltos deben ser estrictamente **1 al 40** y circulares.
+    - **Squelch-Lock**: El escaneo TIENE PROHIBIDO iniciarse si el Squelch está abierto (notificación en pantalla).
+    - **Control Total**: Un clic simple en las flechas durante un escaneo debe detenerlo instantáneamente. El PTT también detiene el escaneo.
+
+6. **Identidad y Persistencia**:
+    - **Hardware ID**: Uso de **Android ID** en nativo y **Web Device ID** persistente en navegador para reconocimiento único de equipos.
+    - **Inicio Seguro**: Volumen inicial al **70%** y Squelch cerrado (**SQL 60% / RFG 40%**) para evitar estática al primer inicio.
 
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
-Si un agente detecta un error en estas áreas, **DEBE INFORMAR** antes de aplicar cualquier cambio. No se permiten refactorizaciones automáticas ni cambios de diseño en el núcleo funcional.
+Si detectas un fallo, informa al autor. No apliques "mejoras" estéticas que comprometan estos blindajes técnicos. El núcleo está sellado para garantizar que la voz fluya siempre, incluso en condiciones de red móvil inestable.
 
-**ESTADO DEL NÚCLEO: SELLADO, OPTIMIZADO Y VERIFICADO.**
+**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y VERIFICADO (V11.0).**

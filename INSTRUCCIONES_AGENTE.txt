@@ -1,37 +1,41 @@
-# 📘 MANUAL DE OPERACIONES - RADIO ON AIR (PROTECTED CORE)
+# 📘 MANUAL DE OPERACIONES V11.0 - RADIO ON AIR SPAIN
 
-Este manual es de lectura OBLIGATORIA para cualquier IA o Agente que retome este proyecto.
+Este manual contiene las instrucciones técnicas críticas y es de lectura OBLIGATORIA para cualquier agente que intervenga en el código.
 
-## 🏗️ ARQUITECTURA (CLEAN MODULES)
-El motor web ha sido refactorizado en archivos independientes para una claridad total:
+## 🏗️ ARQUITECTURA DE MISIÓN CRÍTICA
+El sistema está dividido en módulos estancos para evitar regresiones de audio:
+1. **RadioAudioManager.kt**: Corazón del AudioContext, WebRTC y blindajes de voz.
+2. **ManosLibres.kt**: Motor VOX y captura de micro con Voice Boost.
+3. **RadioNetworkManager.kt**: Gestión de Firebase y señalización Mesh.
+4. **Screens.kt**: Interfaz Nexus blindada geométricamente.
+5. **main.kt**: Coordinación de puente y persistencia de Hardware ID.
 
-1. **RadioPersistence.kt**: Gestiona localStorage y carga de estado inicial.
-2. **RadioNetworkManager.kt**: Único punto de contacto con Firebase (Chat, Users, Inbox).
-3. **RadioAudioManager.kt**: Motor de AudioContext, WebRTC (PeerJS) y PTT.
-4. **RadioBridge.kt**: Puente de eventos JS -> Compose UI.
-5. **main.kt**: Punto de entrada y coordinación de la interfaz.
+## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK)
 
-## ⚠️ REGLAS DE ORO
-- **SEGURIDAD**: Cada Nick está vinculado al ID del teléfono (Hard-Lock). No permitir el cambio de Nick si ya existe un registro.
-- **PTT (MODO EMISORA REAL)**:
-    - Al pulsar PTT, el silencio en la recepción (RX) y el ruido de fondo (QRM) debe ser **ABSOLUTO (0.0)**.
-    - **TONOS**:
-        - **Roger Beep (PTT/RX OFF)**: OBLIGATORIAMENTE **1955Hz** / **0.3s**.
-        - **UI Sounds (Clicks/Etc)**: OBLIGATORIAMENTE **1800Hz** / **0.08s** (sonido corto y distinto).
-- **SQUELCH & QRM**: El ruido de banda es Brown Noise (Ruido Marrón) filtrado para máxima calidez. Debe pasar siempre por el filtro Bandpass y responder al control `setNoiseVolume`.
-- **METER (LEDs/S-METER)**:
-    - **PROHIBIDO RECALCULAR EN UI**: La pantalla (`Screens.kt`) NO debe calcular niveles de ruido ni intensidades. Debe usar UNICAMENTE el valor `mic` reportado por el motor de audio.
-    - El volumen de salida (Master Volume) **NUNCA** debe afectar a los LEDs. La señal de entrada y el volumen son independientes.
-    - Con Squelch abierto (solo ruido), los LEDs deben oscilar sutilmente entre 0.05 y 0.12 (máximo 1-2 LEDs).
-    - Con Squelch cerrado (silencio), el nivel reportado debe ser **0.0 estrictamente** para evitar parpadeos y ahorrar batería.
-    - En recepción de voz, el medidor debe saltar a la zona de S9 (0.65+).
-- **AUDIO TEXTURE**: Mantener el filtro Bandpass en **1500Hz** con **Q 1.2** para preservar la identidad de Radioaficionado.
-- **NETWORK**: Mantener "Nuclear Fix" (Frecuencia Única) y "Full Mesh" (Auto-call/Auto-answer) para garantizar que los móviles se vean y oigan sin filtros de canal por ahora.
-- **VISIBILIDAD**: Los LEDs de portadora deben encenderse SIEMPRE al pulsar.
-- **DESACOPLAMIENTO**: No mezclar lógica de audio en el NetworkManager ni viceversa.
+### 🔊 AUDIO Y TRANSMISIÓN
+- **Voz Blindada**: Nunca eliminar el **DOM Sink** (elementos audio ocultos) ni el **Dither Anti-Gate**. Sin ellos, la voz falla en móviles.
+- **Ducking Pro**: Al transmitir (TX), el silencio receptor debe ser **absoluto** para evitar ecos.
+- **Power Priority**: El volumen maestro de la app debe ser **x3.0** superior al nivel normal del sistema.
+- **Beep Sync**: El Roger Beep debe oírse localmente y transmitirse al bus de red. El PTT tiene un retardo de cierre de 400ms para este fin.
 
-## 🚀 DESPLIEGUE
-- El despliegue es automático vía GitHub Actions (25 min).
-- Si se añaden nuevos archivos, incluirlos siempre en el `git commit`.
+### 📡 SINTONIZACIÓN (MODO EMISORA REAL)
+- **Orden 1-40**: La sintonización recorre los canales numéricamente, no alfabéticamente por ciudad.
+- **Scan Engine**:
+    - Velocidad rítmica (salto cada ~400ms).
+    - Parada automática de 3s al detectar voz.
+    - Squelch-Lock: Si hay ruido (Squelch abierto), el escaneo no arranca y avisa al usuario.
+- **CH LOCK**: Bloqueo total de sintonía para evitar cambios por roce accidental.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 5.0 (ARQUITECTURA POR ARCHIVOS)
+### 🖼️ INTERFAZ NEXUS (UI FREEZE)
+- **Cero Movimiento**: El bloque de canales central tiene un ancho fijo de **140dp**. Los botones laterales son circulares de **54dp**. Prohibido cualquier cambio que cause saltos horizontales.
+- **VOL y SQL**: Son los únicos indicadores técnicos en la pantalla de inicio. El Monitor de Retorno (MON) va siempre oculto en herramientas.
+- **Identidad**: El usuario debe verse siempre el primero en la zona como **(YO)**.
+
+### 🔐 IDENTIDAD
+- **Hardware ID**: Vincular sesiones al ID único del dispositivo (Web/Android). Prohibido basar la identidad solo en nombres aleatorios para evitar suplantaciones.
+
+## 🚀 DESPLIEGUE Y ESTABILIDAD
+- Mantener siempre la capacidad de **10 usuarios por sala** para evitar divisiones innecesarias.
+- En Android, el botón atrás debe **minimizar** la app (`minimizeApp`), nunca cerrarla.
+
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 11.0 (BLINDAJE TOTAL DE VOZ Y UI)

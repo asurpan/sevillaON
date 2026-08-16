@@ -259,18 +259,13 @@ object RadioAudioManager {
             window.setupCallStream = function(call) {
                 console.log("📞 Recibiendo llamada de:", call.peer);
                 
-                // 🛡️ DOM SINK FIX: Elemento de audio visible pero oculto para forzar decodificación
+                // 🛡️ DOM SINK FIX (PROTECTED): Elemento de audio invisible para decodificación WebRTC
                 var remoteAudio = document.createElement("audio");
                 remoteAudio.setAttribute("autoplay", "true");
                 remoteAudio.setAttribute("playsinline", "true");
-                remoteAudio.muted = false; // 🔒 CRÍTICO: El elemento NO debe estar muteado para que el sistema no lo duerma
-                remoteAudio.volume = 0.001; // 🔒 Pero casi inaudible (el sonido real va por AudioContext)
+                remoteAudio.muted = true; // 🔒 OBLIGATORIO: Muted para evitar bloqueos de auto-play
                 
-                remoteAudio.style.position = "absolute";
-                remoteAudio.style.top = "0";
-                remoteAudio.style.width = "1px";
-                remoteAudio.style.height = "1px";
-                remoteAudio.style.opacity = "0.01";
+                remoteAudio.style.display = "none";
                 document.body.appendChild(remoteAudio);
                 
                 call.on('stream', function(remoteStream) {
@@ -278,13 +273,12 @@ object RadioAudioManager {
                     
                     remoteAudio.srcObject = remoteStream;
                     
-                    var forcePlay = function() {
-                        if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
-                        remoteAudio.play().catch(function(e) { console.log("Retrying play..."); });
-                    };
+                    // 🛡️ DESPERTAR MOTOR: Solo si es estrictamente necesario
+                    if (window.app.ctx.state === 'suspended') {
+                        window.app.ctx.resume();
+                    }
                     
-                    forcePlay();
-                    setInterval(forcePlay, 2000); // 🛡️ ANTIDORMIDERA: Forzar reproducción cada 2s
+                    remoteAudio.play().catch(function(e) { /* Silenciar error de play en muted */ });
 
                     console.log("🔊 Stream recibido de:", call.peer);
                     var source = window.app.ctx.createMediaStreamSource(remoteStream);

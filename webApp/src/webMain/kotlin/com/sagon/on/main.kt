@@ -30,8 +30,16 @@ fun main() {
 
         window.remoteTxStates = {};
         window.connectRadio = function(nick) {
-            var sessionID = nick + "_" + Math.random().toString(36).substring(2, 11);
+            // 🛡️ IDENTIFICADOR DE DISPOSITIVO PERSISTENTE (WEB HARDWARE ID)
+            var deviceID = localStorage.getItem("web_device_id");
+            if (!deviceID) {
+                deviceID = "web_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem("web_device_id", deviceID);
+            }
+            
+            var sessionID = nick + "_" + deviceID.substring(4, 12);
             window.app.nick = nick;
+            window.app.deviceID = deviceID;
             window.app.sessionID = sessionID;
             if (window.initAudio) window.initAudio();
             

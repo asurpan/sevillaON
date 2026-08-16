@@ -133,21 +133,27 @@ object RadioAudioManager {
                     window.app.txGate.gain.value = 0;
                     window.app.txGate.connect(window.app.txBus);
 
-                    // 🛡️ AUDIO KEEP-ALIVE: Oscilador ultrasónico (21kHz) inaudible
-                    // Esto evita que el canal WebRTC se cierre por "inactividad" de audio.
+                    // 🛡️ REFUERZO DE MOTOR (HOT-WIRE): Forzar al navegador a mantener vivo el procesamiento
+                    // Conectamos el canal de transmisión a una salida local silenciada para que el 
+                    // AudioContext nunca deje de bombear datos al nodo de red (WebRTC).
+                    var txHotWire = window.app.ctx.createGain();
+                    txHotWire.gain.value = 0;
+                    window.app.txGate.connect(txHotWire);
+                    txHotWire.connect(window.app.ctx.destination);
+
+                    // 🛡️ AUDIO KEEP-ALIVE: Oscilador ultrasónico (20kHz) inaudible
                     window.app.keepAlive = window.app.ctx.createOscillator();
-                    window.app.keepAlive.frequency.value = 21000;
+                    window.app.keepAlive.frequency.value = 20000;
                     window.app.keepAliveGain = window.app.ctx.createGain();
-                    window.app.keepAliveGain.gain.value = 0.001; // Amplitud mínima
+                    window.app.keepAliveGain.gain.value = 0.01; 
                     window.app.keepAlive.connect(window.app.keepAliveGain);
                     window.app.keepAliveGain.connect(window.app.txBus);
                     window.app.keepAlive.start();
 
-                    // 🛡️ DITHER ANTI-GATE: Ruido de confort infinitesimal para evitar que el navegador anule la voz.
-                    // Genera un flujo de datos constante para que el canal WebRTC nunca se cierre por silencio.
+                    // 🛡️ DITHER ANTI-GATE: Ruido de confort para evitar que el navegador anule la voz.
                     var ditherBuffer = window.app.ctx.createBuffer(1, window.app.ctx.sampleRate, window.app.ctx.sampleRate),
                         ditherData = ditherBuffer.getChannelData(0);
-                    for (var i = 0; i < ditherData.length; i++) { ditherData[i] = (Math.random() * 2 - 1) * 0.0001; }
+                    for (var i = 0; i < ditherData.length; i++) { ditherData[i] = (Math.random() * 2 - 1) * 0.001; }
                     var ditherSource = window.app.ctx.createBufferSource();
                     ditherSource.buffer = ditherBuffer;
                     ditherSource.loop = true;
@@ -249,6 +255,13 @@ object RadioAudioManager {
                 console.log("📞 Recibiendo llamada de:", call.peer);
                 call.on('stream', function(remoteStream) {
                     if (!window.app.ctx) return;
+                    
+                    // 🛡️ ACTIVACIÓN CRÍTICA DEL RECEPTOR: Forzar el AudioContext al recibir datos
+                    if (window.app.ctx.state === 'suspended') {
+                        console.log("🔊 Despertando motor de audio para recibir voz...");
+                        window.app.ctx.resume();
+                    }
+
                     console.log("🔊 Stream recibido de:", call.peer);
                     var source = window.app.ctx.createMediaStreamSource(remoteStream);
                     var analyser = window.app.ctx.createAnalyser();

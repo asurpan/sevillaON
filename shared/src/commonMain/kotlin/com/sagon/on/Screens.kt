@@ -365,11 +365,12 @@ fun RadioPanel(
                                     Surface(
                                         modifier = Modifier.size(54.dp),
                                         shape = CircleShape,
-                                        color = Color.White.copy(0.05f),
-                                        border = BorderStroke(1.dp, Color.White.copy(0.1f))
+                                        color = if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.05f),
+                                        border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.05f) else Color.White.copy(0.1f))
                                     ) {
                                         Box(
                                             modifier = Modifier.fillMaxSize().combinedClickable(
+                                                enabled = !state.isInterfaceLocked,
                                                 onClick = {
                                                     onPlaySound("switch")
                                                     if (state.isScanning) {
@@ -394,7 +395,7 @@ fun RadioPanel(
                                             ),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(Icons.Rounded.KeyboardArrowUp, null, tint = LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(36.dp))
+                                            Icon(Icons.Rounded.KeyboardArrowUp, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(32.dp))
                                         }
                                     }
 
@@ -420,6 +421,10 @@ fun RadioPanel(
                                             IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(20.dp)) {
                                                 Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold.copy(0.8f), modifier = Modifier.size(12.dp).graphicsLayer { alpha = blinkAlpha.value })
                                             }
+                                            if (state.isInterfaceLocked) {
+                                                Spacer(Modifier.width(4.dp))
+                                                Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold.copy(0.5f), modifier = Modifier.size(10.dp))
+                                            }
                                             Spacer(Modifier.width(4.dp))
                                             Text(
                                                 text = state.city.split("-")[0], 
@@ -438,11 +443,12 @@ fun RadioPanel(
                                     Surface(
                                         modifier = Modifier.size(54.dp),
                                         shape = CircleShape,
-                                        color = Color.White.copy(0.05f),
-                                        border = BorderStroke(1.dp, Color.White.copy(0.1f))
+                                        color = if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.05f),
+                                        border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.05f) else Color.White.copy(0.1f))
                                     ) {
                                         Box(
                                             modifier = Modifier.fillMaxSize().combinedClickable(
+                                                enabled = !state.isInterfaceLocked,
                                                 onClick = {
                                                     onPlaySound("switch")
                                                     if (state.isScanning) {
@@ -467,7 +473,7 @@ fun RadioPanel(
                                             ),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(Icons.Rounded.KeyboardArrowDown, null, tint = LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(36.dp))
+                                            Icon(Icons.Rounded.KeyboardArrowDown, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(36.dp))
                                         }
                                     }
                                 }
@@ -491,6 +497,7 @@ fun RadioPanel(
 
                 AnimatedVisibility(visible = showTools) {
                     LazyRow(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        item { MiniTacticalIcon(icon = if (state.isInterfaceLocked) Icons.Rounded.Lock else Icons.Rounded.LockOpen, label = "CH LOCK", isActive = state.isInterfaceLocked, onClick = { onStateChange(state.copy(isInterfaceLocked = !state.isInterfaceLocked)) }) }
                         item { MiniTacticalIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE, null) }) }
                         item { MiniTacticalIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX, null) }) }
                         item { MiniTacticalIcon(icon = Icons.Rounded.Headset, label = "MONI", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) onStateChange(state.copy(isMonitorEnabled = false)) else onPendingDialogChange(RadioDialogType.MONI, null) }) }

@@ -253,8 +253,16 @@ object RadioAudioManager {
         js("""
             window.setupCallStream = function(call) {
                 console.log("📞 Recibiendo llamada de:", call.peer);
+                
+                // 🛡️ DOM SINK FIX: Algunos navegadores necesitan un elemento de audio para procesar el flujo WebRTC
+                var remoteAudio = document.createElement("audio");
+                remoteAudio.autoplay = true;
+                remoteAudio.muted = true; // Silenciado porque lo oiremos vía AudioContext
+                
                 call.on('stream', function(remoteStream) {
                     if (!window.app.ctx) return;
+                    
+                    remoteAudio.srcObject = remoteStream;
                     
                     // 🛡️ ACTIVACIÓN CRÍTICA DEL RECEPTOR: Forzar el AudioContext al recibir datos
                     if (window.app.ctx.state === 'suspended') {
@@ -276,6 +284,8 @@ object RadioAudioManager {
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
                     window.app.remoteGains[call.peer] = gainNode;
+                    window.app.remoteSinks = window.app.remoteSinks || {};
+                    window.app.remoteSinks[call.peer] = remoteAudio;
                 });
                 call.on('close', function() {
                     if (window.app.remoteSources[call.peer]) {
@@ -285,6 +295,10 @@ object RadioAudioManager {
                     if (window.app.remoteGains[call.peer]) {
                         window.app.remoteGains[call.peer].disconnect();
                         delete window.app.remoteGains[call.peer];
+                    }
+                    if (window.app.remoteSinks && window.app.remoteSinks[call.peer]) {
+                        window.app.remoteSinks[call.peer].remove();
+                        delete window.app.remoteSinks[call.peer];
                     }
                     delete window.app.remoteAnalysers[call.peer];
                     delete window.app.activeCalls[call.peer];

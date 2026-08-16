@@ -45,8 +45,14 @@ object ManosLibres {
                     voiceFilter.connect(sensorGain);
                     sensorGain.connect(window.app.micAnalyser);
                     voiceFilter.connect(compressor);
-                    if (window.app.moniGainNode) compressor.connect(window.app.moniGainNode);
-                    if (window.app.txGate) compressor.connect(window.app.txGate);
+                    
+                    // 🚀 VOICE BOOST FINAL: Multiplicador de potencia antes de enviar a la red
+                    var voiceBoost = window.app.ctx.createGain();
+                    voiceBoost.gain.value = 1.8; 
+                    compressor.connect(voiceBoost);
+
+                    if (window.app.moniGainNode) voiceBoost.connect(window.app.moniGainNode);
+                    if (window.app.txGate) voiceBoost.connect(window.app.txGate);
                     return true;
                 }).catch(function(err) { return false; });
             };

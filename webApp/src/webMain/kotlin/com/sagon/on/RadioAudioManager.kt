@@ -319,11 +319,11 @@ object RadioAudioManager {
                 if(!window.app) return;
                 var peers = Object.keys(window.app.remoteSources);
                 if(peers.length <= 1) {
-                    peers.forEach(id => { if(window.app.remoteGains[id]) window.app.remoteGains[id].gain.value = 1.0; });
+                    peers.forEach(id => { if(window.app.remoteGains[id]) window.app.remoteGains[id].gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.1); });
                     return;
                 }
 
-                // Encontrar la potencia máxima actual
+                // Encontrar la potencia máxima actual entre los que están hablando
                 var maxPwr = 0;
                 peers.forEach(id => {
                     var p = window.app.remotePowers[id] || 0.7;
@@ -334,13 +334,18 @@ object RadioAudioManager {
                     var gain = window.app.remoteGains[id];
                     if(!gain) return;
                     var p = window.app.remotePowers[id] || 0.7;
+                    var diff = maxPwr - p;
                     
-                    if(p >= maxPwr) {
+                    if(diff <= 0.05) {
+                        // Señales igualadas: Ambos se oyen fuerte
                         gain.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.1);
+                    } else if (diff > 0.25) {
+                        // DIFERENCIA CRÍTICA: Aplastamiento total (Saturación del receptor)
+                        gain.gain.setTargetAtTime(0.0, window.app.ctx.currentTime, 0.1);
                     } else {
                         // El más débil se oye de fondo con ruido (efecto pisado)
-                        var reduction = Math.max(0.1, 1.0 - (maxPwr - p));
-                        gain.gain.setTargetAtTime(reduction * 0.3, window.app.ctx.currentTime, 0.1);
+                        var reduction = Math.max(0.05, 0.3 - diff);
+                        gain.gain.setTargetAtTime(reduction, window.app.ctx.currentTime, 0.1);
                     }
                 });
             }

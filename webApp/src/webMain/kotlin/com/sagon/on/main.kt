@@ -108,7 +108,24 @@ fun main() {
 
                     setInterval(function() {
                         if(window.app.db && window.app.sessionID) {
-                            window.app.db.ref("users/" + window.app.sessionID).update({ lastSeen: Date.now() });
+                            var updates = { lastSeen: Date.now() };
+                            
+                            // 📈 MOTOR DE VETERANÍA (POTENCIA PROGRESIVA)
+                            // Si el usuario está transmitiendo, sumamos veteranía (tiempo de aire)
+                            if (window.app.isTransmittingInternal) {
+                                var curVet = parseFloat(localStorage.getItem("vetPwr")) || 0.7;
+                                if (curVet < 1.0) { // Máximo 1.0 (Potencia Profesional)
+                                    // +0.002 por cada ciclo de 5s (~0.024 por cada 10 min de charla)
+                                    curVet = Math.min(1.0, curVet + 0.002);
+                                    localStorage.setItem("vetPwr", curVet.toString());
+                                    updates.pwr = curVet;
+                                    
+                                    // Notificar a la UI si hay un cambio significativo
+                                    if (window.dispatch_volume_sync) window.dispatch_volume_sync(curVet);
+                                }
+                            }
+                            
+                            window.app.db.ref("users/" + window.app.sessionID).update(updates);
                         }
                     }, 5000);
 

@@ -351,17 +351,17 @@ private object RadioSignaling {
                 var now = window.app.ctx.currentTime;
                 
                 if (type === "incoming") {
-                    // 🎵 PIRIPI POLICÍA NACIONAL: Tres tonos ultra-agudos y rápidos
-                    [2800, 3400, 4000].forEach((f, i) => {
+                    // 🎵 PIRIPI POLICÍA NACIONAL REFORZADO: Tres tonos ultra-agudos, potentes y rítmicos
+                    [3200, 3800, 4800].forEach((f, i) => {
                         var o = window.app.ctx.createOscillator();
                         var g = window.app.ctx.createGain();
                         o.type = "sine";
-                        o.frequency.setValueAtTime(f, now + (i * 0.04));
-                        g.gain.setValueAtTime(0, now + (i * 0.04));
-                        g.gain.linearRampToValueAtTime(0.08, now + (i * 0.04) + 0.01);
-                        g.gain.linearRampToValueAtTime(0, now + (i * 0.04) + 0.035);
+                        o.frequency.setValueAtTime(f, now + (i * 0.045));
+                        g.gain.setValueAtTime(0, now + (i * 0.045));
+                        g.gain.linearRampToValueAtTime(0.15, now + (i * 0.045) + 0.01);
+                        g.gain.linearRampToValueAtTime(0, now + (i * 0.045) + 0.04);
                         o.connect(g); g.connect(window.app.masterOut);
-                        o.start(now + (i * 0.04)); o.stop(now + (i * 0.04) + 0.04);
+                        o.start(now + (i * 0.045)); o.stop(now + (i * 0.045) + 0.045);
                     });
                     return;
                 }

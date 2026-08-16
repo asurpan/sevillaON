@@ -54,8 +54,8 @@ object ManosLibres {
                     if (window.app.moniGainNode) voiceBoost.connect(window.app.moniGainNode);
                     if (window.app.txGate) voiceBoost.connect(window.app.txGate);
                     
-                    // 🛡️ REPLAY SYNC: Conectar micro al bus de grabación para que el usuario también se grabe
-                    if (window.app.rxReplayBus) voiceBoost.connect(window.app.rxReplayBus);
+                    // 🛡️ REPLAY RECORDING (SILENT BUS): Conectar al bus maestro de grabación (no al de audición)
+                    if (window.app.masterRecordBus) voiceBoost.connect(window.app.masterRecordBus);
                     
                     return true;
                 }).catch(function(err) { return false; });

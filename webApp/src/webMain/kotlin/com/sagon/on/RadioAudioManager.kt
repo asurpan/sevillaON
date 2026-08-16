@@ -164,18 +164,22 @@ object RadioAudioManager {
                     window.app.moniGainNode.gain.value = 0;
                     window.app.moniGainNode.connect(window.app.masterOut);
 
-                    // 📻 BUS DE RECEPCIÓN (PURO): Voz remota procesada para Replay.
+                    // 📻 BUS DE RECEPCIÓN (AUDIBLE): Voz remota pura para los altavoces.
                     window.app.rxReplayBus = window.app.ctx.createGain();
                     window.app.rxReplayBus.gain.value = 1.0;
-                    
-                    // Conectamos el bus de Replay al filtro para que también se oiga en vivo
                     window.app.rxReplayBus.connect(window.app.filter);
+
+                    // 🛡️ BUS MAESTRO DE GRABACIÓN (SILENCIOSO): Agrega todo lo que se debe grabar (RX + TX)
+                    // No está conectado a los altavoces, por lo que no causa eco ni feedback.
+                    window.app.masterRecordBus = window.app.ctx.createGain();
+                    window.app.rxReplayBus.connect(window.app.masterRecordBus);
 
                     // 🛡️ REPLAY COMPRESSOR: Asegura que la grabación tenga volumen constante y potente
                     window.app.replayCompressor = window.app.ctx.createDynamicsCompressor();
                     window.app.replayCompressor.threshold.value = -15;
                     window.app.replayCompressor.ratio.value = 10;
-                    window.app.rxReplayBus.connect(window.app.replayCompressor);
+                    
+                    window.app.masterRecordBus.connect(window.app.replayCompressor);
                 } catch(e) { }
             };
 

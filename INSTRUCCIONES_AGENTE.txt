@@ -1,36 +1,31 @@
-# 📘 MANUAL DE OPERACIONES V11.0 - RADIO ON AIR SPAIN
+# 📘 MANUAL DE OPERACIONES V12.1 - RADIO ON AIR SPAIN (ÉLITE SEO)
 
-Este manual contiene las instrucciones técnicas críticas y es de lectura OBLIGATORIA para cualquier agente que intervenga en el código.
+Este manual contiene las instrucciones técnicas y comerciales críticas. Lectura OBLIGATORIA.
 
 ## 🏗️ ARQUITECTURA DE MISIÓN CRÍTICA
-El sistema está blindado en módulos estancos para evitar regresiones de audio y diseño:
-1. **RadioAudioManager.kt**: Corazón del AudioContext, WebRTC y motor Replay V4.1.
-2. **ManosLibres.kt**: Motor VOX, Voice Boost (1.8x) y Replay Sync.
-3. **Screens.kt**: Interfaz Nexus blindada geométricamente con efectos de alta gama.
-4. **main.kt**: Gestión de Hard-Lock ID y coordinación de la red.
+1. **RadioAudioManager.kt**: Corazón del AudioContext, distorsión por pisado y buses de grabación silenciados.
+2. **index.html / robots.txt / sitemap.xml**: Núcleo de marketing e indexación en Google.
+3. **ManosLibres.kt**: Motor VOX y ruteo de micro local al bus de grabación.
+4. **Screens.kt**: Interfaz Nexus blindada geométricamente.
 
 ## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK)
 
 ### 🔊 AUDIO Y TRANSMISIÓN
-- **Voz Blindada**: Mantener **DOM Sink** con reproducción forzada. Sin esto, fallan los LEDs y la voz en móviles.
-- **MONI (Monitor)**: Solo audible en TX (PTT pulsado). Ganancia x0.18.
-- **Replay V4.1**: Grabación de 30s (canal completo: voz local + remota). Detección universal de codecs y compresión dedicada. Ducking automático de radio en vivo. Reproducción a 1.15x.
-- **Beep Sync**: El Roger Beep debe transmitirse al bus de red (PTT Tail de 400ms).
+- **Eco-Zero**: El micro local se graba vía `masterRecordBus`. NUNCA conectarlo a rutas audibles para el propio usuario fuera del MONI (en TX).
+- **Pisado Real**: Diferencia de potencia > 0.05 activa distorsión; > 0.25 activa aplastamiento total.
+- **Voz Blindada**: Mantener DOM Sink con reproducción forzada.
+- **Replay V4.2**: Graba todo el canal. Compatible con todos los codecs móviles.
 
-### 📡 SINTONIZACIÓN (MODO EMISORA REAL)
-- **Orden Numérico 1-40**: La sintonización recorre los canales estrictamente por número.
-- **Scan Engine**: Velocidad ~400ms, parada de 3s en voz. Bloqueado si el Squelch está abierto.
+### 📡 VETERANÍA Y POTENCIA
+- **Progreso**: +0.002 pwr / 5s de charla. Rango 0.7 a 1.0.
+- **Jerarquía**: Los vatios (W) en pantalla determinan quién domina el canal físicamente.
 
-### 🖼️ INTERFAZ NEXUS (UI FREEZE V11.0)
-- **Cero Movimiento**: Bloque central de **140dp**, línea de estado de **32dp**. Prohibido causar desplazamientos visuales.
-- **Identidad Visual**:
-    - **SQUELCH**: Estado de reposo técnico.
-    - **Verde Esmeralda**: Color exclusivo (`0xFF10B981`) para el nombre de quien habla.
-    - **S-Meter**: 20 LEDs con halo de luz dinámico (glow).
-    - **Replay Progress**: El icono brilla solo si hay contenido y se apaga progresivamente al reproducir.
+### 🖼️ INTERFAZ Y SEO
+- **Landing V12.1**: Textos optimizados para búsqueda de "Walkie Talkie" y "Radio CB".
+- **Nexus UI**: Prohibido causar desplazamientos visuales (Contenedor 32dp fijo).
+- **Verde Esmeralda**: Color exclusivo para RX con efecto fundido.
 
-### 🔐 IDENTIDAD Y NICK
-- **Hard-Lock ID**: Un equipo = un usuario. Prohibido duplicar sesiones en Firebase por cambios de Nick.
-- **Indicativos**: Mínimo 2, máximo 32 caracteres. Soporta indicativos largos profesionales.
+### 🔐 IDENTIDAD
+- **Hard-Lock ID**: Un equipo = un usuario en Firebase. Prohibido duplicar sesiones.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 11.0 (REPLAY TOTAL & CODEC UNIVERSAL)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 12.1 (ÉLITE DISTORTION & SEO)

@@ -155,7 +155,10 @@ fun WelcomeScreen(
                     if (nick.isEmpty()) Text("TU INDICATIVO...", color = Color.White.copy(0.2f), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     BasicTextField(
                         value = nick,
-                        onValueChange = { if (it.length <= 15) onNickChange(it.uppercase().filter { c -> c in 'A'..'Z' || c in '0'..'9' || c == ' ' || c == '-' }) },
+                        onValueChange = { 
+                            // 🛡️ REGLA: MÁXIMO 32 CARACTERES (PARA INDICATIVOS LARGOS)
+                            if (it.length <= 32) onNickChange(it.uppercase().filter { c -> c in 'A'..'Z' || c in '0'..'9' || c == ' ' || c == '-' }) 
+                        },
                         textStyle = TextStyle(color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp),
                         cursorBrush = SolidColor(LuxeColors.Gold),
                         modifier = Modifier.fillMaxWidth(),
@@ -167,11 +170,16 @@ fun WelcomeScreen(
             Spacer(Modifier.height(24.dp))
 
             Button(
-                onClick = { if (nick.isNotBlank()) { if (!hasAcceptedMic) onMicAccept(); onConnect(null) } },
+                onClick = { 
+                    if (nick.trim().length >= 2) { 
+                        if (!hasAcceptedMic) onMicAccept(); onConnect(null) 
+                    } 
+                },
                 modifier = Modifier.fillMaxWidth().height(64.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Gold),
                 shape = RoundedCornerShape(20.dp),
-                enabled = nick.isNotBlank()
+                // 🛡️ REGLA: MÍNIMO 2 CARACTERES PARA EVITAR NOMBRES VACÍOS O DE UNA LETRA
+                enabled = nick.trim().length >= 2
             ) {
                 Text("ENTRAR EN LA RADIO", fontWeight = FontWeight.Black, letterSpacing = 2.sp, fontSize = 16.sp, color = Color.Black)
             }
@@ -291,10 +299,30 @@ fun RadioPanel(
                         Text(nick, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(onClick = { if (isReplayReady) onReplay() }, color = if (isReplayReady) LuxeColors.Gold.copy(0.1f) else Color.White.copy(0.05f), shape = CircleShape, border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.1f)), modifier = Modifier.size(32.dp)) {
+                        Surface(
+                            onClick = { if (isReplayReady) onReplay() }, 
+                            color = if (isReplayReady) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f), 
+                            shape = CircleShape, 
+                            border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.1f)), 
+                            modifier = Modifier.size(32.dp).drawBehind {
+                                if (isReplayReady) {
+                                    // 🛡️ EFECTO RESPLANDOR (GLOW) DEL BOTÓN
+                                    drawCircle(
+                                        color = LuxeColors.Gold.copy(alpha = 0.2f),
+                                        radius = size.maxDimension * 0.7f,
+                                        center = center
+                                    )
+                                }
+                            }
+                        ) {
                             Box(contentAlignment = Alignment.Center) {
                                 if (replayProgress > 0f) CircularProgressIndicator(progress = { replayProgress }, modifier = Modifier.fillMaxSize(), color = LuxeColors.Gold, strokeWidth = 2.dp)
-                                Icon(Icons.Rounded.History, null, tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.3f), modifier = Modifier.size(16.dp))
+                                Icon(
+                                    Icons.Rounded.History, 
+                                    null, 
+                                    tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.2f), 
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
                         }
                         Spacer(Modifier.width(8.dp))

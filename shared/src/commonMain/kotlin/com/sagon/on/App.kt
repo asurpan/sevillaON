@@ -107,12 +107,6 @@ fun App(
     var isAppReady by remember { mutableStateOf(true) }
     var nick by remember { mutableStateOf(savedNick) }
 
-    LaunchedEffect(nick) {
-        if (nick.isNotBlank()) {
-            onConnectRadio(nick)
-        }
-    }
-
     var radioState by remember { mutableStateOf(initialState) }
     var localNotification by remember { mutableStateOf<AppNotification?>(null) }
 

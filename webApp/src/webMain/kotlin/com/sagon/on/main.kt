@@ -30,15 +30,26 @@ fun main() {
 
         window.remoteTxStates = {};
         window.connectRadio = function(nick) {
-            // 🛡️ IDENTIFICADOR DE DISPOSITIVO PERSISTENTE (WEB HARDWARE ID)
+            // 🛡️ IDENTIFICADOR DE DISPOSITIVO PERSISTENTE (WEB HARDWARE ID + ANDROID ID)
             var deviceID = localStorage.getItem("web_device_id");
+            if (window.AndroidApp && window.AndroidApp.getAndroidId) {
+                try { 
+                    var aid = window.AndroidApp.getAndroidId(); 
+                    if(aid) deviceID = aid;
+                } catch(e) {}
+            }
+            
             if (!deviceID) {
-                deviceID = "web_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                deviceID = "web_" + Math.random().toString(36).substring(2, 15);
                 localStorage.setItem("web_device_id", deviceID);
             }
             
-            var sessionID = nick + "_" + deviceID.substring(4, 12);
-            window.app.nick = nick;
+            // 🔒 IDENTIDAD DE EQUIPO (HARD-LOCK): La sesión es el ID del dispositivo.
+            // Esto impide duplicados: un equipo = una entrada en Firebase, cambies el nombre que cambies.
+            var sessionID = deviceID.toString().replace(/[.#${'$'}\[\]]/g, "_");
+            var cleanNick = (nick || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
+            
+            window.app.nick = cleanNick;
             window.app.deviceID = deviceID;
             window.app.sessionID = sessionID;
             if (window.initAudio) window.initAudio();
@@ -231,8 +242,8 @@ fun main() {
                             val userNick = (u.nick as? String ?: "ESTACIÓN").trim().uppercase()
                             val lastSeen = (u.lastSeen as? Double ?: 0.0)
                             
-                            if (userNick.length < 3) continue
-                            if (now - lastSeen > 15000) continue 
+                            if (userNick.isEmpty()) continue
+                            if (now - lastSeen > 30000) continue 
                             if (nicksSeen.contains(userNick)) continue
                             
                             // 🔒 SISTEMA DE BLOQUEO SIGILOSO (MUTUO)

@@ -464,9 +464,7 @@ private object ReplayEngine {
     fun install() {
         js("""
             var replayBlobs = [];
-            var currentRecorder = null;
             var activityDetected = false;
-            var replayAnalyser = null;
             var isPlaying = false;
 
             window.initReplayRecorder = function() {
@@ -478,59 +476,11 @@ private object ReplayEngine {
                 var streamDest = window.app.ctx.createMediaStreamDestination();
                 window.app.rxReplayBus.connect(streamDest);
                 
-                replayAnalyser = window.app.ctx.createAnalyser();
+                var replayAnalyser = window.app.ctx.createAnalyser();
                 replayAnalyser.fftSize = 256;
                 window.app.rxReplayBus.connect(replayAnalyser);
 
-                function startRecording() {
-                    var chunks = [];
-                    activityDetected = false;
-                    
-                    var options = { mimeType: 'audio/webm;codecs=opus' };
-                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                        options = { mimeType: 'audio/webm' };
-                    }
-                    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                        options = {}; 
-                    }
-
-                    try {
-                        var recorder = new MediaRecorder(streamDest.stream, options);
-                        var hasVoice = false;
-                        
-                        var activityTimer = setInterval(function() {
-                            if (activityDetected) hasVoice = true;
-                        }, 100);
-
-                        recorder.ondataavailable = function(e) { 
-                            if (e.data.size > 0) chunks.push(e.data); 
-                        };
-
-                        recorder.onstop = function() {
-                            clearInterval(activityTimer);
-                            if (chunks.length > 0 && hasVoice) {
-                                var blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
-                                replayBlobs.push(blob);
-                                if (replayBlobs.length > 6) replayBlobs.shift();
-                                if (window.dispatch_replay_available) window.dispatch_replay_available(true);
-                            }
-                            // Reiniciar inmediatamente tras parada
-                            startRecording();
-                        };
-
-                        // Grabar en bloques de 5 segundos
-                        setTimeout(function() {
-                            if (recorder.state === "recording") recorder.stop();
-                        }, 5000);
-
-                        recorder.start();
-                    } catch(e) { 
-                        console.error("Replay Recorder Error:", e);
-                        setTimeout(startRecording, 5000); 
-                    }
-                }
-
-                function monitorActivity() {
+                function monitor() {
                     if (replayAnalyser) {
                         var d = new Uint8Array(replayAnalyser.fftSize);
                         replayAnalyser.getByteTimeDomainData(d);
@@ -541,55 +491,92 @@ private object ReplayEngine {
                             }
                         }
                     }
-                    requestAnimationFrame(monitorActivity);
+                    requestAnimationFrame(monitor);
                 }
+                monitor();
 
-                startRecording();
-                monitorActivity();
+                function startChunk() {
+                    var chunks = [];
+                    var hasVoiceInThisChunk = false;
+                    activityDetected = false; // Reset global activity
+
+                    try {
+                        var recorder = new MediaRecorder(streamDest.stream);
+                        
+                        recorder.ondataavailable = function(e) { 
+                            if (e.data && e.data.size > 0) chunks.push(e.data); 
+                        };
+
+                        recorder.onstop = function() {
+                            // 🛡️ REGLA: Si hubo actividad en CUALQUIER momento de estos 5s, guardamos
+                            if (chunks.length > 0 && (hasVoiceInThisChunk || activityDetected)) {
+                                var blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+                                replayBlobs.push(blob);
+                                if (replayBlobs.length > 6) replayBlobs.shift();
+                                if (window.dispatch_replay_available) window.dispatch_replay_available(replayBlobs.length > 0);
+                            }
+                            startChunk(); // Ciclo infinito
+                        };
+
+                        // Monitoreo local del chunk
+                        var checkInterval = setInterval(function() {
+                            if (activityDetected) hasVoiceInThisChunk = true;
+                        }, 200);
+
+                        // Cerrar chunk a los 5 segundos
+                        setTimeout(function() {
+                            clearInterval(checkInterval);
+                            if (recorder.state === "recording") recorder.stop();
+                        }, 5000);
+
+                        recorder.start();
+                    } catch(e) { 
+                        console.error("Replay Recorder Error:", e);
+                        setTimeout(startChunk, 2000); 
+                    }
+                }
+                startChunk();
             };
 
             window.playReplay = function() {
-                if (replayBlobs.length === 0) {
-                    if (window.dispatch_notification) window.dispatch_notification('REPLAY VACÍO', 'No hay grabaciones con voz reciente.', 'info');
-                    return;
-                }
-                if (isPlaying) return;
+                if (replayBlobs.length === 0 || isPlaying) return;
                 
                 isPlaying = true;
                 var playlist = [...replayBlobs];
                 var index = 0;
+                var player = new Audio();
+                player.playbackRate = 1.15;
 
                 function playNext() {
                     if (index >= playlist.length) {
-                        if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
                         isPlaying = false;
+                        if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
                         return;
                     }
 
                     var url = URL.createObjectURL(playlist[index]);
-                    var audio = new Audio(url);
-                    audio.playbackRate = 1.15;
+                    player.src = url;
                     
-                    audio.onplay = function() {
+                    player.onplay = function() {
                         if (window.dispatch_replay_progress) {
                             window.dispatch_replay_progress((index + 1) / playlist.length);
                         }
                     };
 
-                    audio.onended = function() {
+                    player.onended = function() {
                         URL.revokeObjectURL(url);
                         index++;
                         playNext();
                     };
 
-                    audio.onerror = function() {
+                    player.onerror = function() {
                         URL.revokeObjectURL(url);
                         index++;
                         playNext();
                     };
 
-                    audio.play().catch(function(err) {
-                        isPlaying = false;
+                    player.play().catch(function(err) {
+                        console.error("Replay Playback Error:", err);
                         index++;
                         playNext();
                     });

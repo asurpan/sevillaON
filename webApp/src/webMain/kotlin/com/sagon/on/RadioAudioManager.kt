@@ -39,9 +39,19 @@ object RadioAudioManager {
                     window.app.filter.Q.value = 1.2; 
                     
                     // 🛡️ MOTOR DE SUPERVIVENCIA (iOS/ANDROID/CHROME):
-                    // No usamos compresores al final que puedan silenciar señales débiles.
+                    // Ruteo simplificado para evitar cortes por algoritmos de ahorro.
                     window.app.filter.connect(window.app.masterRxGain);
                     window.app.masterRxGain.connect(window.app.masterOut);
+
+                    // 🛡️ HARDWARE KEEP-ALIVE: Inyectar un tono inaudible directo a la salida física
+                    // Esto evita que el sistema operativo duerma el chip de audio.
+                    var hwKeepAlive = window.app.ctx.createOscillator();
+                    hwKeepAlive.frequency.value = 21000; 
+                    var hwKeepAliveGain = window.app.ctx.createGain();
+                    hwKeepAliveGain.gain.value = 0.001; 
+                    hwKeepAlive.connect(hwKeepAliveGain);
+                    hwKeepAliveGain.connect(window.app.ctx.destination);
+                    hwKeepAlive.start();
                     
                     // --- 🌊 GENERADOR DE QRM REAL (FILTRADO Y OSCILANTE) ---
                     var bufferSize = 2 * window.app.ctx.sampleRate,
@@ -257,30 +267,28 @@ object RadioAudioManager {
         RadioSignaling.install()
         js("""
             window.setupCallStream = function(call) {
-                console.log("📞 Recibiendo llamada de:", call.peer);
+                console.log("📞 Iniciando ruteo de audio WebRTC para:", call.peer);
                 
-                // 🛡️ DOM SINK FIX (PROTECTED): Elemento de audio invisible para decodificación WebRTC
+                // 🛡️ DOM SINK (NÚCLEO): Elemento de audio real. 
+                // ALGUNOS NAVEGADORES NO DECODIFICAN SI ESTÁ MUTEADO.
                 var remoteAudio = document.createElement("audio");
                 remoteAudio.setAttribute("autoplay", "true");
                 remoteAudio.setAttribute("playsinline", "true");
-                remoteAudio.muted = true; // 🔒 OBLIGATORIO: Muted para evitar bloqueos de auto-play
+                remoteAudio.muted = false; // 🔒 TRUCO: No mutear para forzar decodificación
+                remoteAudio.volume = 0.0001; // 🔒 Pero volumen inaudible
                 
                 remoteAudio.style.display = "none";
                 document.body.appendChild(remoteAudio);
                 
                 call.on('stream', function(remoteStream) {
-                    if (!window.app.ctx) return;
-                    
+                    console.log("🔊 Flujo de audio activo y decodificando:", call.peer);
                     remoteAudio.srcObject = remoteStream;
                     
-                    // 🛡️ DESPERTAR MOTOR: Solo si es estrictamente necesario
-                    if (window.app.ctx.state === 'suspended') {
-                        window.app.ctx.resume();
+                    // 🛡️ RESUME AGRESIVO: Despertar motor en cada ráfaga
+                    if (window.app.ctx.state !== 'running') {
+                        window.app.ctx.resume().then(() => { console.log("Motor reanimado."); });
                     }
                     
-                    remoteAudio.play().catch(function(e) { /* Silenciar error de play en muted */ });
-
-                    console.log("🔊 Stream recibido de:", call.peer);
                     var source = window.app.ctx.createMediaStreamSource(remoteStream);
                     var analyser = window.app.ctx.createAnalyser();
                     var gainNode = window.app.ctx.createGain();
@@ -288,14 +296,25 @@ object RadioAudioManager {
                     
                     source.connect(analyser);
                     source.connect(gainNode);
+                    
+                    // 📻 Ruteo directo al filtro para evitar pérdidas en buses intermedios
+                    gainNode.connect(window.app.filter);
+                    
+                    // Si el bus de replay existe, lo conectamos también
                     if (window.app.rxReplayBus) gainNode.connect(window.app.rxReplayBus);
-                    else gainNode.connect(window.app.filter);
                     
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
                     window.app.remoteGains[call.peer] = gainNode;
                     window.app.remoteSinks = window.app.remoteSinks || {};
                     window.app.remoteSinks[call.peer] = remoteAudio;
+
+                    // 🛡️ FORCE REPLAY (AUTO-PLAY RE-TRIAL)
+                    var playOnce = function() {
+                        remoteAudio.play().catch(function(e) { console.log("Play block wait..."); });
+                    };
+                    playOnce();
+                    setTimeout(playOnce, 500);
                 });
                 call.on('close', function() {
                     if (window.app.remoteSources[call.peer]) {

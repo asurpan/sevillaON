@@ -299,16 +299,19 @@ fun RadioPanel(
                         Text(nick, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        val isPlaying = replayProgress > 0f
+                        val brightnessFactor = if (isPlaying) (1f - replayProgress).coerceIn(0.2f, 1f) else 1f
+                        
                         Surface(
-                            onClick = { if (isReplayReady) onReplay() }, 
-                            color = if (isReplayReady) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f), 
+                            onClick = { if (isReplayReady && !isPlaying) onReplay() }, 
+                            color = if (isReplayReady) LuxeColors.Gold.copy(alpha = 0.2f * brightnessFactor) else Color.White.copy(0.05f), 
                             shape = CircleShape, 
-                            border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.1f)), 
+                            border = BorderStroke(1.dp, if (isReplayReady) LuxeColors.Gold.copy(alpha = brightnessFactor) else Color.White.copy(0.1f)), 
                             modifier = Modifier.size(32.dp).drawBehind {
                                 if (isReplayReady) {
-                                    // 🛡️ EFECTO RESPLANDOR (GLOW) DEL BOTÓN
+                                    // 🛡️ EFECTO RESPLANDOR (GLOW) DINÁMICO
                                     drawCircle(
-                                        color = LuxeColors.Gold.copy(alpha = 0.2f),
+                                        color = LuxeColors.Gold.copy(alpha = 0.2f * brightnessFactor),
                                         radius = size.maxDimension * 0.7f,
                                         center = center
                                     )
@@ -316,11 +319,11 @@ fun RadioPanel(
                             }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                if (replayProgress > 0f) CircularProgressIndicator(progress = { replayProgress }, modifier = Modifier.fillMaxSize(), color = LuxeColors.Gold, strokeWidth = 2.dp)
+                                if (isPlaying) CircularProgressIndicator(progress = { replayProgress }, modifier = Modifier.fillMaxSize(), color = LuxeColors.Gold.copy(alpha = brightnessFactor), strokeWidth = 2.dp)
                                 Icon(
                                     Icons.Rounded.History, 
                                     null, 
-                                    tint = if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.2f), 
+                                    tint = if (isReplayReady) LuxeColors.Gold.copy(alpha = brightnessFactor) else Color.White.copy(0.2f), 
                                     modifier = Modifier.size(16.dp)
                                 )
                             }

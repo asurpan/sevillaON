@@ -553,16 +553,19 @@ private object ReplayEngine {
                 var playlist = [...replayBlobs];
                 var index = 0;
 
-                // 🛡️ DUCKING: Silenciar radio en vivo durante el replay
-                var originalRxGain = window.app.masterRxGain.gain.value;
-                var originalNoiseGain = window.app.noise.gain.value;
-                window.app.masterRxGain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.1);
-                window.app.noise.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.1);
+                // 🛡️ DUCKING TÁCTICO: Bajar la radio en vivo al mínimo absoluto para un audio de Replay perfecto
+                var targetRx = 3.5; 
+                var targetNoise = window.app.currentNoiseTarget || 0;
+                
+                window.app.masterRxGain.gain.setTargetAtTime(0.02, window.app.ctx.currentTime, 0.15);
+                window.app.noise.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.15);
 
                 function finishReplay() {
                     isPlaying = false;
-                    window.app.masterRxGain.gain.setTargetAtTime(originalRxGain, window.app.ctx.currentTime, 0.2);
-                    window.app.noise.gain.setTargetAtTime(originalNoiseGain, window.app.ctx.currentTime, 0.2);
+                    var now = window.app.ctx.currentTime;
+                    // Restaurar volumen original de forma suave
+                    window.app.masterRxGain.gain.setTargetAtTime(targetRx, now, 0.3);
+                    window.app.noise.gain.setTargetAtTime(targetNoise, now, 0.3);
                     if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
                 }
 

@@ -7,7 +7,7 @@ El sistema está dividido en módulos estancos para evitar regresiones de audio:
 1. **RadioAudioManager.kt**: Corazón del AudioContext, WebRTC y blindajes de voz.
 2. **ManosLibres.kt**: Motor VOX y captura de micro con Voice Boost.
 3. **RadioNetworkManager.kt**: Gestión de Firebase y señalización Mesh.
-4. **Screens.kt**: Interfaz Nexus blindada geométricamente.
+4. **Screens.kt**: Interfaz Nexus blindada geométricamente con efectos de alta gama.
 5. **main.kt**: Coordinación de puente y persistencia de Hardware ID.
 
 ## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK)
@@ -19,23 +19,22 @@ El sistema está dividido en módulos estancos para evitar regresiones de audio:
 - **Beep Sync**: El Roger Beep debe oírse localmente y transmitirse al bus de red. El PTT tiene un retardo de cierre de 400ms para este fin.
 
 ### 📡 SINTONIZACIÓN (MODO EMISORA REAL)
-- **Orden 1-40**: La sintonización recorre los canales numéricamente, no alfabéticamente por ciudad.
+- **Orden 1-40**: La sintonización recorre los canales numéricamente (Soria -> Salamanca...).
 - **Scan Engine**:
     - Velocidad rítmica (salto cada ~400ms).
     - Parada automática de 3s al detectar voz.
     - Squelch-Lock: Si hay ruido (Squelch abierto), el escaneo no arranca y avisa al usuario.
-- **CH LOCK**: Bloqueo total de sintonía para evitar cambios por roce accidental.
+- **CH LOCK**: Bloqueo total de sintonía para evitar cambios accidentales.
 
-### 🖼️ INTERFAZ NEXUS (UI FREEZE)
-- **Cero Movimiento**: El bloque de canales central tiene un ancho fijo de **140dp**. Los botones laterales son circulares de **54dp**. Prohibido cualquier cambio que cause saltos horizontales.
-- **VOL y SQL**: Son los únicos indicadores técnicos en la pantalla de inicio. El Monitor de Retorno (MON) va siempre oculto en herramientas.
+### 🖼️ INTERFAZ NEXUS (UI FREEZE V11.0)
+- **Cero Movimiento**: El bloque de canales central tiene un ancho fijo de **140dp**. La línea de estado tiene altura fija de **32dp**. Prohibido cualquier cambio que cause saltos o desplazamientos.
+- **Identidad Visual**:
+    - **SQUELCH**: Es la palabra clave para el estado de reposo (puerta cerrada).
+    - **Verde Esmeralda**: Color exclusivo (`0xFF10B981`) para el nombre de quien habla, con efecto fundido y glow.
+    - **S-Meter**: 20 LEDs con halo de luz (glow) dinámico.
 - **Identidad**: El usuario debe verse siempre el primero en la zona como **(YO)**.
 
 ### 🔐 IDENTIDAD
-- **Hardware ID**: Vincular sesiones al ID único del dispositivo (Web/Android). Prohibido basar la identidad solo en nombres aleatorios para evitar suplantaciones.
+- **Hardware ID**: Vincular sesiones al ID único del dispositivo (Web/Android). Prohibido basar la identidad solo en nombres efímeros.
 
-## 🚀 DESPLIEGUE Y ESTABILIDAD
-- Mantener siempre la capacidad de **10 usuarios por sala** para evitar divisiones innecesarias.
-- En Android, el botón atrás debe **minimizar** la app (`minimizeApp`), nunca cerrarla.
-
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 11.0 (BLINDAJE TOTAL DE VOZ Y UI)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 11.0 (PROYECTO BLINDADO)

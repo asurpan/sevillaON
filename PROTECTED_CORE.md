@@ -25,8 +25,9 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 4. **Diseño Visual Nexus (`Screens.kt`)**:
     - **ESTADO: CONGELADO TOTAL**. Prohibido mover botones o cambiar tamaños.
     - **Blindaje Geométrico**: Bloque central fijo a **140dp**, botones laterales a **54dp**. No debe haber saltos horizontales al cambiar de canal.
-    - **Jerarquía Técnica**: Solo **VOL** y **SQL** aparecen en la columna principal. El resto (MON, DISC, DSP...) va al panel desplegable.
-    - **Identidad**: El usuario local siempre aparece el primero como **(YO)** con etiqueta dorada.
+    - **RX Tag (Nombre)**: La etiqueta del operador que habla debe usar el color **Verde Esmeralda (`0xFF10B981`)** con efecto fundido y resplandor suave.
+    - **Contenedor de Estado**: La línea de estado (donde aparece SQUELCH/AIRE/NOMBRE) debe tener una altura fija de **32dp** para evitar saltos de línea.
+    - **S-Meter**: 20 LEDs con efecto resplandor (Cyan -> Amarillo -> Rojo). Prohibido bajar la resolución del medidor.
 
 5. **Lógica de Sintonización y Escaneo**:
     - **Orden Numérico**: Los saltos deben ser estrictamente **1 al 40** y circulares.
@@ -38,6 +39,6 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Inicio Seguro**: Volumen inicial al **70%** y Squelch cerrado (**SQL 60% / RFG 40%**) para evitar estática al primer inicio.
 
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
-Si detectas un fallo, informa al autor. No apliques "mejoras" estéticas que comprometan estos blindajes técnicos. El núcleo está sellado para garantizar que la voz fluya siempre, incluso en condiciones de red móvil inestable.
+Si detectas un fallo, informa al autor. No apliques "mejoras" estéticas que comprometan estos blindajes técnicos. El núcleo está sellado para garantizar que la voz fluya siempre.
 
 **ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y VERIFICADO (V11.0).**

@@ -309,8 +309,8 @@ fun RadioPanel(
                 // Pantalla de la Radio (S-Meter y Canal)
                 Surface(
                     modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(20.dp)), 
-                    color = if(rx) Color(0xFF064E3B) else Color.Black, 
-                    border = BorderStroke(2.dp, if(rx) Color(0xFF10B981) else LuxeColors.Gold.copy(0.4f))
+                    color = Color.Black, 
+                    border = BorderStroke(2.dp, LuxeColors.Gold.copy(0.4f))
                 ) {
                     Column(modifier = Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Row(modifier = Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -318,25 +318,99 @@ fun RadioPanel(
                                 MiniTechLabel("VOL", "${(state.systemVolume * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.VOLUME_CONTROL, null) }
                                 MiniTechLabel("SQL", "${(state.squelch * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.SQUELCH_CONTROL, null) }
                             }
-                            Column(modifier = Modifier.weight(1f).padding(horizontal = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                val statusText = when { 
-                                    rx -> transmitterNick?.uppercase() ?: "RECIBIENDO"
-                                    isTransmitting || isBeeping -> "AIRE"
-                                    else -> "SQUELCH" 
+                            Column(
+                                modifier = Modifier.weight(1f).padding(horizontal = 4.dp), 
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                // 🛡️ CONTENEDOR DE ESTADO FIJO (EVITA SALTOS DE LÍNEA)
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().height(32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    androidx.compose.animation.AnimatedVisibility(
+                                        visible = rx,
+                                        enter = fadeIn(tween(600)) + scaleIn(initialScale = 0.85f),
+                                        exit = fadeOut(tween(400)) + scaleOut(targetScale = 0.85f)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(
+                                                    Brush.horizontalGradient(
+                                                        listOf(
+                                                            Color.Transparent,
+                                                            Color(0xFF10B981).copy(0.2f),
+                                                            Color(0xFF10B981).copy(0.2f),
+                                                            Color.Transparent
+                                                        )
+                                                    )
+                                                )
+                                                .border(
+                                                    BorderStroke(1.dp, Color(0xFF10B981).copy(0.4f)),
+                                                    RoundedCornerShape(8.dp)
+                                                )
+                                                .padding(horizontal = 14.dp, vertical = 3.dp)
+                                        ) {
+                                            Text(
+                                                text = transmitterNick?.uppercase() ?: "RECEPTOR",
+                                                color = Color(0xFF10B981), // 🟢 VERDE ESMERALDA ILUMINADO
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                letterSpacing = 1.5.sp,
+                                                modifier = Modifier.drawBehind {
+                                                    // 🛡️ SOFT GREEN GLOW
+                                                    drawRect(
+                                                        color = Color(0xFF10B981).copy(alpha = 0.1f),
+                                                        size = size.copy(height = size.height + 4.dp.toPx()),
+                                                        alpha = 0.4f
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
+
+                                    if (!rx) {
+                                        Text(
+                                            text = if (isTransmitting || isBeeping) "AIRE" else "SQUELCH",
+                                            color = if (isTransmitting) Color.Red else Color.White.copy(0.12f),
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Black,
+                                            letterSpacing = 2.sp
+                                        )
+                                    }
                                 }
-                                Text(
-                                    text = statusText, 
-                                    color = if(rx) Color(0xFF10B981) else if(isTransmitting) Color.Red else Color.White.copy(0.2f), 
-                                    fontSize = 11.sp, 
-                                    fontWeight = FontWeight.Black, 
-                                    letterSpacing = if(rx) 1.sp else 2.sp,
-                                    maxLines = 1
-                                )
+                                
                                 Spacer(Modifier.height(4.dp))
-                                Row(modifier = Modifier.fillMaxWidth().height(14.dp).clip(RoundedCornerShape(2.dp)), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    repeat(15) { i ->
-                                        val isActive = i < (mic * 15)
-                                        Box(modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(1.dp)).background(if (isActive) (if(i > 12) Color.Red else if(i > 9) Color(0xFFFACC15) else LuxeColors.Gold) else Color.White.copy(0.05f)))
+
+                                // 🔋 S-METER PROTAGONISTA (SIEMPRE VISIBLE Y ADICTIVO)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().height(22.dp).padding(vertical = 2.dp), 
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    repeat(20) { i ->
+                                        val isActive = i < (mic * 20)
+                                        val ledColor = when {
+                                            i > 16 -> Color(0xFFEF4444) // Rojo
+                                            i > 12 -> Color(0xFFFACC15) // Amarillo
+                                            else -> LuxeColors.Gold     // Cyan
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .fillMaxHeight()
+                                                .clip(RoundedCornerShape(1.dp))
+                                                .background(if (isActive) ledColor else Color.White.copy(0.05f))
+                                                .drawBehind {
+                                                    if (isActive) {
+                                                        drawCircle(
+                                                            color = ledColor.copy(alpha = 0.25f),
+                                                            radius = size.maxDimension * 0.9f,
+                                                            center = center
+                                                        )
+                                                    }
+                                                }
+                                        )
                                     }
                                 }
                                 Spacer(Modifier.height(8.dp))
@@ -563,7 +637,7 @@ fun RadioPanel(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(modifier = Modifier.fillMaxWidth().height(84.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val pttColor = if(isTransmitting) Color.Red else if(rx) Color.Green else LuxeColors.Gold
+                    val pttColor = if(isTransmitting) Color.Red else LuxeColors.Gold
                     Surface(
                         modifier = Modifier.weight(1.5f).fillMaxHeight().scale(pttScale).pointerInput(Unit) {
                             detectTapGestures(
@@ -583,7 +657,7 @@ fun RadioPanel(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.Mic, null, tint = pttColor, modifier = Modifier.size(28.dp))
                                 Spacer(Modifier.width(12.dp))
-                                Text(if(isTransmitting) "AIRE" else if(rx) "RECIBIENDO" else "HABLAR", color = pttColor, fontWeight = FontWeight.Black, fontSize = 16.sp)
+                                Text(if(isTransmitting) "AIRE" else "HABLAR", color = pttColor, fontWeight = FontWeight.Black, fontSize = 16.sp)
                             }
                         }
                     }

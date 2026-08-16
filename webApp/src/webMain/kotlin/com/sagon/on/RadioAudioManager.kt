@@ -31,6 +31,8 @@ object RadioAudioManager {
                     window.app.masterRxGain = window.app.ctx.createGain();
                     window.app.masterRxGain.gain.value = 2.0;
                     
+                    window.app.currentMasterGain = 1.4; // 🛡️ INICIO SEGURO: 70% por defecto
+
                     window.app.compressor = window.app.ctx.createDynamicsCompressor();
                     window.app.compressor.threshold.value = -20;
                     window.app.compressor.ratio.value = 8;
@@ -94,11 +96,21 @@ object RadioAudioManager {
                         }
                     };
 
+                    window.setMasterVolume = function(v) {
+                        if (!window.app || !window.app.masterOut) return;
+                        var now = window.app.ctx.currentTime;
+                        // Mapeo: 0.0 -> 0.0, 1.0 -> 2.0 (para dar un extra de potencia)
+                        window.app.currentMasterGain = v * 2.0;
+                        if (!window.app.pttStateInternal) {
+                            window.app.masterOut.gain.setTargetAtTime(window.app.currentMasterGain, now, 0.1);
+                        }
+                    };
+
                     window.updateMasterVolume = function() {
                         if (window.app && window.app.masterOut) {
-                            // 🔒 HARD-LOCK: No subir el volumen si estamos transmitiendo
                             if (window.app.pttStateInternal) return;
-                            window.app.masterOut.gain.setTargetAtTime(1.5, window.app.ctx.currentTime, 0.1);
+                            var now = window.app.ctx.currentTime;
+                            window.app.masterOut.gain.setTargetAtTime(window.app.currentMasterGain || 1.0, now, 0.1);
                         }
                     };
 
@@ -204,7 +216,8 @@ object RadioAudioManager {
                     
                     if (window.app.masterOut) {
                         window.app.masterOut.gain.cancelScheduledValues(now);
-                        window.app.masterOut.gain.setValueAtTime(1.5, now);
+                        var targetVol = (window.app.currentMasterGain !== undefined) ? window.app.currentMasterGain : 1.5;
+                        window.app.masterOut.gain.setValueAtTime(targetVol, now);
                     }
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(2.0, now, 0.2);
                     // 🔒 Restaurar ruido de fondo de forma suave
@@ -434,8 +447,8 @@ private object ReplayEngine {
                     
                     // Intentar encontrar el mejor codec soportado
                     var mimeType = "audio/webm;codecs=opus";
+                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/webm";
                     if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/ogg;codecs=opus";
-                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/mp4";
                     if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "";
 
                     try {
@@ -461,7 +474,7 @@ private object ReplayEngine {
                         var d = new Uint8Array(replayAnalyser.fftSize);
                         replayAnalyser.getByteTimeDomainData(d);
                         for(var i=0; i<d.length; i++) {
-                            if (Math.abs(d[i] - 128) > 5) { // Umbral de sensibilidad
+                            if (Math.abs(d[i] - 128) > 2) { // 🛡️ SENSIBILIDAD AUMENTADA
                                 activityDetected = true;
                                 break;
                             }

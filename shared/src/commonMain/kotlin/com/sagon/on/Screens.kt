@@ -273,9 +273,8 @@ fun RadioPanel(
                     Column(modifier = Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Row(modifier = Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.width(60.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                MiniTechLabel("VOL", "${(state.systemVolume * 100).toInt()}%") { }
-                                MiniTechLabel("RFG", "${(state.rfGain * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.GAIN_CONTROL, null) }
-                                MiniTechLabel("MON", "${(state.monitorVolume * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.MONI, null) }
+                                MiniTechLabel("VOL", "${(state.systemVolume * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.VOLUME_CONTROL, null) }
+                                MiniTechLabel("SQL", "${(state.squelch * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.SQUELCH_CONTROL, null) }
                             }
                             Column(modifier = Modifier.weight(1f).padding(horizontal = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 val statusText = when { 

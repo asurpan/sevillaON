@@ -53,7 +53,8 @@ object RadioPersistence {
                 isDspEnabled = localStorage.getItem("dspEnabled")?.toBoolean() ?: true,
                 activeProfile = profile,
                 isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
-                squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.55f 
+                squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.55f,
+                systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 0.7f
             )
         } catch(e: Exception) { RadioState() }
     }
@@ -80,6 +81,7 @@ object RadioPersistence {
             localStorage.setItem("disMode", s.isDiscreteModeEnabled.toString())
             localStorage.setItem("activeProfile", s.activeProfile.name)
             localStorage.setItem("squelch", s.squelch.toString())
+            localStorage.setItem("sysVol", s.systemVolume.toString())
         } catch(e: Exception) {}
 
         if (win.app != null) {
@@ -92,6 +94,11 @@ object RadioPersistence {
             win.app.rfGain = s.rfGain
             win.app.squelch = s.squelch
             win.app.rogerEnabled = s.isRogerBeepEnabled
+            
+            // 🛡️ ACTUALIZACIÓN DE VOLUMEN MAESTRO
+            if (win.setMasterVolume != null) {
+                win.setMasterVolume(s.systemVolume)
+            }
             
             js("if(window.updateMoniGain) window.updateMoniGain();")
             js("if(window.updateMasterVolume) window.updateMasterVolume();")

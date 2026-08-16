@@ -38,7 +38,7 @@ enum class RadioDialogType {
     ANTENNA, WATTS, FRIENDS, DSP, RADAR, ECO, LOCK, REPLAY, VOX, MONI, ROGER, REVERB, CHAT, 
     INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, 
     BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, DISCRETE, SELECT_NICK, 
-    HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, USER_ACTIONS, SQUELCH_CONTROL, GAIN_CONTROL
+    HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, USER_ACTIONS, SQUELCH_CONTROL, GAIN_CONTROL, VOLUME_CONTROL
 }
 
 @Composable
@@ -833,6 +833,20 @@ fun RadioDialogs(
                     Text("Ajusta la sensibilidad de recepción de tu antena.", fontSize = 12.sp, color = Color.White.copy(0.6f))
                     Spacer(Modifier.height(24.dp))
                     EliteSlider("RF GAIN", state.rfGain) { onStateChange(state.copy(rfGain = it)) }
+                }
+            },
+            confirmButton = { LuxeButton("ACEPTAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp)) }
+        )
+        RadioDialogType.VOLUME_CONTROL -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = { Text("VOLUMEN DE SALIDA", fontWeight = FontWeight.Black, color = LuxeColors.Gold) },
+            text = {
+                Column {
+                    Text("Ajusta el volumen general del equipo. Sincronizado con el sistema.", fontSize = 12.sp, color = Color.White.copy(0.6f))
+                    Spacer(Modifier.height(24.dp))
+                    EliteSlider("VOLUMEN", state.systemVolume) { onStateChange(state.copy(systemVolume = it)) }
                 }
             },
             confirmButton = { LuxeButton("ACEPTAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp)) }

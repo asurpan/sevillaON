@@ -511,8 +511,12 @@ private object ReplayEngine {
                     activityDetected = false; 
 
                     try {
-                        // 🚀 CODEC LOCK: Forzar un formato estándar
-                        var recorder = new MediaRecorder(streamDest.stream, { mimeType: 'audio/webm' });
+                        // 🚀 COMPATIBILIDAD TOTAL DE CODECS
+                        var mimeType = "audio/webm;codecs=opus";
+                        if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/webm";
+                        if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "";
+                        
+                        var recorder = new MediaRecorder(streamDest.stream, mimeType ? { mimeType: mimeType } : {});
                         
                         recorder.ondataavailable = function(e) { 
                             if (e.data && e.data.size > 0) chunks.push(e.data); 

@@ -56,7 +56,7 @@ fun main() {
                         if (u.city === baseCity) currentRoomUsers++;
                     });
                     
-                    while (currentRoomUsers >= 6) {
+                    while (currentRoomUsers >= 10) { // 🚀 CAPACIDAD AUMENTADA: 10 usuarios por sala
                         subIndex++;
                         roomSuffix = "-" + subIndex;
                         currentRoomUsers = 0;
@@ -242,10 +242,11 @@ fun main() {
 
                             val myCity = win.app.currentCity as? String ?: ""
                             val userCity = u.city as? String ?: ""
+                            val isMe = (k == win.app.sessionID)
                             
                             // 🔒 FILTRO DE SALA ESTRICTO: Solo conectar con gente en TU misma sub-sala (-2, -3, etc)
-                            // Esto evita que el móvil se caliente intentando gestionar toda la ciudad a la vez.
-                            if (myCity != userCity) continue
+                            // Excepto a ti mismo, que siempre debes verte para confirmar conexión.
+                            if (!isMe && myCity != userCity) continue
 
                             val isTransmitting = u.tx == true
                             val userPwr = (u.pwr as? Double ?: 0.7).toFloat()
@@ -368,6 +369,8 @@ fun main() {
                 RadioNetworkManager.connect(it) 
                 js("window.ensureMicAccess()")
                 screenState = Screen.RadioCB
+                // 🛡️ ACTIVACIÓN DE SONIDO TRAS CARGA
+                js("if(window.app) window.app.canPlaySounds = true;")
             },
             onLogout = { RadioPersistence.logout() },
             onInstallRequest = { },

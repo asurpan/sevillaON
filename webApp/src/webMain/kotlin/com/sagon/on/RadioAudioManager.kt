@@ -331,8 +331,10 @@ object RadioAudioManager {
 private object RadioSignaling {
     fun install() {
         js("""
+            window.app.canPlaySounds = false; // 🛡️ BLOQUEO INICIAL: No pitar durante la carga
+
             window.playUiSound = function(type) {
-                if(!window.app.ctx) return;
+                if(!window.app.ctx || !window.app.canPlaySounds) return;
                 var now = window.app.ctx.currentTime;
                 
                 if (type === "incoming") {

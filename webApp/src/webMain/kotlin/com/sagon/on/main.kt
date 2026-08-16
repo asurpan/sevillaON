@@ -70,6 +70,15 @@ fun main() {
                     
                     if (window.dispatch_room_update) window.dispatch_room_update(finalCityRoom);
 
+                    // 🛡️ NOTIFICAR CAMBIO DE SALA SI NO ES LA PRINCIPAL
+                    if (roomSuffix !== "") {
+                        setTimeout(function() {
+                            if (window.dispatch_notification) {
+                                window.dispatch_notification("AVISO DE SALA", "La sala principal está llena. Estás en la sala de respaldo: " + finalCityRoom, "info");
+                            }
+                        }, 5000);
+                    }
+
                     window.app.db.ref("users/" + sessionID).set({
                         nick: nick,
                         city: finalCityRoom,
@@ -347,6 +356,15 @@ fun main() {
             onMicFailure = { },
             onIntegrityStatus = { },
             onIncomingAlert = { _, _, _ -> },
+            onNotification = { title, message, type ->
+                val nType = when(type.lowercase()) {
+                    "success" -> NotificationType.Success
+                    "danger", "error" -> NotificationType.Danger
+                    "warning" -> NotificationType.Warning
+                    else -> NotificationType.Info
+                }
+                notificationState.value = AppNotification(title, message, nType)
+            },
             onVoxSync = { },
             onRoomUpdate = { newRoom ->
                 radioState.value = radioState.value.copy(city = newRoom, channel = newRoom)

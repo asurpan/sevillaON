@@ -27,6 +27,7 @@ object RadioBridge {
         onMicFailure: () -> Unit,
         onIntegrityStatus: (Boolean) -> Unit,
         onIncomingAlert: (String, String, String) -> Unit,
+        onNotification: (String, String, String) -> Unit,
         onVoxSync: (Boolean) -> Unit,
         onRoomUpdate: (String) -> Unit,
         onPttLive: (Boolean) -> Unit,
@@ -48,6 +49,7 @@ object RadioBridge {
         win.dispatch_mic_failure = onMicFailure
         win.dispatch_integrity_status = onIntegrityStatus
         win.dispatch_incoming_alert = onIncomingAlert
+        win.dispatch_notification = onNotification
         win.dispatch_vox_sync = onVoxSync
         win.dispatch_room_update = onRoomUpdate
         win.dispatch_ptt_live = onPttLive

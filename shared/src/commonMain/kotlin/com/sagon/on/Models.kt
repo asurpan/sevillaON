@@ -106,7 +106,7 @@ data class ChatMessage(
     val isSystem: Boolean = false
 )
 
-enum class NotificationType { Info, Warning, Success }
+enum class NotificationType { Info, Warning, Success, Danger }
 
 enum class ActivityProfile {
     NORMAL, MOTO, CICLISMO, SENDERISMO, PASEO, SOCORRISTAS, CARAVANAS

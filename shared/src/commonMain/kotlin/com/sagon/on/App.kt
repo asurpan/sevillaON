@@ -344,6 +344,9 @@ fun App(
                                     onBlockUser(id)
                                 },
                                 onReplay = onReplayRequest,
+                                onNotification = { t, m, type -> 
+                                    localNotification = AppNotification(t, m, type)
+                                },
                                 pendingDialog = pendingDialog,
                                 onPendingDialogChange = { dialog, payload -> 
                                     pendingDialog = dialog

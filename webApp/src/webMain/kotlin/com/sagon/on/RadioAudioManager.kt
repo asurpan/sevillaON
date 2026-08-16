@@ -29,22 +29,19 @@ object RadioAudioManager {
                     window.app.masterOut.connect(window.app.ctx.destination);
                     
                     window.app.masterRxGain = window.app.ctx.createGain();
-                    window.app.masterRxGain.gain.value = 3.5; // 🚀 GANANCIA DE RECEPCIÓN EXTRA
+                    window.app.masterRxGain.gain.value = 3.5; 
                     
-                    window.app.currentMasterGain = 2.1; // 🛡️ INICIO POTENTE (Equivale a 70% con multiplicador x3)
-
-                    window.app.compressor = window.app.ctx.createDynamicsCompressor();
-                    window.app.compressor.threshold.value = -20;
-                    window.app.compressor.ratio.value = 8;
+                    window.app.currentMasterGain = 2.1; 
 
                     window.app.filter = window.app.ctx.createBiquadFilter();
                     window.app.filter.type = "bandpass"; 
                     window.app.filter.frequency.value = 1500; 
                     window.app.filter.Q.value = 1.2; 
                     
+                    // 🛡️ MOTOR DE SUPERVIVENCIA (iOS/ANDROID/CHROME):
+                    // No usamos compresores al final que puedan silenciar señales débiles.
                     window.app.filter.connect(window.app.masterRxGain);
-                    window.app.masterRxGain.connect(window.app.compressor);
-                    window.app.compressor.connect(window.app.masterOut);
+                    window.app.masterRxGain.connect(window.app.masterOut);
                     
                     // --- 🌊 GENERADOR DE QRM REAL (FILTRADO Y OSCILANTE) ---
                     var bufferSize = 2 * window.app.ctx.sampleRate,
@@ -262,25 +259,32 @@ object RadioAudioManager {
             window.setupCallStream = function(call) {
                 console.log("📞 Recibiendo llamada de:", call.peer);
                 
-                // 🛡️ DOM SINK FIX: Algunos navegadores necesitan un elemento de audio en el DOM para procesar WebRTC
+                // 🛡️ DOM SINK FIX: Elemento de audio visible pero oculto para forzar decodificación
                 var remoteAudio = document.createElement("audio");
-                remoteAudio.style.display = "none"; 
+                remoteAudio.setAttribute("autoplay", "true");
+                remoteAudio.setAttribute("playsinline", "true");
+                remoteAudio.muted = false; // 🔒 CRÍTICO: El elemento NO debe estar muteado para que el sistema no lo duerma
+                remoteAudio.volume = 0.001; // 🔒 Pero casi inaudible (el sonido real va por AudioContext)
+                
+                remoteAudio.style.position = "absolute";
+                remoteAudio.style.top = "0";
+                remoteAudio.style.width = "1px";
+                remoteAudio.style.height = "1px";
+                remoteAudio.style.opacity = "0.01";
                 document.body.appendChild(remoteAudio);
-                remoteAudio.autoplay = true;
-                remoteAudio.muted = true; 
                 
                 call.on('stream', function(remoteStream) {
                     if (!window.app.ctx) return;
                     
-                    // 🔒 VÍNCULO FÍSICO: Obligatorio para decodificación WebRTC
                     remoteAudio.srcObject = remoteStream;
-                    remoteAudio.play().catch(function(e) { console.log("Audio play blocked, but stream attached."); });
                     
-                    // 🛡️ ACTIVACIÓN CRÍTICA DEL RECEPTOR: Forzar el AudioContext al recibir datos
-                    if (window.app.ctx.state === 'suspended') {
-                        console.log("🔊 Despertando motor de audio para recibir voz...");
-                        window.app.ctx.resume();
-                    }
+                    var forcePlay = function() {
+                        if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                        remoteAudio.play().catch(function(e) { console.log("Retrying play..."); });
+                    };
+                    
+                    forcePlay();
+                    setInterval(forcePlay, 2000); // 🛡️ ANTIDORMIDERA: Forzar reproducción cada 2s
 
                     console.log("🔊 Stream recibido de:", call.peer);
                     var source = window.app.ctx.createMediaStreamSource(remoteStream);

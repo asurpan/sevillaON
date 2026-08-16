@@ -16,10 +16,11 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Monitor (MONI)**: Solo debe funcionar durante la transmisión (**PTT presionado**). Ganancia fijada en **0.18x** para un retorno potente.
     - **Roger Beep**: Blindado a **1955Hz**, **0.3s** y ataque plano.
 
-3. **Motor de Replay Inteligente (V4)**:
-    - **Aislamiento RX**: Solo graba el `rxReplayBus` (voz de otros).
+3. **Motor de Replay Inteligente (V4.1)**:
+    - **Grabación Total**: Graba tanto la voz local como la remota (vía `rxReplayBus`). Prohibido aislar al usuario de su propia grabación.
     - **Tactical Ducking**: Al reproducir Replay, la radio en vivo debe bajar al **2%** de volumen de forma automática.
     - **Dedicación de Compresión**: Uso obligado del `replayCompressor` para que las grabaciones tengan volumen constante.
+    - **Codec Universal**: Detección dinámica de formato (WebM/Opus/Nativo) para garantizar compatibilidad en todos los navegadores móviles.
     - **Capacidad Táctica**: Buffer de **30 segundos** exactos (6 bloques de 5s) con memoria por segmento.
     - **Velocidad Táctica**: Reproducción fija a **1.15x**.
 
@@ -28,7 +29,7 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **RX Tag (Nombre)**: La etiqueta del operador que habla debe usar el color **Verde Esmeralda (`0xFF10B981`)** con efecto fundido y resplandor suave.
     - **Contenedor de Estado**: La línea de estado (donde aparece SQUELCH/AIRE/NOMBRE) debe tener una altura fija de **32dp** para evitar saltos de línea.
     - **S-Meter**: 20 LEDs con efecto resplandor (Glow).
-    - **Replay Icon**: Debe tener fundido progresivo de brillo y glow durante la reproducción.
+    - **Replay Icon**: Debe tener fundido progresivo de brillo y glow durante la reproducción. Solo brilla si hay grabaciones con voz real.
 
 5. **Identidad y Persistencia**:
     - **Hardware ID (Hard-Lock)**: La `sessionID` en Firebase está vinculada estrictamente al ID del dispositivo. Prohibido crear sesiones basadas solo en el Nick para evitar duplicados.

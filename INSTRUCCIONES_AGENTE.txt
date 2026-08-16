@@ -4,8 +4,8 @@ Este manual contiene las instrucciones técnicas críticas y es de lectura OBLIG
 
 ## 🏗️ ARQUITECTURA DE MISIÓN CRÍTICA
 El sistema está blindado en módulos estancos para evitar regresiones de audio y diseño:
-1. **RadioAudioManager.kt**: Corazón del AudioContext, WebRTC y motor Replay V4.
-2. **ManosLibres.kt**: Motor VOX y Voice Boost (1.8x).
+1. **RadioAudioManager.kt**: Corazón del AudioContext, WebRTC y motor Replay V4.1.
+2. **ManosLibres.kt**: Motor VOX, Voice Boost (1.8x) y Replay Sync.
 3. **Screens.kt**: Interfaz Nexus blindada geométricamente con efectos de alta gama.
 4. **main.kt**: Gestión de Hard-Lock ID y coordinación de la red.
 
@@ -14,7 +14,7 @@ El sistema está blindado en módulos estancos para evitar regresiones de audio 
 ### 🔊 AUDIO Y TRANSMISIÓN
 - **Voz Blindada**: Mantener **DOM Sink** con reproducción forzada. Sin esto, fallan los LEDs y la voz en móviles.
 - **MONI (Monitor)**: Solo audible en TX (PTT pulsado). Ganancia x0.18.
-- **Replay V4**: Grabación de 30s con compresión dedicada y ducking automático de radio en vivo. Reproducción acelerada a 1.15x.
+- **Replay V4.1**: Grabación de 30s (canal completo: voz local + remota). Detección universal de codecs y compresión dedicada. Ducking automático de radio en vivo. Reproducción a 1.15x.
 - **Beep Sync**: El Roger Beep debe transmitirse al bus de red (PTT Tail de 400ms).
 
 ### 📡 SINTONIZACIÓN (MODO EMISORA REAL)
@@ -27,10 +27,10 @@ El sistema está blindado en módulos estancos para evitar regresiones de audio 
     - **SQUELCH**: Estado de reposo técnico.
     - **Verde Esmeralda**: Color exclusivo (`0xFF10B981`) para el nombre de quien habla.
     - **S-Meter**: 20 LEDs con halo de luz dinámico (glow).
-    - **Replay Progress**: El icono se apaga progresivamente durante el uso.
+    - **Replay Progress**: El icono brilla solo si hay contenido y se apaga progresivamente al reproducir.
 
 ### 🔐 IDENTIDAD Y NICK
 - **Hard-Lock ID**: Un equipo = un usuario. Prohibido duplicar sesiones en Firebase por cambios de Nick.
 - **Indicativos**: Mínimo 2, máximo 32 caracteres. Soporta indicativos largos profesionales.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 11.0 (PROYECTO BLINDADO TOTAL)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 11.0 (REPLAY TOTAL & CODEC UNIVERSAL)

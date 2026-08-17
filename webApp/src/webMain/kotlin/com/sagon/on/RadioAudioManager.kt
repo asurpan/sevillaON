@@ -65,14 +65,11 @@ object RadioAudioManager {
                     window.app.currentMasterGain = 1.0; 
                     window.app.masterOut.gain.setValueAtTime(1.0, window.app.ctx.currentTime);
 
-                    // 🛡️ MOTOR DE SILENCIO ADAPTATIVO (KEEP-ALIVE POR HARDWARE SIN SONIDO)
-                    // Creamos una fuente de datos constante con valor 0. 
-                    // El navegador ve actividad en el hilo de audio y no suspende el proceso, 
-                    // pero el resultado físico es SILENCIO TOTAL.
-                    var silenceKeepAlive = window.app.ctx.createConstantSource();
-                    silenceKeepAlive.offset.value = 0;
-                    silenceKeepAlive.connect(window.app.ctx.destination);
-                    silenceKeepAlive.start();
+                    // 🛡️ MOTOR DE SILENCIO ADAPTATIVO (KEEP-ALIVE GLOBAL)
+                    window.app.silenceKeepAlive = window.app.ctx.createConstantSource();
+                    window.app.silenceKeepAlive.offset.value = 0;
+                    window.app.silenceKeepAlive.connect(window.app.ctx.destination);
+                    window.app.silenceKeepAlive.start();
                     
                     window.app.masterOut.connect(window.app.ctx.destination);
                     
@@ -173,7 +170,7 @@ object RadioAudioManager {
 
                     var ditherBuffer = window.app.ctx.createBuffer(1, window.app.ctx.sampleRate, window.app.ctx.sampleRate),
                         ditherData = ditherBuffer.getChannelData(0);
-                    for (var i = 0; i < ditherData.length; i++) { ditherData[i] = (Math.random() * 2 - 1) * 0.001; }
+                    for (var i = 0; i < ditherData.length; i++) { ditherData[i] = (Math.random() * 2 - 1) * 0.00001; }
                     var ditherSource = window.app.ctx.createBufferSource();
                     ditherSource.buffer = ditherBuffer;
                     ditherSource.loop = true;
@@ -212,6 +209,14 @@ object RadioAudioManager {
 
                 if (active) {
                     if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                    
+                    // 🚀 WAKE-UP PULSE: Sacudimos el motor de audio para evitar que la voz se duerma
+                    if (window.app.silenceKeepAlive) {
+                        var nowPulse = window.app.ctx.currentTime;
+                        window.app.silenceKeepAlive.offset.setValueAtTime(0.0001, nowPulse);
+                        window.app.silenceKeepAlive.offset.linearRampToValueAtTime(0, nowPulse + 0.05);
+                    }
+
                     if (window.app.totTimer) clearTimeout(window.app.totTimer);
                     window.app.totTimer = setTimeout(function() {
                         if (window.app.pttStateInternal) {

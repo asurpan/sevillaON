@@ -36,15 +36,23 @@ fun main() {
                 return;
             }
 
-            // 🛡️ IDENTIFICADOR DE DISPOSITIVO PERSISTENTE
+            // 🛡️ IDENTIFICADOR DE DISPOSITIVO PERSISTENTE (STABLE ID)
             var deviceID = localStorage.getItem("web_device_id");
+            
+            // Si estamos en entorno Android Nativo, usar el ID real del hardware para máxima estabilidad
+            if (window.AndroidApp && window.AndroidApp.getAndroidId) {
+                var aId = window.AndroidApp.getAndroidId();
+                if (aId) deviceID = "android_" + aId;
+            }
+
             if (!deviceID) {
-                deviceID = "web_" + Math.random().toString(36).substring(2, 15);
+                deviceID = "web_" + Math.random().toString(36).substring(2, 12);
                 localStorage.setItem("web_device_id", deviceID);
             }
             
             var cleanNick = (nick || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
-            var sessionID = (cleanNick + "_" + deviceID.substring(0, 8)).trim();
+            // 🛡️ HARD-LOCK: Usamos el ID completo para evitar duplicados por colisión de prefijo
+            var sessionID = (cleanNick + "_" + deviceID).trim();
             
             window.app.nick = cleanNick;
             window.app.deviceID = deviceID;
@@ -95,11 +103,11 @@ fun main() {
                     }
 
                     window.app.db.ref("users/" + sessionID).set({
-                        nick: nick,
+                        nick: cleanNick,
                         city: finalCityRoom,
                         channel: finalCityRoom,
                         tx: false,
-                        pwr: 0.7,
+                        pwr: parseFloat(localStorage.getItem("vetPwr")) || 0.7,
                         roger: (localStorage.getItem("roger") === "true"),
                         lastSeen: Date.now()
                     });
@@ -108,7 +116,11 @@ fun main() {
 
                     setInterval(function() {
                         if(window.app.db && window.app.sessionID) {
-                            var updates = { lastSeen: Date.now() };
+                            var updates = { 
+                                lastSeen: Date.now(),
+                                nick: window.app.nick || cleanNick,
+                                city: window.app.currentCity || finalCityRoom
+                            };
                             
                             // 🛡️ AUDITORÍA: Estadísticas de Transmisión
                             if (window.app.peer && window.app.activeCalls) {
@@ -290,7 +302,13 @@ fun main() {
                             val u = users[k] ?: continue
                             currentIDs.add(k)
                             
-                            val userNick = (u.nick as? String ?: "ESTACIÓN").trim().uppercase()
+                            var userNick = (u.nick as? String ?: "").trim().uppercase()
+                            if (userNick.isEmpty()) {
+                                // Fallback: Extraer del ID (ej: DFF_web_isik -> DFF)
+                                userNick = k.split("_")[0].uppercase()
+                            }
+                            if (userNick.isEmpty()) userNick = "ESTACIÓN"
+
                             val lastSeen = (u.lastSeen as? Double ?: 0.0)
                             
                             if (userNick.isEmpty()) continue

@@ -317,6 +317,15 @@ fun main() {
                             val isTransmitting = u.tx == true
                             val userPwr = (u.pwr as? Double ?: 0.7).toFloat()
                             win.app.remotePowers[k] = userPwr
+                            
+                            // 🛡️ SQUELCH INDIVIDUAL: Si no transmite, volumen a CERO real
+                            val gNode = win.app.remoteGains[k]
+                            if (gNode != null && gNode != undefined) {
+                                val targetVol = if (isTransmitting) 1.0 else 0.0
+                                if (gNode.gain.value != targetVol) {
+                                    gNode.gain.setTargetAtTime(targetVol, win.app.ctx.currentTime, 0.05)
+                                }
+                            }
 
                             val prevState = win.remoteTxStates[k] ?: false
                             if (prevState && !isTransmitting) {

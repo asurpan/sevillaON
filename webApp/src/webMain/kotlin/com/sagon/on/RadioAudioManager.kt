@@ -65,14 +65,16 @@ object RadioAudioManager {
                     window.app.currentMasterGain = 1.0; 
                     window.app.masterOut.gain.setValueAtTime(1.0, window.app.ctx.currentTime);
 
-                    // 🛡️ HARDWARE KEEP-ALIVE: Ultrasónico casi-cero para silencio absoluto
-                    var hwKeepAlive = window.app.ctx.createOscillator();
-                    hwKeepAlive.frequency.value = 21000; 
-                    var hwKeepAliveGain = window.app.ctx.createGain();
-                    hwKeepAliveGain.gain.value = 0.0001; 
-                    hwKeepAlive.connect(hwKeepAliveGain);
-                    hwKeepAliveGain.connect(window.app.ctx.destination);
-                    hwKeepAlive.start();
+                    // 🛡️ MOTOR DE SILENCIO ADAPTATIVO (KEEP-ALIVE POR HARDWARE SIN SONIDO)
+                    // Creamos una fuente de datos constante con valor 0. 
+                    // El navegador ve actividad en el hilo de audio y no suspende el proceso, 
+                    // pero el resultado físico es SILENCIO TOTAL.
+                    var silenceKeepAlive = window.app.ctx.createConstantSource();
+                    silenceKeepAlive.offset.value = 0;
+                    silenceKeepAlive.connect(window.app.ctx.destination);
+                    silenceKeepAlive.start();
+                    
+                    window.app.masterOut.connect(window.app.ctx.destination);
                     
                     // --- 🌊 GENERADOR DE QRM REAL (FILTRADO Y OSCILANTE) ---
                     var bufferSize = 2 * window.app.ctx.sampleRate,
@@ -111,8 +113,12 @@ object RadioAudioManager {
                         var now = window.app.ctx.currentTime;
                         if (v <= 0) {
                             window.app.currentNoiseTarget = 0;
-                            window.app.noise.gain.setTargetAtTime(0, now, 0.1);
-                            if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0, now, 0.1);
+                            window.app.noise.gain.cancelScheduledValues(now);
+                            window.app.noise.gain.setValueAtTime(0, now);
+                            if (window.app.lfoGain) {
+                                window.app.lfoGain.gain.cancelScheduledValues(now);
+                                window.app.lfoGain.gain.setValueAtTime(0, now);
+                            }
                         } else {
                             window.app.currentNoiseTarget = (v * 0.28); 
                             window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, now, 0.1);

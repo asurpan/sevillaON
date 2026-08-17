@@ -19,6 +19,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Hardware Keep-Alive**: No eliminar el oscilador de **21kHz**. Es el marcapasos que evita que el sistema operativo duerma el chip de audio.
 - **Replay One-Shot**: El botón debe vaciar la memoria al usarse. Una escucha, una limpieza.
 - **Pisado Real**: Usar el motor `WaveShaper` para distorsionar voces débiles cuando hay choque de portadoras.
+- **BLOQUEO DE RUTAS Y VOLUMEN**: Queda TERMINANTEMENTE PROHIBIDO modificar los enrutados de audio (rutas de nodos), así como subir o bajar volúmenes o ganancias configuradas. Estas rutas y niveles están BLINDADOS para garantizar la estabilidad del hardware. Solo se permiten cambios en la lógica de control, nunca en la cadena de potencia o ruteo de audio físico.
 
 ### 📡 VETERANÍA Y RED
 - **Progreso de Potencia**: +0.002 pwr / 5s de charla. No regalar veteranía; se gana modulando.

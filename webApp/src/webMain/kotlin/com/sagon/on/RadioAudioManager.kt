@@ -471,7 +471,8 @@ private object RadioSignaling {
                 g.gain.setValueAtTime(0, now + duration);
                 o.connect(g); 
                 g.connect(window.app.masterOut);
-                if (window.app.txBus) g.connect(window.app.txBus);
+                // 🛡️ FIX: No enviar el Roger Beep a la red para evitar el "doble pitido" en los receptores
+                // if (window.app.txBus) g.connect(window.app.txBus); 
                 o.onended = function() {
                     if (type === "ptt_off") {
                         window.app.isBeeping = false;

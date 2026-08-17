@@ -211,6 +211,15 @@ fun main() {
     RadioMapsManager.install()
     RadioBridge.install()
 
+    // 🛡️ SINCRONIZACIÓN INICIAL DE ESTADO CRÍTICO
+    val initialState = RadioPersistence.loadInitialState()
+    if (win.app != null) {
+        win.app.discreteMode = initialState.isDiscreteModeEnabled
+        win.app.rogerEnabled = initialState.isRogerBeepEnabled
+        win.app.voxActive = initialState.isVoxEnabled
+        win.app.voxSens = initialState.voxSensitivity
+    }
+
     // --- 🛡️ PREVENCIÓN DE CIERRE EN WEB (UNLOAD HACK) ---
     window.addEventListener("beforeunload", { event ->
         val e = event.asDynamic()
@@ -318,10 +327,11 @@ fun main() {
                             val userPwr = (u.pwr as? Double ?: 0.7).toFloat()
                             win.app.remotePowers[k] = userPwr
                             
-                            // 🛡️ SQUELCH INDIVIDUAL: Si no transmite, volumen a CERO real
+                            // 🛡️ SQUELCH INDIVIDUAL: Si no transmite o estamos en modo discreto, volumen a CERO real
                             val gNode = win.app.remoteGains[k]
                             if (gNode != null && gNode != undefined) {
-                                val targetVol = if (isTransmitting) 1.0 else 0.0
+                                val isDiscrete = radioState.value.isDiscreteModeEnabled
+                                val targetVol = if (isTransmitting && !(isDiscrete && !isMe)) 1.0 else 0.0
                                 if (gNode.gain.value != targetVol) {
                                     gNode.gain.setTargetAtTime(targetVol, win.app.ctx.currentTime, 0.05)
                                 }
@@ -557,6 +567,7 @@ fun main() {
                     w.app.voxActive = newState.isVoxEnabled
                     w.app.voxSens = newState.voxSensitivity
                     w.app.rogerEnabled = newState.isRogerBeepEnabled
+                    w.app.discreteMode = newState.isDiscreteModeEnabled
                     localStorage.setItem("roger", newState.isRogerBeepEnabled.toString())
                     js("if(window.broadcastPTT) window.broadcastPTT(window.app.pttStateInternal || false, newState.isRogerBeepEnabled);")
                 }

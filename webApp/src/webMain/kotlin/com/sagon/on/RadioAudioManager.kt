@@ -34,14 +34,30 @@ object RadioAudioManager {
                 }
                 var AC = window.AudioContext || window.webkitAudioContext;
                 try {
-                    window.app.ctx = new AC({ latencyHint: 'interactive', sampleRate: 48000 });
+                    // 🛡️ AUTO-LATENCY: Dejamos que el hardware decida el sampleRate para evitar conflictos en Android 13
+                    window.app.ctx = new AC({ latencyHint: 'interactive' });
                     window.app.diag.ctxState = window.app.ctx.state;
                     
                     window.app.ctx.onstatechange = function() {
                         window.app.diag.ctxState = window.app.ctx.state;
+                        // 🛡️ ANDROID 16 WATCHDOG: Si el sistema suspende el audio, intentar revivirlo
+                        if (window.app.ctx.state !== 'running') {
+                            window.app.ctx.resume().catch(e => {});
+                        }
                     };
 
-                    // --- 🏗️ ARQUITECTURA DE SALIDA (ORDEN INAMOVIBLE) ---
+                    // 📟 REGISTRO MEDIASESSION (OBLIGATORIO ANDROID 16)
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.metadata = new MediaMetadata({
+                            title: 'ON AIR SPAIN',
+                            artist: 'Radio CB Digital',
+                            album: 'Comunicación Élite',
+                            artwork: [{ src: 'logo.png', sizes: '512x512', type: 'image/png' }]
+                        });
+                        navigator.mediaSession.playbackState = "playing";
+                    }
+
+                    // --- 🏗️ ARQUITECTURA DE SALIDA ---
                     window.app.masterOut = window.app.ctx.createGain();
                     window.app.masterOut.connect(window.app.ctx.destination);
                     
@@ -57,7 +73,7 @@ object RadioAudioManager {
                     window.app.filter.frequency.value = 1500; 
                     window.app.filter.Q.value = 1.2; 
                     
-                    // 🔒 CADENA DE RECEPCIÓN: Señal -> Filtro -> RxGain -> Compressor -> MasterOut
+                    // 🔒 CADENA DE RECEPCIÓN (RUIDO): Filtro -> RxGain -> Compressor -> MasterOut
                     window.app.filter.connect(window.app.masterRxGain);
                     window.app.masterRxGain.connect(window.app.mainCompressor);
                     window.app.mainCompressor.connect(window.app.masterOut);
@@ -65,11 +81,24 @@ object RadioAudioManager {
                     window.app.currentMasterGain = 1.0; 
                     window.app.masterOut.gain.setValueAtTime(1.0, window.app.ctx.currentTime);
 
-                    // 🛡️ MOTOR DE VIDA (KEEP-ALIVE) - Valor mínimo inaudible para evitar suspensión
-                    window.app.silenceKeepAlive = window.app.ctx.createConstantSource();
-                    window.app.silenceKeepAlive.offset.value = 0.0001; 
-                    window.app.silenceKeepAlive.connect(window.app.ctx.destination);
-                    window.app.silenceKeepAlive.start();
+                    // 🛡️ MOTOR DE VIDA DINÁMICO (ANTI-ANDROID 16 SLEEP)
+                    // Usamos una frecuencia que oscila para que el sistema no la filtre como ruido
+                    window.app.androidKeepAlive = window.app.ctx.createOscillator();
+                    window.app.androidKeepAlive.frequency.value = 20500; 
+                    window.app.androidKeepAliveGain = window.app.ctx.createGain();
+                    window.app.androidKeepAliveGain.gain.value = 0.008; // Un poco más fuerte para el DAC de A16
+                    
+                    var lfoA16 = window.app.ctx.createOscillator();
+                    lfoA16.frequency.value = 0.5; // Oscilación lenta
+                    var lfoA16Gain = window.app.ctx.createGain();
+                    lfoA16Gain.gain.value = 100; // Mueve la frecuencia +-100Hz
+                    lfoA16.connect(lfoA16Gain);
+                    lfoA16Gain.connect(window.app.androidKeepAlive.frequency);
+                    
+                    window.app.androidKeepAlive.connect(window.app.androidKeepAliveGain);
+                    window.app.androidKeepAliveGain.connect(window.app.ctx.destination);
+                    window.app.androidKeepAlive.start();
+                    lfoA16.start();
                     
                     // --- 🌊 GENERADOR DE QRM REAL (FILTRADO Y OSCILANTE) ---
                     var bufferSize = 2 * window.app.ctx.sampleRate,
@@ -269,15 +298,21 @@ object RadioAudioManager {
                 var remoteAudio = document.createElement("audio");
                 remoteAudio.setAttribute("autoplay", "true");
                 remoteAudio.setAttribute("playsinline", "true");
-                remoteAudio.muted = true; 
+                // 🛡️ FIX ANDROID 16: El elemento audio debe estar activo para que el sistema lo considere Media
+                remoteAudio.muted = false; 
+                remoteAudio.volume = 0.01; 
                 remoteAudio.style.cssText = "position:fixed;width:1px;height:1px;top:0;opacity:0.01;pointer-events:none;z-index:-1";
                 document.body.appendChild(remoteAudio);
                 
                 call.on('stream', function(remoteStream) {
                     console.log("🔊 VOZ RECIBIDA. Tracks:", remoteStream.getAudioTracks().length);
                     remoteAudio.srcObject = remoteStream;
-                    if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                    remoteAudio.play().catch(function(e) { });
 
+                    if (!window.app.ctx && window.initAudio) window.initAudio();
+                    if (!window.app.ctx) return;
+                    
+                    // 🚀 CREACIÓN INMEDIATA DE NODOS (No esperar a resume para evitar bloqueos de visibilidad)
                     var source = window.app.ctx.createMediaStreamSource(remoteStream);
                     var analyser = window.app.ctx.createAnalyser();
                     var gainNode = window.app.ctx.createGain();
@@ -286,11 +321,9 @@ object RadioAudioManager {
                     source.connect(analyser);
                     source.connect(gainNode);
                     
-                    // 🛡️ RECONEXIÓN LEDs: El analizador DEBE recibir datos siempre.
-                    if (window.app.filter) {
-                        gainNode.connect(window.app.filter);
-                        if (window.app.rxReplayBus) gainNode.connect(window.app.rxReplayBus);
-                    }
+                    // 🛡️ TRIPLE ROUTING: Máxima redundancia para Android 16
+                    if (window.app.masterOut) gainNode.connect(window.app.masterOut);
+                    gainNode.connect(window.app.ctx.destination);
                     
                     // 🛡️ DECODING BRIDGE: Conexión silenciosa a la salida para asegurar proceso
                     var dummy = window.app.ctx.createGain();
@@ -304,8 +337,10 @@ object RadioAudioManager {
                     window.app.remoteSinks = window.app.remoteSinks || {};
                     window.app.remoteSinks[call.peer] = remoteAudio;
 
-                    remoteAudio.play().catch(function(e) { });
-                    
+                    if (window.app.ctx.state !== 'running') {
+                        window.app.ctx.resume().catch(function(e) { });
+                    }
+
                     // AUDITORÍA RX
                     window.app.diag.rxPackets[call.peer] = 0;
                     var diagInterval = setInterval(function() {
@@ -334,8 +369,15 @@ object RadioAudioManager {
             function updateRemotePriorities() {
                 if(!window.app) return;
                 var peers = Object.keys(window.app.remoteSources);
+                var isDiscrete = (window.app.discreteMode === true);
+
                 if(peers.length <= 1) {
-                    peers.forEach(id => { if(window.app.remoteGains[id]) window.app.remoteGains[id].gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.1); });
+                    peers.forEach(id => { 
+                        if(window.app.remoteGains[id]) {
+                            var target = isDiscrete ? 0 : 1.0;
+                            window.app.remoteGains[id].gain.setTargetAtTime(target, window.app.ctx.currentTime, 0.1); 
+                        }
+                    });
                     return;
                 }
                 var maxPwr = 0;
@@ -349,6 +391,12 @@ object RadioAudioManager {
                     var source = window.app.remoteSources[id];
                     var ana = window.app.remoteAnalysers[id];
                     if(!gain || !source) return;
+
+                    if (isDiscrete) {
+                        gain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.1);
+                        return;
+                    }
+
                     var p = window.app.remotePowers[id] || 0.7;
                     var diff = maxPwr - p;
                     

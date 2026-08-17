@@ -104,29 +104,29 @@ fun WelcomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 32.dp),
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+            verticalArrangement = Arrangement.Center
         ) {
-            Spacer(Modifier.height(60.dp))
+            Spacer(Modifier.height(20.dp))
 
             Box(contentAlignment = Alignment.Center) {
                 val glowScale by infiniteTransition.animateFloat(
-                    initialValue = 1f, targetValue = 1.3f,
+                    initialValue = 1f, targetValue = 1.2f,
                     animationSpec = infiniteRepeatable(tween(2000), RepeatMode.Reverse),
                     label = "Glow"
                 )
                 
                 Box(
                     Modifier
-                        .size(120.dp)
+                        .size(100.dp)
                         .scale(glowScale)
                         .background(LuxeColors.Gold.copy(0.1f), CircleShape)
-                        .blur(40.dp)
+                        .blur(30.dp)
                 )
                 
                 Surface(
-                    modifier = Modifier.size(80.dp),
+                    modifier = Modifier.size(70.dp),
                     shape = CircleShape,
                     color = Color.Black,
                     border = BorderStroke(2.dp, LuxeColors.Gold)
@@ -135,33 +135,33 @@ fun WelcomeScreen(
                         Image(
                             painter = painterResource(Res.drawable.logo),
                             contentDescription = null,
-                            modifier = Modifier.size(50.dp).clip(CircleShape)
+                            modifier = Modifier.size(45.dp).clip(CircleShape)
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(40.dp))
-            Text("IDENTIFICACIÓN", color = LuxeColors.Gold, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
-            Text("ON AIR SPAIN", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+            Spacer(Modifier.height(24.dp))
+            Text("IDENTIFICACIÓN", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
+            Text("ON AIR SPAIN", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp)
             
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
 
             Surface(
-                modifier = Modifier.fillMaxWidth().height(64.dp),
-                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = Color.White.copy(0.04f),
                 border = BorderStroke(1.dp, Color.White.copy(0.1f))
             ) {
-                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp), contentAlignment = Alignment.CenterStart) {
-                    if (nick.isEmpty()) Text("TU INDICATIVO...", color = Color.White.copy(0.2f), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), contentAlignment = Alignment.CenterStart) {
+                    if (nick.isEmpty()) Text("TU INDICATIVO...", color = Color.White.copy(0.2f), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     BasicTextField(
                         value = nick,
                         onValueChange = { 
                             // 🛡️ REGLA: MÁXIMO 32 CARACTERES (PARA INDICATIVOS LARGOS)
                             if (it.length <= 32) onNickChange(it.uppercase().filter { c -> c in 'A'..'Z' || c in '0'..'9' || c == ' ' || c == '-' }) 
                         },
-                        textStyle = TextStyle(color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp),
+                        textStyle = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp),
                         cursorBrush = SolidColor(LuxeColors.Gold),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -169,7 +169,7 @@ fun WelcomeScreen(
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             Button(
                 onClick = { 
@@ -177,26 +177,26 @@ fun WelcomeScreen(
                         if (!hasAcceptedMic) onMicAccept(); onConnect(null) 
                     } 
                 },
-                modifier = Modifier.fillMaxWidth().height(64.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Gold),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 // 🛡️ REGLA: MÍNIMO 2 CARACTERES PARA EVITAR NOMBRES VACÍOS O DE UNA LETRA
                 enabled = nick.trim().length >= 2
             ) {
-                Text("ENTRAR EN LA RADIO", fontWeight = FontWeight.Black, letterSpacing = 2.sp, fontSize = 16.sp, color = Color.Black)
+                Text("ENTRAR EN LA RADIO", fontWeight = FontWeight.Black, letterSpacing = 1.5.sp, fontSize = 14.sp, color = Color.Black)
             }
             
             if (totalUsers > 0) {
-                Spacer(Modifier.height(32.dp))
-                Surface(color = Color.White.copy(0.05f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, Color.White.copy(0.05f))) {
-                    Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(6.dp).background(LuxeColors.Gold, CircleShape))
-                        Spacer(Modifier.width(8.dp))
-                        Text("$totalUsers ONLINE", color = Color.White.copy(0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Spacer(Modifier.height(20.dp))
+                Surface(color = Color.White.copy(0.05f), shape = RoundedCornerShape(10.dp), border = BorderStroke(1.dp, Color.White.copy(0.05f))) {
+                    Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(5.dp).background(LuxeColors.Gold, CircleShape))
+                        Spacer(Modifier.width(6.dp))
+                        Text("$totalUsers ONLINE", color = Color.White.copy(0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 }
             }
-            Spacer(Modifier.height(100.dp))
+            Spacer(Modifier.height(30.dp))
         }
     }
 }
@@ -365,22 +365,28 @@ fun RadioPanel(
                         )
                     )
                 ) {
-                    Column(modifier = Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Row(modifier = Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.width(55.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        val availableWidth = maxWidth
+                        val sideWidth = (availableWidth * 0.16f).coerceIn(48.dp, 60.dp)
+                        val buttonSize = (availableWidth * 0.14f).coerceIn(38.dp, 52.dp)
+                        val channelFontSize = (availableWidth.value / 9.5f).coerceIn(30f, 38f).sp
+                        val iconSize = (buttonSize.value * 0.6f).dp
+
+                        Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                            // 📊 COLUMNA IZQUIERDA (CONTROLES)
+                            Column(Modifier.width(sideWidth), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 MiniTechLabel("VOL", "${(state.systemVolume * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.VOLUME_CONTROL, null) }
                                 MiniTechLabel("SQL", "${(state.squelch * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.SQUELCH_CONTROL, null) }
                             }
+
+                            // 📻 CUERPO CENTRAL (S-METER Y CANALES)
                             Column(
-                                modifier = Modifier.weight(1f).padding(horizontal = 4.dp), 
+                                modifier = Modifier.weight(1f).padding(horizontal = 2.dp), 
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                // 🛡️ CONTENEDOR DE ESTADO FIJO (EVITA SALTOS DE LÍNEA)
-                                Box(
-                                    modifier = Modifier.fillMaxWidth().height(32.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
+                                // 🛡️ ESTADO (AIRE / RX)
+                                Box(modifier = Modifier.fillMaxWidth().height(28.dp), contentAlignment = Alignment.Center) {
                                     androidx.compose.animation.AnimatedVisibility(
                                         visible = rx,
                                         enter = fadeIn(tween(600)) + scaleIn(initialScale = 0.85f),
@@ -389,88 +395,53 @@ fun RadioPanel(
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(8.dp))
-                                                .background(
-                                                    Brush.horizontalGradient(
-                                                        listOf(
-                                                            Color.Transparent,
-                                                            Color(0xFF10B981).copy(0.2f),
-                                                            Color(0xFF10B981).copy(0.2f),
-                                                            Color.Transparent
-                                                        )
-                                                    )
-                                                )
-                                                .border(
-                                                    BorderStroke(1.dp, Color(0xFF10B981).copy(0.4f)),
-                                                    RoundedCornerShape(8.dp)
-                                                )
-                                                .padding(horizontal = 14.dp, vertical = 3.dp)
+                                                .background(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xFF10B981).copy(0.2f), Color(0xFF10B981).copy(0.2f), Color.Transparent)))
+                                                .border(BorderStroke(1.dp, Color(0xFF10B981).copy(0.4f)), RoundedCornerShape(8.dp))
+                                                .padding(horizontal = 12.dp, vertical = 2.dp)
                                         ) {
                                             Text(
                                                 text = transmitterNick?.uppercase() ?: "RECEPTOR",
-                                                color = Color(0xFF10B981), // 🟢 VERDE ESMERALDA ILUMINADO
-                                                fontSize = 12.sp,
+                                                color = Color(0xFF10B981),
+                                                fontSize = 11.sp,
                                                 fontWeight = FontWeight.ExtraBold,
-                                                letterSpacing = 1.5.sp,
-                                                modifier = Modifier.drawBehind {
-                                                    // 🛡️ SOFT GREEN GLOW
-                                                    drawRect(
-                                                        color = Color(0xFF10B981).copy(alpha = 0.1f),
-                                                        size = size.copy(height = size.height + 4.dp.toPx()),
-                                                        alpha = 0.4f
-                                                    )
-                                                }
+                                                letterSpacing = 1.2.sp
                                             )
                                         }
                                     }
-
                                     if (!rx) {
                                         Text(
                                             text = if (isTransmitting || isBeeping) "AIRE" else "SQUELCH",
                                             color = if (isTransmitting) Color.Red else Color.White.copy(0.12f),
-                                            fontSize = 10.sp,
+                                            fontSize = 9.sp,
                                             fontWeight = FontWeight.Black,
-                                            letterSpacing = 2.sp
+                                            letterSpacing = 1.5.sp
+                                        )
+                                    }
+                                }
+
+                                // 🔋 S-METER ADAPTATIVO
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().height(18.dp).padding(vertical = 2.dp), 
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    repeat(20) { i ->
+                                        val isActive = i < (mic * 20)
+                                        val ledColor = when {
+                                            i > 16 -> Color(0xFFEF4444)
+                                            i > 12 -> Color(0xFFFACC15)
+                                            else -> LuxeColors.Green
+                                        }
+                                        Box(
+                                            modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(1.dp)).background(if (isActive) ledColor else Color.White.copy(0.05f))
                                         )
                                     }
                                 }
                                 
                                 Spacer(Modifier.height(4.dp))
-
-                                // 🔋 S-METER PROTAGONISTA (SIEMPRE VISIBLE Y ADICTIVO)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().height(22.dp).padding(vertical = 2.dp), 
-                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
-                                ) {
-                                    repeat(20) { i ->
-                                        val isActive = i < (mic * 20)
-                                        val ledColor = when {
-                                            i > 16 -> Color(0xFFEF4444) // Rojo
-                                            i > 12 -> Color(0xFFFACC15) // Amarillo
-                                            else -> LuxeColors.Green    // 🟢 VERDE (Cambio solicitado)
-                                        }
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .fillMaxHeight()
-                                                .clip(RoundedCornerShape(1.dp))
-                                                .background(if (isActive) ledColor else Color.White.copy(0.05f))
-                                                .drawBehind {
-                                                    if (isActive) {
-                                                        drawCircle(
-                                                            color = ledColor.copy(alpha = 0.25f),
-                                                            radius = size.maxDimension * 0.9f,
-                                                            center = center
-                                                        )
-                                                    }
-                                                }
-                                        )
-                                    }
-                                }
-                                Spacer(Modifier.height(8.dp))
                                 
-                                // CANAL PRINCIPAL
+                                // 🔼🔽 SELECTOR DE CANALES RESPONSIVO
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().height(100.dp), 
+                                    modifier = Modifier.fillMaxWidth(), 
                                     verticalAlignment = Alignment.CenterVertically, 
                                     horizontalArrangement = Arrangement.Center
                                 ) {
@@ -488,9 +459,9 @@ fun RadioPanel(
                                         }
                                     }
 
-                                    // 🔼 BOTÓN SUBIR CANAL
+                                    // 🔼 SUBIR
                                     Surface(
-                                        modifier = Modifier.size(48.dp),
+                                        modifier = Modifier.size(buttonSize),
                                         shape = CircleShape,
                                         color = if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.05f),
                                         border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.05f) else Color.White.copy(0.1f))
@@ -500,18 +471,15 @@ fun RadioPanel(
                                                 enabled = !state.isInterfaceLocked,
                                                 onClick = {
                                                     onPlaySound("switch")
-                                                    if (state.isScanning) {
-                                                        // 🛡️ REGLA: UN CLIC DETIENE EL ESCANEO SI ESTÁ ACTIVO
-                                                        onStateChange(state.copy(isScanning = false))
-                                                    } else {
-                                                        val chToCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }
+                                                    if (state.isScanning) onStateChange(state.copy(isScanning = false))
+                                                    else {
                                                         val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
                                                         val nextCh = if (curCh >= 40) 1 else curCh + 1
-                                                        val nextCity = chToCity[nextCh] ?: "SORIA"
+                                                        val nextCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }[nextCh] ?: "SORIA"
                                                         onStateChange(state.copy(city = nextCity, channel = nextCity))
                                                     }
                                                 },
-                                                onLongClick = {
+                                                onLongClick = { 
                                                     if (state.rfGain > state.squelch) {
                                                         onNotification("AVISO ESCANEO", "CIERRA EL SQUELCH PARA PODER ESCANEAR", NotificationType.Warning)
                                                     } else {
@@ -522,21 +490,16 @@ fun RadioPanel(
                                             ),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(Icons.Rounded.KeyboardArrowUp, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(28.dp))
+                                            Icon(Icons.Rounded.KeyboardArrowUp, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(iconSize))
                                         }
                                     }
 
-                                    Spacer(Modifier.width(8.dp))
-
-                                    // 🛡️ BLOQUE CENTRAL FIJO (BLINDAJE TOTAL CONTRA MOVIMIENTO)
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally, 
-                                        modifier = Modifier.weight(1f) 
-                                    ) {
+                                    // 🛡️ CANAL CENTRAL
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = "CH ${CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: "00"}", 
                                             color = LuxeColors.Gold, 
-                                            fontSize = 38.sp, 
+                                            fontSize = channelFontSize, 
                                             fontWeight = FontWeight.Black,
                                             modifier = Modifier.clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
                                         )
@@ -545,14 +508,14 @@ fun RadioPanel(
                                             horizontalArrangement = Arrangement.Center,
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(20.dp)) {
-                                                Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold.copy(0.8f), modifier = Modifier.size(12.dp).graphicsLayer { alpha = blinkAlpha.value })
+                                            IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(18.dp)) {
+                                                Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold.copy(0.8f), modifier = Modifier.size(11.dp).graphicsLayer { alpha = blinkAlpha.value })
                                             }
                                             Spacer(Modifier.width(4.dp))
                                             Text(
                                                 text = state.city.split("-")[0], 
                                                 color = Color.White.copy(0.6f), 
-                                                fontSize = 11.sp, 
+                                                fontSize = 9.sp, 
                                                 fontWeight = FontWeight.Bold, 
                                                 maxLines = 1, 
                                                 modifier = Modifier.basicMarquee()
@@ -560,11 +523,9 @@ fun RadioPanel(
                                         }
                                     }
 
-                                    Spacer(Modifier.width(8.dp))
-
-                                    // 🔽 BOTÓN BAJAR CANAL
+                                    // 🔽 BAJAR
                                     Surface(
-                                        modifier = Modifier.size(48.dp),
+                                        modifier = Modifier.size(buttonSize),
                                         shape = CircleShape,
                                         color = if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.05f),
                                         border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.05f) else Color.White.copy(0.1f))
@@ -574,18 +535,15 @@ fun RadioPanel(
                                                 enabled = !state.isInterfaceLocked,
                                                 onClick = {
                                                     onPlaySound("switch")
-                                                    if (state.isScanning) {
-                                                        // 🛡️ REGLA: UN CLIC DETIENE EL ESCANEO SI ESTÁ ACTIVO
-                                                        onStateChange(state.copy(isScanning = false))
-                                                    } else {
-                                                        val chToCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }
+                                                    if (state.isScanning) onStateChange(state.copy(isScanning = false))
+                                                    else {
                                                         val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
                                                         val nextCh = if (curCh <= 1) 40 else curCh - 1
-                                                        val nextCity = chToCity[nextCh] ?: "SORIA"
+                                                        val nextCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }[nextCh] ?: "SORIA"
                                                         onStateChange(state.copy(city = nextCity, channel = nextCity))
                                                     }
                                                 },
-                                                onLongClick = {
+                                                onLongClick = { 
                                                     if (state.rfGain > state.squelch) {
                                                         onNotification("AVISO ESCANEO", "CIERRA EL SQUELCH PARA PODER ESCANEAR", NotificationType.Warning)
                                                     } else {
@@ -596,25 +554,26 @@ fun RadioPanel(
                                             ),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(Icons.Rounded.KeyboardArrowDown, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(28.dp))
+                                            Icon(Icons.Rounded.KeyboardArrowDown, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(iconSize))
                                         }
                                     }
                                 }
                             }
-                            Column(modifier = Modifier.width(55.dp), horizontalAlignment = Alignment.End) {
+
+                            // 📊 COLUMNA DERECHA (BLOQUEO Y WATTS)
+                            Column(Modifier.width(sideWidth), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.Center) {
                                 Icon(
                                     imageVector = if (state.isInterfaceLocked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
                                     contentDescription = null,
                                     tint = if (state.isInterfaceLocked) LuxeColors.Gold else Color.White.copy(0.2f),
-                                    modifier = Modifier.size(14.dp).clickable { 
-                                        onStateChange(state.copy(isInterfaceLocked = !state.isInterfaceLocked))
-                                    }
+                                    modifier = Modifier.size(16.dp).clickable { onStateChange(state.copy(isInterfaceLocked = !state.isInterfaceLocked)) }
                                 )
-                                Text("WATTS", color = Color.White.copy(0.3f), fontSize = 8.sp, fontWeight = FontWeight.Black)
+                                Spacer(Modifier.height(2.dp))
+                                Text("WATTS", color = Color.White.copy(0.3f), fontSize = 7.sp, fontWeight = FontWeight.Black)
                                 Text(
                                     text = "${if(isTransmitting) (state.veteranPower * 15f).toInt() else if(rx) 9 else 0}", 
                                     color = if(isTransmitting) Color.Red else if(rx) LuxeColors.Gold else Color.White.copy(0.2f), 
-                                    fontSize = 24.sp, 
+                                    fontSize = 20.sp, 
                                     fontWeight = FontWeight.Black,
                                     modifier = Modifier.combinedClickable(
                                         onClick = { onPendingDialogChange(RadioDialogType.WATTS, null) },

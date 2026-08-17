@@ -69,7 +69,7 @@ object RadioAudioManager {
                     var hwKeepAlive = window.app.ctx.createOscillator();
                     hwKeepAlive.frequency.value = 21000; 
                     var hwKeepAliveGain = window.app.ctx.createGain();
-                    hwKeepAliveGain.gain.value = 0.0001; 
+                    hwKeepAliveGain.gain.value = 0.003; 
                     hwKeepAlive.connect(hwKeepAliveGain);
                     hwKeepAliveGain.connect(window.app.ctx.destination);
                     hwKeepAlive.start();

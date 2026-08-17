@@ -65,14 +65,22 @@ object RadioAudioManager {
                     window.app.currentMasterGain = 1.0; 
                     window.app.masterOut.gain.setValueAtTime(1.0, window.app.ctx.currentTime);
 
-                    // 🛡️ HARDWARE KEEP-ALIVE: Inyectar un tono inaudible directo a la salida física
+                    // 🛡️ HARDWARE KEEP-ALIVE SÁNDWICH (ULTRASÓNICO + SUBSÓNICO)
                     var hwKeepAlive = window.app.ctx.createOscillator();
                     hwKeepAlive.frequency.value = 21000; 
                     var hwKeepAliveGain = window.app.ctx.createGain();
-                    hwKeepAliveGain.gain.value = 0.003; 
+                    hwKeepAliveGain.gain.value = 0.005; 
                     hwKeepAlive.connect(hwKeepAliveGain);
                     hwKeepAliveGain.connect(window.app.ctx.destination);
                     hwKeepAlive.start();
+
+                    var subKeepAlive = window.app.ctx.createOscillator();
+                    subKeepAlive.frequency.value = 15; 
+                    var subKeepAliveGain = window.app.ctx.createGain();
+                    subKeepAliveGain.gain.value = 0.005; 
+                    subKeepAlive.connect(subKeepAliveGain);
+                    subKeepAliveGain.connect(window.app.ctx.destination);
+                    subKeepAlive.start();
                     
                     // --- 🌊 GENERADOR DE QRM REAL (FILTRADO Y OSCILANTE) ---
                     var bufferSize = 2 * window.app.ctx.sampleRate,
@@ -114,7 +122,7 @@ object RadioAudioManager {
                             window.app.noise.gain.setTargetAtTime(0, now, 0.1);
                             if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0, now, 0.1);
                         } else {
-                            window.app.currentNoiseTarget = (v * 0.28) + 0.005; 
+                            window.app.currentNoiseTarget = (v * 0.28) + 0.0001; 
                             window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, now, 0.1);
                             if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0.008, now, 0.1);
                         }

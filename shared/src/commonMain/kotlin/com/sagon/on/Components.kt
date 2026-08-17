@@ -100,7 +100,7 @@ fun UserCard(
     )
 
     Surface(
-        modifier = Modifier.width(90.dp).height(120.dp).clickable { if(!isMe) onAvatarClick() },
+        modifier = Modifier.width(95.dp).height(125.dp).clickable(enabled = !isMe) { onAvatarClick() },
         color = if (user.isTransmitting) Color.Red.copy(0.1f) else Color.White.copy(0.05f),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, if (user.isTransmitting) Color.Red.copy(0.4f) else Color.White.copy(0.1f))
@@ -115,9 +115,18 @@ fun UserCard(
                     Icon(Icons.Rounded.Person, null, tint = if (isMe) LuxeColors.Gold else Color.White, modifier = Modifier.padding(6.dp))
                 }
             }
-            Spacer(Modifier.height(4.dp))
-            Text(user.nick, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1)
-            if (isMe) Text("(YO)", color = LuxeColors.Gold, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = user.nick, 
+                color = Color.White, 
+                fontSize = 10.sp, 
+                fontWeight = FontWeight.Black, 
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+                lineHeight = 12.sp,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            if (isMe) Text("(YO)", color = LuxeColors.Gold, fontSize = 8.sp, fontWeight = FontWeight.Bold)
             else Text("${(user.txPower * 10).toInt()}W", color = Color.White.copy(0.4f), fontSize = 9.sp)
         }
     }

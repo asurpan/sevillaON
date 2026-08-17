@@ -628,7 +628,7 @@ fun RadioPanel(
                     // Luego el resto de usuarios filtrados, excluyéndote a ti
                     items(users.filter { 
                         it.city.split("-")[0] == state.city.split("-")[0] && 
-                        it.nick.trim().uppercase() != nick.trim().uppercase() 
+                        it.id != me?.id 
                     }) { user -> 
                         UserCard(
                             user = user, 

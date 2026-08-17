@@ -314,7 +314,7 @@ fun RadioPanel(
                                     // 🛡️ EFECTO RESPLANDOR (GLOW) DINÁMICO
                                     drawCircle(
                                         color = LuxeColors.Gold.copy(alpha = 0.2f * brightnessFactor),
-                                        radius = size.maxDimension * 0.7f,
+                                        radius = size.maxDimension * 0.5f,
                                         center = center
                                     )
                                 }
@@ -367,7 +367,7 @@ fun RadioPanel(
                 ) {
                     Column(modifier = Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Row(modifier = Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.width(60.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Column(Modifier.width(55.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                 MiniTechLabel("VOL", "${(state.systemVolume * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.VOLUME_CONTROL, null) }
                                 MiniTechLabel("SQL", "${(state.squelch * 100).toInt()}%") { onPendingDialogChange(RadioDialogType.SQUELCH_CONTROL, null) }
                             }
@@ -490,7 +490,7 @@ fun RadioPanel(
 
                                     // 🔼 BOTÓN SUBIR CANAL
                                     Surface(
-                                        modifier = Modifier.size(46.dp),
+                                        modifier = Modifier.size(48.dp),
                                         shape = CircleShape,
                                         color = if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.05f),
                                         border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.05f) else Color.White.copy(0.1f))
@@ -531,7 +531,7 @@ fun RadioPanel(
                                     // 🛡️ BLOQUE CENTRAL FIJO (BLINDAJE TOTAL CONTRA MOVIMIENTO)
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally, 
-                                        modifier = Modifier.width(110.dp) 
+                                        modifier = Modifier.weight(1f) 
                                     ) {
                                         Text(
                                             text = "CH ${CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: "00"}", 
@@ -564,7 +564,7 @@ fun RadioPanel(
 
                                     // 🔽 BOTÓN BAJAR CANAL
                                     Surface(
-                                        modifier = Modifier.size(46.dp),
+                                        modifier = Modifier.size(48.dp),
                                         shape = CircleShape,
                                         color = if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.05f),
                                         border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.05f) else Color.White.copy(0.1f))
@@ -596,12 +596,12 @@ fun RadioPanel(
                                             ),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(Icons.Rounded.KeyboardArrowDown, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(30.dp))
+                                            Icon(Icons.Rounded.KeyboardArrowDown, null, tint = if (state.isInterfaceLocked) Color.White.copy(0.1f) else LuxeColors.Gold.copy(0.6f), modifier = Modifier.size(28.dp))
                                         }
                                     }
                                 }
                             }
-                            Column(modifier = Modifier.width(60.dp), horizontalAlignment = Alignment.End) {
+                            Column(modifier = Modifier.width(55.dp), horizontalAlignment = Alignment.End) {
                                 Icon(
                                     imageVector = if (state.isInterfaceLocked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
                                     contentDescription = null,

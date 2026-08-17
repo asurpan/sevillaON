@@ -114,7 +114,7 @@ object RadioAudioManager {
                             window.app.noise.gain.setTargetAtTime(0, now, 0.1);
                             if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0, now, 0.1);
                         } else {
-                            window.app.currentNoiseTarget = (v * 0.28) + 0.01; 
+                            window.app.currentNoiseTarget = (v * 0.28) + 0.005; 
                             window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, now, 0.1);
                             if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0.008, now, 0.1);
                         }

@@ -69,7 +69,7 @@ object RadioAudioManager {
                     var hwKeepAlive = window.app.ctx.createOscillator();
                     hwKeepAlive.frequency.value = 21000; 
                     var hwKeepAliveGain = window.app.ctx.createGain();
-                    hwKeepAliveGain.gain.value = 0.005; 
+                    hwKeepAliveGain.gain.value = 0.002; 
                     hwKeepAlive.connect(hwKeepAliveGain);
                     hwKeepAliveGain.connect(window.app.ctx.destination);
                     hwKeepAlive.start();
@@ -77,7 +77,7 @@ object RadioAudioManager {
                     var subKeepAlive = window.app.ctx.createOscillator();
                     subKeepAlive.frequency.value = 15; 
                     var subKeepAliveGain = window.app.ctx.createGain();
-                    subKeepAliveGain.gain.value = 0.005; 
+                    subKeepAliveGain.gain.value = 0.002; 
                     subKeepAlive.connect(subKeepAliveGain);
                     subKeepAliveGain.connect(window.app.ctx.destination);
                     subKeepAlive.start();
@@ -122,7 +122,7 @@ object RadioAudioManager {
                             window.app.noise.gain.setTargetAtTime(0, now, 0.1);
                             if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0, now, 0.1);
                         } else {
-                            window.app.currentNoiseTarget = (v * 0.28) + 0.0001; 
+                            window.app.currentNoiseTarget = (v * 0.28); 
                             window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, now, 0.1);
                             if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0.008, now, 0.1);
                         }

@@ -65,22 +65,14 @@ object RadioAudioManager {
                     window.app.currentMasterGain = 1.0; 
                     window.app.masterOut.gain.setValueAtTime(1.0, window.app.ctx.currentTime);
 
-                    // 🛡️ HARDWARE KEEP-ALIVE SÁNDWICH (ULTRASÓNICO + SUBSÓNICO)
+                    // 🛡️ HARDWARE KEEP-ALIVE: Ultrasónico casi-cero para silencio absoluto
                     var hwKeepAlive = window.app.ctx.createOscillator();
                     hwKeepAlive.frequency.value = 21000; 
                     var hwKeepAliveGain = window.app.ctx.createGain();
-                    hwKeepAliveGain.gain.value = 0.002; 
+                    hwKeepAliveGain.gain.value = 0.0001; 
                     hwKeepAlive.connect(hwKeepAliveGain);
                     hwKeepAliveGain.connect(window.app.ctx.destination);
                     hwKeepAlive.start();
-
-                    var subKeepAlive = window.app.ctx.createOscillator();
-                    subKeepAlive.frequency.value = 15; 
-                    var subKeepAliveGain = window.app.ctx.createGain();
-                    subKeepAliveGain.gain.value = 0.002; 
-                    subKeepAlive.connect(subKeepAliveGain);
-                    subKeepAliveGain.connect(window.app.ctx.destination);
-                    subKeepAlive.start();
                     
                     // --- 🌊 GENERADOR DE QRM REAL (FILTRADO Y OSCILANTE) ---
                     var bufferSize = 2 * window.app.ctx.sampleRate,

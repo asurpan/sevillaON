@@ -65,13 +65,11 @@ object RadioAudioManager {
                     window.app.currentMasterGain = 1.0; 
                     window.app.masterOut.gain.setValueAtTime(1.0, window.app.ctx.currentTime);
 
-                    // 🛡️ MOTOR DE SILENCIO ADAPTATIVO (KEEP-ALIVE GLOBAL)
+                    // 🛡️ MOTOR DE VIDA (KEEP-ALIVE) - Valor mínimo inaudible para evitar suspensión
                     window.app.silenceKeepAlive = window.app.ctx.createConstantSource();
-                    window.app.silenceKeepAlive.offset.value = 0;
+                    window.app.silenceKeepAlive.offset.value = 0.0001; 
                     window.app.silenceKeepAlive.connect(window.app.ctx.destination);
                     window.app.silenceKeepAlive.start();
-                    
-                    window.app.masterOut.connect(window.app.ctx.destination);
                     
                     // --- 🌊 GENERADOR DE QRM REAL (FILTRADO Y OSCILANTE) ---
                     var bufferSize = 2 * window.app.ctx.sampleRate,
@@ -170,7 +168,7 @@ object RadioAudioManager {
 
                     var ditherBuffer = window.app.ctx.createBuffer(1, window.app.ctx.sampleRate, window.app.ctx.sampleRate),
                         ditherData = ditherBuffer.getChannelData(0);
-                    for (var i = 0; i < ditherData.length; i++) { ditherData[i] = (Math.random() * 2 - 1) * 0.00001; }
+                    for (var i = 0; i < ditherData.length; i++) { ditherData[i] = (Math.random() * 2 - 1) * 0.0001; }
                     var ditherSource = window.app.ctx.createBufferSource();
                     ditherSource.buffer = ditherBuffer;
                     ditherSource.loop = true;

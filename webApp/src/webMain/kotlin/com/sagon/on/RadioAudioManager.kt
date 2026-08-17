@@ -60,6 +60,7 @@ object RadioAudioManager {
                     // --- 🏗️ ARQUITECTURA DE SALIDA ---
                     window.app.masterOut = window.app.ctx.createGain();
                     window.app.masterOut.connect(window.app.ctx.destination);
+                    window.app.masterOut.gain.setValueAtTime(1.0, window.app.ctx.currentTime);
                     
                     window.app.masterRxGain = window.app.ctx.createGain();
                     window.app.masterRxGain.gain.value = 3.5; 
@@ -300,9 +301,9 @@ object RadioAudioManager {
                 var remoteAudio = document.createElement("audio");
                 remoteAudio.setAttribute("autoplay", "true");
                 remoteAudio.setAttribute("playsinline", "true");
-                // 🛡️ FIX ANDROID 16: El elemento audio debe estar activo para que el sistema lo considere Media
-                remoteAudio.muted = false; 
-                remoteAudio.volume = 0.01; 
+                // 🛡️ FIX ANDROID 16: El elemento audio debe estar activo pero en silencio para no interferir
+                remoteAudio.muted = true; 
+                remoteAudio.volume = 0; 
                 remoteAudio.style.cssText = "position:fixed;width:1px;height:1px;top:0;opacity:0.01;pointer-events:none;z-index:-1";
                 document.body.appendChild(remoteAudio);
                 
@@ -323,14 +324,14 @@ object RadioAudioManager {
                     source.connect(analyser);
                     source.connect(gainNode);
                     
-                    // 🛡️ TRIPLE ROUTING: Máxima redundancia para Android 16
+                    // 🛡️ CADENA DE VOZ: Conectar al filtro para boost (3.5x) y procesamiento radio
+                    if (window.app.filter) gainNode.connect(window.app.filter);
                     if (window.app.masterOut) gainNode.connect(window.app.masterOut);
-                    gainNode.connect(window.app.ctx.destination);
                     
-                    // 🛡️ DECODING BRIDGE: Conexión silenciosa a la salida para asegurar proceso
+                    // 🛡️ DECODING BRIDGE: Tubería de emergencia directa a salida
                     var dummy = window.app.ctx.createGain();
-                    dummy.gain.value = 0; 
-                    source.connect(dummy);
+                    dummy.gain.value = 0.02; 
+                    gainNode.connect(dummy);
                     dummy.connect(window.app.ctx.destination);
 
                     window.app.remoteSources[call.peer] = source;
@@ -339,8 +340,12 @@ object RadioAudioManager {
                     window.app.remoteSinks = window.app.remoteSinks || {};
                     window.app.remoteSinks[call.peer] = remoteAudio;
 
+                    // 🚀 HARD WAKEUP: Intentar despertar el audio en cada recepción
                     if (window.app.ctx.state !== 'running') {
-                        window.app.ctx.resume().catch(function(e) { });
+                        window.app.ctx.resume().then(() => {
+                            console.log("🔊 Audio despertado por RX entrante.");
+                            if (window.updateMasterVolume) window.updateMasterVolume();
+                        }).catch(e => {});
                     }
 
                     // AUDITORÍA RX

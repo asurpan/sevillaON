@@ -234,6 +234,25 @@ fun main() {
         win.app.voxSens = initialState.voxSensitivity
     }
 
+    // 🛡️ MOTOR DE DESBLOQUEO DE AUDIO (USER GESTURE HACK)
+    // Los navegadores bloquean el audio hasta que el usuario interactúa.
+    window.addEventListener("click", {
+        val app = window.asDynamic().app
+        if (app != null && app.ctx != null && app.ctx.state == "suspended") {
+            console.log("🔊 Desbloqueando motor de audio tras interacción...");
+            app.ctx.resume().then({ 
+                if (window.asDynamic().updateMasterVolume) window.asDynamic().updateMasterVolume()
+            })
+        }
+    }, js("{ once: false }"))
+
+    window.addEventListener("touchstart", {
+        val app = window.asDynamic().app
+        if (app != null && app.ctx != null && app.ctx.state == "suspended") {
+            app.ctx.resume()
+        }
+    }, js("{ once: false }"))
+
     // --- 🛡️ PREVENCIÓN DE CIERRE EN WEB (UNLOAD HACK) ---
     window.addEventListener("beforeunload", { event ->
         val e = event.asDynamic()

@@ -169,7 +169,9 @@ fun main() {
                         { 'urls': 'stun:stun1.l.google.com:19302' },
                         { 'urls': 'stun:stun.cloudflare.com:3478' },
                         { 'urls': 'stun:global.stun.twilio.com:3478' },
-                        { 'urls': 'stun:stun.services.mozilla.com' }
+                        { 'urls': 'stun:stun.services.mozilla.com' },
+                        { 'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
+                        { 'urls': 'turn:openrelay.metered.ca:443', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
                     ] }
                 });
                 window.app.peer.on("call", function(call) {
@@ -313,7 +315,8 @@ fun main() {
                             
                             if (userNick.isEmpty()) continue
                             if (now - lastSeen > 30000) continue 
-                            if (nicksSeen.contains(userNick)) continue
+                            // 🛡️ PERMITIR DUPLICADOS DE NICK (Distintos dispositivos)
+                            // if (nicksSeen.contains(userNick)) continue
                             
                             // 🔒 SISTEMA DE BLOQUEO SIGILOSO (MUTUO)
                             val myID = win.app.sessionID as? String ?: ""
@@ -642,6 +645,7 @@ fun main() {
             replayProgress = replayProgressState.value,
             isReplayReady = isReplayReadyState.value,
             remoteUsers = remoteUsersState,
+            myId = (window.asDynamic().app?.sessionID as? String) ?: "",
             remoteTransmitterName = remoteTransmitterName.value,
             chatMessages = chatMessagesState,
             audioIntegrity = true,

@@ -235,7 +235,9 @@ object RadioAudioManager {
                 if (!window.app.ctx) return; 
 
                 if (active) {
-                    if (window.app.ctx.state === 'suspended') window.app.ctx.resume();
+                    if (window.app.ctx.state !== 'running') {
+                        window.app.ctx.resume().catch(function(e) { });
+                    }
                     
                     // 🚀 WAKE-UP PULSE: Sacudimos el motor de audio para evitar que la voz se duerma
                     if (window.app.silenceKeepAlive) {

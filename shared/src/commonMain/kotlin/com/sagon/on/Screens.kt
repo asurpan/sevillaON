@@ -207,6 +207,7 @@ fun RadioPanel(
     nick: String,
     mic: Float,
     users: List<RemoteUser>,
+    myId: String = "",
     rx: Boolean,
     transmitterNick: String?,
     isBeeping: Boolean,
@@ -609,30 +610,12 @@ fun RadioPanel(
                 // Lista de Operadores
                 Text("OPERADORES EN ZONA", color = Color.White.copy(0.3f), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth())
                 LazyRow(modifier = Modifier.fillMaxWidth().height(100.dp), contentPadding = PaddingValues(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Primero mostrarte a ti mismo (si estás en la lista)
-                    val me = users.find { it.nick.trim().uppercase() == nick.trim().uppercase() }
-                    if (me != null) {
-                        item {
-                            UserCard(
-                                user = me,
-                                isMe = true,
-                                onFriendToggle = { },
-                                onPrivateChat = { },
-                                onReport = { },
-                                onBlock = { },
-                                onAvatarClick = { }
-                            )
-                        }
-                    }
-
-                    // Luego el resto de usuarios filtrados, excluyéndote a ti
                     items(users.filter { 
-                        it.city.split("-")[0] == state.city.split("-")[0] && 
-                        it.id != me?.id 
+                        it.city.split("-")[0] == state.city.split("-")[0]
                     }) { user -> 
                         UserCard(
                             user = user, 
-                            isMe = false, 
+                            isMe = (user.id == myId), 
                             onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, 
                             onPrivateChat = { }, 
                             onReport = { onReport(user.id) }, 

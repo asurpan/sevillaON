@@ -297,7 +297,7 @@ object RadioAudioManager {
                         window.app.txGate.gain.cancelScheduledValues(now);
                         window.app.txGate.gain.setTargetAtTime(0, now + 0.4, 0.01);
                     }
-                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(2.5, now, 0.2);
+                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, now, 0.2);
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.2);
                     if (window.app.lfoGain && window.app.currentNoiseTarget > 0) window.app.lfoGain.gain.setTargetAtTime(0.008, now, 0.2);
                     
@@ -338,13 +338,9 @@ object RadioAudioManager {
                     source.connect(analyser);
                     source.connect(gainNode);
                     
-                    // 🛡️ CADENA DE VOZ PROFESIONAL (CALIDAD TOTAL): 
-                    // Ruta limpia: GainNode -> MasterRxGain -> MainCompressor -> MasterOut
-                    if (window.app.masterRxGain) gainNode.connect(window.app.masterRxGain);
-                    
                     // 🛡️ DECODING BRIDGE: Conexión técnica inaudible para estabilidad de hilos
                     var dummy = window.app.ctx.createGain();
-                    dummy.gain.value = 0.001; 
+                    dummy.gain.value = 0.005; // Recuperado para evitar que el navegador cierre la voz
                     source.connect(dummy); 
                     dummy.connect(window.app.ctx.destination);
 
@@ -453,19 +449,10 @@ object RadioAudioManager {
                         }
                     }
 
-                    // 🛡️ MOTOR DE DISTORSIÓN DINÁMICA
-                    if (!window.app.remoteDistortion) window.app.remoteDistortion = {};
-                    if (!window.app.remoteDistortion[id]) {
-                        var dist = window.app.ctx.createWaveShaper();
-                        dist.oversample = '4x';
-                        window.app.remoteDistortion[id] = dist;
-                        source.disconnect();
-                        if (ana) source.connect(ana); 
-                        source.connect(dist);
-                        dist.connect(gain);
-                    }
                     var distNode = window.app.remoteDistortion[id];
-                    if(diff <= 0.05) {
+                    if(!gain || !distNode) return;
+
+                    if (isDiscrete) {
                         gain.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.1);
                         distNode.curve = null; 
                     } else if (diff > 0.25) {

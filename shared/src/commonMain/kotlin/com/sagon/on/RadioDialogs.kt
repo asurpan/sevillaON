@@ -380,8 +380,12 @@ fun RadioDialogs(
                     
                     Surface(
                         onClick = { 
-                            onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled))
+                            val nextVal = !state.isDiscreteModeEnabled
+                            onStateChange(state.copy(isDiscreteModeEnabled = nextVal))
                             triggerUiSound("switch")
+                            if (nextVal) {
+                                onNotification(AppNotification("MODO DISCRETO", "SILENCIO TOTAL ACTIVADO. LAS VOCES NO SONARÁN.", NotificationType.Warning))
+                            }
                         },
                         color = if (state.isDiscreteModeEnabled) LuxeColors.Gold.copy(0.15f) else Color.White.copy(0.05f),
                         shape = RoundedCornerShape(12.dp),

@@ -63,11 +63,13 @@ object RadioAudioManager {
                     window.app.masterOut.gain.setValueAtTime(1.0, window.app.ctx.currentTime);
                     
                     window.app.masterRxGain = window.app.ctx.createGain();
-                    window.app.masterRxGain.gain.value = 3.5; 
+                    window.app.masterRxGain.gain.value = 4.5; 
                     
                     window.app.mainCompressor = window.app.ctx.createDynamicsCompressor();
-                    window.app.mainCompressor.threshold.value = -18;
-                    window.app.mainCompressor.ratio.value = 12;
+                    window.app.mainCompressor.threshold.value = -24; // Más bajo para capturar más voz
+                    window.app.mainCompressor.ratio.value = 12; // Compresión fuerte para sonido "apretado"
+                    window.app.mainCompressor.attack.value = 0.003; // Respuesta instantánea a picos
+                    window.app.mainCompressor.release.value = 0.25; 
 
                     window.app.filter = window.app.ctx.createBiquadFilter();
                     window.app.filter.type = "bandpass"; 
@@ -81,6 +83,16 @@ object RadioAudioManager {
                     
                     window.app.currentMasterGain = 1.0; 
                     window.app.masterOut.gain.setValueAtTime(1.0, window.app.ctx.currentTime);
+
+                    // 🛡️ SISTEMA DE SUPERVIVENCIA (KEEP-ALIVE INFRASÓNICO)
+                    // Inyectamos una frecuencia de 5Hz (inaudible) para mantener el hardware despierto.
+                    window.app.silenceKeepAlive = window.app.ctx.createOscillator();
+                    window.app.silenceKeepAlive.frequency.value = 5;
+                    window.app.silenceKeepAliveGain = window.app.ctx.createGain();
+                    window.app.silenceKeepAliveGain.gain.value = 0;
+                    window.app.silenceKeepAlive.connect(window.app.silenceKeepAliveGain);
+                    window.app.silenceKeepAliveGain.connect(window.app.masterOut);
+                    window.app.silenceKeepAlive.start();
 
                     // 🛡️ MOTOR DE VIDA DINÁMICO (ANTI-ANDROID 16 SLEEP)
                     // Usamos una frecuencia que oscila para que el sistema no la filtre como ruido
@@ -240,11 +252,11 @@ object RadioAudioManager {
                         window.app.ctx.resume().catch(function(e) { });
                     }
                     
-                    // 🚀 WAKE-UP PULSE: Sacudimos el motor de audio para evitar que la voz se duerma
-                    if (window.app.silenceKeepAlive) {
+                    // 🛡️ MOTOR DE VIDA DINÁMICO (WAKE-UP PULSE)
+                    if (window.app.silenceKeepAliveGain) {
                         var nowPulse = window.app.ctx.currentTime;
-                        window.app.silenceKeepAlive.offset.setValueAtTime(0.0001, nowPulse);
-                        window.app.silenceKeepAlive.offset.linearRampToValueAtTime(0, nowPulse + 0.05);
+                        window.app.silenceKeepAliveGain.gain.setValueAtTime(0.02, nowPulse);
+                        window.app.silenceKeepAliveGain.gain.linearRampToValueAtTime(0, nowPulse + 0.15);
                     }
 
                     if (window.app.totTimer) clearTimeout(window.app.totTimer);
@@ -283,7 +295,7 @@ object RadioAudioManager {
                         window.app.txGate.gain.cancelScheduledValues(now);
                         window.app.txGate.gain.setTargetAtTime(0, now + 0.4, 0.01);
                     }
-                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, now, 0.2);
+                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(4.5, now, 0.2);
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.2);
                     if (window.app.lfoGain && window.app.currentNoiseTarget > 0) window.app.lfoGain.gain.setTargetAtTime(0.008, now, 0.2);
                     
@@ -301,8 +313,8 @@ object RadioAudioManager {
                 var remoteAudio = document.createElement("audio");
                 remoteAudio.setAttribute("autoplay", "true");
                 remoteAudio.setAttribute("playsinline", "true");
-                // 🛡️ FIX ANDROID 16: El elemento audio debe estar activo pero en silencio para no interferir
-                remoteAudio.muted = true; 
+                // 🛡️ FIX: Mantener el stream "vivo" para el navegador (Unmuted con volumen 0)
+                remoteAudio.muted = false; 
                 remoteAudio.volume = 0; 
                 remoteAudio.style.cssText = "position:fixed;width:1px;height:1px;top:0;opacity:0.01;pointer-events:none;z-index:-1";
                 document.body.appendChild(remoteAudio);
@@ -324,19 +336,22 @@ object RadioAudioManager {
                     source.connect(analyser);
                     source.connect(gainNode);
                     
-                    // 🛡️ CADENA DE VOZ: Conectar al filtro para boost (3.5x) y procesamiento radio
-                    if (window.app.filter) gainNode.connect(window.app.filter);
-                    if (window.app.masterOut) gainNode.connect(window.app.masterOut);
+                    // 🛡️ CADENA DE VOZ PROFESIONAL: RxGain -> Compressor (Sonido apretado y sin picos)
+                    if (window.app.masterRxGain) gainNode.connect(window.app.masterRxGain);
+                    // La conexión a masterOut se elimina; la voz fluye por la cadena: 
+                    // GainNode -> MasterRxGain -> Compressor -> MasterOut
                     
-                    // 🛡️ DECODING BRIDGE: Tubería de emergencia directa a salida
+                    // 🛡️ DECODING BRIDGE: Conexión técnica (0.005) para mantener el stream activo
                     var dummy = window.app.ctx.createGain();
-                    dummy.gain.value = 0.02; 
-                    gainNode.connect(dummy);
-                    dummy.connect(window.app.ctx.destination);
+                    dummy.gain.value = window.app.discreteMode ? 0 : 0.005; 
+                    source.connect(dummy); 
+                    dummy.connect(window.app.masterOut); 
 
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
                     window.app.remoteGains[call.peer] = gainNode;
+                    window.app.remoteDummies = window.app.remoteDummies || {};
+                    window.app.remoteDummies[call.peer] = dummy;
                     window.app.remoteSinks = window.app.remoteSinks || {};
                     window.app.remoteSinks[call.peer] = remoteAudio;
 
@@ -347,6 +362,11 @@ object RadioAudioManager {
                             if (window.updateMasterVolume) window.updateMasterVolume();
                         }).catch(e => {});
                     }
+                    
+                    // 🛡️ WATCHDOG: Re-vincular stream tras 1s por si el navegador bloqueó el arranque
+                    setTimeout(function() {
+                        if (remoteAudio.paused) remoteAudio.play().catch(function() { });
+                    }, 1000);
 
                     // AUDITORÍA RX
                     window.app.diag.rxPackets[call.peer] = 0;
@@ -401,12 +421,34 @@ object RadioAudioManager {
 
                     if (isDiscrete) {
                         gain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.1);
+                        if (window.app.remoteDummies && window.app.remoteDummies[id]) {
+                            window.app.remoteDummies[id].gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.1);
+                        }
                         return;
+                    } else {
+                        if (window.app.remoteDummies && window.app.remoteDummies[id]) {
+                            window.app.remoteDummies[id].gain.setTargetAtTime(0.005, window.app.ctx.currentTime, 0.1);
+                        }
                     }
 
                     var p = window.app.remotePowers[id] || 0.7;
                     var diff = maxPwr - p;
                     
+                    // 🛡️ MOTOR DE VIDA DINÁMICO (KEEP-ALIVE DURANTE RECEPCIÓN)
+                    if (window.app.silenceKeepAliveGain) {
+                        var d = new Uint8Array(ana.fftSize);
+                        ana.getByteTimeDomainData(d);
+                        var peak = 0; 
+                        for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>peak) peak=v; }
+                        
+                        var nowS = window.app.ctx.currentTime;
+                        if (peak < 12) { // Silencio detectado (Umbral 12)
+                            window.app.silenceKeepAliveGain.gain.setTargetAtTime(0.01, nowS, 0.1);
+                        } else { // Voz detectada
+                            window.app.silenceKeepAliveGain.gain.setTargetAtTime(0, nowS, 0.05);
+                        }
+                    }
+
                     // 🛡️ MOTOR DE DISTORSIÓN DINÁMICA
                     if (!window.app.remoteDistortion) window.app.remoteDistortion = {};
                     if (!window.app.remoteDistortion[id]) {
@@ -438,7 +480,7 @@ object RadioAudioManager {
                     }
                 });
             }
-            setInterval(updateRemotePriorities, 200);
+            setInterval(updateRemotePriorities, 100);
         """)
         ManosLibres.install()
         MoniGuard.install()
@@ -467,16 +509,19 @@ private object RadioSignaling {
                 var now = window.app.ctx.currentTime;
                 
                 if (type === "incoming") {
-                    [3200, 3800, 4800].forEach((f, i) => {
-                        var o = window.app.ctx.createOscillator();
-                        var g = window.app.ctx.createGain();
-                        o.type = "sine";
-                        o.frequency.setValueAtTime(f, now + (i * 0.045));
-                        g.gain.setValueAtTime(0, now + (i * 0.045));
-                        g.gain.linearRampToValueAtTime(0.15, now + (i * 0.045) + 0.01);
-                        g.gain.linearRampToValueAtTime(0, now + (i * 0.045) + 0.04);
-                        o.connect(g); g.connect(window.app.masterOut);
-                        o.start(now + (i * 0.045)); o.stop(now + (i * 0.045) + 0.045);
+                    var pairs = [[697, 1209], [770, 1336], [852, 1477], [941, 1633]]; // Secuencia DTMF Potente (1, 5, 9, D)
+                    pairs.forEach((f, i) => {
+                        f.forEach(freq => {
+                            var o = window.app.ctx.createOscillator();
+                            var g = window.app.ctx.createGain();
+                            o.type = "sine";
+                            o.frequency.setValueAtTime(freq, now + (i * 0.12));
+                            g.gain.setValueAtTime(0, now + (i * 0.12));
+                            g.gain.linearRampToValueAtTime(0.15, now + (i * 0.12) + 0.01);
+                            g.gain.linearRampToValueAtTime(0, now + (i * 0.12) + 0.1);
+                            o.connect(g); g.connect(window.app.masterOut);
+                            o.start(now + (i * 0.12)); o.stop(now + (i * 0.12) + 0.12);
+                        });
                     });
                     return;
                 }

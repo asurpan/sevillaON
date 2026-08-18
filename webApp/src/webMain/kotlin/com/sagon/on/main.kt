@@ -176,6 +176,7 @@ fun main() {
                 });
                 window.app.peer.on("call", function(call) {
                     console.log("🚀 PeerJS: Llamada entrante de:", call.peer);
+                    if (window.app.ctx && window.app.ctx.state !== 'running') window.app.ctx.resume();
                     window.app.activeCalls[call.peer] = call;
                 
                 // 🔒 FILTRO DE BLOQUEO SIGILOSO PARA LLAMADAS ENTRANTES
@@ -202,8 +203,9 @@ fun main() {
         window.establishOutgoingCall = function(id) {
             if (!window.app.peer || window.app.activeCalls[id]) return;
             var stream = window.getStream();
-            if (!stream) {
-                console.warn("🛡️ AUDITORÍA: No hay stream local para llamar a:", id);
+            if (!stream || stream.getAudioTracks().length === 0) {
+                console.warn("🛡️ WebRTC: Stream no listo (0 tracks) para llamar a:", id, ". Reintentando en 1s...");
+                setTimeout(function() { window.establishOutgoingCall(id); }, 1000);
                 return;
             }
             console.log("🚀 PeerJS: Llamando a:", id, "Tracks enviados:", stream.getAudioTracks().length);
@@ -636,7 +638,14 @@ fun main() {
                     RadioDiagData(micPermission = "not_initialized")
                 }
             },
-            onMicEnable = { a, r, p -> RadioAudioManager.setPtt(a, r, p) },
+            onMicEnable = { a, r, p -> 
+                if (a && radioState.value.isDiscreteModeEnabled) {
+                    val newState = radioState.value.copy(isDiscreteModeEnabled = false)
+                    radioState.value = newState
+                    RadioPersistence.saveState(newState)
+                }
+                RadioAudioManager.setPtt(a, r, p) 
+            },
             onReport = { },
             onBlockUser = { },
             onNotificationDismiss = { },

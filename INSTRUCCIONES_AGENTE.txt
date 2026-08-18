@@ -7,7 +7,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **MEMORIA DE SESIÓN**: Al entrar en este proyecto, lee primero `PROTECTED_CORE.md`.
 
 ## 🏗️ ARQUITECTURA DE MISIÓN CRÍTICA
-1. **RadioAudioManager.kt**: Corazón del AudioContext con marcapasos ultrasónico y puente de decodificación forzada.
+1. **RadioAudioManager.kt**: Corazón del AudioContext con motor de supervivencia infrasónico (5Hz) y enrutamiento dinámico Rx/Tx.
 2. **RadioMeshModule.kt**: Clase independiente para comunicación P2P en caso de Blackout total.
 3. **RadioDialogs.kt**: Gestión de seguridad crítica y disuasión de cambios de Nick.
 4. **Screens.kt**: Interfaz Nexus blindada geométricamente.
@@ -16,7 +16,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 
 ### 🔊 AUDIO Y VOZ (BLINDAJE TOTAL)
 - **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen 0 vía un nodo Gain `dummy`. Sin esto, los LEDs mueren en Chrome.
-- **Hardware Keep-Alive**: No eliminar el oscilador de **21kHz**. Es el marcapasos que evita que el sistema operativo duerma el chip de audio.
+- **Infrasonic Keep-Alive**: Mantener siempre el oscilador de **5Hz** activo durante los silencios de recepción. Es el marcapasos inaudible que evita que el navegador o el SO suspendan el hilo de voz. Debe silenciarse (0 absoluto) instantáneamente al detectar voz real.
 - **Replay One-Shot**: El botón debe vaciar la memoria al usarse. Una escucha, una limpieza.
 - **Pisado Real**: Usar el motor `WaveShaper` para distorsionar voces débiles cuando hay choque de portadoras.
 - **BLOQUEO DE RUTAS Y VOLUMEN**: Queda TERMINANTEMENTE PROHIBIDO modificar los enrutados de audio (rutas de nodos), así como subir o bajar volúmenes o ganancias configuradas. Estas rutas y niveles están BLINDADOS para garantizar la estabilidad del hardware. Solo se permiten cambios en la lógica de control, nunca en la cadena de potencia o ruteo de audio físico.
@@ -34,4 +34,4 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Derecho de Admisión**: Usar lenguaje firme en el borrado de datos para proteger la comunidad.
 - **Hard-Lock ID**: Un equipo físico = una identidad en red.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 12.5 (AUDIO & SEGURIDAD INFALIBLE)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 13.0 (AUDIO INFRASÓNICO & SEGURIDAD TOTAL)

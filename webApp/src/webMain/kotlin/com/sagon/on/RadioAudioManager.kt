@@ -180,6 +180,33 @@ object RadioAudioManager {
                         }
                     };
 
+                    window.updateDspSettings = function(enabled, level) {
+                        if (!window.app || !window.app.filter || !window.app.mainCompressor) return;
+                        var now = window.app.ctx.currentTime;
+                        var intensity = (level !== undefined && level !== null) ? level : 0.5;
+
+                        if (enabled) {
+                            // --- 📻 MODO HiFi FM PROFESIONAL ---
+                            window.app.filter.type = "peaking";
+                            window.app.filter.frequency.setTargetAtTime(1500, now, 0.1);
+                            window.app.filter.Q.setTargetAtTime(0.4, now, 0.1); // Respuesta ancha
+                            window.app.filter.gain.setTargetAtTime(5.0 * intensity, now, 0.1);
+
+                            window.app.mainCompressor.threshold.setTargetAtTime(-34 * intensity, now, 0.1);
+                            window.app.mainCompressor.ratio.setTargetAtTime(14, now, 0.1);
+                            window.app.mainCompressor.attack.setTargetAtTime(0.002, now, 0.1);
+                        } else {
+                            // --- 📻 MODO RADIO NORMAL (BANDA ESTRECHA) ---
+                            window.app.filter.type = "bandpass";
+                            window.app.filter.frequency.setTargetAtTime(1500, now, 0.1);
+                            window.app.filter.Q.setTargetAtTime(1.2, now, 0.1);
+                            
+                            window.app.mainCompressor.threshold.setTargetAtTime(-18, now, 0.1);
+                            window.app.mainCompressor.ratio.setTargetAtTime(12, now, 0.1);
+                            window.app.mainCompressor.attack.setTargetAtTime(0.003, now, 0.1);
+                        }
+                    };
+
                     // 🛡️ WAKE LOCK
                     window.app.requestWakeLock = function() {
                         if ('wakeLock' in navigator && document.visibilityState === 'visible') {

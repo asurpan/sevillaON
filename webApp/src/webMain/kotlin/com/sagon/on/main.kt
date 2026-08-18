@@ -80,6 +80,25 @@ fun main() {
                         if (u.city === baseCity && (now - lastSeen < 30000)) currentRoomUsers++;
                     });
                     
+                    // 🛡️ CONTROL DE NICK ÚNICO: Verificar si el Nick ya está en uso por otro dispositivo
+                    var isNickTaken = false;
+                    Object.keys(users).forEach(function(key) {
+                        var u = users[key];
+                        var lastSeen = u.lastSeen || 0;
+                        // Solo bloqueamos si el Nick coincide Y el dispositivo es diferente Y estuvo activo hace menos de 45s
+                        if (u.nick === cleanNick && key !== sessionID && (now - lastSeen < 45000)) {
+                            isNickTaken = true;
+                        }
+                    });
+
+                    if (isNickTaken) {
+                        if (window.dispatch_notification) {
+                            window.dispatch_notification("FALLO DE CONEXIÓN", "EL INDICATIVO '" + cleanNick + "' YA ESTÁ EN USO EN OTRO DISPOSITIVO.", "danger");
+                        }
+                        if (window.dispatch_nick_conflict) window.dispatch_nick_conflict();
+                        return; // 🛑 CANCELAR CONEXIÓN
+                    }
+
                     while (currentRoomUsers >= 10) { 
                         subIndex++;
                         roomSuffix = "-" + subIndex;
@@ -109,7 +128,7 @@ fun main() {
                         city: finalCityRoom,
                         channel: finalCityRoom,
                         tx: false,
-                        pwr: parseFloat(localStorage.getItem("vetPwr")) || 0.7,
+                        pwr: parseFloat(localStorage.getItem("vetPwr_" + cleanNick)) || 0.7,
                         roger: (localStorage.getItem("roger") === "true"),
                         lastSeen: Date.now()
                     });
@@ -140,14 +159,13 @@ fun main() {
                                 });
                             }
 
-                            // 📈 MOTOR DE VETERANÍA (POTENCIA PROGRESIVA)
-                            // Si el usuario está transmitiendo, sumamos veteranía (tiempo de aire)
+                            // 📈 MOTOR DE VETERANÍA (POTENCIA PROGRESIVA POR NICK)
                             if (window.app.isTransmittingInternal) {
-                                var curVet = parseFloat(localStorage.getItem("vetPwr")) || 0.7;
-                                if (curVet < 1.0) { // Máximo 1.0 (Potencia Profesional)
-                                    // +0.002 por cada ciclo de 5s (~0.024 por cada 10 min de charla)
+                                var nickKey = "vetPwr_" + (window.app.nick || cleanNick);
+                                var curVet = parseFloat(localStorage.getItem(nickKey)) || 0.7;
+                                if (curVet < 1.0) { 
                                     curVet = Math.min(1.0, curVet + 0.002);
-                                    localStorage.setItem("vetPwr", curVet.toString());
+                                    localStorage.setItem(nickKey, curVet.toString());
                                     updates.pwr = curVet;
                                     
                                     // Notificar a la UI si hay un cambio significativo

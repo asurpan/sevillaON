@@ -102,8 +102,7 @@ object RadioPersistence {
             
             js("if(window.updateMoniGain) window.updateMoniGain();")
             js("if(window.updateMasterVolume) window.updateMasterVolume();")
-            if (s.isDspEnabled) js("if(window.updateDspSettings) window.updateDspSettings(true);")
-            else js("if(window.updateDspSettings) window.updateDspSettings(false);")
+            js("if(window.updateDspSettings) window.updateDspSettings(s.isDspEnabled, s.dspLevel);")
 
             if (win.app.db != null && win.app.sessionID != null) {
                 val updates: dynamic = js("{}")

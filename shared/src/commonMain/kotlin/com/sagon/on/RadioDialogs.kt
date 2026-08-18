@@ -170,8 +170,15 @@ fun RadioDialogs(
             },
             text = {
                 Column {
+                    Text(
+                        "El Procesador Digital de Señal (DSP) optimiza la voz remota para obtener una calidad HiFi FM profesional, eliminando ruidos y expandiendo el rango dinámico.",
+                        fontSize = 13.sp,
+                        color = Color.White.copy(0.7f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(16.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Activar limpieza de voz", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Text("Activar Sonido HiFi FM", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
                         Switch(checked = state.isDspEnabled, onCheckedChange = { onStateChange(state.copy(isDspEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
                     }
                     if (state.isDspEnabled) {

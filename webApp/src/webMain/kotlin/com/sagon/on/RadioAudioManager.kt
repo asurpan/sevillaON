@@ -63,11 +63,11 @@ object RadioAudioManager {
                     window.app.masterOut.gain.setValueAtTime(1.0, window.app.ctx.currentTime);
                     
                     window.app.masterRxGain = window.app.ctx.createGain();
-                    window.app.masterRxGain.gain.value = 4.5; 
+                    window.app.masterRxGain.gain.value = 2.5; 
                     
                     window.app.mainCompressor = window.app.ctx.createDynamicsCompressor();
-                    window.app.mainCompressor.threshold.value = -24; // Más bajo para capturar más voz
-                    window.app.mainCompressor.ratio.value = 12; // Compresión fuerte para sonido "apretado"
+                    window.app.mainCompressor.threshold.value = -18; 
+                    window.app.mainCompressor.ratio.value = 12; 
                     window.app.mainCompressor.attack.value = 0.003; // Respuesta instantánea a picos
                     window.app.mainCompressor.release.value = 0.25; 
 
@@ -198,7 +198,8 @@ object RadioAudioManager {
                     var txHotWire = window.app.ctx.createGain();
                     txHotWire.gain.value = 0;
                     window.app.txGate.connect(txHotWire);
-                    txHotWire.connect(window.app.ctx.destination);
+                    // 🛡️ ECO-FIX: Desconexión física para garantizar silencio local al emitir
+                    // txHotWire.connect(window.app.ctx.destination); 
 
                     window.app.keepAlive = window.app.ctx.createOscillator();
                     window.app.keepAlive.frequency.value = 20000;
@@ -219,7 +220,8 @@ object RadioAudioManager {
 
                     window.app.moniGainNode = window.app.ctx.createGain();
                     window.app.moniGainNode.gain.value = 0;
-                    window.app.moniGainNode.connect(window.app.masterOut);
+                    // 🛡️ ECO-FIX: Desconexión física del monitor local
+                    // window.app.moniGainNode.connect(window.app.masterOut); 
 
                     window.app.rxReplayBus = window.app.ctx.createGain();
                     window.app.rxReplayBus.gain.value = 1.0;
@@ -295,7 +297,7 @@ object RadioAudioManager {
                         window.app.txGate.gain.cancelScheduledValues(now);
                         window.app.txGate.gain.setTargetAtTime(0, now + 0.4, 0.01);
                     }
-                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(4.5, now, 0.2);
+                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(2.5, now, 0.2);
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.2);
                     if (window.app.lfoGain && window.app.currentNoiseTarget > 0) window.app.lfoGain.gain.setTargetAtTime(0.008, now, 0.2);
                     
@@ -313,8 +315,8 @@ object RadioAudioManager {
                 var remoteAudio = document.createElement("audio");
                 remoteAudio.setAttribute("autoplay", "true");
                 remoteAudio.setAttribute("playsinline", "true");
-                // 🛡️ FIX: Mantener el stream "vivo" para el navegador (Unmuted con volumen 0)
-                remoteAudio.muted = false; 
+                // 🛡️ ECO-FIX: Silencio físico total en el elemento DOM para evitar bucles del navegador
+                remoteAudio.muted = true; 
                 remoteAudio.volume = 0; 
                 remoteAudio.style.cssText = "position:fixed;width:1px;height:1px;top:0;opacity:0.01;pointer-events:none;z-index:-1";
                 document.body.appendChild(remoteAudio);
@@ -336,16 +338,15 @@ object RadioAudioManager {
                     source.connect(analyser);
                     source.connect(gainNode);
                     
-                    // 🛡️ CADENA DE VOZ PROFESIONAL: RxGain -> Compressor (Sonido apretado y sin picos)
+                    // 🛡️ CADENA DE VOZ PROFESIONAL (CALIDAD TOTAL): 
+                    // Ruta limpia: GainNode -> MasterRxGain -> MainCompressor -> MasterOut
                     if (window.app.masterRxGain) gainNode.connect(window.app.masterRxGain);
-                    // La conexión a masterOut se elimina; la voz fluye por la cadena: 
-                    // GainNode -> MasterRxGain -> Compressor -> MasterOut
                     
-                    // 🛡️ DECODING BRIDGE: Conexión técnica (0.005) para mantener el stream activo
+                    // 🛡️ DECODING BRIDGE: Conexión técnica inaudible para estabilidad de hilos
                     var dummy = window.app.ctx.createGain();
-                    dummy.gain.value = window.app.discreteMode ? 0 : 0.005; 
+                    dummy.gain.value = 0.001; 
                     source.connect(dummy); 
-                    dummy.connect(window.app.masterOut); 
+                    dummy.connect(window.app.ctx.destination);
 
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
@@ -403,6 +404,9 @@ object RadioAudioManager {
                         if(window.app.remoteGains[id]) {
                             var target = isDiscrete ? 0 : 1.0;
                             window.app.remoteGains[id].gain.setTargetAtTime(target, window.app.ctx.currentTime, 0.1); 
+                        }
+                        if (window.app.remoteDistortion && window.app.remoteDistortion[id]) {
+                            window.app.remoteDistortion[id].curve = null;
                         }
                     });
                     return;

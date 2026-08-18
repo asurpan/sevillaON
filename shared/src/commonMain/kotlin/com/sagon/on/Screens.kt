@@ -235,6 +235,18 @@ fun RadioPanel(
     
     val pttScale by animateFloatAsState(if (pttLocked) 0.94f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "PttSqueeze")
 
+    // 🛡️ ANIMACIÓN MODO DISCRETO (PARPADEO SUAVE)
+    val discreteTransition = rememberInfiniteTransition(label = "DiscreteBlink")
+    val discreteAlpha by discreteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "DiscreteAlpha"
+    )
+
     LaunchedEffect(externalPttBlocked) { if (externalPttBlocked) isPttBlockedByRx = true }
     LaunchedEffect(isPttBlockedByRx) { if (isPttBlockedByRx) { delay(800); isPttBlockedByRx = false } }
 
@@ -564,10 +576,26 @@ fun RadioPanel(
                             // 📊 COLUMNA DERECHA (BLOQUEO Y WATTS)
                             Column(Modifier.width(sideWidth), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.Center) {
                                 Icon(
+                                    imageVector = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing,
+                                    contentDescription = null,
+                                    tint = if (state.isDiscreteModeEnabled) Color(0xFF87CEEB).copy(alpha = discreteAlpha) else Color.White.copy(0.15f),
+                                    modifier = Modifier.size(20.dp).graphicsLayer {
+                                        alpha = if (state.isDiscreteModeEnabled) discreteAlpha else 1f
+                                    }.clickable { 
+                                        if (state.isDiscreteModeEnabled) {
+                                            onStateChange(state.copy(isDiscreteModeEnabled = false))
+                                            onPlaySound("switch")
+                                        } else {
+                                            onPendingDialogChange(RadioDialogType.DISCRETE, null)
+                                        }
+                                    }
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Icon(
                                     imageVector = if (state.isInterfaceLocked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
                                     contentDescription = null,
                                     tint = if (state.isInterfaceLocked) LuxeColors.Gold else Color.White.copy(0.2f),
-                                    modifier = Modifier.size(16.dp).clickable { onStateChange(state.copy(isInterfaceLocked = !state.isInterfaceLocked)) }
+                                    modifier = Modifier.size(18.dp).clickable { onStateChange(state.copy(isInterfaceLocked = !state.isInterfaceLocked)) }
                                 )
                                 Spacer(Modifier.height(2.dp))
                                 Text("WATTS", color = Color.White.copy(0.3f), fontSize = 7.sp, fontWeight = FontWeight.Black)

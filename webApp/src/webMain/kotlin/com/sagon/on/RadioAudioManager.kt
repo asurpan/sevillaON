@@ -99,17 +99,18 @@ object RadioAudioManager {
                     window.app.androidKeepAlive = window.app.ctx.createOscillator();
                     window.app.androidKeepAlive.frequency.value = 20500; 
                     window.app.androidKeepAliveGain = window.app.ctx.createGain();
-                    window.app.androidKeepAliveGain.gain.value = 0.001; // 🛡️ ANTISLEEP-FIX: Volumen ultrasónico mínimo para supervivencia en background
+                    window.app.androidKeepAliveGain.gain.value = 0.001; 
                     
                     var lfoA16 = window.app.ctx.createOscillator();
-                    lfoA16.frequency.value = 0.5; // Oscilación lenta
+                    lfoA16.frequency.value = 0.5; 
                     var lfoA16Gain = window.app.ctx.createGain();
-                    lfoA16Gain.gain.value = 100; // Mueve la frecuencia +-100Hz
+                    lfoA16Gain.gain.value = 100; 
                     lfoA16.connect(lfoA16Gain);
                     lfoA16Gain.connect(window.app.androidKeepAlive.frequency);
                     
                     window.app.androidKeepAlive.connect(window.app.androidKeepAliveGain);
-                    window.app.androidKeepAliveGain.connect(window.app.ctx.destination);
+                    window.app.androidKeepAliveGain.connect(window.app.ctx.destination); // 🛡️ SINK TÉCNICO: Directo a salida física
+                    window.app.androidKeepAliveGain.gain.value = 0.001; // Recuperado para evitar cierre de app
                     window.app.androidKeepAlive.start();
                     lfoA16.start();
                     
@@ -323,6 +324,12 @@ object RadioAudioManager {
                         window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
                     }
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01);
+                    // 🛡️ ECO-LOCK: Silenciar todos los puentes técnicos al transmitir
+                    if (window.app.remoteDummies) {
+                        Object.keys(window.app.remoteDummies).forEach(id => {
+                            window.app.remoteDummies[id].gain.setTargetAtTime(0, now, 0.01);
+                        });
+                    }
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.lfoGain) window.app.lfoGain.gain.setTargetAtTime(0, now, 0.01);
                 } else {
@@ -331,6 +338,12 @@ object RadioAudioManager {
                         window.app.txGate.gain.setTargetAtTime(0, now + 0.4, 0.01);
                     }
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, now, 0.2);
+                    // 🛡️ RE-ACTIVACIÓN DE PUENTES (LEDs): Devolver el flujo técnico tras soltar PTT
+                    if (window.app.remoteDummies && !window.app.discreteMode) {
+                        Object.keys(window.app.remoteDummies).forEach(id => {
+                            window.app.remoteDummies[id].gain.setTargetAtTime(0.002, now + 0.2, 0.1);
+                        });
+                    }
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.2);
                     if (window.app.lfoGain && window.app.currentNoiseTarget > 0) window.app.lfoGain.gain.setTargetAtTime(0.008, now, 0.2);
                     
@@ -362,33 +375,26 @@ object RadioAudioManager {
                     if (!window.app.ctx && window.initAudio) window.initAudio();
                     if (!window.app.ctx) return;
                     
-                    // 🚀 CREACIÓN INMEDIATA DE NODOS (No esperar a resume para evitar bloqueos de visibilidad)
+                    // 🚀 CREACIÓN DE NODOS DE ALTA FIDELIDAD
                     var source = window.app.ctx.createMediaStreamSource(remoteStream);
                     var analyser = window.app.ctx.createAnalyser();
-                    var distNode = window.app.ctx.createWaveShaper();
                     var gainNode = window.app.ctx.createGain();
                     analyser.fftSize = 256;
-                    distNode.oversample = '4x';
                     
-                    // 🛡️ ENRUTAMIENTO FIJO DE ALTA FIDELIDAD
-                    source.connect(analyser);
-                    source.connect(distNode);
-                    distNode.connect(gainNode);
-                    
-                    // 🛡️ CADENA DE VOZ PROFESIONAL: RxGain -> Compressor (Calidad Total)
+                    // 🛡️ ENRUTAMIENTO V15.1 (BLOQUEADO)
+                    source.connect(analyser); 
+                    source.connect(gainNode);
                     if (window.app.masterRxGain) gainNode.connect(window.app.masterRxGain);
                     
-                    // 🛡️ DECODING BRIDGE: Conexión técnica inaudible para estabilidad de hilos
+                    // 🛡️ DECODING BRIDGE (LEDs + BACKGROUND): Conexión técnica mínima para activar flujo
                     var dummy = window.app.ctx.createGain();
-                    dummy.gain.value = 0.005; // Recuperado para evitar que el navegador cierre la voz
+                    dummy.gain.value = 0.002; // Valor mínimo para que Chrome procese el stream y los LEDs
                     source.connect(dummy); 
-                    dummy.connect(window.app.ctx.destination);
+                    dummy.connect(window.app.ctx.destination); 
 
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
                     window.app.remoteGains[call.peer] = gainNode;
-                    window.app.remoteDistortion = window.app.remoteDistortion || {};
-                    window.app.remoteDistortion[call.peer] = distNode;
                     window.app.remoteDummies = window.app.remoteDummies || {};
                     window.app.remoteDummies[call.peer] = dummy;
                     window.app.remoteSinks = window.app.remoteSinks || {};
@@ -468,8 +474,9 @@ object RadioAudioManager {
                         }
                         return;
                     } else {
-                        if (window.app.remoteDummies && window.app.remoteDummies[id]) {
-                            window.app.remoteDummies[id].gain.setTargetAtTime(0.005, window.app.ctx.currentTime, 0.1);
+                        // 🛡️ RE-ESTABLECER PUENTE (LEDs) SI NO ESTAMOS TRANSMITIENDO
+                        if (window.app.remoteDummies && window.app.remoteDummies[id] && !window.app.pttStateInternal) {
+                            window.app.remoteDummies[id].gain.setTargetAtTime(0.002, window.app.ctx.currentTime, 0.1);
                         }
                     }
 
@@ -494,8 +501,8 @@ object RadioAudioManager {
                     var distNode = window.app.remoteDistortion[id];
                     if(!gain || !distNode) return;
 
-                    if (isDiscrete) {
-                        gain.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.1);
+                    if (diff <= 0.05) {
+                        gain.gain.setTargetAtTime(isDiscrete ? 0 : 1.0, window.app.ctx.currentTime, 0.1);
                         distNode.curve = null; 
                     } else if (diff > 0.25) {
                         gain.gain.setTargetAtTime(0.01, window.app.ctx.currentTime, 0.1);

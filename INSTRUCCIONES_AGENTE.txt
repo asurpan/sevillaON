@@ -26,6 +26,8 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Progreso de Potencia**: +0.002 pwr / 5s de charla. No regalar veteranía; se gana modulando.
 - **Llamada Inteligente**: Solo el ID más bajo llama al más alto. Sagrado para estabilidad en 4G.
 - **Persistencia de Nick**: El indicativo del usuario DEBE guardarse en `localStorage` bajo la clave `indicativo` inmediatamente después de la validación. Esto evita que el usuario tenga que re-identificarse en cada sesión web.
+- **Indicativo Único (Hard-Lock)**: Queda TERMINANTEMENTE PROHIBIDO permitir duplicados de Nicks activos en diferentes dispositivos. El sistema debe verificar en Firebase si un Nick ya tiene una sesión activa (lastSeen < 45s) con un ID distinto antes de permitir la entrada. Cada indicativo es ÚNICO y está vinculado a su hardware.
+- **Advertencia de Olvido**: Si el usuario intenta "olvidar" su indicativo o borrar datos, el sistema DEBE mostrar una advertencia crítica informando de que perderá toda su potencia (Watts) y veteranía acumulada de forma IRRECUPERABLE.
 - **Módulo Mesh**: No integrar en la clase principal. Debe permanecer como un recurso de emergencia independiente.
 
 ### 🖼️ INTERFAZ Y MARKETING
@@ -36,4 +38,4 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Derecho de Admisión**: Usar lenguaje firme en el borrado de datos para proteger la comunidad.
 - **Hard-Lock ID**: Un equipo físico = una identidad en red.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 14.1 (PERSISTENCIA WEB & BLINDAJE DE VOZ)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 14.3 (NICK ÚNICO & PROTECCIÓN DE VATIOS)

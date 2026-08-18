@@ -476,7 +476,7 @@ fun RadioDialogs(
                 }
             },
             confirmButton = { 
-                LuxeButton("SÍ, DESTRUIR VETERANÍA", { onDismiss(); onLogoutConfirm() }, true, Modifier.fillMaxWidth().height(52.dp), Color.Red, Color.White) 
+                LuxeButton("SÍ, OLVIDAR Y BORRAR VATIOS", { onDismiss(); onLogoutConfirm() }, true, Modifier.fillMaxWidth().height(52.dp), Color.Red, Color.White) 
             },
             dismissButton = {
                 TextButton(onClick = onDismiss, modifier = Modifier.padding(top = 10.dp)) { 
@@ -876,7 +876,7 @@ fun RadioDialogs(
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                             Icon(Icons.Rounded.DeleteSweep, null, tint = LuxeColors.Red, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(12.dp))
-                            Text("BORRAR TODO Y SALIR", color = LuxeColors.Red, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            Text("OLVIDAR MI INDICATIVO", color = LuxeColors.Red, fontSize = 11.sp, fontWeight = FontWeight.Black)
                         }
                     }
                 }

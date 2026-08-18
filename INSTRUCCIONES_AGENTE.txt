@@ -18,6 +18,8 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen **0.005** vía un nodo Gain `dummy`. Este puente mantiene la tubería WebRTC "caliente" y evita que Chrome suspenda el proceso de audio.
 - **User-Gesture Hack**: El motor de audio DEBE reactivarse (`ctx.resume()`) mediante escuchadores de eventos `click` y `touchstart` globales. Es obligatorio para saltar las restricciones de Autoplay de los navegadores.
 - **Infrasonic Keep-Alive**: Mantener siempre el oscilador de **5Hz** activo durante los silencios de recepción. Es el marcapasos inaudible que evita que el navegador o el SO suspendan el hilo de voz. Debe silenciarse (0 absoluto) instantáneamente al detectar voz real.
+- **Background Survival (Anti-Sleep)**: Mantener un oscilador ultrasónico de **20.5kHz** con ganancia mínima (**0.001**) conectado permanentemente a la salida física. Esto garantiza que el SO detecte actividad de audio constante y no cierre la pestaña al minimizar el navegador.
+- **WakeLock Re-Activo**: El sistema DEBE re-adquirir el `WakeLock` en cada evento `visibilitychange` para asegurar que la pantalla no se duerma tras volver del segundo plano.
 - **Replay One-Shot**: El botón debe vaciar la memoria al usarse. Una escucha, una limpieza.
 - **Pisado Real**: Usar el motor `WaveShaper` para distorsionar voces débiles cuando hay choque de portadoras.
 - **BLOQUEO DE RUTAS Y VOLUMEN**: Queda TERMINANTEMENTE PROHIBIDO modificar los enrutados de audio (rutas de nodos), así como subir o bajar volúmenes o ganancias configuradas. Estas rutas y niveles están BLINDADOS para garantizar la estabilidad del hardware. Solo se permiten cambios en la lógica de control, nunca en la cadena de potencia o ruteo de audio físico.
@@ -38,4 +40,4 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Derecho de Admisión**: Usar lenguaje firme en el borrado de datos para proteger la comunidad.
 - **Hard-Lock ID**: Un equipo físico = una identidad en red.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 14.3 (NICK ÚNICO & PROTECCIÓN DE VATIOS)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 14.4 (SUPERVIVENCIA BACKGROUND & BLINDAJE)

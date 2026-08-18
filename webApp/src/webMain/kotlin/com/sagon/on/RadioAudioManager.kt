@@ -99,7 +99,7 @@ object RadioAudioManager {
                     window.app.androidKeepAlive = window.app.ctx.createOscillator();
                     window.app.androidKeepAlive.frequency.value = 20500; 
                     window.app.androidKeepAliveGain = window.app.ctx.createGain();
-                    window.app.androidKeepAliveGain.gain.value = 0.008; // Un poco más fuerte para el DAC de A16
+                    window.app.androidKeepAliveGain.gain.value = 0.001; // 🛡️ ANTISLEEP-FIX: Volumen ultrasónico mínimo para supervivencia en background
                     
                     var lfoA16 = window.app.ctx.createOscillator();
                     lfoA16.frequency.value = 0.5; // Oscilación lenta
@@ -207,15 +207,21 @@ object RadioAudioManager {
                         }
                     };
 
-                    // 🛡️ WAKE LOCK
+                    // 🛡️ WAKE LOCK RE-ACTIVO
                     window.app.requestWakeLock = function() {
-                        if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+                        if ('wakeLock' in navigator) {
                             navigator.wakeLock.request('screen')
-                                .then(lock => { window.app.screenLock = lock; })
+                                .then(lock => { 
+                                    window.app.screenLock = lock;
+                                    console.log("🛡️ WakeLock Adquirido (Pantalla Protegida)");
+                                })
                                 .catch(err => { });
                         }
                     };
                     window.app.requestWakeLock();
+                    document.addEventListener('visibilitychange', function() {
+                        if (document.visibilityState === 'visible') window.app.requestWakeLock();
+                    });
                     
                     window.app.txBus = window.app.ctx.createMediaStreamDestination();
                     window.app.txGate = window.app.ctx.createGain();

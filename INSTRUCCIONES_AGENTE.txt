@@ -25,6 +25,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 ### 📡 VETERANÍA Y RED
 - **Progreso de Potencia**: +0.002 pwr / 5s de charla. No regalar veteranía; se gana modulando.
 - **Llamada Inteligente**: Solo el ID más bajo llama al más alto. Sagrado para estabilidad en 4G.
+- **Persistencia de Nick**: El indicativo del usuario DEBE guardarse en `localStorage` bajo la clave `indicativo` inmediatamente después de la validación. Esto evita que el usuario tenga que re-identificarse en cada sesión web.
 - **Módulo Mesh**: No integrar en la clase principal. Debe permanecer como un recurso de emergencia independiente.
 
 ### 🖼️ INTERFAZ Y MARKETING
@@ -35,4 +36,4 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Derecho de Admisión**: Usar lenguaje firme en el borrado de datos para proteger la comunidad.
 - **Hard-Lock ID**: Un equipo físico = una identidad en red.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 14.0 (ANTISLEEP WEB AUDIO & BLINDAJE DE VOZ)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 14.1 (PERSISTENCIA WEB & BLINDAJE DE VOZ)

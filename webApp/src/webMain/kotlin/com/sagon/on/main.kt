@@ -51,6 +51,8 @@ fun main() {
             }
             
             var cleanNick = (nick || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
+            localStorage.setItem("indicativo", cleanNick); // 🛡️ PERSISTENCIA: Recordar Nick para la próxima visita
+            
             // 🛡️ HARD-LOCK: Usamos el ID completo para evitar duplicados por colisión de prefijo
             var sessionID = (cleanNick + "_" + deviceID).trim();
             

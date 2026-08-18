@@ -332,11 +332,18 @@ object RadioAudioManager {
                     // 🚀 CREACIÓN INMEDIATA DE NODOS (No esperar a resume para evitar bloqueos de visibilidad)
                     var source = window.app.ctx.createMediaStreamSource(remoteStream);
                     var analyser = window.app.ctx.createAnalyser();
+                    var distNode = window.app.ctx.createWaveShaper();
                     var gainNode = window.app.ctx.createGain();
                     analyser.fftSize = 256;
+                    distNode.oversample = '4x';
                     
+                    // 🛡️ ENRUTAMIENTO FIJO DE ALTA FIDELIDAD
                     source.connect(analyser);
-                    source.connect(gainNode);
+                    source.connect(distNode);
+                    distNode.connect(gainNode);
+                    
+                    // 🛡️ CADENA DE VOZ PROFESIONAL: RxGain -> Compressor (Calidad Total)
+                    if (window.app.masterRxGain) gainNode.connect(window.app.masterRxGain);
                     
                     // 🛡️ DECODING BRIDGE: Conexión técnica inaudible para estabilidad de hilos
                     var dummy = window.app.ctx.createGain();
@@ -347,6 +354,8 @@ object RadioAudioManager {
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
                     window.app.remoteGains[call.peer] = gainNode;
+                    window.app.remoteDistortion = window.app.remoteDistortion || {};
+                    window.app.remoteDistortion[call.peer] = distNode;
                     window.app.remoteDummies = window.app.remoteDummies || {};
                     window.app.remoteDummies[call.peer] = dummy;
                     window.app.remoteSinks = window.app.remoteSinks || {};

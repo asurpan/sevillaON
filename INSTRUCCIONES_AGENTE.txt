@@ -15,7 +15,8 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 ## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK)
 
 ### 🔊 AUDIO Y VOZ (BLINDAJE TOTAL)
-- **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen 0 vía un nodo Gain `dummy`. Sin esto, los LEDs mueren en Chrome.
+- **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen **0.005** vía un nodo Gain `dummy`. Este puente mantiene la tubería WebRTC "caliente" y evita que Chrome suspenda el proceso de audio.
+- **User-Gesture Hack**: El motor de audio DEBE reactivarse (`ctx.resume()`) mediante escuchadores de eventos `click` y `touchstart` globales. Es obligatorio para saltar las restricciones de Autoplay de los navegadores.
 - **Infrasonic Keep-Alive**: Mantener siempre el oscilador de **5Hz** activo durante los silencios de recepción. Es el marcapasos inaudible que evita que el navegador o el SO suspendan el hilo de voz. Debe silenciarse (0 absoluto) instantáneamente al detectar voz real.
 - **Replay One-Shot**: El botón debe vaciar la memoria al usarse. Una escucha, una limpieza.
 - **Pisado Real**: Usar el motor `WaveShaper` para distorsionar voces débiles cuando hay choque de portadoras.
@@ -34,4 +35,4 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Derecho de Admisión**: Usar lenguaje firme en el borrado de datos para proteger la comunidad.
 - **Hard-Lock ID**: Un equipo físico = una identidad en red.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 13.0 (AUDIO INFRASÓNICO & SEGURIDAD TOTAL)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 14.0 (ANTISLEEP WEB AUDIO & BLINDAJE DE VOZ)

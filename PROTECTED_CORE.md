@@ -7,8 +7,8 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 
 1. **Blindaje de Voz y LEDs (WebRTC Sink)**:
     - **DOM Sink Fix**: Es OBLIGATORIO crear elementos `<audio>` con `muted=true` y `playsinline`. 
-    - **Decoding Bridge**: Se debe conectar cada stream remoto a un nodo `dummy` de volumen 0 directo a la salida física. Esto engaña al navegador para que mantenga la decodificación activa y los LEDs brillen.
-    - **Hardware Keep-Alive**: Mantener el oscilador ultrasónico de **21kHz** inaudible en la salida física para evitar el modo suspensión del chip de audio.
+    - **Decoding Bridge**: Se debe conectar cada stream remoto a un nodo `dummy` de volumen **0.005** directo a la salida física. Esto engaña al navegador para que mantenga la decodificación activa y los LEDs brillen.
+    - **Hardware Keep-Alive (Motor 5Hz)**: Mantener el oscilador **infrasónico de 5Hz** inaudible en la salida física para evitar el modo suspensión del chip de audio. Debe silenciarse automáticamente cuando se detecta voz real entrante.
 
 2. **Motor de Veteranía y Pisado Real (V12.5)**:
     - **Progresión de Potencia**: +0.002 pwr por cada 5 segundos de TX. Rango: 0.7 (Novato) a 1.0 (Élite).
@@ -34,4 +34,4 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al autor. NO apliques parches que eliminen los nodos inaudibles o el bridge silencioso, ya que son los pilares que mantienen la voz viva en móviles modernos.
 
-**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y OPTIMIZADO (V12.5).**
+**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y OPTIMIZADO (V14.0).**

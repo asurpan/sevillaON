@@ -2,7 +2,7 @@ package com.sagon.on
 
 /**
  * 🔒 WEBAPP ENTRY POINT - ARQUITECTURA MODULAR
- * ESTADO: PROTECTED CORE - VERSIÓN 7.1 (PURE RADIO)
+ * ESTADO: PROTECTED CORE - VERSIÓN 9.5 (PURE RADIO)
  */
 
 import androidx.compose.runtime.*
@@ -11,6 +11,7 @@ import androidx.compose.ui.window.ComposeViewport
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.browser.localStorage
+import kotlinx.coroutines.delay
 import kotlin.js.Date
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -31,216 +32,110 @@ fun main() {
         window.remoteTxStates = {};
         window.connectRadio = function(nick) {
             if (window.app.peer && !window.app.peer.destroyed) {
-                console.log("🛡️ AUDITORÍA: Radio ya conectada. Actualizando Nick...");
+                if (window.app.peer.disconnected) window.app.peer.reconnect();
                 window.app.nick = nick.toUpperCase();
                 return;
             }
 
-            // 🛡️ IDENTIFICADOR DE DISPOSITIVO PERSISTENTE (STABLE ID)
-            var deviceID = localStorage.getItem("web_device_id");
-            
-            // Si estamos en entorno Android Nativo, usar el ID real del hardware para máxima estabilidad
-            if (window.AndroidApp && window.AndroidApp.getAndroidId) {
-                var aId = window.AndroidApp.getAndroidId();
-                if (aId) deviceID = "android_" + aId;
-            }
-
-            if (!deviceID) {
-                deviceID = "web_" + Math.random().toString(36).substring(2, 12);
-                localStorage.setItem("web_device_id", deviceID);
-            }
+            var deviceID = localStorage.getItem("web_device_id") || ("web_" + Math.random().toString(36).substring(2, 12));
+            localStorage.setItem("web_device_id", deviceID);
             
             var cleanNick = (nick || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
-            localStorage.setItem("indicativo", cleanNick); // 🛡️ PERSISTENCIA: Recordar Nick para la próxima visita
+            localStorage.setItem("indicativo", cleanNick); 
             
-            // 🛡️ HARD-LOCK: Usamos el ID completo para evitar duplicados por colisión de prefijo
             var sessionID = (cleanNick + "_" + deviceID).trim();
-            
             window.app.nick = cleanNick;
             window.app.deviceID = deviceID;
             window.app.sessionID = sessionID;
             
-            console.log("🚀 Iniciando conexión Radio: ", sessionID);
+            console.log("🚀 Iniciando Radio v9.2 (Pure-Link):", sessionID);
             if (window.initAudio) window.initAudio();
             
-            var baseCity = localStorage.getItem("lastCity") || "SEVILLA";
-            
             if (window.app.db) {
-                window.app.db.ref("users").once('value', function(snapshot) {
-                    var users = snapshot.val() || {};
-                    var currentRoomUsers = 0;
-                    var roomSuffix = "";
-                    var subIndex = 1;
-                    var now = Date.now();
-                    
-                    // 🛡️ FILTRO DE SESIONES REALES: Solo contar usuarios activos (vistos hace menos de 30s)
-                    Object.values(users).forEach(function(u) {
-                        var lastSeen = u.lastSeen || 0;
-                        if (u.city === baseCity && (now - lastSeen < 30000)) currentRoomUsers++;
-                    });
-                    
-                    // 🛡️ CONTROL DE NICK ÚNICO: Verificar si el Nick ya está en uso por otro dispositivo
-                    var isNickTaken = false;
-                    Object.keys(users).forEach(function(key) {
-                        var u = users[key];
-                        var lastSeen = u.lastSeen || 0;
-                        // Solo bloqueamos si el Nick coincide Y el dispositivo es diferente Y estuvo activo hace menos de 45s
-                        if (u.nick === cleanNick && key !== sessionID && (now - lastSeen < 45000)) {
-                            isNickTaken = true;
-                        }
-                    });
-
-                    if (isNickTaken) {
-                        if (window.dispatch_notification) {
-                            window.dispatch_notification("FALLO DE CONEXIÓN", "EL INDICATIVO '" + cleanNick + "' YA ESTÁ EN USO EN OTRO DISPOSITIVO.", "danger");
-                        }
-                        if (window.dispatch_nick_conflict) window.dispatch_nick_conflict();
-                        return; // 🛑 CANCELAR CONEXIÓN
-                    }
-
-                    while (currentRoomUsers >= 10) { 
-                        subIndex++;
-                        roomSuffix = "-" + subIndex;
-                        currentRoomUsers = 0;
-                        Object.values(users).forEach(function(u) {
-                            var lastSeen = u.lastSeen || 0;
-                            if (u.city === baseCity + roomSuffix && (now - lastSeen < 30000)) currentRoomUsers++;
-                        });
-                    }
-                    
-                    var finalCityRoom = baseCity + roomSuffix;
-                    window.app.currentCity = finalCityRoom;
-                    
-                    if (window.dispatch_room_update) window.dispatch_room_update(finalCityRoom);
-
-                    // 🛡️ NOTIFICAR CAMBIO DE SALA SI NO ES LA PRINCIPAL
-                    if (roomSuffix !== "") {
-                        setTimeout(function() {
-                            if (window.dispatch_notification) {
-                                window.dispatch_notification("AVISO DE SALA", "La sala principal está llena. Estás en la sala de respaldo: " + finalCityRoom, "info");
-                            }
-                        }, 5000);
-                    }
-
-                    window.app.db.ref("users/" + sessionID).set({
-                        nick: cleanNick,
-                        city: finalCityRoom,
-                        channel: finalCityRoom,
-                        tx: false,
-                        pwr: parseFloat(localStorage.getItem("vetPwr_" + cleanNick)) || 0.7,
-                        roger: (localStorage.getItem("roger") === "true"),
-                        lastSeen: Date.now()
-                    });
-                    
-                    window.app.db.ref("users/" + sessionID).onDisconnect().remove();
-
-                    setInterval(function() {
-                        if(window.app.db && window.app.sessionID) {
-                            var updates = { 
-                                lastSeen: Date.now(),
-                                nick: window.app.nick || cleanNick,
-                                city: window.app.currentCity || finalCityRoom
-                            };
-                            
-                            // 🛡️ AUDITORÍA: Estadísticas de Transmisión
-                            if (window.app.peer && window.app.activeCalls) {
-                                Object.keys(window.app.activeCalls).forEach(id => {
-                                    var call = window.app.activeCalls[id];
-                                    if (call && call.peerConnection) {
-                                        call.peerConnection.getStats(null).then(stats => {
-                                            stats.forEach(report => {
-                                                if (report.type === "outbound-rtp" && report.kind === "audio") {
-                                                    window.app.diag.txPackets = report.packetsSent;
-                                                }
-                                            });
-                                        });
-                                    }
-                                });
-                            }
-
-                            // 📈 MOTOR DE VETERANÍA (POTENCIA PROGRESIVA POR NICK)
-                            if (window.app.isTransmittingInternal) {
-                                var nickKey = "vetPwr_" + (window.app.nick || cleanNick);
-                                var curVet = parseFloat(localStorage.getItem(nickKey)) || 0.7;
-                                if (curVet < 1.0) { 
-                                    curVet = Math.min(1.0, curVet + 0.002);
-                                    localStorage.setItem(nickKey, curVet.toString());
-                                    updates.pwr = curVet;
-                                    
-                                    // Notificar a la UI si hay un cambio significativo
-                                    if (window.dispatch_volume_sync) window.dispatch_volume_sync(curVet);
-                                }
-                            }
-                            
-                            window.app.db.ref("users/" + window.app.sessionID).update(updates);
-                        }
-                    }, 5000);
-
-                    if (window.initFirebaseListener) window.initFirebaseListener();
+                window.app.db.ref("users/" + sessionID).set({
+                    nick: cleanNick,
+                    city: localStorage.getItem("lastCity") || "SEVILLA",
+                    tx: false,
+                    pwr: parseFloat(localStorage.getItem("vetPwr_" + cleanNick)) || 0.7,
+                    roger: (localStorage.getItem("roger") === "true"),
+                    lastSeen: Date.now()
                 });
+                window.app.currentCity = localStorage.getItem("lastCity") || "SEVILLA";
+                window.app.db.ref("users/" + sessionID).onDisconnect().remove();
+
+                setInterval(function() {
+                    if(window.app.db && window.app.sessionID) {
+                        window.app.db.ref("users/" + window.app.sessionID).update({ lastSeen: Date.now() });
+                    }
+                }, 5000);
+                if (window.initFirebaseListener) window.initFirebaseListener();
             }
             
             if (typeof Peer !== 'undefined') {
                 window.app.peer = new Peer(sessionID, { 
                     secure: true,
-                    config: { 'iceServers': [
-                        { 'urls': 'stun:stun.l.google.com:19302' },
-                        { 'urls': 'stun:stun1.l.google.com:19302' },
-                        { 'urls': 'stun:stun2.l.google.com:19302' },
-                        { 'urls': 'stun:stun3.l.google.com:19302' },
-                        { 'urls': 'stun:stun4.l.google.com:19302' },
-                        { 'urls': 'stun:stun.cloudflare.com:3478' },
-                        { 'urls': 'stun:global.stun.twilio.com:3478' },
-                        { 'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
-                        { 'urls': 'turn:openrelay.metered.ca:443', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
-                        { 'urls': 'turn:openrelay.metered.ca:443?transport=tcp', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
-                    ], 'iceCandidatePoolSize': 10 }
+                    config: { 
+                        'iceServers': [
+                            { 'urls': 'stun:stun.l.google.com:19302' },
+                            { 'urls': 'stun:stun1.l.google.com:19302' },
+                            { 'urls': 'stun:stun2.l.google.com:19302' },
+                            { 'urls': 'stun:stun3.l.google.com:19302' },
+                            { 'urls': 'stun:stun4.l.google.com:19302' },
+                            { 'urls': 'stun:stun.cloudflare.com:3478' },
+                            { 'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
+                            { 'urls': 'turn:openrelay.metered.ca:443', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
+                            { 'urls': 'turn:openrelay.metered.ca:443?transport=tcp', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
+                        ],
+                        'iceTransportPolicy': 'all',
+                        'iceCandidatePoolSize': 10
+                    }
                 });
-                window.app.peer.on("call", function(call) {
-                    console.log("🚀 PeerJS: Llamada entrante de:", call.peer);
-                    if (window.app.ctx && window.app.ctx.state !== 'running') window.app.ctx.resume();
-                    window.app.activeCalls[call.peer] = call;
-                
-                // 🔒 FILTRO DE BLOQUEO SIGILOSO PARA LLAMADAS ENTRANTES
-                var remoteID = call.peer;
-                var currentBlocked = window.app.currentBlockedList || [];
-                if (currentBlocked.indexOf(remoteID) !== -1) {
-                    console.log("🚫 Bloqueando llamada entrante de ID en lista negra:", remoteID);
-                    call.close();
-                    return;
-                }
 
-                var stream = window.getStream();
-                console.log("🚀 PeerJS: Contestando a:", call.peer, "Tracks enviados:", stream ? stream.getAudioTracks().length : 0);
-                call.answer(stream);
+                window.app.peer.on('error', function(err) {
+                    console.error("🛑 PeerJS Error:", err.type);
+                    if (err.type === 'disconnected' || err.type === 'network') {
+                        window.app.peer.destroy();
+                        setTimeout(function() { window.connectRadio(window.app.nick); }, 3000);
+                    }
+                });
+
+                window.app.peer.on("call", function(call) {
+                    console.log("🚀 PeerJS: Recibiendo de:", call.peer);
+                    window.app.activeCalls[call.peer] = call;
+                    call.answer(window.getStream());
                     if (window.setupCallStream) window.setupCallStream(call);
                 });
             }
         };
 
-        window.getStream = function() {
-            return (window.app.txBus) ? window.app.txBus.stream : null;
+        // 🛡️ MEJORA v8.1: Portadora Ultrasónica para mantener el túnel 4G abierto por bi-direccionalidad
+        window.getStream = function() { 
+            if (window.app.txBus && window.app.txBus.stream && window.app.txBus.stream.getAudioTracks().length > 0) {
+                return window.app.txBus.stream;
+            }
+            if (window.app.ctx) {
+                var dest = window.app.ctx.createMediaStreamDestination();
+                var osc = window.app.ctx.createOscillator();
+                var g = window.app.ctx.createGain();
+                osc.frequency.value = 20000; // Inaudible
+                g.gain.value = 0.0001; 
+                osc.connect(g); g.connect(dest);
+                osc.start();
+                return dest.stream;
+            }
+            return null;
         };
 
         window.establishOutgoingCall = function(id) {
-            if (!window.app.peer || window.app.activeCalls[id]) return;
+            if (!window.app.peer || window.app.peer.destroyed || window.app.activeCalls[id]) return;
             var stream = window.getStream();
-            if (!stream || stream.getAudioTracks().length === 0) {
-                console.warn("🛡️ WebRTC: Stream no listo (0 tracks) para llamar a:", id, ". Reintentando en 1s...");
-                setTimeout(function() { window.establishOutgoingCall(id); }, 1000);
-                return;
-            }
-            console.log("🚀 PeerJS: Llamando a:", id, "Tracks enviados:", stream.getAudioTracks().length);
+            if (!stream) return;
+            console.log("🚀 PeerJS: Llamando a:", id);
             var call = window.app.peer.call(id, stream);
             if (call) {
                 window.app.activeCalls[id] = call;
                 if (window.setupCallStream) window.setupCallStream(call);
             }
-        };
-
-        // 🛡️ SOLICITUD PROACTIVA DE MICRÓFONO
-        window.ensureMicAccess = function() {
-            if (window.requestMicPermission) window.requestMicPermission();
         };
     """)
 
@@ -249,443 +144,153 @@ fun main() {
     RadioMapsManager.install()
     RadioBridge.install()
 
-    // 🛡️ SINCRONIZACIÓN INICIAL DE ESTADO CRÍTICO
-    val initialState = RadioPersistence.loadInitialState()
-    if (win.app != null) {
-        win.app.discreteMode = initialState.isDiscreteModeEnabled
-        win.app.rogerEnabled = initialState.isRogerBeepEnabled
-        win.app.voxActive = initialState.isVoxEnabled
-        win.app.voxSens = initialState.voxSensitivity
-    }
-
-    // 🛡️ MOTOR DE DESBLOQUEO DE AUDIO (USER GESTURE HACK)
-    // Los navegadores bloquean el audio hasta que el usuario interactúa.
-    window.addEventListener("click", {
-        val app = window.asDynamic().app
-        if (app != null && app.ctx != null && app.ctx.state == "suspended") {
-            console.log("🔊 Desbloqueando motor de audio tras interacción...");
-            app.ctx.resume().then({ 
-                if (window.asDynamic().updateMasterVolume) window.asDynamic().updateMasterVolume()
-            })
-        }
-    }, js("{ once: false }"))
-
-    window.addEventListener("touchstart", {
-        val app = window.asDynamic().app
-        if (app != null && app.ctx != null && app.ctx.state == "suspended") {
-            app.ctx.resume()
-        }
-    }, js("{ once: false }"))
-
-    // --- 🛡️ PREVENCIÓN DE CIERRE EN WEB (UNLOAD HACK) ---
-    window.addEventListener("beforeunload", { event ->
-        val e = event.asDynamic()
-        e.preventDefault()
-        e.returnValue = ""
-    })
-
     ComposeViewport(root) {
-        val initialState = remember { RadioPersistence.loadInitialState() }
-
-        var screenState by remember { 
-            mutableStateOf(
-                if ((localStorage.getItem("indicativo") ?: "").isNotEmpty() && initialState.hasAcceptedMicExplain) Screen.RadioCB 
-                else Screen.Welcome
-            ) 
-        }
-        
-        val micLevelState = remember { mutableStateOf(0f) }
-        val isBeepingState = remember { mutableStateOf(false) }
+        val radioState = remember { mutableStateOf(RadioPersistence.loadInitialState()) }
         val remoteUsersState = remember { mutableStateListOf<RemoteUser>() }
-        val chatMessagesState = remember { mutableStateListOf<ChatMessage>() }
-        val isPttLiveState = remember { mutableStateOf(false) }
-        val voxActiveState = remember { mutableStateOf(initialState.isVoxEnabled) }
-        val notificationState = remember { mutableStateOf<AppNotification?>(null) }
-        val radioState = remember { mutableStateOf(initialState) }
+        val micLevelState = remember { mutableStateOf(0f) }
         val remoteTransmitterName = remember { mutableStateOf<String?>(null) }
-        
         val usersNotified = remember { mutableSetOf<String>() }
-        
-        val isReplayReadyState = remember { mutableStateOf(false) }
-        val replayProgressState = remember { mutableStateOf(0f) }
-        val systemVolumeState = remember { mutableStateOf(0.7f) }
-        val backPressCount = remember { mutableStateOf(0) }
 
-        // --- 🛡️ VINCULACIÓN DEL BOTÓN ATRÁS DEL NAVEGADOR (WEB) ---
         LaunchedEffect(Unit) {
-            window.history.pushState(null, "", window.location.href)
-            window.addEventListener("popstate", {
-                backPressCount.value++
-                window.history.pushState(null, "", window.location.href)
-            })
-        }
-
-        val onDiagRequestHelper = {
-            val app = window.asDynamic().app
-            val d = if (app != null && app != undefined) app.diag else null
-            val rxMap = mutableMapOf<String, Int>()
-            
-            if (d != null && d != undefined) {
-                if (d.rxPackets != null && d.rxPackets != undefined) {
-                    val keys = js("Object").keys(d.rxPackets)
-                    for (i in 0 until (keys.length as Int)) {
-                        val k = keys[i] as String
-                        rxMap[k] = d.rxPackets[k] as Int
+            while(true) {
+                delay(5000)
+                val app = window.asDynamic().app
+                if (app != null && app.peer != null && !app.peer.destroyed && !app.peer.disconnected) {
+                    remoteUsersState.forEach { user ->
+                        if (user.id != app.sessionID && app.activeCalls[user.id] == null) {
+                            if (app.sessionID < user.id) window.asDynamic().establishOutgoingCall(user.id)
+                        }
                     }
                 }
-                RadioDiagData(
-                    micPermission = d.micPermission as? String ?: "unknown",
-                    ctxState = d.ctxState as? String ?: "none",
-                    txPackets = (d.txPackets as? Double ?: 0.0).toInt(),
-                    rxPackets = rxMap
-                )
-            } else {
-                RadioDiagData(micPermission = "not_initialized")
             }
         }
 
         RadioBridge.setupDispatchers(
             win = win,
             onMic = { micLevelState.value = it },
-            onBeep = { isBeepingState.value = it },
+            onBeep = { },
             onPttSync = { },
             onPttBlocked = { },
             onReplayEmpty = { },
             onReplayStart = { },
-            onBack = { backPressCount.value++ },
+            onBack = { },
             onNickConflict = { },
             onUsersUpdate = { users ->
                 try {
-                    // Actualizar lista global de bloqueados para el motor de audio
-                    window.asDynamic().app.currentBlockedList = radioState.value.blockedUsers.toTypedArray()
-                    
                     val list = mutableListOf<RemoteUser>()
-                    val nicksSeen = mutableSetOf<String>()
-                    val currentIDs = mutableSetOf<String>()
                     val now = Date.now()
-
-                    if (users != null && users != undefined) {
+                    val myCityBase = (win.app.currentCity as? String ?: "").split("-")[0]
+                    if (users != null) {
                         val keys = js("Object").keys(users)
                         for (i in 0 until (keys.length as Int)) {
                             val k = keys[i] as String
                             val u = users[k] ?: continue
-                            currentIDs.add(k)
-                            
-                            var userNick = (u.nick as? String ?: "").trim().uppercase()
-                            if (userNick.isEmpty()) {
-                                // Fallback: Extraer del ID (ej: DFF_web_isik -> DFF)
-                                userNick = k.split("_")[0].uppercase()
-                            }
-                            if (userNick.isEmpty()) userNick = "ESTACIÓN"
-
-                            val lastSeen = (u.lastSeen as? Double ?: 0.0)
-                            
-                            if (userNick.isEmpty()) continue
-                            if (now - lastSeen > 30000) continue 
-                            // 🛡️ PERMITIR DUPLICADOS DE NICK (Distintos dispositivos)
-                            // if (nicksSeen.contains(userNick)) continue
-                            
-                            // 🔒 SISTEMA DE BLOQUEO SIGILOSO (MUTUO)
-                            val myID = win.app.sessionID as? String ?: ""
-                            val remoteBlocks = (u.blocks as? String ?: "").split(",")
-                            val IAmBlockedByThem = remoteBlocks.contains(myID)
-                            val TheyAreBlockedByMe = radioState.value.blockedUsers.contains(k)
-                            
-                            if (IAmBlockedByThem || TheyAreBlockedByMe) {
-                                // Cortar comunicación si existe
-                                val activeCall = win.app.activeCalls[k]
-                                if (activeCall != null && activeCall != undefined) {
-                                    try { js("activeCall.close();") } catch(e: Exception) {}
-                                    js("delete window.app.activeCalls[k];")
-                                }
-                                continue
-                            }
-
-                            nicksSeen.add(userNick)
-
-                            val myCity = win.app.currentCity as? String ?: ""
-                            val userCity = u.city as? String ?: ""
-                            val isMe = (k == win.app.sessionID)
-                            
-                            // 🔒 FILTRO DE SALA ESTRICTO: Solo conectar con gente en TU misma sub-sala (-2, -3, etc)
-                            // Excepto a ti mismo, que siempre debes verte para confirmar conexión.
-                            if (!isMe && myCity != userCity) continue
-
+                            val userCityBase = (u.city as? String ?: "").split("-")[0]
+                            if (k != win.app.sessionID && myCityBase != userCityBase) continue
+                            if (now - (u.lastSeen as? Double ?: 0.0) > 30000) continue 
                             val isTransmitting = u.tx == true
-                            val userPwr = (u.pwr as? Double ?: 0.7).toFloat()
-                            win.app.remotePowers[k] = userPwr
-                            
-                            // 🛡️ SQUELCH INDIVIDUAL: Si transmite, volumen a 1.0 (El modo discreto NO mutes la voz)
-                            val gNode = win.app.remoteGains[k]
-                            if (gNode != null && gNode != undefined) {
-                                val targetVol = if (isTransmitting) 1.0 else 0.0
-                                if (gNode.gain.value != targetVol) {
-                                    gNode.gain.setTargetAtTime(targetVol, win.app.ctx.currentTime, 0.05)
-                                }
-                            }
-
+                            win.app.remotePowers[k] = (u.pwr as? Double ?: 0.7).toFloat()
                             val prevState = win.remoteTxStates[k] ?: false
-                            if (prevState && !isTransmitting) {
-                                val isMe = (k == win.app.sessionID)
-                                val senderRoger = u.roger == true
-                                // 🛡️ SILENCIO EN CARGA: Solo sonar si no estamos en la pantalla de bienvenida/carga
-                                if (!isMe && senderRoger && win.playUiSound != null && screenState != Screen.Welcome) {
-                                    win.playUiSound("rx_off")
-                                }
-                            }
-                            
-                            // 🎵 PIRIPI (Modo Discreto / Inicio Transmisión)
-                            if (!prevState && isTransmitting) {
-                                val isMe = (k == win.app.sessionID)
-                                // 🛡️ SILENCIO EN CARGA: Solo sonar si no estamos en la pantalla de bienvenida/carga
-                                if (!isMe && radioState.value.isDiscreteModeEnabled && win.playUiSound != null && screenState != Screen.Welcome) {
-                                    win.playUiSound("incoming")
-                                }
-                            }
-                            
+                            if (prevState && !isTransmitting && k != win.app.sessionID && u.roger == true) win.playUiSound("rx_off")
                             win.remoteTxStates[k] = isTransmitting
-
-                            // 🎵 AVISO ENTRADA USUARIO (BEEP O NOTIFICACIÓN AMIGO)
+                            var userNick = (u.nick as? String ?: "").trim().uppercase()
+                            if (userNick.isEmpty()) userNick = k.split("_")[0].uppercase()
                             if (k != win.app.sessionID && !usersNotified.contains(k)) {
-                                usersNotified.add(k)
-                                // 🛡️ SILENCIO EN CARGA: Solo sonar si no estamos en la pantalla de bienvenida/carga
-                                if (screenState != Screen.Welcome) {
-                                    if (radioState.value.friends.contains(userNick)) {
-                                        // Es un amigo: Notificación especial
-                                        if (win.playUiSound != null) win.playUiSound("incoming")
-                                        notificationState.value = AppNotification(
-                                            title = "¡AMIGO EN FRECUENCIA!",
-                                            message = "Tu compañero $userNick acaba de entrar en ${win.app.currentCity}.",
-                                            type = NotificationType.Success
-                                        )
-                                        // Intentar notificación nativa si estamos en Android
-                                        js("if(window.AndroidApp && window.AndroidApp.showNotification) window.AndroidApp.showNotification('AMIGO CONECTADO', 'El operador ' + userNick + ' está en frecuencia.');")
-                                    } else {
-                                        // Usuario normal: Solo beep grave
-                                        if (win.playUiSound != null) win.playUiSound("user_in")
-                                    }
-                                }
+                                usersNotified.add(k); win.playUiSound(if (radioState.value.friends.contains(userNick)) "incoming" else "user_in")
                             }
-
-                            list.add(RemoteUser(
-                                id = k, 
-                                nick = userNick, 
-                                isTransmitting = isTransmitting,
-                                city = u.city as? String ?: "SEVILLA",
-                                channel = u.channel as? String ?: "SEVILLA",
-                                txPower = userPwr,
-                                isFriend = radioState.value.friends.contains(userNick),
-                                roger = (u.roger == true)
-                            ))
-                            
-                            if (k != win.app.sessionID && win.app.activeCalls[k] == null) {
-                                // 🛡️ LLAMADA INTELIGENTE (ANTI-CONFLICTO):
-                                // Solo el dispositivo con la ID lexicográficamente menor inicia la llamada.
-                                // Esto es sagrado para evitar el "Glare" (choque de llamadas) en 4G/WiFi.
-                                if (win.app.sessionID < k) {
-                                    console.log("🚀 Sincronizando túnel WebRTC con:", userNick);
-                                    win.establishOutgoingCall(k);
-                                }
-                            }
+                            list.add(RemoteUser(id = k, nick = userNick, isTransmitting = isTransmitting, city = u.city as? String ?: "SEVILLA", channel = u.channel as? String ?: "SEVILLA", txPower = (u.pwr as? Double ?: 0.7).toFloat(), isFriend = radioState.value.friends.contains(userNick), roger = (u.roger == true)))
                         }
                     }
-                    
-                    // 🛡️ LIMPIEZA: Si un usuario desaparece, permitir que vuelva a pitar al entrar
-                    usersNotified.retainAll(currentIDs)
-
-                    remoteUsersState.clear()
-                    remoteUsersState.addAll(list)
-                    
-                    // 🛡️ FIX: Detectar si alguien que NO soy yo está transmitiendo
+                    remoteUsersState.clear(); remoteUsersState.addAll(list)
                     val activeRemoteTx = list.find { it.isTransmitting && it.id != win.app.sessionID }
                     remoteTransmitterName.value = activeRemoteTx?.nick
-                    
-                    // 📻 Sincronizar estado de recepción para el motor de audio y VOX
-                    if (win.app) {
-                        win.app.rxActiveInternal = (activeRemoteTx != null)
-                    }
+                    if (win.app) win.app.rxActiveInternal = (activeRemoteTx != null)
                 } catch(e: Exception) { }
             },
-            onChatUpdate = { data ->
-                val nl = mutableListOf<ChatMessage>()
-                if (data != null && data != undefined) {
-                    val keys = js("Object").keys(data)
-                    for (i in 0 until (keys.length as Int)) {
-                        val k = keys[i] as String
-                        val m = data[k] ?: continue
-                        nl.add(ChatMessage(k, m.senderNick?.toString() ?: "???", m.text?.toString() ?: "", m.timestamp?.toString()?.toDouble()?.toLong() ?: 0L))
-                    }
-                }
-                chatMessagesState.clear()
-                chatMessagesState.addAll(nl.sortedBy { it.timestamp })
-            },
-            onReplayProgress = { replayProgressState.value = it },
-            onReplayAvailable = { isReplayReadyState.value = it },
+            onChatUpdate = { },
+            onReplayProgress = { },
+            onReplayAvailable = { },
             onChatOpen = { },
             onMicFailure = { },
             onIntegrityStatus = { },
             onIncomingAlert = { _, _, _ -> },
-            onNotification = { title, message, type ->
-                val nType = when(type.lowercase()) {
-                    "success" -> NotificationType.Success
-                    "danger", "error" -> NotificationType.Danger
-                    "warning" -> NotificationType.Warning
-                    else -> NotificationType.Info
-                }
-                notificationState.value = AppNotification(title, message, nType)
-            },
+            onNotification = { _, _, _ -> },
             onVoxSync = { },
-            onRoomUpdate = { newRoom ->
-                radioState.value = radioState.value.copy(city = newRoom, channel = newRoom)
-                // 🛡️ RE-SINCRONIZACIÓN DE FIREBASE AL CAMBIAR DE CANAL/SALA
-                val w = window.asDynamic()
-                if (w.app != null && w.app.db != null && w.app.sessionID != null) {
-                    val updates: dynamic = js("{}")
-                    updates.city = newRoom
-                    updates.channel = newRoom
-                    w.app.db.ref("users/" + w.app.sessionID).update(updates)
-                }
-            },
-            onPttLive = { isPttLiveState.value = it },
-            onVolumeSync = { newVol ->
-                systemVolumeState.value = newVol
-                val w = window.asDynamic()
-                if (w.setMasterVolume != null) w.setMasterVolume(newVol)
-            },
-            onDiagRequest = onDiagRequestHelper
+            onRoomUpdate = { },
+            onPttLive = { },
+            onVolumeSync = { newVol -> if (win.setMasterVolume != null) win.setMasterVolume(newVol) },
+            onDiagRequest = { RadioDiagData() }
         )
 
         App(
             savedNick = localStorage.getItem("indicativo") ?: "",
             initialState = radioState.value,
-            forceInitialScreen = (screenState == Screen.Welcome),
+            forceInitialScreen = false,
             isFirstTime = false,
-            onOnboardingFinish = { },
-            onPermissionRequest = { 
-                RadioNetworkManager.connect(it) 
-                js("window.ensureMicAccess()")
-                screenState = Screen.RadioCB
-                // 🛡️ ACTIVACIÓN DE SONIDO TRAS CARGA
-                js("if(window.app) window.app.canPlaySounds = true;")
-            },
+            onPermissionRequest = { RadioNetworkManager.connect(it); js("window.ensureMicAccess()"); js("if(window.app) window.app.canPlaySounds = true;") },
             onLogout = { RadioPersistence.logout() },
-            onInstallRequest = { },
-            externalShowExitConfirm = false,
-            onExternalExitRequest = { _, _ -> 
-                val w = window.asDynamic()
-                if (w.AndroidApp != null && w.AndroidApp.minimizeApp != null) {
-                    w.AndroidApp.minimizeApp()
-                }
-            },
-            onShareRequest = { city, channel, subtone, _, _, _ -> 
-                val subText = if (subtone != "0000") " | 🔐 *$subtone*" else ""
-                val shareText = "📻 *ON AIR SPAIN*\n📍 *$city* | 🔊 *CH $channel*$subText\n\n¡Modulamos! 🚀\nhttps://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone"
-                val w = window.asDynamic()
-                val encoded = w.encodeURIComponent(shareText)
-                window.open("https://api.whatsapp.com/send?text=$encoded", "_blank")
-            },
-            onNoiseVolumeChange = { vol -> 
-                val w = window.asDynamic()
-                if(w.setNoiseVolume != null) w.setNoiseVolume(vol)
-            },
-            onMoniVolumeChange = { vol ->
-                val w = window.asDynamic()
-                if(w.app != null) {
-                    w.app.moniVolume = vol
-                    w.app.moniActive = (vol > 0)
-                }
-                js("if(window.updateMoniGain) window.updateMoniGain();")
-                js("if(window.updateMasterVolume) window.updateMasterVolume();")
-            },
+            onNoiseVolumeChange = { if(win.setNoiseVolume != null) win.setNoiseVolume(it) },
+            onMoniVolumeChange = { vol -> if(win.app != null) { win.app.moniVolume = vol; win.app.moniActive = (vol > 0) }; js("if(window.updateMoniGain) window.updateMoniGain();") },
             onEchoChange = { _, _ -> },
             onCityChange = { newCity ->
-                val w = window.asDynamic()
-                if (w.app != null && w.app.db != null && w.app.sessionID != null) {
-                    w.app.currentCity = newCity
-                    val updates: dynamic = js("{}")
-                    updates.city = newCity
-                    updates.channel = newCity
-                    w.app.db.ref("users/" + w.app.sessionID).update(updates)
+                if (win.app != null && win.app.db != null && win.app.sessionID != null) {
+                    win.app.currentCity = newCity
+                    win.app.db.ref("users/" + win.app.sessionID).update(js("{city: newCity, channel: newCity}"))
+                    js("if(window.initFirebaseListener) window.initFirebaseListener();")
                 }
             },
-            onSubtoneChange = { },
-            onChannelChange = { newCh ->
-                val w = window.asDynamic()
-                if (w.app != null && w.app.db != null && w.app.sessionID != null) {
-                    val updates: dynamic = js("{}")
-                    updates.channel = newCh
-                    w.app.db.ref("users/" + w.app.sessionID).update(updates)
-                }
-            },
+            onChannelChange = { newCh -> if (win.app != null && win.app.db != null && win.app.sessionID != null) { win.app.db.ref("users/" + win.app.sessionID).update(js("{channel: newCh}")) } },
             onSendMessage = { t, tg -> RadioNetworkManager.sendMessage(t, tg) },
             onDeleteMessage = { id, tg -> RadioNetworkManager.deleteMessage(id, tg) },
             onPrivateChatRequest = { },
             onPublicChatRequest = { },
             onStateSave = { newState -> 
-                RadioPersistence.saveState(newState)
-                radioState.value = newState 
-                voxActiveState.value = newState.isVoxEnabled
-                
-                val w = window.asDynamic()
-                if(w.app != null) {
-                    w.app.voxActive = newState.isVoxEnabled
-                    w.app.voxSens = newState.voxSensitivity
-                    w.app.rogerEnabled = newState.isRogerBeepEnabled
-                    w.app.discreteMode = newState.isDiscreteModeEnabled
-                    localStorage.setItem("roger", newState.isRogerBeepEnabled.toString())
-                    js("if(window.broadcastPTT) window.broadcastPTT(window.app.pttStateInternal || false, newState.isRogerBeepEnabled);")
-                }
+                RadioPersistence.saveState(newState); radioState.value = newState
+                if(win.app != null) { win.app.voxActive = newState.isVoxEnabled; win.app.voxSens = newState.voxSensitivity; win.app.rogerEnabled = newState.isRogerBeepEnabled; win.app.discreteMode = newState.isDiscreteModeEnabled; localStorage.setItem("roger", newState.isRogerBeepEnabled.toString()); }
             },
             onConnectRadio = { RadioNetworkManager.connect(it) },
-            onDiagRequest = onDiagRequestHelper,
+            onDiagRequest = { RadioDiagData() },
             onMicEnable = { a, r, p -> 
-                val w = window.asDynamic()
-                if (a && radioState.value.isDiscreteModeEnabled) {
-                    val newState = radioState.value.copy(isDiscreteModeEnabled = false)
-                    radioState.value = newState
-                    RadioPersistence.saveState(newState)
-                    // 🛡️ SYNC CRÍTICA: Asegurar que el motor de audio sepa que ya no es discreto
-                    if (w.app != null) w.app.discreteMode = false
-                }
+                if (a && radioState.value.isDiscreteModeEnabled) { val newState = radioState.value.copy(isDiscreteModeEnabled = false); radioState.value = newState; if (win.app != null) win.app.discreteMode = false }
                 RadioAudioManager.setPtt(a, r, p) 
             },
             onReport = { },
             onBlockUser = { },
             onNotificationDismiss = { },
-            onNotificationPermissionRequest = { },
             onReplayRequest = { RadioAudioManager.playReplay() },
             onBatteryCheckRequest = { false },
             onIgnoreBatteryOptimizations = { },
             onGpsRequest = { it(null) },
             onGpsCityRequest = { it(null) },
-            onPlaySound = { type ->
-                val w = window.asDynamic()
-                if (w.playUiSound != null) w.playUiSound(type)
-            },
+            onPlaySound = { if (win.playUiSound != null) win.playUiSound(it) },
             showInstallPrompt = false,
             onInstallConfirm = { },
             onInstallDismiss = { },
-            externalNotification = notificationState.value,
-            externalVolume = systemVolumeState.value,
-            externalBackPressCount = backPressCount.value,
+            externalNotification = null,
+            externalVolume = 0.7f,
+            externalBackPressCount = 0,
             micLevel = micLevelState.value,
-            isBeeping = isBeepingState.value,
+            isBeeping = false,
             isCodedRx = false,
-            externalPtt = isPttLiveState.value,
+            externalPtt = false,
             externalPttBlocked = false,
-            replayProgress = replayProgressState.value,
-            isReplayReady = isReplayReadyState.value,
+            replayProgress = 0f,
+            isReplayReady = false,
             remoteUsers = remoteUsersState,
-            myId = (window.asDynamic().app?.sessionID as? String) ?: "",
+            myId = (win.app?.sessionID as? String) ?: "",
             remoteTransmitterName = remoteTransmitterName.value,
-            chatMessages = chatMessagesState,
+            chatMessages = emptyList(),
             audioIntegrity = true,
-            onAntennaTest = { _ -> },
+            onAntennaTest = { },
             onRequestLocationPermission = { },
             onOpenSettings = { },
             onChatOpenConsumed = { },
             onChatTargetConsumed = { },
-            voxActive = voxActiveState.value
+            voxActive = radioState.value.isVoxEnabled,
+            onExternalExitRequest = { _, _ -> if (win.AndroidApp != null && win.AndroidApp.minimizeApp != null) win.AndroidApp.minimizeApp() },
+            externalShowExitConfirm = false,
+            onShareRequest = { _, _, _, _, _, _ -> },
+            onSubtoneChange = { }
         )
     }
 }

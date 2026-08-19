@@ -39,6 +39,7 @@ object ManosLibres {
                     }
 
                     window.app.rawStream = stream;
+                    if (window.app.ctx.state !== 'running') window.app.ctx.resume();
                     var micSrc = window.app.ctx.createMediaStreamSource(stream);
                     var voiceFilter = window.app.ctx.createBiquadFilter();
                     voiceFilter.type = "highpass"; voiceFilter.frequency.value = 150; 
@@ -119,7 +120,8 @@ object ManosLibres {
 
                 // --- 📟 LÓGICA DE LEDs PROFESIONAL (CARRIER + MODULACIÓN) ---
                 var finalLevel = 0;
-                if (window.app.isTransmittingInternal || window.app.isBeeping) {
+                var isTransInternal = window.app.isTransmittingInternal || false;
+                if (isTransInternal || window.app.isBeeping) {
                     finalLevel = window.app.isBeeping ? 1.0 : 0.75 + Math.min(0.25, peakLevel * 0.8);
                 } else {
                     if (rxActive) {

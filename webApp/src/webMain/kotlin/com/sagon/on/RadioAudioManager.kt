@@ -5,7 +5,7 @@ import kotlinx.browser.window
 
 /**
  * 🎙️ RADIO AUDIO MANAGER: MOTOR DE SONIDO PROFESIONAL
- * 🔒 HARD-LOCK: PROTECTED CORE - SELLADO TOTAL v9.6.1
+ * 🔒 HARD-LOCK: PROTECTED CORE - SELLADO TOTAL v9.8
  * ⚠️ AVISO: Lógica WebRTC y Ruteo Blindada. NO MODIFICAR.
  */
 object RadioAudioManager {
@@ -94,16 +94,16 @@ object RadioAudioManager {
                     window.app.androidKeepAlive.start();
                     lfoA16.start();
                     
-                    // 🛡️ SISTEMA DITHER (v9.4): Optimizado para silencio total pero manteniendo el túnel
+                    // 🛡️ SISTEMA DITHER (v9.8): Ruido Oculto Suave pero persistente
                     var ditherSize = window.app.ctx.sampleRate;
                     var ditherBuffer = window.app.ctx.createBuffer(1, ditherSize, window.app.ctx.sampleRate);
                     var ditherData = ditherBuffer.getChannelData(0);
-                    for (var i = 0; i < ditherSize; i++) { ditherData[i] = (Math.random() * 2 - 1) * 0.01; }
+                    for (var i = 0; i < ditherSize; i++) { ditherData[i] = (Math.random() * 2 - 1) * 0.05; }
                     var ditherSource = window.app.ctx.createBufferSource();
                     ditherSource.buffer = ditherBuffer;
                     ditherSource.loop = true;
                     var ditherGain = window.app.ctx.createGain();
-                    ditherGain.gain.value = 0.002; 
+                    ditherGain.gain.value = 0.005; // v9.8: Bajado a nivel inaudible
                     ditherSource.connect(ditherGain);
                     ditherGain.connect(window.app.masterOut);
                     ditherSource.start();
@@ -204,6 +204,8 @@ object RadioAudioManager {
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(0, now, 0.01);
+                    // 🛡️ v9.8: Forzar apagado de monitor si no está explícitamente activo
+                    if (window.updateMoniGain) window.updateMoniGain();
                 } else {
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now + 0.4, 0.01);
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, now, 0.2);
@@ -261,11 +263,13 @@ object RadioAudioManager {
                     if (window.app.ctx.state !== 'running') {
                         window.app.ctx.resume().then(() => { 
                             console.log("🔊 AudioContext reanudado al recibir voz.");
-                            // Forzar volumen del audio sink para despertar al navegador
-                            remoteAudio.volume = 0.05;
-                            setTimeout(() => { remoteAudio.volume = 0; }, 500);
+                            // 🛡️ v9.7: Kick de volumen para romper el muteo del navegador
+                            remoteAudio.volume = 0.2;
+                            setTimeout(() => { remoteAudio.volume = 0.01; }, 1000);
                         });
                     }
+                    // 🛡️ v9.7: Forzar conexión física al recibir voz
+                    if (window.app.masterOut) window.app.masterOut.connect(window.app.ctx.destination);
                 });
                 call.on('close', function() {
                     if (window.app.remoteSources[call.peer]) window.app.remoteSources[call.peer].disconnect();

@@ -62,7 +62,6 @@ fun main() {
             
             console.log("🚀 Iniciando conexión Radio: ", sessionID);
             if (window.initAudio) window.initAudio();
-            if (window.initAudio) window.initAudio();
             
             var baseCity = localStorage.getItem("lastCity") || "SEVILLA";
             
@@ -321,6 +320,30 @@ fun main() {
             })
         }
 
+        val onDiagRequestHelper = {
+            val app = window.asDynamic().app
+            val d = if (app != null && app != undefined) app.diag else null
+            val rxMap = mutableMapOf<String, Int>()
+            
+            if (d != null && d != undefined) {
+                if (d.rxPackets != null && d.rxPackets != undefined) {
+                    val keys = js("Object").keys(d.rxPackets)
+                    for (i in 0 until (keys.length as Int)) {
+                        val k = keys[i] as String
+                        rxMap[k] = d.rxPackets[k] as Int
+                    }
+                }
+                RadioDiagData(
+                    micPermission = d.micPermission as? String ?: "unknown",
+                    ctxState = d.ctxState as? String ?: "none",
+                    txPackets = (d.txPackets as? Double ?: 0.0).toInt(),
+                    rxPackets = rxMap
+                )
+            } else {
+                RadioDiagData(micPermission = "not_initialized")
+            }
+        }
+
         RadioBridge.setupDispatchers(
             win = win,
             onMic = { micLevelState.value = it },
@@ -529,29 +552,7 @@ fun main() {
                 val w = window.asDynamic()
                 if (w.setMasterVolume != null) w.setMasterVolume(newVol)
             },
-            onDiagRequest = {
-                val app = window.asDynamic().app
-                val d = if (app != null && app != undefined) app.diag else null
-                val rxMap = mutableMapOf<String, Int>()
-                
-                if (d != null && d != undefined) {
-                    if (d.rxPackets != null && d.rxPackets != undefined) {
-                        val keys = js("Object").keys(d.rxPackets)
-                        for (i in 0 until (keys.length as Int)) {
-                            val k = keys[i] as String
-                            rxMap[k] = d.rxPackets[k] as Int
-                        }
-                    }
-                    RadioDiagData(
-                        micPermission = d.micPermission as? String ?: "unknown",
-                        ctxState = d.ctxState as? String ?: "none",
-                        txPackets = (d.txPackets as? Double ?: 0.0).toInt(),
-                        rxPackets = rxMap
-                    )
-                } else {
-                    RadioDiagData(micPermission = "not_initialized")
-                }
-            }
+            onDiagRequest = onDiagRequestHelper
         )
 
         App(
@@ -605,7 +606,6 @@ fun main() {
                     updates.city = newCity
                     updates.channel = newCity
                     w.app.db.ref("users/" + w.app.sessionID).update(updates)
-                    js("if(window.initFirebaseListener) window.initFirebaseListener();")
                 }
             },
             onSubtoneChange = { },
@@ -637,29 +637,7 @@ fun main() {
                 }
             },
             onConnectRadio = { RadioNetworkManager.connect(it) },
-            onDiagRequest = {
-                val app = window.asDynamic().app
-                val d = if (app != null && app != undefined) app.diag else null
-                val rxMap = mutableMapOf<String, Int>()
-                
-                if (d != null && d != undefined) {
-                    if (d.rxPackets != null && d.rxPackets != undefined) {
-                        val keys = js("Object").keys(d.rxPackets)
-                        for (i in 0 until (keys.length as Int)) {
-                            val k = keys[i] as String
-                            rxMap[k] = d.rxPackets[k] as Int
-                        }
-                    }
-                    RadioDiagData(
-                        micPermission = d.micPermission as? String ?: "unknown",
-                        ctxState = d.ctxState as? String ?: "none",
-                        txPackets = (d.txPackets as? Double ?: 0.0).toInt(),
-                        rxPackets = rxMap
-                    )
-                } else {
-                    RadioDiagData(micPermission = "not_initialized")
-                }
-            },
+            onDiagRequest = onDiagRequestHelper,
             onMicEnable = { a, r, p -> 
                 val w = window.asDynamic()
                 if (a && radioState.value.isDiscreteModeEnabled) {

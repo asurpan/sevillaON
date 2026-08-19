@@ -5,8 +5,8 @@ import kotlinx.browser.window
 
 /**
  * 🎙️ RADIO AUDIO MANAGER: MOTOR DE SONIDO PROFESIONAL
- * 🔒 HARD-LOCK: PROTECTED CORE - NO MODIFICAR LÓGICA DE RUTEO
- * ⚠️ AVISO: El motor VOX ha sido movido a ManosLibres.kt. MANTENER SEPARADO.
+ * 🔒 HARD-LOCK: PROTECTED CORE - SELLADO TOTAL v7.1
+ * ⚠️ AVISO: Lógica WebRTC y Ruteo Blindada. NO MODIFICAR.
  */
 object RadioAudioManager {
     fun install() {
@@ -338,8 +338,8 @@ object RadioAudioManager {
                         window.app.txGate.gain.setTargetAtTime(0, now + 0.4, 0.01);
                     }
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, now, 0.2);
-                    // 🛡️ RE-ACTIVACIÓN DE PUENTES (LEDs): Devolver el flujo técnico tras soltar PTT
-                    if (window.app.remoteDummies && !window.app.discreteMode) {
+                    // 🛡️ RE-ACTIVACIÓN DE PUENTES (LEDs): Devolver el flujo técnico tras soltar PTT (Siempre activo)
+                    if (window.app.remoteDummies) {
                         Object.keys(window.app.remoteDummies).forEach(id => {
                             window.app.remoteDummies[id].gain.setTargetAtTime(0.002, now + 0.2, 0.1);
                         });
@@ -388,7 +388,7 @@ object RadioAudioManager {
                     
                     // 🛡️ DECODING BRIDGE (LEDs + BACKGROUND): Conexión técnica mínima para activar flujo
                     var dummy = window.app.ctx.createGain();
-                    dummy.gain.value = 0.002; // Valor mínimo para que Chrome procese el stream y los LEDs
+                    dummy.gain.value = 0.01; // 🛡️ UMBRAL DE SEGURIDAD: Aumentado para asegurar decodificación en Chrome
                     source.connect(dummy); 
                     dummy.connect(window.app.ctx.destination); 
 
@@ -399,6 +399,7 @@ object RadioAudioManager {
                     window.app.remoteDummies[call.peer] = dummy;
                     window.app.remoteSinks = window.app.remoteSinks || {};
                     window.app.remoteSinks[call.peer] = remoteAudio;
+                    window.app.remoteDistortion = window.app.remoteDistortion || {}; // 🛡️ FIX: Inicializar mapa de distorsión
 
                     // 🚀 HARD WAKEUP: Intentar despertar el audio en cada recepción
                     if (window.app.ctx.state !== 'running') {
@@ -419,8 +420,9 @@ object RadioAudioManager {
                         if (!window.app.peer || !call.peerConnection) { clearInterval(diagInterval); return; }
                         call.peerConnection.getStats(null).then(stats => {
                             stats.forEach(report => {
-                                if (report.type === "inbound-rtp" && report.kind === "audio") {
-                                    window.app.diag.rxPackets[call.peer] = report.packetsReceived;
+                                // 🛡️ COMPATIBILIDAD RX: Buscar estadísticas de recepción de audio
+                                if ((report.type === "inbound-rtp" || report.type === "track") && report.kind === "audio") {
+                                    window.app.diag.rxPackets[call.peer] = report.packetsReceived || window.app.diag.rxPackets[call.peer];
                                 }
                             });
                         }).catch(e => {});
@@ -446,8 +448,8 @@ object RadioAudioManager {
                 if(peers.length <= 1) {
                     peers.forEach(id => { 
                         if(window.app.remoteGains[id]) {
-                            var target = isDiscrete ? 0 : 1.0;
-                            window.app.remoteGains[id].gain.setTargetAtTime(target, window.app.ctx.currentTime, 0.1); 
+                            // 🛡️ FIX DISCRETO: El modo discreto NO debe silenciar la voz, solo el ruido (manejado en otro lugar)
+                            window.app.remoteGains[id].gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.1); 
                         }
                         if (window.app.remoteDistortion && window.app.remoteDistortion[id]) {
                             window.app.remoteDistortion[id].curve = null;
@@ -467,17 +469,9 @@ object RadioAudioManager {
                     var ana = window.app.remoteAnalysers[id];
                     if(!gain || !source) return;
 
-                    if (isDiscrete) {
-                        gain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.1);
-                        if (window.app.remoteDummies && window.app.remoteDummies[id]) {
-                            window.app.remoteDummies[id].gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.1);
-                        }
-                        return;
-                    } else {
-                        // 🛡️ RE-ESTABLECER PUENTE (LEDs) SI NO ESTAMOS TRANSMITIENDO
-                        if (window.app.remoteDummies && window.app.remoteDummies[id] && !window.app.pttStateInternal) {
-                            window.app.remoteDummies[id].gain.setTargetAtTime(0.002, window.app.ctx.currentTime, 0.1);
-                        }
+                    // 🛡️ RE-ESTABLECER PUENTE (LEDs) SI NO ESTAMOS TRANSMITIENDO
+                    if (window.app.remoteDummies && window.app.remoteDummies[id] && !window.app.pttStateInternal) {
+                        window.app.remoteDummies[id].gain.setTargetAtTime(0.002, window.app.ctx.currentTime, 0.1);
                     }
 
                     var p = window.app.remotePowers[id] || 0.7;
@@ -498,25 +492,28 @@ object RadioAudioManager {
                         }
                     }
 
+                    // 🛡️ FIX: Asegurar que remoteDistortion existe para evitar retorno temprano
+                    window.app.remoteDistortion = window.app.remoteDistortion || {};
                     var distNode = window.app.remoteDistortion[id];
-                    if(!gain || !distNode) return;
-
+                    
                     if (diff <= 0.05) {
-                        gain.gain.setTargetAtTime(isDiscrete ? 0 : 1.0, window.app.ctx.currentTime, 0.1);
-                        distNode.curve = null; 
+                        gain.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.1);
+                        if(distNode) distNode.curve = null; 
                     } else if (diff > 0.25) {
                         gain.gain.setTargetAtTime(0.01, window.app.ctx.currentTime, 0.1);
-                        distNode.curve = null;
+                        if(distNode) distNode.curve = null;
                     } else {
                         var reduction = Math.max(0.05, 0.3 - diff);
                         gain.gain.setTargetAtTime(reduction, window.app.ctx.currentTime, 0.1);
-                        var k = diff * 800;
-                        var n_samples = 44100, curve = new Float32Array(n_samples);
-                        for (var i = 0; i < n_samples; ++i ) {
-                            var x = i * 2 / n_samples - 1;
-                            curve[i] = ( 3 + k ) * x / ( Math.PI + k * Math.abs(x) );
+                        if(distNode) {
+                            var k = diff * 800;
+                            var n_samples = 44100, curve = new Float32Array(n_samples);
+                            for (var i = 0; i < n_samples; ++i ) {
+                                var x = i * 2 / n_samples - 1;
+                                curve[i] = ( 3 + k ) * x / ( Math.PI + k * Math.abs(x) );
+                            }
+                            distNode.curve = curve; 
                         }
-                        distNode.curve = curve; 
                     }
                 });
             }

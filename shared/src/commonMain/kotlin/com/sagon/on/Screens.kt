@@ -2,7 +2,7 @@ package com.sagon.on
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - PANTALLAS DE NAVEGACIÓN
- * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 7.0 (PURE RADIO)
+ * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 7.1 (PURE RADIO)
  */
 
 import androidx.compose.animation.*
@@ -254,11 +254,13 @@ fun RadioPanel(
     val currentOnPlaySound by rememberUpdatedState(onPlaySound)
     val currentRadioState by rememberUpdatedState(state)
 
-    // 🛡️ REGLA DE ORO: EL PTT SIEMPRE DETIENE EL ESCANEO
+    // 🛡️ REGLA DE ORO: EL PTT SIEMPRE DETIENE EL ESCANEO Y EL MODO DISCRETO
     val isTransmitting = (pttLocked || externalPtt || isBeeping) && !isPttBlockedByRx
     LaunchedEffect(isTransmitting) {
-        if (isTransmitting && state.isScanning) {
-            currentOnStateChange(currentRadioState.copy(isScanning = false))
+        if (isTransmitting) {
+            if (state.isScanning || state.isDiscreteModeEnabled) {
+                onStateChange(state.copy(isScanning = false, isDiscreteModeEnabled = false))
+            }
         }
     }
 

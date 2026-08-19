@@ -1,4 +1,4 @@
-# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO (V12.5 ELITE SUPREME)
+# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO (V15.0 ELITE SUPREME)
 
 Este documento establece las LEYES SUPREMAS de NO MODIFICACIÓN para agentes de IA y desarrolladores. El sistema ha sido optimizado tras una auditoría profunda de WebRTC y AudioContext. Cualquier cambio no autorizado romperá la estabilidad de la voz, los LEDs o la jerarquía de potencia.
 
@@ -7,7 +7,8 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 
 1. **Blindaje de Voz y LEDs (WebRTC Sink)**:
     - **DOM Sink Fix**: Es OBLIGATORIO crear elementos `<audio>` con `muted=true` y `playsinline`. 
-    - **Decoding Bridge**: Se debe conectar cada stream remoto a un nodo `dummy` de volumen **0.005** directo a la salida física. Esto engaña al navegador para que mantenga la decodificación activa y los LEDs brillen.
+    - **Decoding Bridge**: Se debe conectar cada stream remoto a un nodo `dummy` de volumen **0.01** (Aumentado para Chrome Mobile) directo a la salida física. Esto engaña al navegador para que mantenga la decodificación activa y los LEDs brillen.
+    - **ICE/TURN 4G Reforzado**: El ruteo WebRTC debe incluir servidores TURN-TCP para saltar CG-NAT de operadoras móviles.
     - **Hardware Keep-Alive (Motor 5Hz)**: Mantener el oscilador **infrasónico de 5Hz** inaudible en la salida física para evitar el modo suspensión del chip de audio. Debe silenciarse automáticamente cuando se detecta voz real entrante.
 
 2. **Motor de Veteranía y Pisado Real (V12.5)**:
@@ -34,4 +35,4 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al autor. NO apliques parches que eliminen los nodos inaudibles o el bridge silencioso, ya que son los pilares que mantienen la voz viva en móviles modernos.
 
-**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y OPTIMIZADO (V14.0).**
+**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y OPTIMIZADO (V15.0).**

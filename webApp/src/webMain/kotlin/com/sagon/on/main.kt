@@ -2,7 +2,7 @@ package com.sagon.on
 
 /**
  * 🔒 WEBAPP ENTRY POINT - ARQUITECTURA MODULAR
- * ESTADO: PROTECTED CORE - VERSIÓN 7.0 (PURE RADIO)
+ * ESTADO: PROTECTED CORE - VERSIÓN 7.1 (PURE RADIO)
  */
 
 import androidx.compose.runtime.*
@@ -187,12 +187,15 @@ fun main() {
                     config: { 'iceServers': [
                         { 'urls': 'stun:stun.l.google.com:19302' },
                         { 'urls': 'stun:stun1.l.google.com:19302' },
+                        { 'urls': 'stun:stun2.l.google.com:19302' },
+                        { 'urls': 'stun:stun3.l.google.com:19302' },
+                        { 'urls': 'stun:stun4.l.google.com:19302' },
                         { 'urls': 'stun:stun.cloudflare.com:3478' },
                         { 'urls': 'stun:global.stun.twilio.com:3478' },
-                        { 'urls': 'stun:stun.services.mozilla.com' },
                         { 'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
-                        { 'urls': 'turn:openrelay.metered.ca:443', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
-                    ] }
+                        { 'urls': 'turn:openrelay.metered.ca:443', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
+                        { 'urls': 'turn:openrelay.metered.ca:443?transport=tcp', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
+                    ], 'iceCandidatePoolSize': 10 }
                 });
                 window.app.peer.on("call", function(call) {
                     console.log("🚀 PeerJS: Llamada entrante de:", call.peer);
@@ -389,11 +392,10 @@ fun main() {
                             val userPwr = (u.pwr as? Double ?: 0.7).toFloat()
                             win.app.remotePowers[k] = userPwr
                             
-                            // 🛡️ SQUELCH INDIVIDUAL: Si no transmite o estamos en modo discreto, volumen a CERO real
+                            // 🛡️ SQUELCH INDIVIDUAL: Si transmite, volumen a 1.0 (El modo discreto NO mutes la voz)
                             val gNode = win.app.remoteGains[k]
                             if (gNode != null && gNode != undefined) {
-                                val isDiscrete = radioState.value.isDiscreteModeEnabled
-                                val targetVol = if (isTransmitting && !(isDiscrete && !isMe)) 1.0 else 0.0
+                                val targetVol = if (isTransmitting) 1.0 else 0.0
                                 if (gNode.gain.value != targetVol) {
                                     gNode.gain.setTargetAtTime(targetVol, win.app.ctx.currentTime, 0.05)
                                 }
@@ -659,10 +661,13 @@ fun main() {
                 }
             },
             onMicEnable = { a, r, p -> 
+                val w = window.asDynamic()
                 if (a && radioState.value.isDiscreteModeEnabled) {
                     val newState = radioState.value.copy(isDiscreteModeEnabled = false)
                     radioState.value = newState
                     RadioPersistence.saveState(newState)
+                    // 🛡️ SYNC CRÍTICA: Asegurar que el motor de audio sepa que ya no es discreto
+                    if (w.app != null) w.app.discreteMode = false
                 }
                 RadioAudioManager.setPtt(a, r, p) 
             },

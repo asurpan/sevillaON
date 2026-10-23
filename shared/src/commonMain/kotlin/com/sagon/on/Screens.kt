@@ -308,6 +308,17 @@ fun RadioPanel(
         label = "DiscreteAlpha"
     )
 
+    var hasSeenDiscreteExplain by remember { mutableStateOf(false) }
+    val handleDiscreteToggle = {
+        onPlaySound("switch")
+        if (!state.isDiscreteModeEnabled && !hasSeenDiscreteExplain) {
+            hasSeenDiscreteExplain = true
+            onPendingDialogChange(RadioDialogType.DISCRETE, null)
+        } else {
+            onStateChange(state.copy(isDiscreteModeEnabled = !state.isDiscreteModeEnabled))
+        }
+    }
+
     LaunchedEffect(externalPttBlocked) { if (externalPttBlocked) isPttBlockedByRx = true }
     LaunchedEffect(isPttBlockedByRx) { if (isPttBlockedByRx) { delay(800); isPttBlockedByRx = false } }
 
@@ -672,14 +683,7 @@ fun RadioPanel(
                                     tint = if (state.isDiscreteModeEnabled) Color(0xFF87CEEB).copy(alpha = discreteAlpha) else Color.White.copy(0.15f),
                                     modifier = Modifier.size(20.dp).graphicsLayer {
                                         alpha = if (state.isDiscreteModeEnabled) discreteAlpha else 1f
-                                    }.clickable { 
-                                        if (state.isDiscreteModeEnabled) {
-                                            onStateChange(state.copy(isDiscreteModeEnabled = false))
-                                            onPlaySound("switch")
-                                        } else {
-                                            onPendingDialogChange(RadioDialogType.DISCRETE, null)
-                                        }
-                                    }
+                                    }.clickable { handleDiscreteToggle() }
                                 )
                                 Spacer(Modifier.height(8.dp))
                                 Icon(
@@ -716,7 +720,7 @@ fun RadioPanel(
 
                 AnimatedVisibility(visible = showTools) {
                     LazyRow(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        item { MiniTacticalIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { onPendingDialogChange(RadioDialogType.DISCRETE, null) }) }
+                        item { MiniTacticalIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { handleDiscreteToggle() }) }
                         item { MiniTacticalIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX, null) }) }
                         item { MiniTacticalIcon(icon = Icons.Rounded.Headset, label = "MONI", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) onStateChange(state.copy(isMonitorEnabled = false)) else onPendingDialogChange(RadioDialogType.MONI, null) }) }
                         item { MiniTacticalIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { onPendingDialogChange(RadioDialogType.DSP, null) }) }

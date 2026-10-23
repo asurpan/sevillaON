@@ -223,14 +223,17 @@ object RadioAudioManager {
                     window.app.moniGainNode = window.app.ctx.createGain();
                     window.app.moniGainNode.gain.value = 0;
                     window.app.moniGainNode.connect(window.app.masterOut);
-                    window.app.rxReplayBus = window.app.ctx.createGain();
-                    window.app.rxReplayBus.gain.value = 1.0;
-                    window.app.rxReplayBus.connect(window.app.filter);
+
+                    // 🎙️ BUS DE GRABACIÓN MASTER PARA REPLAY (PTT PROPIO + RX REMOTO)
                     window.app.masterRecordBus = window.app.ctx.createGain();
-                    window.app.rxReplayBus.connect(window.app.masterRecordBus);
+                    window.app.masterRecordBus.gain.value = 1.5;
+
+                    if (window.app.txGate) window.app.txGate.connect(window.app.masterRecordBus);
+                    if (window.app.masterRxGain) window.app.masterRxGain.connect(window.app.masterRecordBus);
+
                     window.app.replayCompressor = window.app.ctx.createDynamicsCompressor();
-                    window.app.replayCompressor.threshold.value = -15;
-                    window.app.replayCompressor.ratio.value = 10;
+                    window.app.replayCompressor.threshold.value = -24;
+                    window.app.replayCompressor.ratio.value = 8;
                     window.app.masterRecordBus.connect(window.app.replayCompressor);
                 } catch(e) { }
             };
@@ -520,13 +523,13 @@ object ReplayEngine {
             var activityDetected = false;
             var isPlaying = false;
             window.initReplayRecorder = function() {
-                if (!window.app.ctx || !window.app.rxReplayBus || !window.app.replayCompressor) { setTimeout(window.initReplayRecorder, 1000); return; }
+                if (!window.app.ctx || !window.app.masterRecordBus || !window.app.replayCompressor) { setTimeout(window.initReplayRecorder, 1000); return; }
                 var streamDest = window.app.ctx.createMediaStreamDestination();
                 window.app.replayCompressor.connect(streamDest);
                 var replayAnalyser = window.app.ctx.createAnalyser();
                 replayAnalyser.fftSize = 256;
                 window.app.replayCompressor.connect(replayAnalyser);
-                function monitor() { if (replayAnalyser) { var d = new Uint8Array(replayAnalyser.fftSize); replayAnalyser.getByteTimeDomainData(d); for(var i=0; i<d.length; i++) { if (Math.abs(d[i] - 128) > 8) { activityDetected = true; break; } } } requestAnimationFrame(monitor); }
+                function monitor() { if (replayAnalyser) { var d = new Uint8Array(replayAnalyser.fftSize); replayAnalyser.getByteTimeDomainData(d); for(var i=0; i<d.length; i++) { if (Math.abs(d[i] - 128) > 3) { activityDetected = true; break; } } } requestAnimationFrame(monitor); }
                 monitor();
                 function startChunk() {
                     var chunks = []; var hasVoiceInThisChunk = false; activityDetected = false; 

@@ -464,9 +464,10 @@ fun RadioPanel(
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 // 🛡️ ESTADO (AIRE / RX)
+                                val showRemoteRx = rx && !isTransmitting && !isBeeping
                                 Box(modifier = Modifier.fillMaxWidth().height(28.dp), contentAlignment = Alignment.Center) {
                                     androidx.compose.animation.AnimatedVisibility(
-                                        visible = rx,
+                                        visible = showRemoteRx,
                                         enter = fadeIn(tween(600)) + scaleIn(initialScale = 0.85f),
                                         exit = fadeOut(tween(400)) + scaleOut(targetScale = 0.85f)
                                     ) {
@@ -486,10 +487,10 @@ fun RadioPanel(
                                             )
                                         }
                                     }
-                                    if (!rx) {
+                                    if (!showRemoteRx) {
                                         Text(
                                             text = if (isTransmitting || isBeeping) "AIRE" else "SQUELCH",
-                                            color = if (isTransmitting) Color.Red else Color.White.copy(0.12f),
+                                            color = if (isTransmitting || isBeeping) Color.Red else Color.White.copy(0.12f),
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Black,
                                             letterSpacing = 1.5.sp
@@ -497,13 +498,26 @@ fun RadioPanel(
                                     }
                                 }
 
-                                // 🔋 S-METER ADAPTATIVO
+                                // 🔋 S-METER TÁCTICO 27MHz (PRECISIÓN POR BARRIO, PUEBLO Y DISTANCIA REAL)
                                 Row(
                                     modifier = Modifier.fillMaxWidth().height(18.dp).padding(vertical = 2.dp), 
                                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
+                                    val remoteUser = users.find { it.nick.equals(transmitterNick, ignoreCase = true) }
+                                    val remotePower = remoteUser?.txPower ?: 0.7f
+                                    val sameCity = remoteUser != null && remoteUser.city.split("-")[0] == state.city.split("-")[0]
+                                    val sameChannel = remoteUser != null && remoteUser.channel == state.channel
+
+                                    // 📶 ESCALA CB 27MHz: Misma calle/barrio (S9+30dB) vs Ciudad vs Provincia
+                                    val cbSignalFactor = when {
+                                        sameChannel && sameCity -> 1.0f // 💥 Misma calle / Mismo barrio: SARTENAZO A TOPE (S9+30dB)
+                                        sameCity -> 0.85f * (remotePower / 0.7f).coerceIn(0.8f, 1.1f) // Mismo pueblo / ciudad: S8-S9
+                                        else -> 0.50f * (remotePower / 0.7f).coerceIn(0.5f, 0.9f) // Otra ciudad / Provincia: S5
+                                    }
+
+                                    val signalLevel = if (isTransmitting) mic else if (rx) cbSignalFactor.coerceIn(0.25f, 1.0f) else 0f
                                     repeat(20) { i ->
-                                        val isActive = i < (mic * 20)
+                                        val isActive = i < (signalLevel * 20)
                                         val ledColor = when {
                                             i > 16 -> Color(0xFFEF4444)
                                             i > 12 -> Color(0xFFFACC15)

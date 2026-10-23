@@ -1,6 +1,5 @@
 package com.sagon.on
 
-import kotlinx.browser.localStorage
 import kotlinx.browser.window
 
 /**
@@ -191,27 +190,79 @@ object RadioAudioManager {
 
             window.broadcastPTT = function(active, roger, power) {
                 if(!window.app) return;
-                window.app.pttStateInternal = active; 
-                window.app.isTransmittingInternal = active; 
-                if (window.updateMoniGain) window.updateMoniGain(); // 🛡️ v9.4: Actualizar monitor inmediatamente
                 if (!window.app.ctx && window.initAudio) window.initAudio();
                 if (!window.app.ctx) return; 
-                if (active && window.app.ctx.state !== 'running') window.app.ctx.resume();
+                if (window.app.ctx.state !== 'running') window.app.ctx.resume();
+
                 var now = window.app.ctx.currentTime;
+                var sessionRef = window.app.db ? window.app.db.ref("users/" + window.app.sessionID) : null;
+
                 if (active) {
-                    if (window.app.ctx.state !== 'running') window.app.ctx.resume();
-                    window.app.db.ref("users/" + window.app.sessionID).update({ tx: true, pwr: power || 0.7 });
+                    if (window.app.rogerReleaseTimeout) {
+                        clearTimeout(window.app.rogerReleaseTimeout);
+                        window.app.rogerReleaseTimeout = null;
+                    }
+                    window.app.pttStateInternal = true; 
+                    window.app.isTransmittingInternal = true; 
+                    window.app.isBeeping = false;
+
+                    if (sessionRef) sessionRef.update({ tx: true, pwr: power || 0.7 });
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01);
                     if (window.app.noise) window.app.noise.gain.setTargetAtTime(0, now, 0.01);
-                    // 🛡️ v9.8: Forzar apagado de monitor si no está explícitamente activo
                     if (window.updateMoniGain) window.updateMoniGain();
                 } else {
-                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now + 0.4, 0.01);
-                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, now, 0.2);
-                    if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.2);
-                    window.app.db.ref("users/" + window.app.sessionID).update({ tx: false });
-                    if (roger && window.playUiSound) window.playUiSound("ptt_off");
+                    window.app.pttStateInternal = false;
+
+                    // 1. Cortar micrófono inmediatamente para no transmitir respiración/ruido tras soltar PTT
+                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now, 0.01);
+
+                    var shouldPlayRoger = (roger === true || window.app.rogerEnabled === true);
+
+                    if (shouldPlayRoger && window.app.ctx) {
+                        window.app.isBeeping = true;
+                        window.app.isTransmittingInternal = true; // MANTENER PORTADORA ACTIVA DURANTE EL BEEP
+
+                        // 2. Generar el Roger Beep y transmitirlo TANTO al altavoz local COMO por aire (txBus)
+                        var beepOsc = window.app.ctx.createOscillator();
+                        var beepGain = window.app.ctx.createGain();
+                        
+                        beepOsc.type = "triangle";
+                        beepOsc.frequency.setValueAtTime(1955, now);
+                        beepGain.gain.setValueAtTime(0.20, now);
+                        beepGain.gain.setValueAtTime(0, now + 0.30);
+
+                        beepOsc.connect(beepGain);
+                        
+                        if (window.app.masterOut) beepGain.connect(window.app.masterOut);
+                        if (window.app.txBus) beepGain.connect(window.app.txBus);
+
+                        beepOsc.start(now);
+                        beepOsc.stop(now + 0.30);
+
+                        // 3. APAGAR LA PORTADORA SOLO CUANDO HAYA TERMINADO EL ROGER BEEP
+                        if (window.app.rogerReleaseTimeout) clearTimeout(window.app.rogerReleaseTimeout);
+                        window.app.rogerReleaseTimeout = setTimeout(function() {
+                            window.app.isTransmittingInternal = false;
+                            window.app.isBeeping = false;
+                            if (sessionRef) sessionRef.update({ tx: false });
+
+                            var endNow = window.app.ctx ? window.app.ctx.currentTime : now;
+                            if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.15);
+                            if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.15);
+                            if (window.updateMoniGain) window.updateMoniGain();
+                        }, 350);
+
+                    } else {
+                        // Cierre inmediato sin Roger Beep
+                        window.app.isTransmittingInternal = false;
+                        window.app.isBeeping = false;
+                        if (sessionRef) sessionRef.update({ tx: false });
+
+                        if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, now, 0.15);
+                        if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.15);
+                        if (window.updateMoniGain) window.updateMoniGain();
+                    }
                 }
             };
 
@@ -222,15 +273,12 @@ object RadioAudioManager {
                 var remoteAudio = document.createElement("audio");
                 remoteAudio.setAttribute("autoplay", "true");
                 remoteAudio.setAttribute("playsinline", "true");
-                remoteAudio.muted = false; remoteAudio.volume = 0.01; // 🛡️ v9.2: Volumen mínimo para mantener flujo activo
+                remoteAudio.muted = false; remoteAudio.volume = 0.01;
                 remoteAudio.style.cssText = "position:fixed;width:1px;height:1px;top:0;left:0;opacity:0.001;pointer-events:none;z-index:-1";
                 document.body.appendChild(remoteAudio);
                 
                 call.on('stream', function(remoteStream) {
                     console.log("🔊 VOZ RECIBIDA. Tracks:", remoteStream.getAudioTracks().length);
-                    console.log("📊 DIAG: State=" + (window.app.ctx ? window.app.ctx.state : 'none') + 
-                                " | MasterGain=" + (window.app.masterOut ? window.app.masterOut.gain.value : 'N/A') +
-                                " | RxGain=" + (window.app.masterRxGain ? window.app.masterRxGain.gain.value : 'N/A'));
                     
                     if (remoteStream.getAudioTracks().length === 0) console.error("⚠️ ALERTA: Stream recibido pero tiene 0 pistas de audio.");
                     remoteAudio.srcObject = remoteStream;
@@ -244,13 +292,14 @@ object RadioAudioManager {
                     var gainNode = window.app.ctx.createGain();
                     analyser.fftSize = 256;
 
-                    source.connect(analyser); source.connect(gainNode);
+                    source.connect(analyser); 
+                    source.connect(gainNode);
                     if (window.app.masterRxGain) gainNode.connect(window.app.masterRxGain);
-                    if (window.app.masterOut) gainNode.connect(window.app.masterOut); // 🛡️ v9.6.1: Puente directo
                     
                     var dummy = window.app.ctx.createGain();
                     dummy.gain.value = 0.0001; 
-                    source.connect(dummy); dummy.connect(window.app.ctx.destination); 
+                    source.connect(dummy); 
+                    dummy.connect(window.app.ctx.destination); 
 
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
@@ -262,13 +311,10 @@ object RadioAudioManager {
                     
                     if (window.app.ctx.state !== 'running') {
                         window.app.ctx.resume().then(() => { 
-                            console.log("🔊 AudioContext reanudado al recibir voz.");
-                            // 🛡️ v9.7: Kick de volumen para romper el muteo del navegador
                             remoteAudio.volume = 0.2;
                             setTimeout(() => { remoteAudio.volume = 0.01; }, 1000);
                         });
                     }
-                    // 🛡️ v9.7: Forzar conexión física al recibir voz
                     if (window.app.masterOut) window.app.masterOut.connect(window.app.ctx.destination);
                 });
                 call.on('close', function() {
@@ -282,26 +328,29 @@ object RadioAudioManager {
             function updateRemotePriorities() {
                 if(!window.app || !window.app.ctx) return;
                 
-                // 🛡️ REFUERZO GLOBAL (v9.6.1): Mantener motor siempre encendido
                 if (window.app.ctx.state !== 'running') window.app.ctx.resume().catch(e=>{});
 
                 var peers = Object.keys(window.app.remoteSources);
                 var rxActive = window.app.rxActiveInternal || false;
 
-                // 🛡️ LOG DIAGNÓSTICO CADA 5 SEGUNDOS
                 if (!window._lastDiag || Date.now() - window._lastDiag > 5000) {
                     console.log("📊 AUDIO-DIAG: " + window.app.ctx.state + " | Peers: " + peers.length + " | Out: " + (window.app.masterOut?window.app.masterOut.gain.value.toFixed(2):'0'));
                     window._lastDiag = Date.now();
                 }
 
-                // 🛡️ AUTO-SQUELCH: Matar ruido si alguien habla
                 if (window.app.noise) {
                     var now = window.app.ctx.currentTime;
                     if (rxActive) window.app.noise.gain.setTargetAtTime(0, now, 0.05);
-                    else if (window.app.currentNoiseTarget > 0 && !window.app.pttStateInternal) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, now, 0.2);
+                    else if (window.app.currentNoiseTarget > 0 && !window.app.pttStateInternal && !window.app.isBeeping) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, now, 0.2);
                 }
 
-                // 🛡️ REFUERZO DE SALIDA: Asegurar conexión al altavoz
+                // Asegurar que el masterRxGain está alto cuando no estamos transmitiendo
+                if (window.app.masterRxGain && !window.app.pttStateInternal && !window.app.isBeeping) {
+                    if (window.app.masterRxGain.gain.value < 1.0) {
+                        window.app.masterRxGain.gain.setTargetAtTime(3.5, window.app.ctx.currentTime, 0.1);
+                    }
+                }
+
                 if (window.app.masterOut && !window.app.pttStateInternal) {
                     try { window.app.masterOut.connect(window.app.ctx.destination); } catch(e) {}
                     if (window.app.masterOut.gain.value < 0.1) {
@@ -315,16 +364,12 @@ object RadioAudioManager {
                     var ana = window.app.remoteAnalysers[id];
                     if(!gain || !source || !ana) return;
 
-                    var p = window.app.remotePowers[id] || 0.7;
-                    var maxPwr = 0;
-                    peers.forEach(pid => { if((window.app.remotePowers[pid]||0.7) > maxPwr) maxPwr = window.app.remotePowers[pid]; });
-                    var diff = maxPwr - p;
-                    
-                    if (diff <= 0.05) gain.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.1);
-                    else if (diff > 0.25) gain.gain.setTargetAtTime(0.05, window.app.ctx.currentTime, 0.1);
-                    else gain.gain.setTargetAtTime(Math.max(0.1, 0.4 - diff), window.app.ctx.currentTime, 0.1);
+                    // Asegurar ganancia limpia (1.0) para todos los usuarios remotos para que se escuchen perfectamente
+                    var isTx = window.remoteTxStates && window.remoteTxStates[id] === true;
+                    gain.gain.setTargetAtTime(isTx ? 1.2 : 1.0, window.app.ctx.currentTime, 0.05);
                 });
             }
+            setInterval(updateRemotePriorities, 100);
             setInterval(updateRemotePriorities, 100);
 
             window.ensureMicAccess = function() {

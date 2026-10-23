@@ -1055,7 +1055,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                             @JavascriptInterface
                             fun installApp() {
-                                post {
+                                Thread {
                                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                                         val shortcutManager = getSystemService(android.content.pm.ShortcutManager::class.java)
                                         if (shortcutManager != null && shortcutManager.isRequestPinShortcutSupported) {
@@ -1071,7 +1071,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                             shortcutManager.requestPinShortcut(pinShortcutInfo, null)
                                         }
                                     }
-                                }
+                                }.start()
                             }
 
                             @JavascriptInterface

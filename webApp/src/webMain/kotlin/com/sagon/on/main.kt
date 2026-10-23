@@ -22,12 +22,40 @@ fun main() {
     if (win.app_initialized == true) return
     win.app_initialized = true
 
-    // 🛡️ CREACIÓN INMEDIATA DEL OBJETO APP Y DEFINICIÓN DE FUNCIONES CRÍTICAS
+    // 🛡️ CREACIÓN INMEDIATA DEL OBJETO APP Y CONTROL DE PESTAÑA ÚNICA
     js("""
         window.app = window.app || { 
             activeCalls: {}, remoteSources: {}, remoteAnalysers: {}, 
             remoteGains: {}, remotePowers: {} 
         };
+
+        // 🛡️ GUARDIÁN DE PESTAÑA ÚNICA (PREVIENE DUPLICADOS Y ECOS)
+        var tabId = "tab_" + Math.random().toString(36).substring(2, 10);
+        window.currentTabId = tabId;
+        window.isDuplicateTab = false;
+
+        function claimTab() {
+            localStorage.setItem("active_radio_tab", tabId);
+            localStorage.setItem("active_radio_hb", Date.now().toString());
+            window.isDuplicateTab = false;
+        }
+
+        claimTab();
+        setInterval(function() {
+            var activeTab = localStorage.getItem("active_radio_tab");
+            var lastHb = parseInt(localStorage.getItem("active_radio_hb") || "0", 10);
+            if (activeTab === tabId) {
+                localStorage.setItem("active_radio_hb", Date.now().toString());
+                window.isDuplicateTab = false;
+            } else if (Date.now() - lastHb > 4000) {
+                claimTab();
+            } else {
+                window.isDuplicateTab = true;
+                if (window.dispatch_duplicate_tab) window.dispatch_duplicate_tab(true);
+            }
+        }, 1500);
+
+        window.claimTabControl = claimTab;
 
         window.remoteTxStates = {};
         window.connectRadio = function(nick) {
@@ -232,6 +260,9 @@ fun main() {
             onDiagRequest = { RadioDiagData() }
         )
 
+        val isDuplicateTabAlert = remember { mutableStateOf(false) }
+        win.dispatch_duplicate_tab = { isDup: Boolean -> if (isDup) isDuplicateTabAlert.value = true }
+
         App(
             savedNick = localStorage.getItem("indicativo") ?: "",
             initialState = radioState.value,
@@ -292,8 +323,17 @@ fun main() {
             onGpsRequest = { it(null) },
             onGpsCityRequest = { it(null) },
             onPlaySound = { if (win.playUiSound != null) win.playUiSound(it) },
-            showInstallPrompt = false,
-            onInstallConfirm = { },
+            showInstallPrompt = remember {
+                val win: dynamic = window
+                val ua = (win.navigator?.userAgent as? String ?: "").uppercase()
+                ua.contains("ANDROID") && win.AndroidApp == null
+            },
+            onInstallConfirm = {
+                val win: dynamic = window
+                val playStoreUrl = "https://play.google.com/store/apps/details?id=com.sagon.on&pcampaignid=web_share"
+                val intentUrl = "intent://open#Intent;scheme=onairspain;package=com.sagon.on;S.browser_fallback_url=" + win.encodeURIComponent(playStoreUrl) + ";end"
+                win.location.href = intentUrl
+            },
             onInstallDismiss = { },
             externalNotification = null,
             externalVolume = 0.7f,

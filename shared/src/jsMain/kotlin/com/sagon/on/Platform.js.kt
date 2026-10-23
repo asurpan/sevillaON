@@ -117,35 +117,20 @@ actual fun showSystemNotification(title: String, message: String) {
 }
 
 actual fun tryOpenNativeApp() {
-    // --- 🛡️ ANTI-LOOP: Solo intentar abrir la app una vez por sesión ---
     val win: dynamic = window
     if (win == null || win.navigator == null || win.location == null) return
-    
-    val sessionStorage = win.sessionStorage
-    if (sessionStorage != null && sessionStorage.getItem("native_jump_attempted") == "true") return
 
     val userAgent = win.navigator.userAgent.toString().uppercase()
     val currentUrl = win.location.href.toString()
-    val isLocalhost = currentUrl.contains("localhost") || currentUrl.contains("127.0.0.1")
     
-    // REGLAS DE ORO PARA EVITAR PANTALLA BLANCA:
-    // 1. No saltar si ya estamos en la App Nativa.
-    // 2. No saltar si estamos en Localhost (desarrollo).
-    // 3. No saltar si el usuario forzó la web.
-    if (!userAgent.contains("ONAIRSPAINNATIVE") && !isLocalhost && !currentUrl.contains("forceWeb=true")) {
-        // --- 🛡️ SOLO EN ANDROID INTENTAMOS ABRIR LA APP ---
-        if (userAgent.contains("ANDROID")) {
-            try {
-                if (sessionStorage != null) sessionStorage.setItem("native_jump_attempted", "true")
-                
-                // Usamos el Intent scheme de Android para un salto directo y fiable con persistencia de parámetros
-                val search = win.location.search.toString()
-                val fallbackUrl = currentUrl + (if (currentUrl.contains("?")) "&" else "?") + "forceWeb=true"
-                win.location.href = "intent://open" + search + "#Intent;scheme=onairspain;package=com.sagon.on;S.browser_fallback_url=" + win.encodeURIComponent(fallbackUrl) + ";end"
-            } catch(e: dynamic) {
-                // Si el método falla, dejamos que siga en la web
-            }
-        }
+    // 🛡️ REGLA: Si es Android y no está dentro de la App Nativa, redirigir a la App / Google Play
+    if (!userAgent.contains("ONAIRSPAINNATIVE") && userAgent.contains("ANDROID") && !currentUrl.contains("forceWeb=true")) {
+        try {
+            val playStoreUrl = "https://play.google.com/store/apps/details?id=com.sagon.on&pcampaignid=web_share"
+            val search = win.location.search.toString()
+            val intentUrl = "intent://open" + search + "#Intent;scheme=onairspain;package=com.sagon.on;S.browser_fallback_url=" + win.encodeURIComponent(playStoreUrl) + ";end"
+            win.location.href = intentUrl
+        } catch(e: dynamic) {}
     }
 }
 

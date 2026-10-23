@@ -94,40 +94,67 @@ fun UserCard(
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "CarrierPulse")
     val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 1f, targetValue = 1.1f,
+        initialValue = 1f, targetValue = 1.15f,
         animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse),
         label = "Pulse"
     )
 
+    // 🟢 ESTADO VERDE EN LÍNEA / ROJO TRANSMITIENDO / DORADO YO
+    val statusColor = when {
+        user.isTransmitting -> Color(0xFFEF4444) // Rojo Transmitiendo
+        isMe -> LuxeColors.Gold // Yo (Dorado)
+        else -> Color(0xFF10B981) // Conectado en Línea (Verde Esmeralda)
+    }
+
     Surface(
-        modifier = Modifier.width(95.dp).height(125.dp).clickable(enabled = !isMe) { onAvatarClick() },
-        color = if (user.isTransmitting) Color.Red.copy(0.1f) else Color.White.copy(0.05f),
+        modifier = Modifier.width(90.dp).height(115.dp).clickable(enabled = !isMe) { onAvatarClick() },
+        color = statusColor.copy(alpha = 0.08f),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, if (user.isTransmitting) Color.Red.copy(0.4f) else Color.White.copy(0.1f))
+        border = BorderStroke(1.dp, statusColor.copy(alpha = 0.35f))
     ) {
-        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            // 🛡️ FIX: Tamaño fijo para evitar "saltos" de línea al activar el pulse de transmisión
-            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+        Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
                 if (user.isTransmitting) {
-                    Box(Modifier.size(42.dp).scale(pulseScale).background(Color.Red.copy(0.2f), CircleShape))
+                    Box(Modifier.size(40.dp).scale(pulseScale).background(Color(0xFFEF4444).copy(0.25f), CircleShape))
                 }
-                Surface(modifier = Modifier.size(36.dp), shape = CircleShape, color = Color.Black) {
-                    Icon(Icons.Rounded.Person, null, tint = if (isMe) LuxeColors.Gold else Color.White, modifier = Modifier.padding(6.dp))
+                Surface(
+                    modifier = Modifier.size(36.dp),
+                    shape = CircleShape,
+                    color = Color.Black,
+                    border = BorderStroke(1.5.dp, statusColor)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Rounded.Person,
+                            contentDescription = null,
+                            tint = statusColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
+
+                // 🟢 Punto LED de estado "En Línea"
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .align(Alignment.BottomEnd)
+                        .background(statusColor, CircleShape)
+                        .border(1.5.dp, Color.Black, CircleShape)
+                )
             }
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = user.nick, 
                 color = Color.White, 
                 fontSize = 10.sp, 
                 fontWeight = FontWeight.Black, 
-                maxLines = 2,
+                maxLines = 1,
                 textAlign = TextAlign.Center,
-                lineHeight = 12.sp,
-                modifier = Modifier.padding(horizontal = 4.dp)
+                modifier = Modifier.padding(horizontal = 2.dp)
             )
+            Spacer(Modifier.height(2.dp))
             if (isMe) Text("(YO)", color = LuxeColors.Gold, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-            else Text("${(user.txPower * 10).toInt()}W", color = Color.White.copy(0.4f), fontSize = 9.sp)
+            else Text("${(user.txPower * 10).toInt()}W", color = Color.White.copy(0.5f), fontSize = 8.sp)
         }
     }
 }

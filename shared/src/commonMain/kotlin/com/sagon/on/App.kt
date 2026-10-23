@@ -108,6 +108,12 @@ fun App(
     var channelToDelete by remember { mutableStateOf<String?>(null) }
     var isAppReady by remember { mutableStateOf(true) }
     var nick by remember { mutableStateOf(savedNick) }
+    var radioState by remember { mutableStateOf(initialState) }
+    var localNotification by remember { mutableStateOf<AppNotification?>(null) }
+    var showPrivacy by remember { mutableStateOf(false) }
+    var showNotificationConsent by remember { mutableStateOf(false) }
+    var showBatteryWarning by remember { mutableStateOf(false) }
+    var showExitDialog by remember { mutableStateOf(false) }
 
     // 🛡️ CONEXIÓN ÚNICA: Solo conectar al iniciar o cambiar de Nick, no en cada recomposición
     LaunchedEffect(nick) {
@@ -117,8 +123,15 @@ fun App(
         }
     }
 
-    var radioState by remember { mutableStateOf(initialState) }
-    var localNotification by remember { mutableStateOf<AppNotification?>(null) }
+    // 🛡️ DETECCIÓN AUTOMÁTICA DE AHORRO DE BATERÍA AL ENTRAR EN LA RADIO
+    LaunchedEffect(screenState) {
+        if (screenState == Screen.RadioCB) {
+            delay(1500)
+            if (onBatteryCheckRequest()) {
+                showBatteryWarning = true
+            }
+        }
+    }
 
     // 🛡️ AUTO-DISMISS PARA NOTIFICACIONES LOCALES
     LaunchedEffect(localNotification) {
@@ -138,12 +151,6 @@ fun App(
             delay(60000)
         }
     }
-    
-
-    var showPrivacy by remember { mutableStateOf(false) }
-    var showNotificationConsent by remember { mutableStateOf(false) }
-    var showBatteryWarning by remember { mutableStateOf(false) }
-    var showExitDialog by remember { mutableStateOf(false) }
     
     var lastBackPressTime by remember { mutableStateOf(0L) }
     var pendingDialog by remember { mutableStateOf<RadioDialogType?>(null) }

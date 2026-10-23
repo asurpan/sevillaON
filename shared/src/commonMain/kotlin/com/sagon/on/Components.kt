@@ -99,15 +99,17 @@ fun UserCard(
         label = "Pulse"
     )
 
-    // 🟢 ESTADO VERDE ESMERALDA PARA EN LÍNEA / ROJO TRANSMITIENDO
-    val statusColor = if (user.isTransmitting) Color(0xFFEF4444) else Color(0xFF10B981)
-    val cardBorderColor = if (isMe) LuxeColors.Gold else statusColor
+    // 🔵 TU USUARIO EN AZUL CIAN / 🟢 DEMÁS USUARIOS EN VERDE ESMERALDA
+    val myBlueColor = Color(0xFF00E5FF) // Azul Cian Neón para ti
+    val otherGreenColor = Color(0xFF10B981) // Verde Esmeralda para los demás
+    
+    val baseColor = if (isMe) myBlueColor else otherGreenColor
 
     Surface(
         modifier = Modifier.width(90.dp).height(115.dp).clickable(enabled = !isMe) { onAvatarClick() },
-        color = statusColor.copy(alpha = 0.08f),
+        color = baseColor.copy(alpha = 0.08f),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, cardBorderColor.copy(alpha = 0.45f))
+        border = BorderStroke(1.dp, baseColor.copy(alpha = 0.45f))
     ) {
         Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
@@ -118,24 +120,24 @@ fun UserCard(
                     modifier = Modifier.size(36.dp),
                     shape = CircleShape,
                     color = Color.Black,
-                    border = BorderStroke(1.5.dp, statusColor)
+                    border = BorderStroke(1.5.dp, if (user.isTransmitting) Color(0xFFEF4444) else baseColor)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            Icons.Rounded.Person,
+                            imageVector = if (user.isTransmitting) Icons.Rounded.Mic else Icons.Rounded.Person,
                             contentDescription = null,
-                            tint = statusColor,
+                            tint = if (user.isTransmitting) Color(0xFFEF4444) else baseColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
-                // 🟢 Punto LED de estado "En Línea"
+                // 🔵/🟢 Punto LED de estado "En Línea" (Azul para ti, Verde para los demás)
                 Box(
                     modifier = Modifier
                         .size(10.dp)
                         .align(Alignment.BottomEnd)
-                        .background(statusColor, CircleShape)
+                        .background(baseColor, CircleShape)
                         .border(1.5.dp, Color.Black, CircleShape)
                 )
             }
@@ -150,7 +152,7 @@ fun UserCard(
                 modifier = Modifier.padding(horizontal = 2.dp)
             )
             Spacer(Modifier.height(2.dp))
-            if (isMe) Text("(YO)", color = LuxeColors.Gold, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+            if (isMe) Text("(YO)", color = myBlueColor, fontSize = 8.sp, fontWeight = FontWeight.Bold)
             else Text("${(user.txPower * 10).toInt()}W", color = Color.White.copy(0.5f), fontSize = 8.sp)
         }
     }

@@ -301,6 +301,25 @@ fun App(
                     )
                 }
 
+                if (showInstallPrompt) {
+                    AlertDialog(
+                        onDismissRequest = onInstallDismiss,
+                        containerColor = LuxeColors.DeepSea,
+                        modifier = Modifier.padding(16.dp).border(1.5.dp, LuxeColors.Gold.copy(0.5f), RoundedCornerShape(28.dp)),
+                        icon = { Icon(Icons.Rounded.Info, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
+                        title = { Text("APP OFICIAL GOOGLE PLAY", fontWeight = FontWeight.Black, fontSize = 18.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center) },
+                        text = {
+                            Text("Para hablar con la pantalla apagada, sin cortes de batería y con la máxima potencia de audio, descarga la App oficial en Google Play Store.", color = Color.White.copy(0.9f), textAlign = TextAlign.Center, fontSize = 13.sp)
+                        },
+                        confirmButton = {
+                            LuxeButton("ABRIR GOOGLE PLAY STORE", { onInstallConfirm() }, true, Modifier.fillMaxWidth().height(50.dp), LuxeColors.Gold, Color.Black)
+                        },
+                        dismissButton = {
+                            TextButton(onClick = onInstallDismiss) { Text("CONTINUAR EN WEB", color = Color.White.copy(0.5f)) }
+                        }
+                    )
+                }
+
                 Crossfade(
                     targetState = if (!isAppReady) null else screenState,
                     modifier = Modifier.fillMaxSize()

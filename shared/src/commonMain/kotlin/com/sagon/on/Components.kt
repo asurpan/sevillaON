@@ -99,18 +99,15 @@ fun UserCard(
         label = "Pulse"
     )
 
-    // 🟢 ESTADO VERDE EN LÍNEA / ROJO TRANSMITIENDO / DORADO YO
-    val statusColor = when {
-        user.isTransmitting -> Color(0xFFEF4444) // Rojo Transmitiendo
-        isMe -> LuxeColors.Gold // Yo (Dorado)
-        else -> Color(0xFF10B981) // Conectado en Línea (Verde Esmeralda)
-    }
+    // 🟢 ESTADO VERDE ESMERALDA PARA EN LÍNEA / ROJO TRANSMITIENDO
+    val statusColor = if (user.isTransmitting) Color(0xFFEF4444) else Color(0xFF10B981)
+    val cardBorderColor = if (isMe) LuxeColors.Gold else statusColor
 
     Surface(
         modifier = Modifier.width(90.dp).height(115.dp).clickable(enabled = !isMe) { onAvatarClick() },
         color = statusColor.copy(alpha = 0.08f),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, statusColor.copy(alpha = 0.35f))
+        border = BorderStroke(1.dp, cardBorderColor.copy(alpha = 0.45f))
     ) {
         Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {

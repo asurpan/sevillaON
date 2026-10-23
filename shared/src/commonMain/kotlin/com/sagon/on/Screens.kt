@@ -177,13 +177,71 @@ fun WelcomeScreen(
                         if (!hasAcceptedMic) onMicAccept(); onConnect(null) 
                     } 
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(54.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Gold),
                 shape = RoundedCornerShape(16.dp),
-                // 🛡️ REGLA: MÍNIMO 2 CARACTERES PARA EVITAR NOMBRES VACÍOS O DE UNA LETRA
                 enabled = nick.trim().length >= 2
             ) {
                 Text("ENTRAR EN LA RADIO", fontWeight = FontWeight.Black, letterSpacing = 1.5.sp, fontSize = 14.sp, color = Color.Black)
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            // 🛡️ DESTACADOS: RED DE MALLA DE EMERGENCIA, MODO OREJA Y RADIO CB
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Card 1: Radio CB
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color.White.copy(0.04f),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, Color.White.copy(0.08f))
+                ) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Radio, null, tint = LuxeColors.Gold, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("BANDA CIUDADANA Y RADIO SOCIAL", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            Text("Conecta en directo con gente de tu ciudad de forma abierta y transparente.", color = Color.White.copy(0.6f), fontSize = 10.sp)
+                        }
+                    }
+                }
+
+                // Card 2: Red de Malla P2P Emergencia
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color(0xFF00E5FF).copy(0.08f),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(0.35f))
+                ) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Router, null, tint = Color(0xFF00E5FF), modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("RED DE MALLA P2P EN EMERGENCIA", color = Color(0xFF00E5FF), fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            Text("Voz móvil a móvil sin 4G/Internet. Ideal para rutas de montaña, eventos masivos o situaciones de catástrofe.", color = Color.White.copy(0.85f), fontSize = 10.sp)
+                        }
+                    }
+                }
+
+                // Card 3: Modo Oreja
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color.White.copy(0.04f),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, Color.White.copy(0.08f))
+                ) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.HearingDisabled, null, tint = LuxeColors.Gold, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text("MODO OREJA Y DISCRETO", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            Text("Silencia altavoces y escucha avisos privados pegando el móvil a tu oreja.", color = Color.White.copy(0.6f), fontSize = 10.sp)
+                        }
+                    }
+                }
             }
             
             if (totalUsers > 0) {

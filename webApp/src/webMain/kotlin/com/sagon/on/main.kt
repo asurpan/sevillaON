@@ -190,11 +190,12 @@ fun main() {
                             val isCallActive = (win.app != null && win.app.activeCalls != null && win.app.activeCalls[k] != null)
                             if (now - (u.lastSeen as? Double ?: 0.0) > 45000 && !isCallActive) continue 
                             
-                            val audioIsTx = (win.remoteTxStates != null && win.remoteTxStates[k] == true)
-                            val isTransmitting = (u.tx == true || audioIsTx)
+                            val isMe = (k == win.app.sessionID)
+                            val audioIsTx = if (isMe) (win.app?.isTransmittingInternal == true) else (win.remoteTxStates != null && win.remoteTxStates[k] == true)
+                            val isTransmitting = if (isMe) (win.app?.isTransmittingInternal == true) else (u.tx == true || audioIsTx)
                             win.app.remotePowers[k] = (u.pwr as? Double ?: 0.7).toFloat()
                             val prevState = win.remoteTxStates[k] ?: false
-                            if (prevState && !isTransmitting && k != win.app.sessionID && u.roger == true) win.playUiSound("rx_off")
+                            if (prevState && !isTransmitting && !isMe && u.roger == true) win.playUiSound("rx_off")
                             win.remoteTxStates[k] = isTransmitting
                             var userNick = (u.nick as? String ?: "").trim().uppercase()
                             if (userNick.isEmpty()) userNick = k.split("_")[0].uppercase()

@@ -43,7 +43,7 @@ object RadioPersistence {
                 subtone = urlSubtone ?: (localStorage.getItem("lastSubtone") ?: "0000"),
                 voxSensitivity = localStorage.getItem("voxSens")?.toFloatOrNull() ?: 0.5f,
                 monitorVolume = initialMoniVol,
-                rfGain = localStorage.getItem("rfGain")?.toFloatOrNull() ?: 0.5f, 
+                rfGain = localStorage.getItem("rfGain")?.toFloatOrNull() ?: 0.85f, 
                 isRogerBeepEnabled = localStorage.getItem("roger")?.toBoolean() ?: true,
                 isVoxEnabled = localStorage.getItem("voxActive")?.toBoolean() ?: false,
                 isMonitorEnabled = localStorage.getItem("moniActive")?.toBoolean() ?: false,
@@ -53,7 +53,7 @@ object RadioPersistence {
                 isDspEnabled = localStorage.getItem("dspEnabled")?.toBoolean() ?: true,
                 activeProfile = profile,
                 isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
-                squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.55f,
+                squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.15f,
                 systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 0.7f
             )
         } catch(e: Exception) { RadioState() }

@@ -193,11 +193,13 @@ fun main() {
             }
         }
 
+        val voxPttState = remember { mutableStateOf(false) }
+
         RadioBridge.setupDispatchers(
             win = win,
             onMic = { micLevelState.value = it },
             onBeep = { },
-            onPttSync = { },
+            onPttSync = { active -> voxPttState.value = active },
             onPttBlocked = { },
             onReplayEmpty = { },
             onReplayStart = { },
@@ -341,7 +343,7 @@ fun main() {
             micLevel = micLevelState.value,
             isBeeping = false,
             isCodedRx = false,
-            externalPtt = false,
+            externalPtt = voxPttState.value,
             externalPttBlocked = false,
             replayProgress = 0f,
             isReplayReady = false,

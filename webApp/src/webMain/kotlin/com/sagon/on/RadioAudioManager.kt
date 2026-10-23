@@ -244,6 +244,10 @@ object RadioAudioManager {
                 if (!window.app.ctx) return; 
                 if (window.app.ctx.state !== 'running') window.app.ctx.resume();
 
+                // 🔴 NOTIFICAR A COMPOSE UI (VOX / PTT PANTALLA EN ROJO)
+                if (window.dispatch_ptt_sync) window.dispatch_ptt_sync(active);
+                if (window.dispatch_ptt_live) window.dispatch_ptt_live(active);
+
                 var now = window.app.ctx.currentTime;
                 var sessionRef = window.app.db ? window.app.db.ref("users/" + window.app.sessionID) : null;
 

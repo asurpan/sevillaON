@@ -620,7 +620,8 @@ fun RadioPanel(
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.Black,
                                                     letterSpacing = 1.sp,
-                                                    maxLines = 1
+                                                    maxLines = 1,
+                                                    modifier = Modifier.basicMarquee()
                                                 )
                                             }
                                         }

@@ -244,10 +244,6 @@ object RadioAudioManager {
                 if (!window.app.ctx) return; 
                 if (window.app.ctx.state !== 'running') window.app.ctx.resume();
 
-                // 🔴 NOTIFICAR A COMPOSE UI (VOX / PTT PANTALLA EN ROJO)
-                if (window.dispatch_ptt_sync) window.dispatch_ptt_sync(active);
-                if (window.dispatch_ptt_live) window.dispatch_ptt_live(active);
-
                 var now = window.app.ctx.currentTime;
                 var sessionRef = window.app.db ? window.app.db.ref("users/" + window.app.sessionID) : null;
 
@@ -259,6 +255,10 @@ object RadioAudioManager {
                     window.app.pttStateInternal = true; 
                     window.app.isTransmittingInternal = true; 
                     window.app.isBeeping = false;
+
+                    // 🔴 NOTIFICAR A COMPOSE UI (PANTALLA Y BOTÓN EN ROJO "AIRE")
+                    if (window.dispatch_ptt_sync) window.dispatch_ptt_sync(true);
+                    if (window.dispatch_ptt_live) window.dispatch_ptt_live(true);
 
                     if (sessionRef) sessionRef.update({ tx: true, pwr: power || 0.7 });
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
@@ -275,7 +275,7 @@ object RadioAudioManager {
 
                     if (shouldPlayRoger && window.app.ctx) {
                         window.app.isBeeping = true;
-                        window.app.isTransmittingInternal = true; // MANTENER PORTADORA ACTIVA DURANTE EL BEEP
+                        window.app.isTransmittingInternal = true; // MANTENER PORTADORA Y PANTALLA EN ROJO DURANTE EL BEEP
 
                         // 2. Generar el Roger Beep y transmitirlo TANTO al altavoz local COMO por aire (txBus)
                         var beepOsc = window.app.ctx.createOscillator();
@@ -294,23 +294,32 @@ object RadioAudioManager {
                         beepOsc.start(now);
                         beepOsc.stop(now + 0.30);
 
-                        // 3. APAGAR LA PORTADORA SOLO CUANDO HAYA TERMINADO EL ROGER BEEP
+                        // 3. APAGAR LA PORTADORA EN PANTALLA Y EN FIREBASE TRAS EL BEEP + COLA DE PORTADORA (550 ms)
                         if (window.app.rogerReleaseTimeout) clearTimeout(window.app.rogerReleaseTimeout);
                         window.app.rogerReleaseTimeout = setTimeout(function() {
                             window.app.isTransmittingInternal = false;
                             window.app.isBeeping = false;
+
+                            // 🟢 NOTIFICAR A COMPOSE UI QUE TERMINÓ EL BEEP Y LA COLA DE PORTADORA
+                            if (window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
+                            if (window.dispatch_ptt_live) window.dispatch_ptt_live(false);
+
                             if (sessionRef) sessionRef.update({ tx: false });
 
                             var endNow = window.app.ctx ? window.app.ctx.currentTime : now;
                             if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.15);
                             if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.15);
                             if (window.updateMoniGain) window.updateMoniGain();
-                        }, 350);
+                        }, 550);
 
                     } else {
                         // Cierre inmediato sin Roger Beep
                         window.app.isTransmittingInternal = false;
                         window.app.isBeeping = false;
+
+                        if (window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
+                        if (window.dispatch_ptt_live) window.dispatch_ptt_live(false);
+
                         if (sessionRef) sessionRef.update({ tx: false });
 
                         if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, now, 0.15);

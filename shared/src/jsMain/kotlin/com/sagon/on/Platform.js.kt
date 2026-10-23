@@ -126,6 +126,17 @@ actual fun tryOpenNativeApp() {
     // 🛡️ REGLA: Si es Android y no está dentro de la App Nativa, redirigir a la App / Google Play
     if (!userAgent.contains("ONAIRSPAINNATIVE") && userAgent.contains("ANDROID") && !currentUrl.contains("forceWeb=true")) {
         try {
+            // Desconectar sesión web para evitar duplicados cuando la app nativa se abra
+            if (win.app != null) {
+                if (win.app.db != null && win.app.sessionID != null) {
+                    try { win.app.db.ref("users/" + win.app.sessionID).remove(); } catch(e: dynamic) {}
+                    try { win.app.db.goOffline(); } catch(e: dynamic) {}
+                }
+                if (win.app.peer != null) {
+                    try { win.app.peer.destroy(); } catch(e: dynamic) {}
+                }
+            }
+
             val playStoreUrl = "https://play.google.com/store/apps/details?id=com.sagon.on&pcampaignid=web_share"
             val search = win.location.search.toString()
             val intentUrl = "intent://open" + search + "#Intent;scheme=onairspain;package=com.sagon.on;S.browser_fallback_url=" + win.encodeURIComponent(playStoreUrl) + ";end"

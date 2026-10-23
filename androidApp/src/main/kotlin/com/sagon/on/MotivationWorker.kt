@@ -26,10 +26,12 @@ class MotivationWorker(context: Context, workerParams: WorkerParameters) : Worke
         val lastUsage = prefs.getLong("last_usage_ts", 0L)
         val now = System.currentTimeMillis()
 
-        // Regla de los 15 días (15 días en ms = 15 * 24 * 60 * 60 * 1000)
-        val fifteenDaysMs = 15L * 24 * 60 * 60 * 1000
+        // Recordatorio de 24 horas de inactividad
+        val oneDayMs = 24L * 60 * 60 * 1000
         
-        if (now - lastUsage >= fifteenDaysMs) {
+        // 🛡️ REGLA DE CORTESÍA: Solo enviar en horario diurno (10:00 a 21:00) para no molestar ni ser pesado
+        val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        if (now - lastUsage >= oneDayMs && currentHour in 10..21) {
             sendMotivationNotification()
         }
 
@@ -43,20 +45,22 @@ class MotivationWorker(context: Context, workerParams: WorkerParameters) : Worke
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Mensajes de Ánimo",
+                "Recordatorios de Ciudad",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Recordatorios amistosos para volver a la red"
+                description = "Recordatorios para explorar tu ciudad y modular con compañeros"
             }
             notificationManager.createNotificationChannel(channel)
         }
 
         val messages = listOf(
-            "¡Estación! Se echa de menos tu voz en la frecuencia. ¿Modulamos un rato? 🎙️",
-            "La red ON AIR SPAIN no es lo mismo sin ti. ¡Entra y saluda a los compañeros!",
-            "¡Buena ruta! Recuerda que la mejor compañía es una voz amiga. Te esperamos en la radio.",
-            "¿Hace cuánto que no reportas en tu ciudad? Tus compañeros están al aire. 📻",
-            "¡Ánimo con la jornada! Pásate por la terminal y comparte un momento con la comunidad."
+            "🌆 ¡Tu ciudad te espera en 3D! Entra a la radio y vuela por la ciudad en vivo. 📻",
+            "👂 MODO OREJA: ¿Estás en público? El Modo Oreja silencia el altavoz y te avisa con un tono discreto cuando te hablen.",
+            "🚀 ¿Hace cuánto no sobrevuelas tu ciudad? Entra a ON AIR SPAIN y modula con los compañeros.",
+            "🎧 MODO OREJA: Te permite estar atento a la emisora en privado pegando el móvil a tu oreja sin molestar a nadie.",
+            "🎙️ ¡Estación! Explora el mapa en vivo de tu ciudad y saluda a los operadores conectados.",
+            "📻 ¡Se echa de menos tu voz en la frecuencia! Entra a la ciudad y comparte ruta con la comunidad.",
+            "🏙️ Tienes estaciones activas en tu zona. ¡Abre la app, activa el Modo Oreja en público y sobrevuela la ciudad!"
         )
         val randomMessage = messages.random()
 
@@ -86,11 +90,10 @@ class MotivationWorker(context: Context, workerParams: WorkerParameters) : Worke
 
     companion object {
         fun schedule(context: Context) {
-            // Actualizar marca de tiempo de uso cada vez que se programa
             val prefs = context.getSharedPreferences("on_air_prefs", Context.MODE_PRIVATE)
             prefs.edit().putLong("last_usage_ts", System.currentTimeMillis()).apply()
 
-            val workRequest = PeriodicWorkRequestBuilder<MotivationWorker>(15, TimeUnit.DAYS)
+            val workRequest = PeriodicWorkRequestBuilder<MotivationWorker>(2, TimeUnit.DAYS)
                 .setConstraints(Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
                     .build())

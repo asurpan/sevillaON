@@ -69,3 +69,21 @@ self.addEventListener('fetch', (event) => {
         })
     );
 });
+
+/* --- 🔔 MANEJO DE CLIC EN NOTIFICACIONES DE NAVEGADOR --- */
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            for (let i = 0; i < clientList.length; i++) {
+                let client = clientList[i];
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow('./');
+            }
+        })
+    );
+});

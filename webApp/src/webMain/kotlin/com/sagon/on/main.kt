@@ -187,8 +187,11 @@ fun main() {
                             val u = users[k] ?: continue
                             val userCityBase = (u.city as? String ?: "").split("-")[0]
                             if (k != win.app.sessionID && myCityBase != userCityBase) continue
-                            if (now - (u.lastSeen as? Double ?: 0.0) > 30000) continue 
-                            val isTransmitting = u.tx == true
+                            val isCallActive = (win.app != null && win.app.activeCalls != null && win.app.activeCalls[k] != null)
+                            if (now - (u.lastSeen as? Double ?: 0.0) > 45000 && !isCallActive) continue 
+                            
+                            val audioIsTx = (win.remoteTxStates != null && win.remoteTxStates[k] == true)
+                            val isTransmitting = (u.tx == true || audioIsTx)
                             win.app.remotePowers[k] = (u.pwr as? Double ?: 0.7).toFloat()
                             val prevState = win.remoteTxStates[k] ?: false
                             if (prevState && !isTransmitting && k != win.app.sessionID && u.roger == true) win.playUiSound("rx_off")
@@ -196,7 +199,13 @@ fun main() {
                             var userNick = (u.nick as? String ?: "").trim().uppercase()
                             if (userNick.isEmpty()) userNick = k.split("_")[0].uppercase()
                             if (k != win.app.sessionID && !usersNotified.contains(k)) {
-                                usersNotified.add(k); win.playUiSound(if (radioState.value.friends.contains(userNick)) "incoming" else "user_in")
+                                usersNotified.add(k)
+                                val isFriend = radioState.value.friends.contains(userNick)
+                                win.playUiSound(if (isFriend) "incoming" else "user_in")
+                                if (isFriend) {
+                                    val userCityName = (u.city as? String ?: "tu ciudad").split("-")[0]
+                                    showSystemNotification("📻 ¡TU AMIGO SE HA CONECTADO!", "¡$userNick ha entrado en la radio de $userCityName!")
+                                }
                             }
                             list.add(RemoteUser(id = k, nick = userNick, isTransmitting = isTransmitting, city = u.city as? String ?: "SEVILLA", channel = u.channel as? String ?: "SEVILLA", txPower = (u.pwr as? Double ?: 0.7).toFloat(), isFriend = radioState.value.friends.contains(userNick), roger = (u.roger == true)))
                         }
@@ -246,7 +255,16 @@ fun main() {
             onPublicChatRequest = { },
             onStateSave = { newState -> 
                 RadioPersistence.saveState(newState); radioState.value = newState
-                if(win.app != null) { win.app.voxActive = newState.isVoxEnabled; win.app.voxSens = newState.voxSensitivity; win.app.rogerEnabled = newState.isRogerBeepEnabled; win.app.discreteMode = newState.isDiscreteModeEnabled; localStorage.setItem("roger", newState.isRogerBeepEnabled.toString()); }
+                if(win.app != null) { 
+                    win.app.voxActive = newState.isVoxEnabled
+                    win.app.voxSens = newState.voxSensitivity
+                    win.app.rogerEnabled = newState.isRogerBeepEnabled
+                    win.app.discreteMode = newState.isDiscreteModeEnabled
+                    localStorage.setItem("roger", newState.isRogerBeepEnabled.toString())
+                }
+                if (win.updateDspSettings != null) {
+                    win.updateDspSettings(newState.isDspEnabled, newState.dspLevel)
+                }
             },
             onConnectRadio = { RadioNetworkManager.connect(it) },
             onDiagRequest = { RadioDiagData() },
@@ -258,8 +276,18 @@ fun main() {
             onBlockUser = { },
             onNotificationDismiss = { },
             onReplayRequest = { RadioAudioManager.playReplay() },
-            onBatteryCheckRequest = { false },
-            onIgnoreBatteryOptimizations = { },
+            onBatteryCheckRequest = {
+                val win: dynamic = window
+                if (win.AndroidApp != null && win.AndroidApp.isBatteryOptimized != null) {
+                    win.AndroidApp.isBatteryOptimized() as Boolean
+                } else false
+            },
+            onIgnoreBatteryOptimizations = {
+                val win: dynamic = window
+                if (win.AndroidApp != null && win.AndroidApp.requestIgnoreBatteryOptimizations != null) {
+                    win.AndroidApp.requestIgnoreBatteryOptimizations()
+                }
+            },
             onGpsRequest = { it(null) },
             onGpsCityRequest = { it(null) },
             onPlaySound = { if (win.playUiSound != null) win.playUiSound(it) },
@@ -289,7 +317,26 @@ fun main() {
             voxActive = radioState.value.isVoxEnabled,
             onExternalExitRequest = { _, _ -> if (win.AndroidApp != null && win.AndroidApp.minimizeApp != null) win.AndroidApp.minimizeApp() },
             externalShowExitConfirm = false,
-            onShareRequest = { _, _, _, _, _, _ -> },
+            onShareRequest = { city, channel, subtone, proRole, platform, _ ->
+                val win: dynamic = window
+                if (win.AndroidApp != null && win.AndroidApp.share != null) {
+                    win.AndroidApp.share(city, channel, subtone, proRole)
+                } else {
+                    val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + (if (!subtone.isNullOrEmpty()) "&subtone=" + subtone else "")
+                    val shareText = "📻 Únete a mi canal $channel ($city) en ON AIR SPAIN: $url"
+                    val nav = win.navigator
+                    if (nav != null && nav.share != null) {
+                        val shareData = js("{}")
+                        shareData.title = "ON AIR SPAIN"
+                        shareData.text = shareText
+                        shareData.url = url
+                        nav.share(shareData)
+                    } else if (nav != null && nav.clipboard != null) {
+                        nav.clipboard.writeText(shareText)
+                        if (win.playUiSound != null) win.playUiSound("incoming")
+                    }
+                }
+            },
             onSubtoneChange = { }
         )
     }

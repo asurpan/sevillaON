@@ -139,13 +139,7 @@ fun App(
         }
     }
     
-    val isWebPlatform = remember {
-        val name = getPlatform().name.uppercase()
-        name.contains("CHROME") || name.contains("SAFARI") || 
-        name.contains("FIREFOX") || name.contains("EDGE") ||
-        name.contains("WEB") || name.contains("UNKNOWN")
-    }
-    
+
     var showPrivacy by remember { mutableStateOf(false) }
     var showNotificationConsent by remember { mutableStateOf(false) }
     var showBatteryWarning by remember { mutableStateOf(false) }
@@ -281,11 +275,11 @@ fun App(
                         onAccept = {
                             showNotificationConsent = false
                             onNotificationPermissionRequest()
-                            if (!isWebPlatform && onBatteryCheckRequest()) showBatteryWarning = true
+                            if (onBatteryCheckRequest()) showBatteryWarning = true
                         },
                         onDismiss = { 
                             showNotificationConsent = false
-                            if (!isWebPlatform && onBatteryCheckRequest()) showBatteryWarning = true
+                            if (onBatteryCheckRequest()) showBatteryWarning = true
                         }
                     )
                 }

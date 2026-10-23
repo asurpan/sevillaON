@@ -76,7 +76,7 @@ fun LoadingScreen(isNightMode: Boolean = false) {
             }
             Spacer(Modifier.height(32.dp))
             Text(
-                "CALIBRANDO FRECUENCIA...",
+                "CONECTANDO CON TU CIUDAD EN DIRECTO...",
                 color = LuxeColors.Gold,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Black,
@@ -326,7 +326,6 @@ fun RadioPanel(
                             border = BorderStroke(1.dp, if (isReplayReady || isPlaying) LuxeColors.Gold.copy(alpha = brightnessFactor) else Color.White.copy(0.1f)), 
                             modifier = Modifier.size(32.dp).drawBehind {
                                 if (isReplayReady || isPlaying) {
-                                    // 🛡️ EFECTO RESPLANDOR (GLOW) DINÁMICO
                                     drawCircle(
                                         color = LuxeColors.Gold.copy(alpha = 0.2f * brightnessFactor),
                                         radius = size.maxDimension * 0.5f,
@@ -354,14 +353,13 @@ fun RadioPanel(
 
                 Spacer(Modifier.height(20.dp))
 
-                // 📺 PANTALLA NEXUS: BORDES FUNDIDOS Y DISEÑO ÉLITE
+                // 📺 PANTALLA NEXUS
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(160.dp)
                         .clip(RoundedCornerShape(22.dp))
                         .drawBehind {
-                            // 🛡️ EFECTO RESPLANDOR EXTERIOR (SOFT GLOW FUNDIDO)
                             drawRoundRect(
                                 color = LuxeColors.Gold.copy(alpha = 0.08f),
                                 size = size,
@@ -479,7 +477,7 @@ fun RadioPanel(
                                         modifier = Modifier.size(buttonSize),
                                         shape = CircleShape,
                                         color = if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.05f),
-                                        border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.05f) else Color.White.copy(0.1f))
+                                        border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.1f))
                                     ) {
                                         Box(
                                             modifier = Modifier.fillMaxSize().combinedClickable(
@@ -523,8 +521,8 @@ fun RadioPanel(
                                             horizontalArrangement = Arrangement.Center,
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(18.dp)) {
-                                                Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold.copy(0.8f), modifier = Modifier.size(11.dp).graphicsLayer { alpha = blinkAlpha.value })
+                                            IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(32.dp)) {
+                                                Icon(Icons.Rounded.Share, "Compartir Canal", tint = LuxeColors.Gold, modifier = Modifier.size(18.dp).graphicsLayer { alpha = blinkAlpha.value })
                                             }
                                             Spacer(Modifier.width(4.dp))
                                             Text(
@@ -543,7 +541,7 @@ fun RadioPanel(
                                         modifier = Modifier.size(buttonSize),
                                         shape = CircleShape,
                                         color = if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.05f),
-                                        border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.05f) else Color.White.copy(0.1f))
+                                        border = BorderStroke(1.dp, if (state.isInterfaceLocked) Color.White.copy(0.02f) else Color.White.copy(0.1f))
                                     ) {
                                         Box(
                                             modifier = Modifier.fillMaxSize().combinedClickable(
@@ -618,10 +616,10 @@ fun RadioPanel(
 
                 Spacer(Modifier.height(12.dp))
 
-                // Herramientas (Minimizadas por defecto)
+                // Funciones Avanzadas (Minimizadas por defecto)
                 var showTools by remember { mutableStateOf(false) }
                 Row(modifier = Modifier.fillMaxWidth().clickable { showTools = !showTools }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                    Text("HERRAMIENTAS TÁCTICAS", color = LuxeColors.Gold.copy(0.5f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Text("FUNCIONES AVANZADAS", color = LuxeColors.Gold.copy(0.5f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                     Icon(if (showTools) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = LuxeColors.Gold.copy(0.5f), modifier = Modifier.size(16.dp))
                 }
 
@@ -637,8 +635,8 @@ fun RadioPanel(
 
                 Spacer(Modifier.height(16.dp))
                 
-                // Lista de Operadores
-                Text("OPERADORES EN ZONA", color = Color.White.copy(0.3f), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth())
+                // Lista de Usuarios en Línea
+                Text("USUARIOS EN LÍNEA", color = Color.White.copy(0.3f), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth())
                 LazyRow(modifier = Modifier.fillMaxWidth().height(100.dp), contentPadding = PaddingValues(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(users.filter { 
                         it.city.split("-")[0] == state.city.split("-")[0]

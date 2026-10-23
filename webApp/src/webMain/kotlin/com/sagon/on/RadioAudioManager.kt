@@ -61,10 +61,57 @@ object RadioAudioManager {
                     window.app.filter.type = "bandpass"; 
                     window.app.filter.frequency.value = 1500; 
                     window.app.filter.Q.value = 1.2; 
-                    
-                    window.app.filter.connect(window.app.masterRxGain);
+
+                    // --- 🎛️ FILTRO DE PRESENCIA DSP DE VOZ ---
+                    window.app.dspPresence = window.app.ctx.createBiquadFilter();
+                    window.app.dspPresence.type = "peaking";
+                    window.app.dspPresence.frequency.value = 2500;
+                    window.app.dspPresence.Q.value = 1.0;
+                    window.app.dspPresence.gain.value = 6.0; 
+
+                    window.app.filter.connect(window.app.dspPresence);
+                    window.app.dspPresence.connect(window.app.masterRxGain);
                     window.app.masterRxGain.connect(window.app.mainCompressor);
                     window.app.mainCompressor.connect(window.app.masterOut);
+
+                    window.updateDspSettings = function(enabled, level) {
+                        if (!window.app || !window.app.ctx) return;
+                        var now = window.app.ctx.currentTime;
+                        var lvl = (level !== undefined) ? level : 0.5;
+
+                        window.app.dspEnabled = enabled;
+                        window.app.dspLevel = lvl;
+
+                        if (window.app.filter) {
+                            if (enabled) {
+                                window.app.filter.type = "bandpass";
+                                window.app.filter.frequency.setTargetAtTime(1200 + (lvl * 1000), now, 0.05);
+                                window.app.filter.Q.setTargetAtTime(0.8 + (lvl * 1.2), now, 0.05);
+                            } else {
+                                window.app.filter.type = "allpass";
+                            }
+                        }
+
+                        if (window.app.dspPresence) {
+                            if (enabled) {
+                                window.app.dspPresence.type = "peaking";
+                                window.app.dspPresence.frequency.setTargetAtTime(2500, now, 0.05);
+                                window.app.dspPresence.gain.setTargetAtTime(3.0 + (lvl * 9.0), now, 0.05);
+                            } else {
+                                window.app.dspPresence.gain.setTargetAtTime(0, now, 0.05);
+                            }
+                        }
+
+                        if (window.app.mainCompressor) {
+                            if (enabled) {
+                                window.app.mainCompressor.threshold.setTargetAtTime(-18 - (lvl * 12), now, 0.05);
+                                window.app.mainCompressor.ratio.setTargetAtTime(8 + (lvl * 8), now, 0.05);
+                            } else {
+                                window.app.mainCompressor.threshold.setTargetAtTime(0, now, 0.05);
+                                window.app.mainCompressor.ratio.setTargetAtTime(1, now, 0.05);
+                            }
+                        }
+                    };
                     
                     console.log("🔊 Nodos de Audio Conectados v8.5");
                     
@@ -295,6 +342,8 @@ object RadioAudioManager {
                     source.connect(analyser); 
                     source.connect(gainNode);
                     if (window.app.masterRxGain) gainNode.connect(window.app.masterRxGain);
+                    // 🛡️ REPLAY RECORDING: Conectar audio remoto al bus de grabación para Replay
+                    if (window.app.masterRecordBus) gainNode.connect(window.app.masterRecordBus);
                     
                     var dummy = window.app.ctx.createGain();
                     dummy.gain.value = 0.0001; 
@@ -325,6 +374,8 @@ object RadioAudioManager {
                 });
             };
 
+            window.app.discreteBeepPlayed = {};
+
             function updateRemotePriorities() {
                 if(!window.app || !window.app.ctx) return;
                 
@@ -344,7 +395,6 @@ object RadioAudioManager {
                     else if (window.app.currentNoiseTarget > 0 && !window.app.pttStateInternal && !window.app.isBeeping) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, now, 0.2);
                 }
 
-                // Asegurar que el masterRxGain está alto cuando no estamos transmitiendo
                 if (window.app.masterRxGain && !window.app.pttStateInternal && !window.app.isBeeping) {
                     if (window.app.masterRxGain.gain.value < 1.0) {
                         window.app.masterRxGain.gain.setTargetAtTime(3.5, window.app.ctx.currentTime, 0.1);
@@ -364,12 +414,41 @@ object RadioAudioManager {
                     var ana = window.app.remoteAnalysers[id];
                     if(!gain || !source || !ana) return;
 
-                    // Asegurar ganancia limpia (1.0) para todos los usuarios remotos para que se escuchen perfectamente
-                    var isTx = window.remoteTxStates && window.remoteTxStates[id] === true;
-                    gain.gain.setTargetAtTime(isTx ? 1.2 : 1.0, window.app.ctx.currentTime, 0.05);
+                    // 🎙️ DETECCIÓN DUAL: Medir energía real de audio en el canal WebRTC
+                    var audioVol = 0;
+                    if (ana) {
+                        var buf = new Uint8Array(ana.fftSize);
+                        ana.getByteTimeDomainData(buf);
+                        var maxDev = 0;
+                        for (var i = 0; i < buf.length; i++) {
+                            var dev = Math.abs(buf[i] - 128);
+                            if (dev > maxDev) maxDev = dev;
+                        }
+                        audioVol = maxDev / 128.0;
+                    }
+
+                    var hasVoiceAudio = (audioVol > 0.06);
+                    var firebaseTx = (window.remoteTxStates && window.remoteTxStates[id] === true);
+
+                    // Si hay voz en la llamada WebRTC O Firebase marca tx, la portadora DEBE encenderse
+                    var isTx = firebaseTx || hasVoiceAudio;
+                    window.remoteTxStates[id] = isTx;
+
+                    if (window.app.discreteMode) {
+                        // 👂 MODO OREJA / DISCRETO: Muto voz por altavoz y aviso con un beep
+                        gain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
+                        if (isTx && !window.app.discreteBeepPlayed[id]) {
+                            window.app.discreteBeepPlayed[id] = true;
+                            if (window.playUiSound) window.playUiSound("incoming");
+                        } else if (!isTx) {
+                            window.app.discreteBeepPlayed[id] = false;
+                        }
+                    } else {
+                        window.app.discreteBeepPlayed[id] = false;
+                        gain.gain.setTargetAtTime(isTx ? 1.2 : 1.0, window.app.ctx.currentTime, 0.05);
+                    }
                 });
             }
-            setInterval(updateRemotePriorities, 100);
             setInterval(updateRemotePriorities, 100);
 
             window.ensureMicAccess = function() {

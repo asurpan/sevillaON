@@ -374,13 +374,13 @@ fun RadioDialogs(
             titleContentColor = LuxeColors.Gold,
             modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
             icon = { Icon(if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
-            title = { Text("MODO DISCRETO", fontWeight = FontWeight.Black) },
+            title = { Text("MODO OREJA (DISCRETO)", fontWeight = FontWeight.Black) },
             text = {
                 Column {
                     Text(
-                        "Para tu privacidad, cuando este modo está activo, la radio no emitirá voces automáticamente si tienes la pantalla apagada.",
+                        "Al activar el Modo Oreja, las voces no sonarán en alto por el altavoz del teléfono. Recibirás un aviso con un tono discreto cuando alguien te hable para que puedas escuchar la voz en privado pegándote el móvil a la oreja.",
                         fontSize = 13.sp,
-                        color = Color.White.copy(0.7f),
+                        color = Color.White.copy(0.85f),
                         textAlign = TextAlign.Center
                     )
                     Spacer(Modifier.height(24.dp))

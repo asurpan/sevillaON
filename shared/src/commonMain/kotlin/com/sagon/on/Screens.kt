@@ -312,8 +312,12 @@ fun RadioPanel(
                 // Header Compacto
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     IconButton(onClick = onExit, modifier = Modifier.size(32.dp)) { Icon(Icons.Rounded.PowerSettingsNew, null, tint = Color.Red.copy(0.8f), modifier = Modifier.size(20.dp)) }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(nick, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.clickable { onPendingDialogChange(RadioDialogType.SELECT_NICK, null) }
+                    ) {
+                        Text("INDICATIVO", color = LuxeColors.Gold.copy(0.6f), fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+                        Text(if (nick.isNotBlank()) nick else "RADIO", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val isPlaying = replayProgress > 0f

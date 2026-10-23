@@ -897,9 +897,14 @@ fun RadioDialogs(
             title = { Text("NIVEL DE SQUELCH", fontWeight = FontWeight.Black, color = LuxeColors.Gold) },
             text = {
                 Column {
-                    Text("Filtra el ruido de fondo. A mayor nivel, más limpia la señal pero menos sensibilidad.", fontSize = 12.sp, color = Color.White.copy(0.6f))
+                    Text("Filtra el ruido de fondo. Al subirlo al máximo, silenciarás las estaciones lejanas que transmitan con señal débil.", fontSize = 12.sp, color = Color.White.copy(0.7f))
                     Spacer(Modifier.height(24.dp))
-                    EliteSlider("SQUELCH", state.squelch) { onStateChange(state.copy(squelch = it)) }
+                    EliteSlider("SQUELCH", state.squelch) { newVal ->
+                        onStateChange(state.copy(squelch = newVal))
+                        if (newVal >= 0.85f) {
+                            onNotification(AppNotification("SQUELCH AL MÁXIMO (100%)", "LAS ESTACIONES LEJANAS CON SEÑAL DÉBIL SERÁN SILENCIADAS POR EL SQUELCH.", NotificationType.Warning))
+                        }
+                    }
                 }
             },
             confirmButton = { LuxeButton("ACEPTAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp)) }

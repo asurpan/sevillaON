@@ -441,10 +441,15 @@ object RadioAudioManager {
                     var isTx = firebaseTx || hasVoiceAudio;
                     window.remoteTxStates[id] = isTx;
 
-                    if (window.app.discreteMode) {
-                        // 👂 MODO OREJA / DISCRETO: Muto voz por altavoz y aviso con un beep
+                    // 🎛️ UMBRAL DE SQUELCH REAL: Si el Squelch local está alto, bloquea señales débiles/lejanas
+                    var localSquelch = (window.app.squelch !== undefined) ? window.app.squelch : 0.15;
+                    var remotePower = (window.app.remotePowers && window.app.remotePowers[id]) ? window.app.remotePowers[id] : 0.7;
+                    var isBlockedBySquelch = (localSquelch > 0.50 && remotePower < (localSquelch * 0.85));
+
+                    if (window.app.discreteMode || (isTx && isBlockedBySquelch)) {
+                        // 👂 MODO DISCRETO O SQUELCH A TOPE BLOQUEANDO SEÑAL DÉBIL
                         gain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
-                        if (isTx && !window.app.discreteBeepPlayed[id]) {
+                        if (isTx && window.app.discreteMode && !window.app.discreteBeepPlayed[id]) {
                             window.app.discreteBeepPlayed[id] = true;
                             if (window.playUiSound) window.playUiSound("incoming");
                         } else if (!isTx) {

@@ -595,23 +595,34 @@ fun RadioPanel(
                                             fontWeight = FontWeight.Black,
                                             modifier = Modifier.clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
                                         )
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically, 
-                                            horizontalArrangement = Arrangement.Center,
-                                            modifier = Modifier.fillMaxWidth()
+                                        Spacer(Modifier.height(2.dp))
+                                        Surface(
+                                            color = Color(0xFF00E5FF).copy(alpha = 0.12f),
+                                            shape = RoundedCornerShape(10.dp),
+                                            border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(alpha = 0.35f)),
+                                            modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { onShare(state.channel, state.subtone, null, null) }
                                         ) {
-                                            IconButton(onClick = { onShare(state.channel, state.subtone, null, null) }, modifier = Modifier.size(32.dp)) {
-                                                Icon(Icons.Rounded.Share, "Compartir Canal", tint = LuxeColors.Gold, modifier = Modifier.size(18.dp).graphicsLayer { alpha = blinkAlpha.value })
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Share,
+                                                    contentDescription = "Compartir Canal",
+                                                    tint = Color(0xFF00E5FF),
+                                                    modifier = Modifier.size(18.dp).graphicsLayer { alpha = blinkAlpha.value }
+                                                )
+                                                Spacer(Modifier.width(6.dp))
+                                                Text(
+                                                    text = state.city.split("-")[0],
+                                                    color = Color.White,
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Black,
+                                                    letterSpacing = 1.sp,
+                                                    maxLines = 1
+                                                )
                                             }
-                                            Spacer(Modifier.width(4.dp))
-                                            Text(
-                                                text = state.city.split("-")[0], 
-                                                color = Color.White.copy(0.6f), 
-                                                fontSize = 9.sp, 
-                                                fontWeight = FontWeight.Bold, 
-                                                maxLines = 1, 
-                                                modifier = Modifier.basicMarquee()
-                                            )
                                         }
                                     }
 

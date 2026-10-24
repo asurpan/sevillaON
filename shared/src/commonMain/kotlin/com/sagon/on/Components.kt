@@ -204,52 +204,54 @@ fun LuxeButton(
 
 @Composable
 fun OnboardingDialog(onDismiss: () -> Unit) {
-    var step by remember { mutableStateOf(1) }
-    val totalSteps = 4
-
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = LuxeColors.DeepSea,
-        modifier = Modifier.padding(16.dp).border(1.dp, LuxeColors.Gold.copy(0.3f), RoundedCornerShape(24.dp)),
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.SettingsInputAntenna, null, tint = LuxeColors.Gold, modifier = Modifier.size(32.dp))
-                Spacer(Modifier.width(12.dp))
-                Text("BIENVENIDO A ON AIR", fontWeight = FontWeight.Black, fontSize = 18.sp, color = Color.White)
-            }
-        },
+        modifier = Modifier.padding(16.dp).border(1.5.dp, Color(0xFF00E5FF).copy(0.5f), RoundedCornerShape(28.dp)),
+        icon = { Icon(Icons.Rounded.Radio, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
+        title = { Text("BIENVENIDO A ON AIR SPAIN", fontWeight = FontWeight.Black, fontSize = 18.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center) },
         text = {
-            Column(Modifier.fillMaxWidth().height(180.dp)) {
-                Crossfade(targetState = step) { currentStep ->
-                    Column {
-                        when(currentStep) {
-                            1 -> {
-                                Text("📻 RADIO CB NACIONAL", fontWeight = FontWeight.Black, color = LuxeColors.Gold)
-                                Text("Estás ante una emisora de Banda Ciudadana real. Sintoniza tu ciudad y habla en directo con otros operadores de toda España.", fontSize = 13.sp, color = Color.White.copy(0.8f), modifier = Modifier.padding(top = 8.dp))
-                            }
-                            2 -> {
-                                Text("🌀 QRM Y SEÑALES REALES", fontWeight = FontWeight.Black, color = LuxeColors.Gold)
-                                Text("Siente el 'viento' de la radio con el QRM vivo. Los LEDs marcan la portadora real y la potencia de tus compañeros.", fontSize = 13.sp, color = Color.White.copy(0.8f), modifier = Modifier.padding(top = 8.dp))
-                            }
-                            3 -> {
-                                Text("⚡ SISTEMA INTELIGENTE Y EFICIENTE", fontWeight = FontWeight.Black, color = LuxeColors.Gold)
-                                Text("Si una sala se llena (máx. 6 estaciones), el sistema escala a sub-canales (-2, -3) automáticamente. Esta tecnología Full-Mesh optimizada evita el calor y protege tu batería.", fontSize = 13.sp, color = Color.White.copy(0.8f), modifier = Modifier.padding(top = 8.dp))
-                            }
-                            4 -> {
-                                Text("🔋 OPTIMIZACIÓN MÓVIL", fontWeight = FontWeight.Black, color = LuxeColors.Gold)
-                                Text("Para un manos libres perfecto en coche o moto, desactiva las restricciones de batería del móvil. ¡Disfruta de la ruta!", fontSize = 13.sp, color = Color.White.copy(0.8f), modifier = Modifier.padding(top = 8.dp))
-                            }
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Card 1: Radio CB
+                Surface(color = Color.White.copy(0.04f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, Color.White.copy(0.08f))) {
+                    Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Radio, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text("BANDA CIUDADANA Y RADIO SOCIAL", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            Text("Conecta en directo con gente de tu ciudad de forma abierta y transparente.", color = Color.White.copy(0.7f), fontSize = 10.sp)
+                        }
+                    }
+                }
+                // Card 2: Red de Malla P2P
+                Surface(color = Color(0xFF00E5FF).copy(0.08f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(0.35f))) {
+                    Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Router, null, tint = Color(0xFF00E5FF), modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text("RED DE MALLA P2P EN EMERGENCIA", color = Color(0xFF00E5FF), fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            Text("Voz móvil a móvil sin 4G/Internet. Ideal para rutas de montaña, eventos masivos o catástrofes.", color = Color.White.copy(0.85f), fontSize = 10.sp)
+                        }
+                    }
+                }
+                // Card 3: Modo Oreja
+                Surface(color = Color.White.copy(0.04f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, Color.White.copy(0.08f))) {
+                    Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.HearingDisabled, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text("MODO OREJA Y DISCRETO", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            Text("Silencia altavoces y escucha avisos privados pegando el móvil a tu oreja.", color = Color.White.copy(0.7f), fontSize = 10.sp)
                         }
                     }
                 }
             }
         },
         confirmButton = {
-            LuxeButton(
-                text = if (step < totalSteps) "SIGUIENTE" else "¡A LA ESCUCHA!",
-                onClick = { if (step < totalSteps) step++ else onDismiss() },
-                modifier = Modifier.fillMaxWidth().height(50.dp)
-            )
+            LuxeButton("COMENZAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
         }
     )
 }
@@ -278,10 +280,47 @@ fun PrivacyConsentDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = LuxeColors.DeepSea,
-        modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
-        title = { Text("PRIVACIDAD", fontWeight = FontWeight.Black, color = Color.White) },
-        text = { Text("Utilizamos tu ubicación aproximada para conectarte a la frecuencia local más cercana.", fontSize = 13.sp, color = Color.White.copy(0.7f)) },
-        confirmButton = { LuxeButton("ACEPTAR", onAccept, true, Modifier.fillMaxWidth().height(48.dp)) }
+        modifier = Modifier.padding(16.dp).border(1.5.dp, Color(0xFF00E5FF).copy(0.6f), RoundedCornerShape(28.dp)),
+        icon = { Icon(Icons.Rounded.Security, null, tint = Color(0xFF00E5FF), modifier = Modifier.size(42.dp)) },
+        title = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("COMPROMISO DE SEGURIDAD Y PRIVACIDAD", fontWeight = FontWeight.Black, fontSize = 15.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(4.dp))
+                Surface(color = Color(0xFF10B981).copy(0.15f), shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, Color(0xFF10B981).copy(0.4f))) {
+                    Text("🔒 100% TRANSPARENTE Y SEGURO", color = Color(0xFF10B981), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Surface(color = Color.White.copy(0.04f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, Color.White.copy(0.08f))) {
+                    Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Mic, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text("MICRÓFONO EN DIRECTO", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            Text("Solo se activa cuando mantengas pulsado el botón HABLAR (PTT) o uses Manos Libres. Tu voz NUNCA se graba.", color = Color.White.copy(0.75f), fontSize = 10.sp)
+                        }
+                    }
+                }
+                Surface(color = Color.White.copy(0.04f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, Color.White.copy(0.08f))) {
+                    Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.LocationOn, null, tint = Color(0xFF00E5FF), modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text("UBICACIÓN (OPCIONAL)", color = Color(0xFF00E5FF), fontSize = 11.sp, fontWeight = FontWeight.Black)
+                            Text("Se procesa la distancia solo para medir la intensidad RF en el S-Meter (S9+30dB). Sin rastreos ni bases de datos.", color = Color.White.copy(0.75f), fontSize = 10.sp)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            LuxeButton("🚀 ENTENDIDO, ENTRAR A LA FRECUENCIA", onAccept, true, Modifier.fillMaxWidth().height(50.dp), LuxeColors.Gold, Color.Black)
+        }
     )
 }
 

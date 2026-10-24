@@ -457,30 +457,24 @@ fun RadioPanel(
 
                 Spacer(Modifier.height(20.dp))
 
-                // 📺 PANTALLA NEXUS
+                // 📺 PANTALLA NEXUS (BORDE CELESTE CIAN DEGRADADO ELEGANTE)
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(160.dp)
-                        .clip(RoundedCornerShape(22.dp))
-                        .drawBehind {
-                            drawRoundRect(
-                                color = LuxeColors.Gold.copy(alpha = 0.08f),
-                                size = size,
-                                cornerRadius = CornerRadius(22.dp.toPx()),
-                                style = Stroke(width = 6.dp.toPx())
-                            )
-                        }, 
-                    color = Color.Black, 
+                        .clip(RoundedCornerShape(20.dp)),
+                    color = Color(0xFF020617),
                     border = BorderStroke(
-                        width = 1.dp, 
+                        width = 1.5.dp, 
                         brush = Brush.verticalGradient(
                             listOf(
-                                LuxeColors.Gold.copy(0.4f),
-                                LuxeColors.Gold.copy(0.05f)
+                                Color(0xFF00E5FF).copy(alpha = 0.70f),
+                                Color(0xFF0EA5E9).copy(alpha = 0.30f),
+                                Color(0xFF00E5FF).copy(alpha = 0.15f)
                             )
                         )
-                    )
+                    ),
+                    shape = RoundedCornerShape(20.dp)
                 ) {
                     BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp)) {
                         val availableWidth = maxWidth
@@ -760,7 +754,7 @@ fun RadioPanel(
                 
                 // Lista de Usuarios en Línea
                 Text("USUARIOS EN LÍNEA", color = Color.White.copy(0.3f), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth())
-                LazyRow(modifier = Modifier.fillMaxWidth().height(100.dp), contentPadding = PaddingValues(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                LazyRow(modifier = Modifier.fillMaxWidth().height(92.dp), contentPadding = PaddingValues(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(users.filter { 
                         it.city.split("-")[0] == state.city.split("-")[0]
                     }) { user -> 

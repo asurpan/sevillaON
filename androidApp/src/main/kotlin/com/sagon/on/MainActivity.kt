@@ -180,11 +180,21 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         }
         currentEngineeringThread?.start()
     }
+    // =========================================================================
+    // 🔒 HARD-LOCK: BANDEROLA ADMOB OFICIAL - MÓDULO SELLADO (NIVEL 0)
+    // PROHIBIDA CUALQUIER MODIFICACIÓN SIN PERMISO EXPLÍCITO DEL USUARIO
+    // ID ANUNCIO: ca-app-pub-7866520163126353/3425068246
+    // =========================================================================
     private var adView: AdView? = null
 
     fun showAdBanner(visible: Boolean) {
         runOnUiThread {
-            adView?.visibility = if (visible) android.view.View.VISIBLE else android.view.View.GONE
+            adView?.let {
+                it.visibility = if (visible) android.view.View.VISIBLE else android.view.View.GONE
+                if (visible) {
+                    it.loadAd(AdRequest.Builder().build())
+                }
+            }
         }
     }
     private var wifiManager: WifiManager? = null
@@ -2066,7 +2076,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             )
         }
 
-        // 💰 BANNER ADMOB ABAJO EN SU PROPIA FRANJA (SIN SOLAPAR NINGUNA PANTALLA NI DIÁLOGO)
+        // =========================================================================
+        // 🔒 HARD-LOCK: BANNER ADMOB INFERIOR PERMANENTE - MÓDULO SELLADO (NIVEL 0)
+        // PROHIBIDA CUALQUIER MODIFICACIÓN SIN PERMISO EXPLÍCITO DEL USUARIO
+        // =========================================================================
         AndroidView(
             modifier = Modifier.fillMaxWidth(),
             factory = { context ->
@@ -2076,6 +2089,9 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                     loadAd(AdRequest.Builder().build())
                     adView = this
                 }
+            },
+            update = { view ->
+                view.visibility = android.view.View.VISIBLE
             }
         )
     }

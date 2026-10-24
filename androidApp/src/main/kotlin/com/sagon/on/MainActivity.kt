@@ -184,40 +184,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     fun showAdBanner(visible: Boolean) {
         runOnUiThread {
-            if (visible) {
-                if (adView == null) {
-                    adView = AdView(this@MainActivity).apply {
-                        setAdSize(AdSize.BANNER)
-                        adUnitId = "ca-app-pub-7866520163126353/3425068246"
-                        loadAd(AdRequest.Builder().build())
-                    }
-                    
-                    val root = findViewById<android.view.ViewGroup>(android.R.id.content)
-                    val params = android.widget.FrameLayout.LayoutParams(
-                        android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                        android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
-                        android.view.Gravity.BOTTOM
-                    )
-                    
-                    adView?.setOnApplyWindowInsetsListener { view, insets ->
-                        val navBarInsets = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                            insets.getInsets(android.view.WindowInsets.Type.navigationBars()).bottom
-                        } else {
-                            insets.systemWindowInsetBottom
-                        }
-                        val density = resources.displayMetrics.density
-                        val extraMargin = (12 * density).toInt()
-                        params.bottomMargin = navBarInsets + extraMargin
-                        view.layoutParams = params
-                        insets
-                    }
-
-                    root?.addView(adView, params)
-                }
-                adView?.visibility = android.view.View.VISIBLE
-            } else {
-                adView?.visibility = android.view.View.GONE
-            }
+            adView?.visibility = if (visible) android.view.View.VISIBLE else android.view.View.GONE
         }
     }
     private var wifiManager: WifiManager? = null

@@ -1015,15 +1015,33 @@ fun RadioDialogs(
             titleContentColor = LuxeColors.ElectricBlue,
             modifier = Modifier.border(1.dp, LuxeColors.ElectricBlue.copy(0.3f), RoundedCornerShape(24.dp)),
             icon = { Icon(Icons.Rounded.Security, null, tint = LuxeColors.ElectricBlue, modifier = Modifier.size(40.dp)) },
-            title = { Text("UBICACIÓN", fontWeight = FontWeight.Black, textAlign = TextAlign.Center) },
+            title = { Text("POLÍTICA DE PRIVACIDAD", fontWeight = FontWeight.Black, textAlign = TextAlign.Center) },
             text = {
-                Text(
-                    "Identificamos tu provincia mediante tu dirección IP.",
-                    fontSize = 13.sp,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "ON AIR SPAIN respeta tu privacidad al 100%. No almacenamos ni comercializamos tus datos personales. La comunicación de voz es directa y sin perfiles falsos.",
+                        fontSize = 12.sp,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 16.sp
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Puedes consultar el documento oficial completo de privacidad en GitHub:",
+                        fontSize = 11.sp,
+                        color = Color.White.copy(0.7f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "https://asurpan.github.io/sevillaON/privacy.html",
+                        fontSize = 11.sp,
+                        color = Color(0xFF00E5FF),
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             },
             confirmButton = {
                 LuxeButton("ENTENDIDO", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.ElectricBlue, Color.White)

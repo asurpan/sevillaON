@@ -51,10 +51,10 @@
         </div>
 
         <h2>1. RECOPILACIÓN Y USO DE DATOS</h2>
-        <p>En cumplimiento con las políticas de Google Play, informamos que <strong>ON AIR SPAIN</strong> minimiza la recopilación de datos al máximo estrictamente necesario para la función de radio:</p>
+        <p>En cumplimiento estricto con las políticas de Google Play, informamos que <strong>ON AIR SPAIN</strong> minimiza la recopilación de datos al máximo necesario para el funcionamiento de la emisora:</p>
         <ul>
-            <li><strong>Ubicación Aproximada (IP):</strong> No solicitamos el permiso de ubicación de grano fino (GPS). Estimamos tu provincia mediante la dirección IP exclusivamente para conectarte de forma automática a la frecuencia local correspondiente.</li>
-            <li><strong>Indicativo de Radio:</strong> Solicitamos un nombre de usuario (Indicativo) para identificarte en la red. Este nombre es efímero y puede ser modificado por el usuario en cualquier momento.</li>
+            <li><strong>Ubicación Geográfica y GPS (Opcional):</strong> El acceso a la ubicación por GPS (`ACCESS_FINE_LOCATION`) es **100% voluntario y opcional**. Si el usuario otorga el permiso, las coordenadas se utilizan **única y exclusivamente en memoria RAM en tiempo real** para calcular la distancia entre emisoras y calibrar la potencia de la portadora en el S-Meter de la radio (para reflejar señal fuerte `S9+30dB` entre estaciones de la misma zona/barrio). Si el usuario deniega el GPS, la radio utiliza la ciudad sintonizada en el dial sin ninguna pérdida de función. **Las coordenadas GPS NUNCA se guardan en bases de datos, NUNCA se rastrean y NUNCA se comparten con terceros.**</li>
+            <li><strong>Indicativo de Radio:</strong> Solicitamos un nombre de usuario (Indicativo) para identificarte en la red. Este nombre es efímero y modificable en cualquier momento.</li>
             <li><strong>Estado de Conexión:</strong> Transmitimos tu estado (en línea/hablando) para que otros usuarios en el mismo canal puedan interactuar contigo.</li>
         </ul>
 
@@ -62,22 +62,22 @@
         <p>Para el correcto funcionamiento de la emisora, la aplicación requiere:</p>
         <ul>
             <li><strong>Micrófono (RECORD_AUDIO):</strong> Esencial para la transmisión de voz. La aplicación solo accede al micrófono cuando el usuario pulsa voluntariamente el botón PTT o activa la función manos libres (VOX). El audio se procesa en tiempo real y <strong>nunca se almacena en el dispositivo ni en servidores externos</strong>.</li>
+            <li><strong>Ubicación Opcional (ACCESS_FINE_LOCATION):</strong> Procesamiento en tiempo real de distancia para simular la fuerza de señal RF en el S-Meter.</li>
             <li><strong>Internet:</strong> Necesario para la transmisión de datos punto a punto y la sincronización con Firebase.</li>
         </ul>
 
         <h2>3. SEGURIDAD Y ALMACENAMIENTO</h2>
-        <p>Utilizamos <strong>Google Firebase</strong> para la gestión de la red en tiempo real. Los datos de sesión se eliminan automáticamente cuando el usuario cierra la aplicación o tras un breve periodo de inactividad (15 segundos). No compartimos bases de datos con terceros.</p>
+        <p>Utilizamos <strong>Google Firebase</strong> para la gestión de la red en tiempo real. Los datos de sesión se eliminan automáticamente cuando el usuario cierra la aplicación o tras un breve periodo de inactividad. No compartimos bases de datos con terceros.</p>
 
         <h2>4. PUBLICIDAD (Google AdMob)</h2>
         <p>Para mantener el servicio gratuito y nacional, mostramos anuncios mediante Google AdMob. Google puede utilizar identificadores publicitarios anónimos para la personalización de anuncios, sujetos a la propia política de privacidad de Google.</p>
 
-        <h2>5. DERECHOS DEL USUARIO</h2>
+        <h2>5. DERECHOS DEL USUARIO Y CONTACTO</h2>
         <p>Al no existir cuentas de usuario permanentes (correos o contraseñas), el usuario ejerce su derecho al olvido simplemente cerrando la sesión o desinstalando la aplicación. Todos los datos temporales vinculados a su sesión desaparecerán del nodo nacional.</p>
 
         <div class="footer">
             &copy; 2026 ON AIR SPAIN - Ingeniería de Radio Profesional.<br>
-            Responsable técnico: Jose Manuel Gonzalez Lorence<br>
-            Contacto de privacidad: appsaiber@gmail.com
+            Contacto de privacidad y soporte técnico: asurpan@gmail.com
         </div>
     </div>
 </body>

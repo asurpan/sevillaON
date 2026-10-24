@@ -297,12 +297,12 @@ fun App(
                         containerColor = LuxeColors.DeepSea,
                         modifier = Modifier.padding(16.dp).border(2.dp, LuxeColors.Gold.copy(0.5f), RoundedCornerShape(32.dp)),
                         icon = { Icon(Icons.Rounded.Warning, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
-                        title = { Text("AHORRO DE BATERÍA", fontWeight = FontWeight.Black, fontSize = 20.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center) },
+                        title = { Text("AHORRO DE BATERÍA DETECTADO", fontWeight = FontWeight.Black, fontSize = 18.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center) },
                         text = {
-                            Text("Para que la radio no se corte, necesitamos que nos pongas como 'Sin restricciones' en los ajustes de batería.", color = Color.White, textAlign = TextAlign.Center)
+                            Text("Para que la radio NO SE CORTE NUNCA con la pantalla apagada, activa 'Inicio Automático' y selecciona 'Sin restricciones' en los ajustes de tu teléfono.", color = Color.White, textAlign = TextAlign.Center, fontSize = 13.sp)
                         },
                         confirmButton = {
-                            LuxeButton("CONFIGURAR", { showBatteryWarning = false; onIgnoreBatteryOptimizations() }, true, Modifier.fillMaxWidth().height(54.dp), LuxeColors.Gold, Color.Black)
+                            LuxeButton("CONFIGURAR BATERÍA Y PERMISOS", { showBatteryWarning = false; onIgnoreBatteryOptimizations() }, true, Modifier.fillMaxWidth().height(52.dp), LuxeColors.Gold, Color.Black)
                         },
                         dismissButton = { TextButton({ showBatteryWarning = false }) { Text("LUEGO", color = Color.White.copy(0.4f)) } }
                     )

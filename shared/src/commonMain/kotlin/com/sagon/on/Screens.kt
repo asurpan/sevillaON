@@ -395,15 +395,16 @@ fun RadioPanel(
                         val isPlaying = replayProgress > 0f
                         val brightnessFactor = if (isPlaying) (1f - replayProgress).coerceIn(0.2f, 1f) else 1f
                         
+                        // ⏪ BOTÓN DE REPLAY (SIEMPRE ACTIVO Y RESPONSIVO)
                         Surface(
-                            onClick = { if (isReplayReady && !isPlaying) onReplay() }, 
-                            color = if (isReplayReady || isPlaying) LuxeColors.Gold.copy(alpha = 0.2f * brightnessFactor) else Color.White.copy(0.05f), 
+                            onClick = { onReplay() }, 
+                            color = if (isReplayReady || isPlaying) LuxeColors.Gold.copy(alpha = 0.25f * brightnessFactor) else Color.White.copy(0.08f), 
                             shape = CircleShape, 
-                            border = BorderStroke(1.dp, if (isReplayReady || isPlaying) LuxeColors.Gold.copy(alpha = brightnessFactor) else Color.White.copy(0.1f)), 
+                            border = BorderStroke(1.dp, if (isReplayReady || isPlaying) LuxeColors.Gold else Color.White.copy(0.2f)), 
                             modifier = Modifier.size(32.dp).drawBehind {
                                 if (isReplayReady || isPlaying) {
                                     drawCircle(
-                                        color = LuxeColors.Gold.copy(alpha = 0.2f * brightnessFactor),
+                                        color = LuxeColors.Gold.copy(alpha = 0.25f * brightnessFactor),
                                         radius = size.maxDimension * 0.5f,
                                         center = center
                                     )
@@ -415,13 +416,40 @@ fun RadioPanel(
                                 Icon(
                                     Icons.Rounded.History, 
                                     null, 
-                                    tint = if (isReplayReady || isPlaying) LuxeColors.Gold.copy(alpha = brightnessFactor) else Color.White.copy(0.2f), 
+                                    tint = if (isReplayReady || isPlaying) LuxeColors.Gold else Color.White.copy(0.7f), 
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
                         }
                         Spacer(Modifier.width(8.dp))
-                        Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(Color.White.copy(0.05f)).border(1.dp, Color.White.copy(0.1f), CircleShape).clickable { onPendingDialogChange(RadioDialogType.SETTINGS, null) }, contentAlignment = Alignment.Center) {
+                        // ❓ BOTÓN DE AYUDA Y MANUAL DE USUARIO
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(0.05f))
+                                .border(1.dp, LuxeColors.Gold.copy(0.4f), CircleShape)
+                                .clickable { onPendingDialogChange(RadioDialogType.HELP, null) }, 
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.HelpOutline, 
+                                contentDescription = "Manual y Soporte", 
+                                tint = LuxeColors.Gold, 
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        // ⚙️ BOTÓN DE AJUSTES
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(0.05f))
+                                .border(1.dp, Color.White.copy(0.1f), CircleShape)
+                                .clickable { onPendingDialogChange(RadioDialogType.SETTINGS, null) }, 
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(Icons.Rounded.Tune, null, tint = Color.White, modifier = Modifier.size(16.dp))
                         }
                     }
@@ -749,7 +777,7 @@ fun RadioPanel(
                 }
             }
 
-            // --- BLOQUE INFERIOR FIJO (PTT) ---
+            // --- BLOQUE INFERIOR FIJO (PTT + MARGEN ESPACIO BANNER ADMOB) ---
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -762,8 +790,8 @@ fun RadioPanel(
                             strokeWidth = 1.dp.toPx()
                         )
                     }
-                    .padding(16.dp)
-                    .padding(bottom = 20.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(bottom = 110.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(modifier = Modifier.fillMaxWidth().height(84.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {

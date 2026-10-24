@@ -30,14 +30,52 @@ object RadioAudioManager {
                 outputDevice: "default"
             };
 
+            //  BUCLE DE MANTENIMIENTO EN SEGUNDO PLANO PARA iOS / SAFARI (MEDIA SESSION API)
+            window.installIosKeepAlive = function() {
+                try {
+                    var ua = navigator.userAgent || "";
+                    var isIos = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                    console.log("🍏 Detección de Dispositivo iOS/iPhone:", isIos);
+
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.metadata = new MediaMetadata({
+                            title: 'ON AIR SPAIN — Radio CB en Directo',
+                            artist: 'Frecuencia Abierta 27MHz',
+                            album: 'Emisora Digital España',
+                            artwork: [
+                                { src: 'https://asurpan.github.io/sevillaON/favicon.ico', sizes: '96x96', type: 'image/png' }
+                            ]
+                        });
+                        navigator.mediaSession.setActionHandler('play', function() {
+                            if (window.app && window.app.ctx && window.app.ctx.state === 'suspended') {
+                                window.app.ctx.resume();
+                            }
+                        });
+                        navigator.mediaSession.setActionHandler('pause', function() { });
+                    }
+
+                    if (!window.app.silentAudioLoop) {
+                        var audio = document.createElement('audio');
+                        audio.setAttribute('loop', 'true');
+                        audio.setAttribute('playsinline', 'true');
+                        audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+                        audio.volume = 0.01;
+                        audio.play().catch(function(e) {});
+                        window.app.silentAudioLoop = audio;
+                    }
+                } catch(e) {}
+            };
+
             window.initAudio = function() {
                 if (window.app.ctx) {
                     if (window.app.ctx.state === 'suspended') {
                         window.app.ctx.resume().then(() => { console.log("🔊 AudioContext reanudado."); });
                     }
+                    if (window.installIosKeepAlive) window.installIosKeepAlive();
                     return;
                 }
                 console.log("🏗️ Inicializando Motor de Audio...");
+                if (window.installIosKeepAlive) window.installIosKeepAlive();
                 var AC = window.AudioContext || window.webkitAudioContext;
                 try {
                     window.app.ctx = new AC({ latencyHint: 'interactive' });
@@ -154,19 +192,39 @@ object RadioAudioManager {
                     ditherGain.connect(window.app.masterOut);
                     ditherSource.start();
                     
+                    // 📻 RUIDO ATMOSFÉRICO QRM 27MHz (RUIDO ROSA SEDOSO Y CÁLIDO CB ANALÓGICO)
                     var bufferSize = 2 * window.app.ctx.sampleRate,
                         noiseBuffer = window.app.ctx.createBuffer(1, bufferSize, window.app.ctx.sampleRate),
                         output = noiseBuffer.getChannelData(0);
-                    for (var i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
+
+                    // Generador de Ruido Rosa Voss-McCartney (1/f): Elimina el soplido metálico áspero y crea el murmullo sedoso real
+                    var b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+                    for (var i = 0; i < bufferSize; i++) {
+                        var white = Math.random() * 2 - 1;
+                        b0 = 0.99886 * b0 + white * 0.0555179;
+                        b1 = 0.99332 * b1 + white * 0.0750759;
+                        b2 = 0.96900 * b2 + white * 0.1538520;
+                        b3 = 0.86650 * b3 + white * 0.3104856;
+                        b4 = 0.55000 * b4 + white * 0.5329522;
+                        b5 = -0.7616 * b5 - white * 0.0168980;
+                        output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+                        output[i] *= 0.11; 
+                        b6 = white * 0.115926;
+                    }
+
                     var noiseSource = window.app.ctx.createBufferSource();
                     noiseSource.buffer = noiseBuffer;
                     noiseSource.loop = true;
+
                     window.app.noise = window.app.ctx.createGain();
                     window.app.noise.gain.value = 0; 
+
+                    // Filtro Paso Bajo Cálido (1800Hz): Recorte de agudos ásperos para resonancia analógica
                     var noiseFilter = window.app.ctx.createBiquadFilter();
-                    noiseFilter.type = "bandpass";
-                    noiseFilter.frequency.value = 1450; 
-                    noiseFilter.Q.value = 1.8;
+                    noiseFilter.type = "lowpass";
+                    noiseFilter.frequency.value = 1800; 
+                    noiseFilter.Q.value = 0.7;
+
                     window.app.lfo = window.app.ctx.createOscillator();
                     window.app.lfo.frequency.value = 0.05; 
                     window.app.lfoGain = window.app.ctx.createGain();
@@ -174,6 +232,7 @@ object RadioAudioManager {
                     window.app.lfo.connect(window.app.lfoGain);
                     window.app.lfoGain.connect(window.app.noise.gain);
                     window.app.lfo.start();
+
                     noiseSource.connect(noiseFilter);
                     noiseFilter.connect(window.app.noise);
                     window.app.noise.connect(window.app.filter); 
@@ -182,13 +241,10 @@ object RadioAudioManager {
                     window.setNoiseVolume = function(v) {
                         if (!window.app.noise || window.app.isTransmittingInternal) return;
                         var now = window.app.ctx.currentTime;
-                        if (v <= 0) {
-                            window.app.currentNoiseTarget = 0;
-                            window.app.noise.gain.setValueAtTime(0, now);
-                        } else {
-                            window.app.currentNoiseTarget = (v * 0.28); 
-                            window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, now, 0.1);
-                        }
+                        var target = (v <= 0) ? 0 : (v * 0.22);
+                        window.app.currentNoiseTarget = target; 
+                        // 🛡️ RAMPA SUAVE EXPONENCIAL (50ms): Elimina chasquidos y clicks al deslizar el Squelch
+                        window.app.noise.gain.setTargetAtTime(target, now, 0.05);
                     };
 
                     window.setMasterVolume = function(v) {
@@ -565,7 +621,13 @@ object ReplayEngine {
                 startChunk();
             };
             window.playReplay = function() {
-                if (replayBlobs.length === 0 || isPlaying) return;
+                if (replayBlobs.length === 0) {
+                    if (window.dispatch_notification) {
+                        window.dispatch_notification("REPLAY DE VOZ", "No hay grabaciones recientes en el buffer aún. Modula o escucha para guardar bloques.", "info");
+                    }
+                    return;
+                }
+                if (isPlaying) return;
                 isPlaying = true; var playlist = [...replayBlobs]; replayBlobs = []; if (window.dispatch_replay_available) window.dispatch_replay_available(false);
                 var index = 0;
                 function finishReplay() { isPlaying = false; window.app.masterRxGain.gain.setTargetAtTime(3.5, window.app.ctx.currentTime, 0.3); }

@@ -194,6 +194,7 @@ fun main() {
         }
 
         val voxPttState = remember { mutableStateOf(false) }
+        val backPressCountState = remember { mutableStateOf(0) }
 
         RadioBridge.setupDispatchers(
             win = win,
@@ -203,7 +204,7 @@ fun main() {
             onPttBlocked = { },
             onReplayEmpty = { },
             onReplayStart = { },
-            onBack = { },
+            onBack = { backPressCountState.value = backPressCountState.value + 1 },
             onNickConflict = { },
             onUsersUpdate = { users ->
                 try {
@@ -339,7 +340,7 @@ fun main() {
             onInstallDismiss = { },
             externalNotification = null,
             externalVolume = 0.7f,
-            externalBackPressCount = 0,
+            externalBackPressCount = backPressCountState.value,
             micLevel = micLevelState.value,
             isBeeping = false,
             isCodedRx = false,

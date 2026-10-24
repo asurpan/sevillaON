@@ -39,7 +39,7 @@ enum class RadioDialogType {
     INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, 
     BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, DISCRETE, SELECT_NICK, 
     HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, USER_ACTIONS, SQUELCH_CONTROL, GAIN_CONTROL, VOLUME_CONTROL,
-    DIAGNOSTIC
+    DIAGNOSTIC, HELP
 }
 
 @Composable
@@ -936,6 +936,38 @@ fun RadioDialogs(
                 }
             },
             confirmButton = { LuxeButton("ACEPTAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp)) }
+        )
+        RadioDialogType.HELP -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.HelpOutline, null, tint = LuxeColors.Gold, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text("MANUAL Y SOPORTE", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold)
+                }
+            },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text("⚙️ GUÍA RÁPIDA DE FUNCIONES", fontWeight = FontWeight.Black, fontSize = 11.sp, color = LuxeColors.Gold)
+                    Spacer(Modifier.height(8.dp))
+                    Text("• 📻 Banda Ciudadana: Sintoniza los 40 canales en directo de tu ciudad.\n• 📡 Red de Malla P2P: Comunicación de emergencia móvil a móvil sin internet ni 4G.\n• 👂 Modo Oreja: Silencia altavoces y escucha de forma privada pegando el móvil a tu oreja.\n• 🎛️ Procesador DSP & Replay: Ecualización HiFi y rebobinado de los últimos 30s de voz.\n• 🔋 S-Meter: Medidor de potencia e intensidad de señal.", fontSize = 11.sp, color = Color.White.copy(0.85f))
+                    Spacer(Modifier.height(16.dp))
+                    Text("👨‍💻 SOPORTE TÉCNICO Y DESARROLLO", fontWeight = FontWeight.Black, fontSize = 11.sp, color = LuxeColors.Gold)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Desarrollado con pasión para la comunidad de radio.\nContacto: asurpan@gmail.com", fontSize = 11.sp, color = Color.White.copy(0.7f))
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = { onPendingDialogChange(RadioDialogType.HELP_PRIVACY, null) },
+                        border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(0.4f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("VER POLÍTICA DE PRIVACIDAD", color = Color(0xFF00E5FF), fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    }
+                }
+            },
+            confirmButton = { LuxeButton("ENTENDIDO", onDismiss, true, Modifier.fillMaxWidth().height(48.dp)) }
         )
         RadioDialogType.HELP_SQUELCH -> AlertDialog(
             onDismissRequest = onDismiss,

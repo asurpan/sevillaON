@@ -56,6 +56,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.imePadding
@@ -180,6 +181,45 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         currentEngineeringThread?.start()
     }
     private var adView: AdView? = null
+
+    fun showAdBanner(visible: Boolean) {
+        runOnUiThread {
+            if (visible) {
+                if (adView == null) {
+                    adView = AdView(this@MainActivity).apply {
+                        setAdSize(AdSize.BANNER)
+                        adUnitId = "ca-app-pub-7866520163126353/3425068246"
+                        loadAd(AdRequest.Builder().build())
+                    }
+                    
+                    val root = findViewById<android.view.ViewGroup>(android.R.id.content)
+                    val params = android.widget.FrameLayout.LayoutParams(
+                        android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                        android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                        android.view.Gravity.BOTTOM
+                    )
+                    
+                    adView?.setOnApplyWindowInsetsListener { view, insets ->
+                        val navBarInsets = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                            insets.getInsets(android.view.WindowInsets.Type.navigationBars()).bottom
+                        } else {
+                            insets.systemWindowInsetBottom
+                        }
+                        val density = resources.displayMetrics.density
+                        val extraMargin = (12 * density).toInt()
+                        params.bottomMargin = navBarInsets + extraMargin
+                        view.layoutParams = params
+                        insets
+                    }
+
+                    root?.addView(adView, params)
+                }
+                adView?.visibility = android.view.View.VISIBLE
+            } else {
+                adView?.visibility = android.view.View.GONE
+            }
+        }
+    }
     private var wifiManager: WifiManager? = null
     private var lastWifiReadings = mutableMapOf<String, Int>()
     private var wifiVarianceValue = 0f
@@ -688,8 +728,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         // 🛡️ FIX: FONDO DE VENTANA (ANTI-FRANJA BLANCA EN NAVEGACIÓN)
         window.decorView.setBackgroundColor(android.graphics.Color.parseColor("#0F172A"))
 
-        // 💰 ADMOB INIT: Inicializar el sistema de anuncios al arrancar
-        MobileAds.initialize(this) {}
+        // 💰 ADMOB INIT: Inicializar el sistema de anuncios al arrancar y mostrar el banner
+        MobileAds.initialize(this) {
+            showAdBanner(true)
+        }
 
         // --- 🛡️ FIX: ASEGURAR QUE EL TECLADO REDIMENSIONA LA WEB (AJUSTE CRÍTICO) ---
         window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -759,15 +801,23 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         registerReceiver(wifiScanReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
 
         setContent {
-            AndroidView(
+            androidx.compose.foundation.layout.Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .then(Modifier)
                     .statusBarsPadding()
                     .navigationBarsPadding()
-                    .imePadding(),
-                factory = { context ->
-                    WebView(context).apply {
-                        webViewInstance = this
+                    .imePadding()
+            ) {
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier
+                        .weight(1f)
+                ) {
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { context ->
+                            WebView(context).apply {
+                                webViewInstance = this
                         
                         // --- 🛡️ BLINDAJE VISUAL: FONDO DE SEGURIDAD (ANTI-PANTALLA BLANCA) ---
                         setBackgroundColor(android.graphics.Color.parseColor("#0F172A"))
@@ -777,9 +827,16 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             android.view.ViewGroup.LayoutParams.MATCH_PARENT
                         )
 
-                        // --- 🛡️ MEJORA DE FOCO (TECLADO) ---
+                        // --- 🛡️ MEJORA DE FOCO (TECLADO Y NAVEGACIÓN ATRÁS SISTEMA) ---
                         isFocusable = true
                         isFocusableInTouchMode = true
+
+                        setOnKeyListener { _, keyCode, keyEvent ->
+                            if (keyCode == KeyEvent.KEYCODE_BACK && keyEvent.action == KeyEvent.ACTION_UP) {
+                                evaluateJavascript("if(window.trigger_back) window.trigger_back();", null)
+                                true
+                            } else false
+                        }
 
                         // --- 🛡️ FIX: QUITAR BARRA BLANCA DE AUTOCOMPLETADO (AUTOFILL) ---
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -1095,12 +1152,35 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             fun requestIgnoreBatteryOptimizations() {
                                 post {
                                     try {
+                                        // 1. Abrir solicitud estándar de optimización de batería (Sin restricciones)
                                         val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                                             data = android.net.Uri.parse("package:$packageName")
                                         }
                                         startActivity(intent)
+
+                                        // 2. Si es dispositivo Xiaomi / Redmi / POCO (HyperOS / MIUI), abrir también "Inicio Automático"
+                                        val manufacturer = android.os.Build.MANUFACTURER.lowercase(java.util.Locale.ROOT)
+                                        val brand = android.os.Build.BRAND.lowercase(java.util.Locale.ROOT)
+                                        if (manufacturer.contains("xiaomi") || manufacturer.contains("redmi") || manufacturer.contains("poco") ||
+                                            brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco")) {
+                                            try {
+                                                val xiaomiIntent = android.content.Intent().apply {
+                                                    component = android.content.ComponentName(
+                                                        "com.miui.securitycenter",
+                                                        "com.miui.permcenter.autostart.AutoStartManagementActivity"
+                                                    )
+                                                }
+                                                startActivity(xiaomiIntent)
+                                            } catch (e: Exception) {
+                                                try {
+                                                    val appSettingsIntent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                        data = android.net.Uri.parse("package:$packageName")
+                                                    }
+                                                    startActivity(appSettingsIntent)
+                                                } catch (e2: Exception) {}
+                                            }
+                                        }
                                     } catch (e: Exception) {
-                                        // Si falla (algunos fabricantes bloquean el intent directo), abrimos los ajustes generales
                                         val intent = android.content.Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                                         startActivity(intent)
                                     }
@@ -1125,53 +1205,12 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                             @JavascriptInterface
                             fun showBanner(visible: Boolean) {
-                                post {
-                                    if (visible) {
-                                        if (adView == null) {
-                                            adView = AdView(context).apply {
-                                                setAdSize(AdSize.BANNER)
-                                                adUnitId = "ca-app-pub-7866520163126353/3425068246"
-                                                loadAd(AdRequest.Builder().build())
-                                            }
-                                            
-                                            // 🛡️ FIX: POSICIONAMIENTO POR ENCIMA DE LA BARRA DE NAVEGACIÓN
-                                            val root = this@MainActivity.findViewById<android.view.ViewGroup>(android.R.id.content)
-                                            val params = android.widget.FrameLayout.LayoutParams(
-                                                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
-                                                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
-                                                android.view.Gravity.BOTTOM
-                                            )
-                                            
-                                            // Escuchar cambios en los bordes del sistema (teclas navegación)
-                                            adView?.setOnApplyWindowInsetsListener { view, insets ->
-                                                val navBarInsets = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                                                    insets.getInsets(android.view.WindowInsets.Type.navigationBars()).bottom
-                                                } else {
-                                                    insets.systemWindowInsetBottom
-                                                }
-                                                // Añadir el margen para subir el banner justo por encima de los botones
-                                                // 🛡️ MEJORA: Subir un pelín más (12dp) para que no se corte
-                                                val density = resources.displayMetrics.density
-                                                val extraMargin = (12 * density).toInt()
-                                                params.bottomMargin = navBarInsets + extraMargin
-                                                view.layoutParams = params
-                                                insets
-                                            }
-
-                                            root?.addView(adView, params)
-                                        }
-                                        adView?.visibility = android.view.View.VISIBLE
-                                    } else {
-                                        adView?.visibility = android.view.View.GONE
-                                    }
-                                }
+                                showAdBanner(visible)
                             }
 
                             @JavascriptInterface
                             fun showBannerSombreros(visible: Boolean) {
-                                // 🛡️ REPARACIÓN QUIRÚRGICA: Evita NoSuchMethodException y NullPointerException
-                                // Implementamos la misma lógica que showBanner para estabilidad.
-                                showBanner(visible)
+                                showAdBanner(visible)
                             }
 
                             @JavascriptInterface
@@ -1358,14 +1397,15 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                     runEngineeringTask {
                                         post { webViewInstance?.evaluateJavascript("if(window.dispatch_notification) window.dispatch_notification('AVISO HARDWARE', 'El terminal solo tiene EMISOR. Apunta directamente al receptor de la TV.', 'info');", null) }
                                         
+                                        data class LocalQuad(val first: String, val second: Long, val third: Int, val fourth: String)
                                         val masterCodes = listOf(
-                                            QuadItem( "SAMSUNG", 0xE0E040BFL, 38000, "Samsung TV Power"),
-                                            QuadItem( "LG", 0x20DF10EFL, 38000, "LG TV Power (Standard)"),
-                                            QuadItem( "LG", 0x04FB08F7L, 38000, "LG TV Power (Old)"),
-                                            QuadItem( "NEC", 0x00FF00FFL, 38000, "Genérico / Luces"),
-                                            QuadItem( "SONY", 0xA90L, 40000, "Sony Bravia Power"),
-                                            QuadItem( "PANASONIC", 0x40040100BCBDL, 37000, "Panasonic Power"),
-                                            QuadItem( "RC5", 0x0C0CL, 36000, "Philips Power")
+                                            LocalQuad( "SAMSUNG", 0xE0E040BFL, 38000, "Samsung TV Power"),
+                                            LocalQuad( "LG", 0x20DF10EFL, 38000, "LG TV Power (Standard)"),
+                                            LocalQuad( "LG", 0x04FB08F7L, 38000, "LG TV Power (Old)"),
+                                            LocalQuad( "NEC", 0x00FF00FFL, 38000, "Genérico / Luces"),
+                                            LocalQuad( "SONY", 0xA90L, 40000, "Sony Bravia Power"),
+                                            LocalQuad( "PANASONIC", 0x40040100BCBDL, 37000, "Panasonic Power"),
+                                            LocalQuad( "RC5", 0x0C0CL, 36000, "Philips Power")
                                         )
 
                                         for (item in masterCodes) {
@@ -2058,12 +2098,20 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 }
             )
         }
+
+        // 💰 BANNER ADMOB ABAJO EN SU PROPIA FRANJA (SIN SOLAPAR NINGUNA PANTALLA NI DIÁLOGO)
+        AndroidView(
+            modifier = Modifier.fillMaxWidth(),
+            factory = { context ->
+                AdView(context).apply {
+                    setAdSize(AdSize.BANNER)
+                    adUnitId = "ca-app-pub-7866520163126353/3425068246"
+                    loadAd(AdRequest.Builder().build())
+                    adView = this
+                }
+            }
+        )
     }
 }
-
-data class QuadItem<out A, out B, out C, out D>(
-    val first: A,
-    val second: B,
-    val third: C,
-    val fourth: D
-)
+}
+}

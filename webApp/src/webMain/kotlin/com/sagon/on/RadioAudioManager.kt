@@ -333,7 +333,7 @@ object RadioAudioManager {
                         window.app.isBeeping = true;
                         window.app.isTransmittingInternal = true; // MANTENER PORTADORA Y PANTALLA EN ROJO DURANTE EL BEEP
 
-                        // 2. Generar el Roger Beep y transmitirlo TANTO al altavoz local COMO por aire (txBus)
+                        // 2. Generar el Roger Beep (Sutil local 14% / Potente por aire 20%)
                         var beepOsc = window.app.ctx.createOscillator();
                         var beepGain = window.app.ctx.createGain();
                         
@@ -344,7 +344,13 @@ object RadioAudioManager {
 
                         beepOsc.connect(beepGain);
                         
-                        if (window.app.masterOut) beepGain.connect(window.app.masterOut);
+                        // 🎧 Salida Local Ajustada sutilmente a 14% para tus oídos
+                        var localBeepGain = window.app.ctx.createGain();
+                        localBeepGain.gain.setValueAtTime(0.14, now);
+                        localBeepGain.gain.setValueAtTime(0, now + 0.30);
+                        beepGain.connect(localBeepGain);
+
+                        if (window.app.masterOut) localBeepGain.connect(window.app.masterOut);
                         if (window.app.txBus) beepGain.connect(window.app.txBus);
 
                         beepOsc.start(now);

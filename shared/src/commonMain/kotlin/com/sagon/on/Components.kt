@@ -203,14 +203,38 @@ fun OnboardingDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = LuxeColors.DeepSea,
-        modifier = Modifier.padding(16.dp).border(1.5.dp, Color(0xFF00E5FF).copy(0.5f), RoundedCornerShape(28.dp)),
-        icon = { Icon(Icons.Rounded.Radio, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
-        title = { Text("BIENVENIDO A ON AIR SPAIN", fontWeight = FontWeight.Black, fontSize = 18.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center) },
+        modifier = Modifier.padding(16.dp).border(1.5.dp, Color(0xFF00E5FF).copy(0.6f), RoundedCornerShape(28.dp)),
+        icon = { Icon(Icons.Rounded.Radio, null, tint = LuxeColors.Gold, modifier = Modifier.size(44.dp)) },
+        title = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("BIENVENIDO A ON AIR SPAIN", fontWeight = FontWeight.Black, fontSize = 18.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(4.dp))
+                Surface(color = Color(0xFF10B981).copy(0.15f), shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, Color(0xFF10B981).copy(0.4f))) {
+                    Text("🔒 100% GRATIS • AL SERVICIO PÚBLICO Y SOCIAL", color = Color(0xFF10B981), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                }
+            }
+        },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                Text(
+                    "Esta aplicación ha sido creada de forma totalmente gratuita y al servicio público, desarrollada para y por las personas que aman la magia de la radio, las ondas y las conversaciones reales.",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 17.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    "Aquí no hay contraseñas, ni perfiles falsos, ni registros obligatorios. Solo la pureza de la voz en directo para conocer gente de tu ciudad, compartir ruta o pasar buenos ratos.",
+                    color = Color.White.copy(0.85f),
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 16.sp
+                )
+                Spacer(Modifier.height(4.dp))
                 // Card 1: Radio CB
                 Surface(color = Color.White.copy(0.04f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, Color.White.copy(0.08f))) {
                     Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -229,25 +253,14 @@ fun OnboardingDialog(onDismiss: () -> Unit) {
                         Spacer(Modifier.width(10.dp))
                         Column {
                             Text("RED DE MALLA P2P EN EMERGENCIA", color = Color(0xFF00E5FF), fontSize = 11.sp, fontWeight = FontWeight.Black)
-                            Text("Voz móvil a móvil sin 4G/Internet. Ideal para rutas de montaña, eventos masivos o catástrofes.", color = Color.White.copy(0.85f), fontSize = 10.sp)
-                        }
-                    }
-                }
-                // Card 3: Modo Oreja
-                Surface(color = Color.White.copy(0.04f), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, Color.White.copy(0.08f))) {
-                    Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.HearingDisabled, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(10.dp))
-                        Column {
-                            Text("MODO OREJA Y DISCRETO", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
-                            Text("Silencia altavoces y escucha avisos privados pegando el móvil a tu oreja.", color = Color.White.copy(0.7f), fontSize = 10.sp)
+                            Text("Voz móvil a móvil sin 4G/Internet. Ideal para rutas de montaña, eventos o catástrofes.", color = Color.White.copy(0.85f), fontSize = 10.sp)
                         }
                     }
                 }
             }
         },
         confirmButton = {
-            LuxeButton("COMENZAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+            LuxeButton("🚀 COMENZAR LA EXPERIENCIA", onDismiss, true, Modifier.fillMaxWidth().height(50.dp), LuxeColors.Gold, Color.Black)
         }
     )
 }

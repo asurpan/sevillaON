@@ -575,6 +575,35 @@ object RadioSignaling {
 
                 if(!window.app.ctx || !window.app.canPlaySounds) return;
                 var now = window.app.ctx.currentTime;
+
+                if (type === "user_in" || type === "friend_in") {
+                    // 🔔 CAMPANILLA CRISTALINA Y MELÓDICA DE BIENVENIDA DE USUARIO (784Hz -> 987Hz)
+                    var isFriend = (type === "friend_in");
+                    var f1 = isFriend ? 880 : 784; 
+                    var f2 = isFriend ? 1046 : 987; 
+                    
+                    var o1 = window.app.ctx.createOscillator(); var g1 = window.app.ctx.createGain();
+                    o1.type = "sine"; o1.frequency.setValueAtTime(f1, now);
+                    g1.gain.setValueAtTime(0, now); g1.gain.linearRampToValueAtTime(0.08, now + 0.02);
+                    g1.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                    o1.connect(g1); g1.connect(window.app.masterOut); o1.start(now); o1.stop(now + 0.22);
+
+                    var o2 = window.app.ctx.createOscillator(); var g2 = window.app.ctx.createGain();
+                    o2.type = "sine"; o2.frequency.setValueAtTime(f2, now + 0.10);
+                    g2.gain.setValueAtTime(0, now + 0.10); g2.gain.linearRampToValueAtTime(0.09, now + 0.12);
+                    g2.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                    o2.connect(g2); g2.connect(window.app.masterOut); o2.start(now + 0.10); o2.stop(now + 0.38);
+                    return;
+                }
+
+                if (type === "switch") {
+                    var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain();
+                    o.type = "sine"; o.frequency.setValueAtTime(1200, now);
+                    g.gain.setValueAtTime(0.06, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                    o.connect(g); g.connect(window.app.masterOut); o.start(now); o.stop(now + 0.06);
+                    return;
+                }
+
                 if (type === "incoming") {
                     var pairs = [[697, 1209], [770, 1336], [852, 1477], [941, 1633]];
                     pairs.forEach((f, i) => { f.forEach(freq => { var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); o.type = "sine"; o.frequency.setValueAtTime(freq, now + (i * 0.12)); g.gain.setValueAtTime(0, now + (i * 0.12)); g.gain.linearRampToValueAtTime(0.15, now + (i * 0.12) + 0.01); g.gain.linearRampToValueAtTime(0, now + (i * 0.12) + 0.1); o.connect(g); g.connect(window.app.masterOut); o.start(now + (i * 0.12)); o.stop(now + (i * 0.12) + 0.12); }); });

@@ -749,28 +749,9 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         }
 
         // =======================================================
-        // 🔒 HARD-LOCK: CLEAN INITIALIZATION (POLÍTICA GOOGLE PLAY)
-        // PROTECCIÓN CRÍTICA: NO PEDIR MICRO NI NOTIFICACIONES AL INICIO
-        // LOS PERMISOS DEBEN SER CONTEXTUALES TRAS INTERACCIÓN
+        // 🔒 HARD-LOCK: ARRANQUE LIMPIO Y DE MÁXIMA CONFIANZA
+        // CERO PERMISOS AL INICIAR LA APP - SOLO PERMISOS CONTEXTUALES TRAS INTERACCIÓN
         // =======================================================
-        val initialPermissions = mutableListOf<String>()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            initialPermissions.add(Manifest.permission.BLUETOOTH_CONNECT)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            initialPermissions.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        // 🛡️ FIX: Añadir permiso IR explícito para evitar limitaciones del sistema
-        initialPermissions.add(Manifest.permission.TRANSMIT_IR)
-        
-        val missingPermissions = initialPermissions.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-        
-        if (missingPermissions.isNotEmpty()) {
-            requestMultiplePermissionsLauncher.launch(missingPermissions.toTypedArray())
-        }
-
         handleIntent(intent)
 
         // --- 📡 REGISTRO DE ESCANEO PASIVO (RADAR DIRECTO) ---

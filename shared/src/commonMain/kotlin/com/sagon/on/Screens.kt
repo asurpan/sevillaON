@@ -564,7 +564,7 @@ fun RadioPanel(
                                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = "CH ${CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: "00"}", 
-                                            color = LuxeColors.Gold, 
+                                            color = Color(0xFF10B981), 
                                             fontSize = channelFontSize, 
                                             fontWeight = FontWeight.Black,
                                             modifier = Modifier.clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
@@ -695,7 +695,7 @@ fun RadioPanel(
                 
                 // Lista de Usuarios en Línea
                 Text("USUARIOS EN LÍNEA", color = Color.White.copy(0.3f), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth())
-                LazyRow(modifier = Modifier.fillMaxWidth().height(92.dp), contentPadding = PaddingValues(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                LazyRow(modifier = Modifier.fillMaxWidth().height(82.dp), contentPadding = PaddingValues(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(users.filter { 
                         it.city.split("-")[0] == state.city.split("-")[0]
                     }) { user -> 
@@ -712,7 +712,7 @@ fun RadioPanel(
                 }
             }
 
-            // --- BLOQUE INFERIOR FIJO (PTT + MARGEN ESPACIO BANNER ADMOB) ---
+            // --- BLOQUE INFERIOR FIJO (PTT + CANDADO DE BLOQUEO) ---
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -725,11 +725,11 @@ fun RadioPanel(
                             strokeWidth = 1.dp.toPx()
                         )
                     }
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .padding(bottom = 110.dp),
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .padding(bottom = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(modifier = Modifier.fillMaxWidth().height(84.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.fillMaxWidth().height(70.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     val pttColor = if(isTransmitting) Color.Red else LuxeColors.Gold
                     Surface(
                         modifier = Modifier.weight(1.5f).fillMaxHeight().scale(pttScale).pointerInput(Unit) {

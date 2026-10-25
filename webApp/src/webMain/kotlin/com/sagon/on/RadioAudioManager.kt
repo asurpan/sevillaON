@@ -566,6 +566,13 @@ object RadioSignaling {
         js("""
             window.app.canPlaySounds = false; 
             window.playUiSound = function(type) {
+                // 📳 RESPUESTA HÁPTICA / VIBRACIÓN TÁCTIL SUTIL EN PTT Y BOTONES (15 ms)
+                try {
+                    if (type === "ptt_on" || type === "switch" || type === "ptt_off") {
+                        if (navigator.vibrate) navigator.vibrate(15);
+                    }
+                } catch(e) {}
+
                 if(!window.app.ctx || !window.app.canPlaySounds) return;
                 var now = window.app.ctx.currentTime;
                 if (type === "incoming") {

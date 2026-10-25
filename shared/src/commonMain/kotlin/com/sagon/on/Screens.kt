@@ -648,28 +648,28 @@ fun RadioPanel(
                                 }
                             }
 
-                            // 📊 COLUMNA DERECHA (BLOQUEO Y WATTS)
+                            // 📊 COLUMNA DERECHA (MODO OREJA, BLOQUEO Y WATTS)
                             Column(Modifier.width(sideWidth), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.Center) {
                                 Icon(
                                     imageVector = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing,
                                     contentDescription = null,
-                                    tint = if (state.isDiscreteModeEnabled) Color(0xFF87CEEB).copy(alpha = discreteAlpha) else Color.White.copy(0.15f),
-                                    modifier = Modifier.size(20.dp).graphicsLayer {
+                                    tint = if (state.isDiscreteModeEnabled) Color(0xFF87CEEB).copy(alpha = discreteAlpha) else Color.White.copy(0.35f),
+                                    modifier = Modifier.size(24.dp).graphicsLayer {
                                         alpha = if (state.isDiscreteModeEnabled) discreteAlpha else 1f
                                     }.clickable { handleDiscreteToggle() }
                                 )
-                                Spacer(Modifier.height(8.dp))
+                                Spacer(Modifier.height(10.dp))
                                 Icon(
                                     imageVector = if (state.isInterfaceLocked) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
                                     contentDescription = null,
-                                    tint = if (state.isInterfaceLocked) LuxeColors.Gold else Color.White.copy(0.2f),
-                                    modifier = Modifier.size(18.dp).clickable { onStateChange(state.copy(isInterfaceLocked = !state.isInterfaceLocked)) }
+                                    tint = if (state.isInterfaceLocked) LuxeColors.Gold else Color.White.copy(0.40f),
+                                    modifier = Modifier.size(22.dp).clickable { onStateChange(state.copy(isInterfaceLocked = !state.isInterfaceLocked)) }
                                 )
-                                Spacer(Modifier.height(2.dp))
-                                Text("WATTS", color = Color.White.copy(0.3f), fontSize = 7.sp, fontWeight = FontWeight.Black)
+                                Spacer(Modifier.height(4.dp))
+                                Text("WATTS", color = Color.White.copy(0.45f), fontSize = 8.sp, fontWeight = FontWeight.Black)
                                 Text(
                                     text = "${if(isTransmitting) (state.veteranPower * 15f).toInt() else if(rx) 9 else 0}", 
-                                    color = if(isTransmitting) Color.Red else if(rx) LuxeColors.Gold else Color.White.copy(0.2f), 
+                                    color = if(isTransmitting) Color.Red else if(rx) LuxeColors.Gold else Color.White.copy(0.3f), 
                                     fontSize = 20.sp, 
                                     fontWeight = FontWeight.Black,
                                     modifier = Modifier.combinedClickable(
@@ -897,9 +897,9 @@ fun RadioPanel(
 
 @Composable
 fun MiniTechLabel(label: String, value: String, onClick: () -> Unit) {
-    Column(modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable(onClick = onClick).padding(2.dp)) {
-        Text(label, color = Color.White.copy(0.5f), fontSize = 7.sp, fontWeight = FontWeight.Black)
-        Text(value, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
+    Column(modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onClick).padding(horizontal = 4.dp, vertical = 2.dp)) {
+        Text(label, color = LuxeColors.Gold.copy(0.7f), fontSize = 8.5.sp, fontWeight = FontWeight.Black)
+        Text(value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Black)
     }
 }
 

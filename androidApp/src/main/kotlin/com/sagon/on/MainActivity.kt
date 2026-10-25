@@ -197,6 +197,21 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             }
         }
     }
+
+    fun launchForegroundRadioService() {
+        runOnUiThread {
+            try {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                    val intent = Intent(this, RadioService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
+                }
+            } catch (e: Exception) {}
+        }
+    }
     private var wifiManager: WifiManager? = null
     private var lastWifiReadings = mutableMapOf<String, Int>()
     private var wifiVarianceValue = 0f
@@ -709,6 +724,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         MobileAds.initialize(this) {
             showAdBanner(true)
         }
+
+        // 🛡️ GUARDIÁN DE SEGUNDO PLANO Y REPRODUCTOR MULTIMEDIA PERMANENTE
+        try {
+            launchForegroundRadioService()
+        } catch (e: Exception) {}
 
         // --- 🛡️ FIX: ASEGURAR QUE EL TECLADO REDIMENSIONA LA WEB (AJUSTE CRÍTICO) ---
         window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)

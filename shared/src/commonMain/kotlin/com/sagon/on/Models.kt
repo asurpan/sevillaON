@@ -60,7 +60,7 @@ data class RadioState(
     val voxSensitivity: Float = 0.5f,
     val isMonitorEnabled: Boolean = false,
     val monitorVolume: Float = 0.7f,
-    val systemVolume: Float = 0.7f,
+    val systemVolume: Float = 0.90f,
     val isEchoEnabled: Boolean = false,
     val echoDelay: Float = 0.3f,
     val isRogerBeepEnabled: Boolean = true,

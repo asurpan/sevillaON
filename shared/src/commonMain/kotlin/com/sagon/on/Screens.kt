@@ -463,7 +463,7 @@ fun RadioPanel(
                                     }
                                     if (!showRemoteRx) {
                                         Text(
-                                            text = if (isTransmitting || isBeeping) "AIRE" else "SQUELCH",
+                                            text = if (isTransmitting || isBeeping) "AIRE" else "SEÑAL",
                                             color = if (isTransmitting || isBeeping) Color.Red else Color.White.copy(0.12f),
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Black,
@@ -472,9 +472,9 @@ fun RadioPanel(
                                     }
                                 }
 
-                                // 🔋 S-METER TÁCTICO 27MHz (PRECISIÓN POR BARRIO, PUEBLO Y DISTANCIA REAL)
+                                // 🔋 S-METER TÁCTICO 27MHz (MÁXIMA VISIBILIDAD DE LEDS - ALTURA 22dp)
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().height(18.dp).padding(vertical = 2.dp), 
+                                    modifier = Modifier.fillMaxWidth().height(22.dp).padding(vertical = 1.dp), 
                                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     val remoteUser = users.find { it.nick.equals(transmitterNick, ignoreCase = true) }
@@ -560,16 +560,26 @@ fun RadioPanel(
                                         }
                                     }
 
-                                    // 🛡️ CANAL CENTRAL
+                                    // 🛡️ CANAL CENTRAL (ETIQUETA CRISTAL NEÓN ESMERALDA)
                                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "CH ${CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: "00"}", 
-                                            color = Color(0xFF10B981), 
-                                            fontSize = channelFontSize, 
-                                            fontWeight = FontWeight.Black,
-                                            modifier = Modifier.clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
-                                        )
-                                        Spacer(Modifier.height(2.dp))
+                                        Surface(
+                                            color = Color(0xFF10B981).copy(alpha = 0.12f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.40f)),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
+                                        ) {
+                                            Text(
+                                                text = "CH ${CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: "00"}", 
+                                                color = Color(0xFF10B981), 
+                                                fontSize = channelFontSize, 
+                                                fontWeight = FontWeight.Black,
+                                                letterSpacing = 1.5.sp,
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                        Spacer(Modifier.height(4.dp))
                                         Surface(
                                             color = Color(0xFF00E5FF).copy(alpha = 0.12f),
                                             shape = RoundedCornerShape(10.dp),
@@ -693,21 +703,136 @@ fun RadioPanel(
 
                 Spacer(Modifier.height(16.dp))
                 
-                // Lista de Usuarios en Línea
+                // Lista de Usuarios en Línea & Radar de Ciudades Activas
+                val localUsers = users.filter { it.city.split("-")[0] == state.city.split("-")[0] }
+                val otherUsers = users.filter { it.city.split("-")[0] != state.city.split("-")[0] }
+
                 Text("USUARIOS EN LÍNEA", color = Color.White.copy(0.3f), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.fillMaxWidth())
-                LazyRow(modifier = Modifier.fillMaxWidth().height(82.dp), contentPadding = PaddingValues(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(users.filter { 
-                        it.city.split("-")[0] == state.city.split("-")[0]
-                    }) { user -> 
-                        UserCard(
-                            user = user, 
-                            isMe = (user.id == myId), 
-                            onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, 
-                            onPrivateChat = { }, 
-                            onReport = { onReport(user.id) }, 
-                            onBlock = { onBlock(user.id) },
-                            onAvatarClick = { onPendingDialogChange(RadioDialogType.USER_ACTIONS, user.id) }
-                        ) 
+
+                if (localUsers.size <= 1 && otherUsers.isNotEmpty()) {
+                    val bestActiveCity = otherUsers.groupBy { it.city.split("-")[0] }.maxByOrNull { it.value.size }?.key ?: "MADRID"
+                    val totalActiveNationwide = otherUsers.size
+
+                    Surface(
+                        color = Color(0xFF00E5FF).copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(alpha = 0.4f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clickable {
+                                onStateChange(state.copy(city = bestActiveCity, channel = bestActiveCity))
+                                onPlaySound("switch")
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Radar,
+                                    contentDescription = "Radar Activo",
+                                    tint = Color(0xFF00E5FF),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "🌐 $totalActiveNationwide ESTACIONES EN ESPAÑA",
+                                        color = Color.White,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                    Text(
+                                        text = "Modulaciones en vivo en $bestActiveCity",
+                                        color = Color.White.copy(0.7f),
+                                        fontSize = 9.sp
+                                    )
+                                }
+                            }
+                            Surface(
+                                color = LuxeColors.Gold,
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = "SINTONIZAR",
+                                    color = Color.Black,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Black,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                } else if (localUsers.size <= 1 && otherUsers.isEmpty()) {
+                    Surface(
+                        color = LuxeColors.Gold.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(alpha = 0.4f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clickable {
+                                onShare(state.channel, state.subtone, null, null)
+                                onPlaySound("switch")
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Icon(
+                                    imageVector = Icons.Rounded.CellTower,
+                                    contentDescription = "Frecuencia Libre",
+                                    tint = LuxeColors.Gold,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "📡 FRECUENCIA LIBRE EN ${state.city.split("-")[0]}",
+                                        color = Color.White,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                    Text(
+                                        text = "¡Sé el primero en modular o invita por WhatsApp!",
+                                        color = Color.White.copy(0.7f),
+                                        fontSize = 9.sp
+                                    )
+                                }
+                            }
+                            Surface(
+                                color = LuxeColors.Gold,
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = "INVITAR",
+                                    color = Color.Black,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Black,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    LazyRow(modifier = Modifier.fillMaxWidth().height(82.dp), contentPadding = PaddingValues(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(localUsers) { user -> 
+                            UserCard(
+                                user = user, 
+                                isMe = (user.id == myId), 
+                                onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, 
+                                onPrivateChat = { }, 
+                                onReport = { onReport(user.id) }, 
+                                onBlock = { onBlock(user.id) },
+                                onAvatarClick = { onPendingDialogChange(RadioDialogType.USER_ACTIONS, user.id) }
+                            ) 
+                        }
                     }
                 }
             }

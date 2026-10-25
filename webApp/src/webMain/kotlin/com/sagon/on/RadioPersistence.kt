@@ -54,7 +54,7 @@ object RadioPersistence {
                 activeProfile = profile,
                 isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
                 squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.90f,
-                systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 0.7f
+                systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 0.90f
             )
         } catch(e: Exception) { RadioState() }
     }

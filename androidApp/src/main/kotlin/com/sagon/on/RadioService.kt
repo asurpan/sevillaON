@@ -23,6 +23,8 @@ class RadioService : Service() {
     }
 
     private var mediaSession: MediaSession? = null
+    private var wakeLock: android.os.PowerManager.WakeLock? = null
+    private var wifiLock: android.net.wifi.WifiManager.WifiLock? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -31,6 +33,16 @@ class RadioService : Service() {
                 mediaSession = MediaSession(this, "ON_AIR_SPAIN_SESSION").apply {
                     isActive = true
                 }
+            }
+            // 🛡️ CPU WAKELOCK: Mantiene la CPU despierta cuando la pantalla se apaga
+            val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            wakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "ON_AIR_SPAIN:RadioWakeLock").apply {
+                acquire()
+            }
+            // 🛡️ WIFI LOCK: Evita que la antena Wi-Fi entre en reposo profundo
+            val wm = applicationContext.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+            wifiLock = wm.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "ON_AIR_SPAIN:WifiLock").apply {
+                acquire()
             }
         } catch (e: Exception) {}
     }
@@ -97,6 +109,8 @@ class RadioService : Service() {
 
     override fun onDestroy() {
         try {
+            if (wakeLock?.isHeld == true) wakeLock?.release()
+            if (wifiLock?.isHeld == true) wifiLock?.release()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 mediaSession?.release()
             }

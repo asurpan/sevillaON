@@ -1071,6 +1071,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             fun share(city: String, channel: String, subtone: String?, proRole: String?) {
                                 post {
                                     val phrases = listOf(
+                                        "💖 Hola, he conocido a LOLA en la radio de la ciudad. Entra un momento a saludar...",
                                         "🎙️ Estoy probando la antena y me falta reporte de señal. ¿Entras un momento y me dices cómo me oyes?",
                                         "📻 Estoy arreglando la antena y calibrando la frecuencia. ¿Entras un segundo a modular?",
                                         "🌆 Vente a volar por los tejados de voz. Estoy en directo en tu ciudad.",

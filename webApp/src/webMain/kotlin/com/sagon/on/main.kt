@@ -385,9 +385,18 @@ fun main() {
                         shareData.title = "ON AIR SPAIN"
                         shareData.text = shareText
                         shareData.url = url
-                        nav.share(shareData)
+                        try {
+                            val promise = nav.share(shareData)
+                            if (promise != null && promise.catch != null) {
+                                promise.catch {
+                                    try { nav.clipboard.writeText(shareText) } catch(e: dynamic) {}
+                                }
+                            }
+                        } catch(e: dynamic) {
+                            try { nav.clipboard.writeText(shareText) } catch(e: dynamic) {}
+                        }
                     } else if (nav != null && nav.clipboard != null) {
-                        nav.clipboard.writeText(shareText)
+                        try { nav.clipboard.writeText(shareText) } catch(e: dynamic) {}
                         if (win.playUiSound != null) win.playUiSound("incoming")
                     }
                 }

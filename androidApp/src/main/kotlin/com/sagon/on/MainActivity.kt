@@ -1081,7 +1081,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                         val shortTopic = if (topic.length > 70) topic.take(67) + "..." else topic
                                         "🎙️ *DEBATE EN VIVO — $cleanCity*\n\n" +
                                         "💬 \"$shortTopic\"\n\n" +
-                                        "🔥 Entra a escuchar las opiniones en directo por radio:\n" +
+                                        "📡 *ON AIR SPAIN* | 🗺️ *$cleanCity* • *CH $channel*$subText\n" +
                                         "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=57"
                                     }
 

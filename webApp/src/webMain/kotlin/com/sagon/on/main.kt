@@ -385,7 +385,7 @@ fun main() {
                     val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + "&v=57"
                     val shareText = "🎙️ *DEBATE EN VIVO — $cleanCity*\n\n" +
                         "💬 \"$shortTopic\"\n\n" +
-                        "🔥 Entra a escuchar las opiniones en directo por radio:\n" + url
+                        "📡 *ON AIR SPAIN* | 🗺️ *$cleanCity* • *CH $channel*\n" + url
                     val nav = win.navigator
                     if (nav != null && nav.share != null) {
                         val shareData = js("{}")

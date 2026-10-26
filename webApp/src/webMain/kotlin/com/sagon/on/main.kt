@@ -382,7 +382,7 @@ fun main() {
                     val topic = getDailyDebateTopic(city)
                     val cleanCity = city.split("-")[0].uppercase()
                     val shortTopic = if (topic.length > 70) topic.take(67) + "..." else topic
-                    val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + "&v=57"
+                    val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + "&v=58"
                     val shareText = "🎙️ *DEBATE EN VIVO — $cleanCity*\n\n" +
                         "💬 \"$shortTopic\"\n\n" +
                         "📡 *ON AIR SPAIN* | 🗺️ *$cleanCity* • *CH $channel*\n" + url

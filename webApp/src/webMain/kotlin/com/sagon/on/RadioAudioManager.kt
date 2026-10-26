@@ -325,8 +325,7 @@ object RadioAudioManager {
                     if (window.app.txMaxTimeout) clearTimeout(window.app.txMaxTimeout);
                     window.app.txMaxTimeout = setTimeout(function() {
                         console.log("⏱️ Max PTT Timeout (60s) alcanzado");
-                        window.app.pttCooldownUntil = Date.now() + 5000; // 5s Cooldown
-                        if (window.dispatch_notification) window.dispatch_notification("⏱️ LÍMITE DE TRANSMISIÓN (60s)", "Límite de tiempo alcanzado. Espera 5s de descanso.", "warning");
+                        if (window.dispatch_notification) window.dispatch_notification("⏱️ CAMBIO AUTOMÁTICO (60s)", "Tiempo de cambio alcanzado. Vuelve a pulsar PTT para continuar.", "info");
                         if (window.playUiSound) window.playUiSound("ptt_off");
                         window.broadcastPTT(false, true, power);
                     }, 60000);

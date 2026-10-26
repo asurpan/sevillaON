@@ -390,12 +390,21 @@ fun BlacklistDialog(blockedUsers: Set<String>, users: List<RemoteUser>, onUnbloc
 
 @Composable
 fun BatteryChecklistDialog(
-    statusJson: String,
+    statusJsonProvider: () -> String,
     onIgnoreBattery: () -> Unit,
     onOpenNotif: () -> Unit,
     onOpenAutoStart: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    var statusJson by remember { mutableStateOf(statusJsonProvider()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            statusJson = statusJsonProvider()
+        }
+    }
+
     val isIgnoringBattery = statusJson.contains("\"isIgnoringBattery\":true")
     val notifsEnabled = statusJson.contains("\"notifsEnabled\":true")
     val isCustomOs = statusJson.contains("\"isXiaomiOrCustom\":true")
@@ -405,16 +414,16 @@ fun BatteryChecklistDialog(
         containerColor = LuxeColors.DeepSea,
         modifier = Modifier.padding(12.dp).border(2.dp, LuxeColors.Gold.copy(0.6f), RoundedCornerShape(28.dp)),
         icon = { Icon(Icons.Rounded.GppMaybe, null, tint = LuxeColors.Gold, modifier = Modifier.size(44.dp)) },
-        title = { Text("DIAGNÓSTICO SEGUNDO PLANO", fontWeight = FontWeight.Black, fontSize = 17.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center) },
+        title = { Text("DIAGNÓSTICO SEGUNDO PLANO", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    "Para evitar que Android corte la voz al apagar la pantalla, verifica tu lista de configuración:",
+                    "Para evitar que Android corte la voz al apagar la pantalla, verifica la lista de configuración:",
                     color = Color.White.copy(0.8f),
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp,
+                    fontSize = 11.sp,
+                    lineHeight = 16.sp,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 14.dp)
                 )
 
                 // 1. MODO BATERÍA
@@ -445,19 +454,27 @@ fun BatteryChecklistDialog(
                         title = "3. Inicio Automático / Autorun",
                         description = "Recomendado para MIUI/HyperOS/Samsung para evitar el cierre por reposo.",
                         isOk = false,
-                        actionText = "ABRIR INICIO AUTOMÁTICO",
+                        actionText = "ABRIR AUTORUN",
                         onAction = onOpenAutoStart
                     )
                 }
             }
         },
         confirmButton = {
-            LuxeButton("CONFIGURAR TODO EN AJUSTES", { onIgnoreBattery() }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+            LuxeButton(
+                text = "CONFIGURAR AJUSTES",
+                onClick = { onIgnoreBattery() },
+                enabled = true,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                containerColor = LuxeColors.Gold,
+                contentColor = Color.Black,
+                fontSize = 13.sp
+            )
         },
         dismissButton = {
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 TextButton(onClick = onDismiss) {
-                    Text("ENTENDIDO, LUEGO", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 12.sp, textAlign = TextAlign.Center)
+                    Text("ENTENDIDO, LUEGO", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp, textAlign = TextAlign.Center)
                 }
             }
         }
@@ -472,26 +489,29 @@ private fun ChecklistItem(
     actionText: String,
     onAction: () -> Unit
 ) {
+    val greenColor = Color(0xFF10B981)
+    val redColor = Color(0xFFEF4444)
+
     Surface(
-        color = if (isOk) Color(0xFF10B981).copy(0.1f) else LuxeColors.Gold.copy(0.08f),
+        color = if (isOk) greenColor.copy(0.12f) else redColor.copy(0.08f),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, if (isOk) Color(0xFF10B981).copy(0.4f) else LuxeColors.Gold.copy(0.3f)),
+        border = BorderStroke(1.dp, if (isOk) greenColor.copy(0.5f) else redColor.copy(0.4f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = if (isOk) Icons.Rounded.CheckCircle else Icons.Rounded.Warning,
+                imageVector = if (isOk) Icons.Rounded.CheckCircle else Icons.Rounded.Cancel,
                 contentDescription = null,
-                tint = if (isOk) Color(0xFF10B981) else LuxeColors.Gold,
-                modifier = Modifier.size(24.dp)
+                tint = if (isOk) greenColor else redColor,
+                modifier = Modifier.size(26.dp)
             )
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp)
-                Text(description, color = Color.White.copy(0.7f), fontSize = 10.sp, lineHeight = 14.sp)
+                Text(title, color = Color.White, fontWeight = FontWeight.Black, fontSize = 11.sp)
+                Text(description, color = Color.White.copy(0.7f), fontSize = 10.sp, lineHeight = 13.sp)
             }
             Spacer(Modifier.width(8.dp))
             if (!isOk) {
@@ -509,7 +529,19 @@ private fun ChecklistItem(
                     )
                 }
             } else {
-                Text("✓ OK", color = Color(0xFF10B981), fontWeight = FontWeight.Black, fontSize = 11.sp)
+                Surface(
+                    color = greenColor.copy(0.2f),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, greenColor.copy(0.5f))
+                ) {
+                    Text(
+                        "✓ OK",
+                        color = greenColor,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 10.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
             }
         }
     }

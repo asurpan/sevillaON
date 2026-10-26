@@ -296,7 +296,7 @@ fun App(
 
                 if (showBatteryWarning) {
                     BatteryChecklistDialog(
-                        statusJson = onBatteryStatusRequest(),
+                        statusJsonProvider = { onBatteryStatusRequest() },
                         onIgnoreBattery = { onIgnoreBatteryOptimizations() },
                         onOpenNotif = { onOpenNotifSettings() },
                         onOpenAutoStart = { onOpenAutoStartSettings() },

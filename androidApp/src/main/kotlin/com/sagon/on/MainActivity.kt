@@ -1071,23 +1071,18 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             @JavascriptInterface
                             fun share(city: String, channel: String, subtone: String?, proRole: String?) {
                                 post {
-                                    val phrases = listOf(
-                                        "💖 Hola, he conocido a LOLA en la radio de la ciudad. Entra un momento a saludar...",
-                                        "🎙️ Estoy probando la antena y me falta reporte de señal. ¿Entras un momento y me dices cómo me oyes?",
-                                        "📻 Estoy arreglando la antena y calibrando la frecuencia. ¿Entras un segundo a modular?",
-                                        "🌆 Vente a volar por los tejados de voz. Estoy en directo en tu ciudad.",
-                                        "✨ Hoy la propagación es pura brisa celestial. Entra a la frecuencia y comparte ruta.",
-                                        "🏙️ Entra en tu ciudad y busquemos juntos los tejados de voz en vivo.",
-                                        "🚀 ¿Me ayudas a volar por la ciudad? Estoy sintonizado en la radio en directo.",
-                                        "📡 Descubre la Frecuencia de tu ciudad. Entra ahora y saluda a las estaciones abiertas."
-                                    )
-                                    val randomPhrase = phrases.random()
+                                    val topic = getDailyDebateTopic(city)
+                                    val cleanCity = city.split("-")[0].uppercase()
+                                    val subText = if (subtone != null && subtone != "0000") " | 🔐 *$subtone*" else ""
 
                                     val shareText = if (city == "RADAR") {
                                         "📡 ¡Vigilancia Hertz Activa! *ON AIR SPAIN*\nAnalizando presencia biológica en directo... 🧬\n\nÚnete: https://asurpan.github.io/sevillaON/?v=57"
                                     } else {
-                                        val subText = if (subtone != null && subtone != "0000") " | 🔐 *$subtone*" else ""
-                                        "$randomPhrase\n\n📻 *ON AIR SPAIN*\n📍 *$city* | 🔊 *CH $channel*$subText\n\nhttps://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=57"
+                                        "🎙️ *DEBATE EN DIRECTO POR VOZ — HOY A LAS 21:00H*\n\n" +
+                                        "💬 *TEMA DE HOY EN $cleanCity:*\n\"$topic\"\n\n" +
+                                        "📻 *ON AIR SPAIN — Radio CB 27MHz*\n📍 *$city* | 🔊 *CH $channel*$subText\n\n" +
+                                        "Entra gratis, escucha en vivo y da tu opinión por radio:\n" +
+                                        "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=57"
                                     }
 
                                     val sendIntent = android.content.Intent().apply {
@@ -1095,7 +1090,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                         putExtra(android.content.Intent.EXTRA_TEXT, shareText)
                                         type = "text/plain"
                                     }
-                                    val shareIntent = android.content.Intent.createChooser(sendIntent, "Compartir Radio")
+                                    val shareIntent = android.content.Intent.createChooser(sendIntent, "Compartir Debate de Radio")
                                     context.startActivity(shareIntent)
                                 }
                             }

@@ -379,19 +379,13 @@ fun main() {
                 if (win.AndroidApp != null && win.AndroidApp.share != null) {
                     win.AndroidApp.share(city, channel, subtone, proRole)
                 } else {
-                    val phrases = listOf(
-                        "💖 Hola, he conocido a LOLA en la radio de la ciudad. Entra un momento a saludar...",
-                        "🎙️ Estoy probando la antena y me falta reporte de señal. ¿Entras un momento y me dices cómo me oyes?",
-                        "📻 Estoy arreglando la antena y calibrando la frecuencia. ¿Entras un segundo a modular?",
-                        "🌆 Vente a volar por los tejados de voz. Estoy en directo en tu ciudad.",
-                        "✨ Hoy la propagación es pura brisa celestial. Entra a la frecuencia y comparte ruta.",
-                        "🏙️ Entra en tu ciudad y busquemos juntos los tejados de voz en vivo.",
-                        "🚀 ¿Me ayudas a volar por la ciudad? Estoy sintonizado en la radio en directo.",
-                        "📡 Descubre la Frecuencia de tu ciudad. Entra ahora y saluda a las estaciones abiertas."
-                    )
-                    val randomPhrase = phrases.random()
+                    val topic = getDailyDebateTopic(city)
+                    val cleanCity = city.split("-")[0].uppercase()
                     val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + (if (!subtone.isNullOrEmpty()) "&subtone=" + subtone else "") + "&v=57"
-                    val shareText = "$randomPhrase\n\n📻 *ON AIR SPAIN*\n📍 *$city* | 🔊 *CH $channel*\n\n$url"
+                    val shareText = "🎙️ *DEBATE EN DIRECTO POR VOZ — HOY A LAS 21:00H*\n\n" +
+                        "💬 *TEMA DE HOY EN $cleanCity:*\n\"$topic\"\n\n" +
+                        "📻 *ON AIR SPAIN — Radio CB 27MHz*\n📍 *$city* | 🔊 *CH $channel*\n\n" +
+                        "Entra gratis, escucha en vivo y da tu opinión por radio:\n" + url
                     val nav = win.navigator
                     if (nav != null && nav.share != null) {
                         val shareData = js("{}")

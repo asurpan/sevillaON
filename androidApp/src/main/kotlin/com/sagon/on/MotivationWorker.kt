@@ -53,16 +53,10 @@ class MotivationWorker(context: Context, workerParams: WorkerParameters) : Worke
             notificationManager.createNotificationChannel(channel)
         }
 
-        val messages = listOf(
-            "🌆 ¡Tu ciudad te espera en 3D! Entra a la radio y vuela por la ciudad en vivo. 📻",
-            "👂 MODO OREJA: ¿Estás en público? El Modo Oreja silencia el altavoz y te avisa con un tono discreto cuando te hablen.",
-            "🚀 ¿Hace cuánto no sobrevuelas tu ciudad? Entra a ON AIR SPAIN y modula con los compañeros.",
-            "🎧 MODO OREJA: Te permite estar atento a la emisora en privado pegando el móvil a tu oreja sin molestar a nadie.",
-            "🎙️ ¡Estación! Explora el mapa en vivo de tu ciudad y saluda a los operadores conectados.",
-            "📻 ¡Se echa de menos tu voz en la frecuencia! Entra a la ciudad y comparte ruta con la comunidad.",
-            "🏙️ Tienes estaciones activas en tu zona. ¡Abre la app, activa el Modo Oreja en público y sobrevuela la ciudad!"
-        )
-        val randomMessage = messages.random()
+        val prefs = applicationContext.getSharedPreferences("on_air_prefs", Context.MODE_PRIVATE)
+        val lastCity = prefs.getString("last_city", "SEVILLA") ?: "SEVILLA"
+        val cleanCity = lastCity.split("-")[0].uppercase()
+        val topic = getDailyDebateTopic(cleanCity)
 
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -73,8 +67,9 @@ class MotivationWorker(context: Context, workerParams: WorkerParameters) : Worke
         )
 
         val notification = NotificationCompat.Builder(applicationContext, channelId)
-            .setContentTitle("📻 ON AIR SPAIN")
-            .setContentText(randomMessage)
+            .setContentTitle("🎙️ DEBATE EN DIRECTO A LAS 21:00H")
+            .setContentText("En $cleanCity: \"$topic\"")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("En $cleanCity:\n\"$topic\"\n\n¡Entra gratis a las 21:00h y da tu opinión en directo por radio!"))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)

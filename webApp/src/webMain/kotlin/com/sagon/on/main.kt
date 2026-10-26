@@ -211,6 +211,7 @@ fun main() {
                     val list = mutableListOf<RemoteUser>()
                     val now = Date.now()
                     val myCityBase = (win.app.currentCity as? String ?: "").split("-")[0]
+                    val isInitialLoad = usersNotified.isEmpty()
                     if (users != null) {
                         val keys = js("Object").keys(users)
                         for (i in 0 until (keys.length as Int)) {
@@ -232,11 +233,13 @@ fun main() {
                             if (userNick.isEmpty()) userNick = k.split("_")[0].uppercase()
                             if (k != win.app.sessionID && !usersNotified.contains(k)) {
                                 usersNotified.add(k)
-                                val isFriend = radioState.value.friends.contains(userNick)
-                                win.playUiSound(if (isFriend) "incoming" else "user_in")
-                                if (isFriend) {
-                                    val userCityName = (u.city as? String ?: "tu ciudad").split("-")[0]
-                                    showSystemNotification("📻 ¡TU AMIGO SE HA CONECTADO!", "¡$userNick ha entrado en la radio de $userCityName!")
+                                if (!isInitialLoad) {
+                                    val isFriend = radioState.value.friends.contains(userNick)
+                                    win.playUiSound(if (isFriend) "incoming" else "user_in")
+                                    if (isFriend) {
+                                        val userCityName = (u.city as? String ?: "tu ciudad").split("-")[0]
+                                        showSystemNotification("📻 ¡TU AMIGO SE HA CONECTADO!", "¡$userNick ha entrado en la radio de $userCityName!")
+                                    }
                                 }
                             }
                             list.add(RemoteUser(id = k, nick = userNick, isTransmitting = isTransmitting, city = u.city as? String ?: "SEVILLA", channel = u.channel as? String ?: "SEVILLA", txPower = (u.pwr as? Double ?: 0.7).toFloat(), isFriend = radioState.value.friends.contains(userNick), roger = (u.roger == true)))

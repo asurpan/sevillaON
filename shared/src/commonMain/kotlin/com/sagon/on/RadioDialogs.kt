@@ -390,7 +390,7 @@ fun RadioDialogs(
                         onClick = { 
                             val nextVal = !state.isDiscreteModeEnabled
                             onStateChange(state.copy(isDiscreteModeEnabled = nextVal))
-                            triggerUiSound("switch")
+                            triggerUiSound(if (nextVal) "incoming" else "switch")
                             if (nextVal) {
                                 onNotification(AppNotification("MODO DISCRETO", "SILENCIO TOTAL ACTIVADO. LAS VOCES NO SONARÁN.", NotificationType.Warning))
                             }
@@ -843,7 +843,14 @@ fun RadioDialogs(
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Modo Discreto", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
-                        Switch(checked = state.isDiscreteModeEnabled, onCheckedChange = { onStateChange(state.copy(isDiscreteModeEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
+                        Switch(
+                            checked = state.isDiscreteModeEnabled,
+                            onCheckedChange = { nextVal ->
+                                onStateChange(state.copy(isDiscreteModeEnabled = nextVal))
+                                triggerUiSound(if (nextVal) "incoming" else "switch")
+                            },
+                            colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold)
+                        )
                     }
 
                     Spacer(Modifier.height(20.dp))

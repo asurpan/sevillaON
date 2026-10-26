@@ -597,10 +597,11 @@ object RadioSignaling {
                 }
 
                 if (type === "switch") {
+                    // 🎛️ CLIC TÁCTIL SUAVE Y AGRADABLE (800Hz / 0.02 - SIN MOLESTAR)
                     var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain();
-                    o.type = "sine"; o.frequency.setValueAtTime(1200, now);
-                    g.gain.setValueAtTime(0.06, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-                    o.connect(g); g.connect(window.app.masterOut); o.start(now); o.stop(now + 0.06);
+                    o.type = "sine"; o.frequency.setValueAtTime(800, now);
+                    g.gain.setValueAtTime(0.02, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                    o.connect(g); g.connect(window.app.masterOut); o.start(now); o.stop(now + 0.04);
                     return;
                 }
 

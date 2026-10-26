@@ -563,20 +563,20 @@ fun RadioPanel(
                                     // 🛡️ CANAL CENTRAL (ETIQUETA CRISTAL NEÓN ESMERALDA)
                                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                                         Surface(
+                                            onClick = { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) },
                                             color = Color(0xFF10B981).copy(alpha = 0.12f),
                                             shape = RoundedCornerShape(12.dp),
-                                            border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.40f)),
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(12.dp))
-                                                .clickable { onPendingDialogChange(RadioDialogType.SELECT_CITY, null) }
+                                            border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.40f))
                                         ) {
                                             Text(
                                                 text = "CH ${CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: "00"}", 
                                                 color = Color(0xFF10B981), 
                                                 fontSize = channelFontSize, 
                                                 fontWeight = FontWeight.Black,
-                                                letterSpacing = 1.5.sp,
-                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                                                letterSpacing = 1.sp,
+                                                maxLines = 1,
+                                                softWrap = false,
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
                                             )
                                         }
                                         Spacer(Modifier.height(4.dp))

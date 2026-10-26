@@ -152,3 +152,28 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
             .catch(error => callback(null));
     """)
 }
+
+actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
+    val cleanCity = city.split("-")[0].trim()
+    val url = "https://api.rss2json.com/v1/api.json?rss_url=" + 
+        window.asDynamic().encodeURIComponent("https://news.google.com/rss/search?q=${cleanCity}+cuando:1d&hl=es&gl=ES&ceid=ES:es")
+    
+    js("""
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.items && data.items.length > 0) {
+                    var title = data.items[0].title;
+                    if (title) {
+                        var cleanTitle = title.split(" - ")[0].trim();
+                        callback(cleanTitle);
+                    } else {
+                        callback(null);
+                    }
+                } else {
+                    callback(null);
+                }
+            })
+            .catch(error => callback(null));
+    """)
+}

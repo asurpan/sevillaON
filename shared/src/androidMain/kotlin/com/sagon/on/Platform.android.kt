@@ -64,3 +64,29 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
         }
     }
 }
+
+actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
+    tourismScope.launch {
+        try {
+            val cleanCity = city.split("-")[0].trim()
+            val encodedCity = java.net.URLEncoder.encode(cleanCity, "UTF-8")
+            val url = java.net.URL("https://api.rss2json.com/v1/api.json?rss_url=https://news.google.com/rss/search?q=${encodedCity}+cuando:1d&hl=es&gl=ES&ceid=ES:es")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 3000
+            connection.readTimeout = 3000
+            val jsonText = connection.inputStream.bufferedReader().readText()
+            
+            val title = jsonText.substringAfter("\"title\":\"", "").substringBefore("\",\"pubDate\"")
+            val cleanTitle = title.substringBefore(" - ").trim()
+            
+            withContext(Dispatchers.Main) {
+                callback(if (cleanTitle.length > 10) cleanTitle else null)
+            }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                callback(null)
+            }
+        }
+    }
+}

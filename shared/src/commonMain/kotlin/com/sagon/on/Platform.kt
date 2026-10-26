@@ -32,3 +32,5 @@ expect fun setVirtualOperatorText(text: String)
 expect fun showSystemNotification(title: String, message: String)
 
 expect fun fetchTourismInfo(city: String, callback: (String?) -> Unit)
+
+expect fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit)

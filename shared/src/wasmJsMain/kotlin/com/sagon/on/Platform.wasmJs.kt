@@ -39,3 +39,7 @@ actual fun showSystemNotification(title: String, message: String) {
 actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
     callback(null)
 }
+
+actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
+    callback(null)
+}

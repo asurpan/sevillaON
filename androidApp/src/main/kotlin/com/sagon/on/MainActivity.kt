@@ -1084,10 +1084,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                     val randomPhrase = phrases.random()
 
                                     val shareText = if (city == "RADAR") {
-                                        "📡 ¡Vigilancia Hertz Activa! *ON AIR SPAIN*\nAnalizando presencia biológica en directo... 🧬\n\nÚnete: https://asurpan.github.io/sevillaON/"
+                                        "📡 ¡Vigilancia Hertz Activa! *ON AIR SPAIN*\nAnalizando presencia biológica en directo... 🧬\n\nÚnete: https://asurpan.github.io/sevillaON/?v=57"
                                     } else {
                                         val subText = if (subtone != null && subtone != "0000") " | 🔐 *$subtone*" else ""
-                                        "$randomPhrase\n\n📻 *ON AIR SPAIN*\n📍 *$city* | 🔊 *CH $channel*$subText\n\nhttps://asurpan.github.io/sevillaON/?city=$city&channel=$channel"
+                                        "$randomPhrase\n\n📻 *ON AIR SPAIN*\n📍 *$city* | 🔊 *CH $channel*$subText\n\nhttps://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=57"
                                     }
 
                                     val sendIntent = android.content.Intent().apply {

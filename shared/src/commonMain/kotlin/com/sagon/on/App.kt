@@ -422,15 +422,17 @@ fun App(
                             Text("La radio seguirá funcionando en segundo plano.", fontSize = 13.sp, color = Color.White.copy(0.7f))
                         },
                         confirmButton = {
-                            Button(
+                            LuxeButton(
+                                text = "MINIMIZAR Y DEJAR EN SEGUNDO PLANO",
                                 onClick = { 
                                     onExternalExitRequest(false, false) 
                                     showExitDialog = false
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Red, contentColor = Color.White),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth().height(48.dp)
-                            ) { Text("MINIMIZAR RADIO", fontWeight = FontWeight.Black, fontSize = 11.sp) }
+                                enabled = true,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                containerColor = LuxeColors.Gold,
+                                contentColor = Color.Black
+                            )
                         },
                         dismissButton = {
                             TextButton(onClick = { showExitDialog = false }) { 

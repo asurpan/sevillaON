@@ -114,7 +114,19 @@ fun main() {
 
                 setInterval(function() {
                     if(window.app.db && window.app.sessionID) {
-                        window.app.db.ref("users/" + window.app.sessionID).update({ lastSeen: Date.now() });
+                        var updates = { lastSeen: Date.now() };
+                        if (window.app.pttStateInternal) {
+                            var cleanNick = window.app.nick || "RADIO";
+                            var currentPwr = parseFloat(localStorage.getItem("vetPwr_" + cleanNick)) || 0.7;
+                            if (currentPwr < 1.0) {
+                                // 🛡️ PROGRESIÓN DE VETERANÍA REAL: Requiere ~25 horas de transmisión activa para alcanzar los 50W Élite
+                                currentPwr = Math.min(1.0, currentPwr + 0.0000166);
+                                localStorage.setItem("vetPwr_" + cleanNick, currentPwr.toString());
+                                localStorage.setItem("vetPwr", currentPwr.toString());
+                                updates.pwr = currentPwr;
+                            }
+                        }
+                        window.app.db.ref("users/" + window.app.sessionID).update(updates);
                     }
                 }, 5000);
                 if (window.initFirebaseListener) window.initFirebaseListener();

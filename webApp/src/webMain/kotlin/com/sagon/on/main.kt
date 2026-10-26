@@ -381,11 +381,11 @@ fun main() {
                 } else {
                     val topic = getDailyDebateTopic(city)
                     val cleanCity = city.split("-")[0].uppercase()
-                    val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + (if (!subtone.isNullOrEmpty()) "&subtone=" + subtone else "") + "&v=57"
-                    val shareText = "🎙️ *RADIO Y DEBATE EN DIRECTO — $cleanCity*\n\n" +
-                        "💬 *TEMA DE HOY EN $cleanCity:*\n\"$topic\"\n\n" +
-                        "📻 *ON AIR SPAIN — Radio CB 27MHz*\n📍 *$city* | 🔊 *CH $channel*\n\n" +
-                        "Entra gratis en vivo ahora o únete al debate de las 21:00h:\n" + url
+                    val shortTopic = if (topic.length > 85) topic.take(82) + "..." else topic
+                    val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + "&v=57"
+                    val shareText = "🎙️ *RADIO Y DEBATE — $cleanCity*\n\n" +
+                        "💬 \"$shortTopic\"\n\n" +
+                        "📻 *ON AIR SPAIN* | 📍 *$cleanCity* 🔊 *CH $channel*\n" + url
                     val nav = win.navigator
                     if (nav != null && nav.share != null) {
                         val shareData = js("{}")

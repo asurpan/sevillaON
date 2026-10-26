@@ -1078,10 +1078,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                     val shareText = if (city == "RADAR") {
                                         "📡 ¡Vigilancia Hertz Activa! *ON AIR SPAIN*\nAnalizando presencia biológica en directo... 🧬\n\nÚnete: https://asurpan.github.io/sevillaON/?v=57"
                                     } else {
-                                        "🎙️ *RADIO Y DEBATE EN DIRECTO — $cleanCity*\n\n" +
-                                        "💬 *TEMA DE HOY EN $cleanCity:*\n\"$topic\"\n\n" +
-                                        "📻 *ON AIR SPAIN — Radio CB 27MHz*\n📍 *$city* | 🔊 *CH $channel*$subText\n\n" +
-                                        "Entra gratis en vivo ahora o únete al debate de las 21:00h:\n" +
+                                        val shortTopic = if (topic.length > 85) topic.take(82) + "..." else topic
+                                        "🎙️ *RADIO Y DEBATE — $cleanCity*\n\n" +
+                                        "💬 \"$shortTopic\"\n\n" +
+                                        "📻 *ON AIR SPAIN* | 📍 *$cleanCity* 🔊 *CH $channel*\n" +
                                         "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=57"
                                     }
 

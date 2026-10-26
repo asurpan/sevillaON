@@ -166,7 +166,7 @@ object RadioAudioManager {
                     window.app.androidKeepAlive = window.app.ctx.createOscillator();
                     window.app.androidKeepAlive.frequency.value = 20500; 
                     window.app.androidKeepAliveGain = window.app.ctx.createGain();
-                    window.app.androidKeepAliveGain.gain.value = 0.001; 
+                    window.app.androidKeepAliveGain.gain.value = 0.00005; // 🛡️ Silencio absoluto para el oído humano
                     var lfoA16 = window.app.ctx.createOscillator();
                     lfoA16.frequency.value = 0.5; 
                     var lfoA16Gain = window.app.ctx.createGain();
@@ -178,7 +178,7 @@ object RadioAudioManager {
                     window.app.androidKeepAlive.start();
                     lfoA16.start();
                     
-                    // 🛡️ SISTEMA DITHER (v9.8): Ruido Oculto Suave pero persistente
+                    // 🛡️ SISTEMA DITHER (v9.8): Ruido Oculto Ultra-Suave e inaudible
                     var ditherSize = window.app.ctx.sampleRate;
                     var ditherBuffer = window.app.ctx.createBuffer(1, ditherSize, window.app.ctx.sampleRate);
                     var ditherData = ditherBuffer.getChannelData(0);
@@ -187,7 +187,7 @@ object RadioAudioManager {
                     ditherSource.buffer = ditherBuffer;
                     ditherSource.loop = true;
                     var ditherGain = window.app.ctx.createGain();
-                    ditherGain.gain.value = 0.005; // v9.8: Bajado a nivel inaudible
+                    ditherGain.gain.value = 0.00005; // 🛡️ Reducido 100 veces para silencio total
                     ditherSource.connect(ditherGain);
                     ditherGain.connect(window.app.masterOut);
                     ditherSource.start();

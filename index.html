@@ -270,40 +270,29 @@
             font-size: 15px;
         }
 
-        /* 📱 TARJETA DE ATERRIZAJE ESTILO TARJETA CIAN TÁCTICA */
-        .landing-card {
-            background: #020617;
-            border: 1.5px solid rgba(0, 229, 255, 0.5);
-            border-radius: 28px;
-            padding: 32px 24px;
-            max-width: 420px;
-            width: 90%;
-            text-align: center;
-            box-shadow: 0 0 35px rgba(0, 229, 255, 0.15);
-            margin: auto 0;
-        }
-
         .btn-primary {
-            background: #00E5FF !important;
-            color: #000000 !important;
+            background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%) !important;
+            color: #FFFFFF !important;
             font-weight: 900 !important;
             width: 100% !important;
-            padding: 16px 20px !important;
+            max-width: 380px !important;
+            padding: 16px 24px !important;
             border-radius: 14px !important;
             border: none !important;
             font-size: 15px !important;
-            letter-spacing: 1px !important;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4) !important;
+            letter-spacing: 1.2px !important;
+            box-shadow: 0 0 25px rgba(14, 165, 233, 0.45) !important;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
+            margin: 0 auto;
         }
 
         @media (max-width: 600px) {
             #landing-ui {
-                padding: 20px 16px !important;
+                padding: 24px 20px !important;
                 min-height: 100vh !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -318,29 +307,30 @@
             .logo-text {
                 font-size: 16px !important;
             }
-            .landing-card {
-                padding: 24px 18px !important;
-                border-radius: 22px !important;
-                width: 92% !important;
+            .hero {
+                margin-top: auto !important;
+                margin-bottom: auto !important;
+                width: 100% !important;
+                text-align: center !important;
             }
             .badge {
-                padding: 5px 12px !important;
-                font-size: 10px !important;
-                margin-bottom: 12px !important;
+                padding: 6px 14px !important;
+                font-size: 11px !important;
+                margin-bottom: 16px !important;
             }
             h1 {
-                font-size: 26px !important;
+                font-size: 30px !important;
                 line-height: 1.25 !important;
-                margin-bottom: 14px !important;
+                margin-bottom: 16px !important;
             }
-            .landing-card p {
-                font-size: 13px !important;
-                line-height: 1.45 !important;
-                margin-bottom: 24px !important;
+            .hero p {
+                font-size: 14px !important;
+                line-height: 1.5 !important;
+                margin-bottom: 28px !important;
             }
             .btn-primary {
-                padding: 14px 18px !important;
-                font-size: 14px !important;
+                padding: 16px 24px !important;
+                font-size: 15px !important;
             }
         }
 
@@ -409,9 +399,9 @@
             <div style="color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 700;">Radio CB Digital</div>
         </header>
 
-        <div class="landing-card">
+        <section class="hero">
             <div class="badge">EMISORA EN DIRECTO</div>
-            <h1>Conoce Gente <br><span style="color: #00E5FF;">en tu Ciudad</span></h1>
+            <h1>Conoce Gente <br><span style="color: var(--pool-blue);">en tu Ciudad</span></h1>
             <p>La red social de voz más directa. Haz amigos, liga o simplemente modula con gente de tu zona. Sin perfiles falsos, solo la pureza de la radio CB digital.</p>
 
             <div style="display: flex; justify-content: center; width: 100%;">
@@ -425,7 +415,7 @@
                     <span>ENTRAR Y CONOCER GENTE</span>
                 </button>
             </div>
-        </div>
+        </section>
 
         <footer style="margin-top: auto; padding: 20px 0; color: rgba(255,255,255,0.2); font-size: 11px; text-align: center;">
             &copy; 2026 ON AIR SPAIN - Ingeniería de Radio Profesional.

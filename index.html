@@ -270,10 +270,40 @@
             font-size: 15px;
         }
 
-        /* 📱 OPTIMIZACIÓN MÓVIL PANTALLA COMPLETA CENTRADA Y EQUILIBRADA */
+        /* 📱 TARJETA DE ATERRIZAJE ESTILO TARJETA CIAN TÁCTICA */
+        .landing-card {
+            background: #020617;
+            border: 1.5px solid rgba(0, 229, 255, 0.5);
+            border-radius: 28px;
+            padding: 32px 24px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 0 35px rgba(0, 229, 255, 0.15);
+            margin: auto 0;
+        }
+
+        .btn-primary {
+            background: #00E5FF !important;
+            color: #000000 !important;
+            font-weight: 900 !important;
+            width: 100% !important;
+            padding: 16px 20px !important;
+            border-radius: 14px !important;
+            border: none !important;
+            font-size: 15px !important;
+            letter-spacing: 1px !important;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4) !important;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
         @media (max-width: 600px) {
             #landing-ui {
-                padding: 24px 20px !important;
+                padding: 20px 16px !important;
                 min-height: 100vh !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -282,41 +312,35 @@
                 margin-bottom: 0 !important;
             }
             .logo-img {
-                width: 46px !important;
-                height: 46px !important;
+                width: 44px !important;
+                height: 44px !important;
             }
             .logo-text {
-                font-size: 17px !important;
+                font-size: 16px !important;
             }
-            .hero {
-                margin-top: auto !important;
-                margin-bottom: auto !important;
-                width: 100% !important;
-                padding: 20px 0 !important;
+            .landing-card {
+                padding: 24px 18px !important;
+                border-radius: 22px !important;
+                width: 92% !important;
             }
             .badge {
-                padding: 6px 14px !important;
-                font-size: 11px !important;
-                margin-bottom: 16px !important;
+                padding: 5px 12px !important;
+                font-size: 10px !important;
+                margin-bottom: 12px !important;
             }
             h1 {
-                font-size: 28px !important;
+                font-size: 26px !important;
                 line-height: 1.25 !important;
-                margin-bottom: 16px !important;
+                margin-bottom: 14px !important;
             }
-            .hero p {
-                font-size: 14px !important;
-                line-height: 1.5 !important;
-                margin-bottom: 28px !important;
-                padding: 0 2% !important;
+            .landing-card p {
+                font-size: 13px !important;
+                line-height: 1.45 !important;
+                margin-bottom: 24px !important;
             }
             .btn-primary {
-                width: 90% !important;
-                max-width: 360px !important;
-                padding: 16px 24px !important;
-                font-size: 15px !important;
-                border-radius: 14px !important;
-                margin: 0 auto !important;
+                padding: 14px 18px !important;
+                font-size: 14px !important;
             }
         }
 
@@ -385,14 +409,14 @@
             <div style="color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 700;">Radio CB Digital</div>
         </header>
 
-        <section class="hero">
-            <div class="badge">Emisora en Directo</div>
-            <h1>Conoce Gente <br><span style="color: var(--pool-blue);">en tu Ciudad</span></h1>
+        <div class="landing-card">
+            <div class="badge">EMISORA EN DIRECTO</div>
+            <h1>Conoce Gente <br><span style="color: #00E5FF;">en tu Ciudad</span></h1>
             <p>La red social de voz más directa. Haz amigos, liga o simplemente modula con gente de tu zona. Sin perfiles falsos, solo la pureza de la radio CB digital.</p>
 
-            <div style="display: flex; justify-content: center;">
+            <div style="display: flex; justify-content: center; width: 100%;">
                 <button class="btn-primary" onclick="launchRadio()">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
                         <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                         <line x1="12" y1="19" x2="12" y2="22"></line>
@@ -401,7 +425,7 @@
                     <span>ENTRAR Y CONOCER GENTE</span>
                 </button>
             </div>
-        </section>
+        </div>
 
         <footer style="margin-top: auto; padding: 20px 0; color: rgba(255,255,255,0.2); font-size: 11px; text-align: center;">
             &copy; 2026 ON AIR SPAIN - Ingeniería de Radio Profesional.

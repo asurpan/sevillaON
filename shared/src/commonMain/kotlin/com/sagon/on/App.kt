@@ -308,29 +308,7 @@ fun App(
                     )
                 }
 
-                if (showInstallPrompt) {
-                    AlertDialog(
-                        onDismissRequest = { },
-                        containerColor = LuxeColors.DeepSea,
-                        modifier = Modifier.padding(16.dp).border(1.5.dp, Color(0xFF00E5FF).copy(0.6f), RoundedCornerShape(28.dp)),
-                        icon = { Icon(Icons.Rounded.Info, null, tint = Color(0xFF00E5FF), modifier = Modifier.size(44.dp)) },
-                        title = {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("APP OFICIAL ONAIR SPAIN", fontWeight = FontWeight.Black, fontSize = 18.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center)
-                                Spacer(Modifier.height(4.dp))
-                                Surface(color = Color(0xFF10B981).copy(0.15f), shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, Color(0xFF10B981).copy(0.4f))) {
-                                    Text("🔒 100% GRATIS • DESCARGA OFICIAL", color = Color(0xFF10B981), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
-                                }
-                            }
-                        },
-                        text = {
-                            Text("¡Bienvenido a la Frecuencia en Directo!\n\nPara hablar en tiempo real con las estaciones de tu ciudad con máxima calidad de audio y seguridad, abre la Aplicación Oficial desde Google Play Store.", color = Color.White.copy(0.9f), textAlign = TextAlign.Center, fontSize = 13.sp, lineHeight = 18.sp)
-                        },
-                        confirmButton = {
-                            LuxeButton("🚀 ABRIR EN GOOGLE PLAY STORE", { onInstallConfirm() }, true, Modifier.fillMaxWidth().height(52.dp), LuxeColors.Gold, Color.Black)
-                        }
-                    )
-                }
+
 
                 Crossfade(
                     targetState = if (!isAppReady) null else screenState,

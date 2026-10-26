@@ -402,7 +402,7 @@ fun RadioPanel(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(160.dp)
+                        .height(172.dp)
                         .clip(RoundedCornerShape(20.dp)),
                     color = Color(0xFF020617),
                     border = BorderStroke(
@@ -417,11 +417,11 @@ fun RadioPanel(
                     ),
                     shape = RoundedCornerShape(20.dp)
                 ) {
-                    BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp)) {
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 8.dp)) {
                         val availableWidth = maxWidth
                         val sideWidth = (availableWidth * 0.16f).coerceIn(48.dp, 60.dp)
                         val buttonSize = (availableWidth * 0.14f).coerceIn(38.dp, 52.dp)
-                        val channelFontSize = (availableWidth.value / 9.5f).coerceIn(30f, 38f).sp
+                        val channelFontSize = (availableWidth.value / 14f).coerceIn(20f, 25f).sp
                         val iconSize = (buttonSize.value * 0.6f).dp
 
                         Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {

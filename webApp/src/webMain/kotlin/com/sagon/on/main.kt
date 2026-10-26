@@ -57,6 +57,22 @@ fun main() {
 
         window.claimTabControl = claimTab;
 
+        window.checkHardwareRestore = function(onRestored) {
+            var hwID = (window.AndroidApp && window.AndroidApp.getAndroidId) ? window.AndroidApp.getAndroidId() : localStorage.getItem("web_device_id");
+            if (!hwID || !window.app || !window.app.db) return;
+            var localNick = localStorage.getItem("indicativo");
+            if (!localNick || localNick.trim() === "") {
+                window.app.db.ref("devices/" + hwID).once("value").then(function(snapshot) {
+                    var val = snapshot.val();
+                    if (val && val.nick && val.nick.trim() !== "") {
+                        console.log("📻 Auto-Restauración Hardware via ANDROID_ID:", val.nick);
+                        localStorage.setItem("indicativo", val.nick);
+                        if (onRestored) onRestored(val.nick);
+                    }
+                });
+            }
+        };
+
         window.remoteTxStates = {};
         window.connectRadio = function(nick) {
             if (window.app.peer && !window.app.peer.destroyed) {
@@ -65,7 +81,8 @@ fun main() {
                 return;
             }
 
-            var deviceID = localStorage.getItem("web_device_id") || ("web_" + Math.random().toString(36).substring(2, 12));
+            var hwID = (window.AndroidApp && window.AndroidApp.getAndroidId) ? window.AndroidApp.getAndroidId() : null;
+            var deviceID = hwID || localStorage.getItem("web_device_id") || ("web_" + Math.random().toString(36).substring(2, 12));
             localStorage.setItem("web_device_id", deviceID);
             
             var cleanNick = (nick || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
@@ -87,6 +104,10 @@ fun main() {
                     pwr: parseFloat(localStorage.getItem("vetPwr_" + cleanNick)) || 0.7,
                     roger: (localStorage.getItem("roger") === "true"),
                     lastSeen: Date.now()
+                });
+                window.app.db.ref("devices/" + deviceID).set({
+                    nick: cleanNick,
+                    updatedAt: Date.now()
                 });
                 window.app.currentCity = localStorage.getItem("lastCity") || "SEVILLA";
                 window.app.db.ref("users/" + sessionID).onDisconnect().remove();
@@ -180,6 +201,7 @@ fun main() {
         val usersNotified = remember { mutableSetOf<String>() }
 
         LaunchedEffect(Unit) {
+            js("if (window.checkHardwareRestore) window.checkHardwareRestore(function(n) { if (n) window.location.reload(); });")
             while(true) {
                 delay(5000)
                 val app = window.asDynamic().app
@@ -205,50 +227,76 @@ fun main() {
             onReplayEmpty = { },
             onReplayStart = { },
             onBack = { backPressCountState.value = backPressCountState.value + 1 },
-            onNickConflict = { },
+            onNickConflict = { conflictingNick ->
+                showSystemNotification("⚠️ INDICATIVO DUPLICADO", "El indicativo $conflictingNick ya está activo en otro terminal. Por favor elige uno diferente.")
+                localStorage.removeItem("indicativo")
+                RadioPersistence.logout()
+            },
             onUsersUpdate = { users ->
                 try {
                     val list = mutableListOf<RemoteUser>()
                     val now = Date.now()
                     val myCityBase = (win.app.currentCity as? String ?: "").split("-")[0]
                     val isInitialLoad = usersNotified.isEmpty()
+                    val myNick = (win.app.nick as? String ?: "").trim().uppercase()
+                    val mySessionID = (win.app.sessionID as? String ?: "")
+
                     if (users != null) {
                         val keys = js("Object").keys(users)
-                        for (i in 0 until (keys.length as Int)) {
-                            val k = keys[i] as String
-                            val u = users[k] ?: continue
-                            val userCityBase = (u.city as? String ?: "").split("-")[0]
-                            if (k != win.app.sessionID && myCityBase != userCityBase) continue
-                            val isCallActive = (win.app != null && win.app.activeCalls != null && win.app.activeCalls[k] != null)
-                            if (now - (u.lastSeen as? Double ?: 0.0) > 45000 && !isCallActive) continue 
-                            
-                            val isMe = (k == win.app.sessionID)
-                            val audioIsTx = if (isMe) (win.app?.isTransmittingInternal == true) else (win.remoteTxStates != null && win.remoteTxStates[k] == true)
-                            val isTransmitting = if (isMe) (win.app?.isTransmittingInternal == true) else (u.tx == true || audioIsTx)
-                            win.app.remotePowers[k] = (u.pwr as? Double ?: 0.7).toFloat()
-                            val prevState = win.remoteTxStates[k] ?: false
-                            if (prevState && !isTransmitting && !isMe && u.roger == true) win.playUiSound("rx_off")
-                            win.remoteTxStates[k] = isTransmitting
-                            var userNick = (u.nick as? String ?: "").trim().uppercase()
-                            if (userNick.isEmpty()) userNick = k.split("_")[0].uppercase()
-                            if (k != win.app.sessionID && !usersNotified.contains(k)) {
-                                usersNotified.add(k)
-                                if (!isInitialLoad) {
-                                    val isFriend = radioState.value.friends.contains(userNick)
-                                    win.playUiSound(if (isFriend) "incoming" else "user_in")
-                                    if (isFriend) {
-                                        val userCityName = (u.city as? String ?: "tu ciudad").split("-")[0]
-                                        showSystemNotification("📻 ¡TU AMIGO SE HA CONECTADO!", "¡$userNick ha entrado en la radio de $userCityName!")
-                                    }
+
+                        // 🛡️ VERIFICACIÓN DE INDICATIVO ÚNICO EN RED (NO DUPLICADOS ACTIVOS)
+                        var hasConflict = false
+                        if (myNick.isNotEmpty() && mySessionID.isNotEmpty()) {
+                            for (i in 0 until (keys.length as Int)) {
+                                val k = keys[i] as String
+                                val u = users[k] ?: continue
+                                val otherNick = (u.nick as? String ?: "").trim().uppercase()
+                                val lastSeen = (u.lastSeen as? Double ?: 0.0)
+                                if (k != mySessionID && otherNick == myNick && (now - lastSeen < 45000)) {
+                                    hasConflict = true
+                                    win.dispatch_nick_conflict(myNick)
+                                    break
                                 }
                             }
-                            list.add(RemoteUser(id = k, nick = userNick, isTransmitting = isTransmitting, city = u.city as? String ?: "SEVILLA", channel = u.channel as? String ?: "SEVILLA", txPower = (u.pwr as? Double ?: 0.7).toFloat(), isFriend = radioState.value.friends.contains(userNick), roger = (u.roger == true)))
+                        }
+
+                        if (!hasConflict) {
+                            for (i in 0 until (keys.length as Int)) {
+                                val k = keys[i] as String
+                                val u = users[k] ?: continue
+                                val userCityBase = (u.city as? String ?: "").split("-")[0]
+                                if (k != win.app.sessionID && myCityBase != userCityBase) continue
+                                val isCallActive = (win.app != null && win.app.activeCalls != null && win.app.activeCalls[k] != null)
+                                if (now - (u.lastSeen as? Double ?: 0.0) > 45000 && !isCallActive) continue 
+                                
+                                val isMe = (k == win.app.sessionID)
+                                val audioIsTx = if (isMe) (win.app?.isTransmittingInternal == true) else (win.remoteTxStates != null && win.remoteTxStates[k] == true)
+                                val isTransmitting = if (isMe) (win.app?.isTransmittingInternal == true) else (u.tx == true || audioIsTx)
+                                win.app.remotePowers[k] = (u.pwr as? Double ?: 0.7).toFloat()
+                                val prevState = win.remoteTxStates[k] ?: false
+                                if (prevState && !isTransmitting && !isMe && u.roger == true) win.playUiSound("rx_off")
+                                win.remoteTxStates[k] = isTransmitting
+                                var userNick = (u.nick as? String ?: "").trim().uppercase()
+                                if (userNick.isEmpty()) userNick = k.split("_")[0].uppercase()
+                                if (k != win.app.sessionID && !usersNotified.contains(k)) {
+                                    usersNotified.add(k)
+                                    if (!isInitialLoad) {
+                                        val isFriend = radioState.value.friends.contains(userNick)
+                                        win.playUiSound(if (isFriend) "incoming" else "user_in")
+                                        if (isFriend) {
+                                            val userCityName = (u.city as? String ?: "tu ciudad").split("-")[0]
+                                            showSystemNotification("📻 ¡TU AMIGO SE HA CONECTADO!", "¡$userNick ha entrado en la radio de $userCityName!")
+                                        }
+                                    }
+                                }
+                                list.add(RemoteUser(id = k, nick = userNick, isTransmitting = isTransmitting, city = u.city as? String ?: "SEVILLA", channel = u.channel as? String ?: "SEVILLA", txPower = (u.pwr as? Double ?: 0.7).toFloat(), isFriend = radioState.value.friends.contains(userNick), roger = (u.roger == true)))
+                            }
                         }
                     }
                     remoteUsersState.clear(); remoteUsersState.addAll(list)
                     val activeRemoteTx = list.find { it.isTransmitting && it.id != win.app.sessionID }
                     remoteTransmitterName.value = activeRemoteTx?.nick
-                    if (win.app) win.app.rxActiveInternal = (activeRemoteTx != null)
+                    if (win.app != null) win.app.rxActiveInternal = (activeRemoteTx != null)
                 } catch(e: Exception) { }
             },
             onChatUpdate = { },
@@ -320,10 +368,28 @@ fun main() {
                     win.AndroidApp.isBatteryOptimized() as Boolean
                 } else false
             },
+            onBatteryStatusRequest = {
+                val win: dynamic = window
+                if (win.AndroidApp != null && win.AndroidApp.getBatteryCheckStatus != null) {
+                    win.AndroidApp.getBatteryCheckStatus() as? String ?: "{}"
+                } else "{}"
+            },
             onIgnoreBatteryOptimizations = {
                 val win: dynamic = window
                 if (win.AndroidApp != null && win.AndroidApp.requestIgnoreBatteryOptimizations != null) {
                     win.AndroidApp.requestIgnoreBatteryOptimizations()
+                }
+            },
+            onOpenNotifSettings = {
+                val win: dynamic = window
+                if (win.AndroidApp != null && win.AndroidApp.openNotificationSettings != null) {
+                    win.AndroidApp.openNotificationSettings()
+                }
+            },
+            onOpenAutoStartSettings = {
+                val win: dynamic = window
+                if (win.AndroidApp != null && win.AndroidApp.openAutoStartSettings != null) {
+                    win.AndroidApp.openAutoStartSettings()
                 }
             },
             onGpsRequest = { it(null) },

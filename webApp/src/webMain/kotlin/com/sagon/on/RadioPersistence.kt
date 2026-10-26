@@ -30,6 +30,9 @@ object RadioPersistence {
             val win: dynamic = window
             var initialMoniVol = localStorage.getItem("moniVol")?.toFloatOrNull() ?: 0.5f
             
+            val savedNick = (localStorage.getItem("indicativo") ?: "").trim()
+            val hasMicExplain = localStorage.getItem("hasMicExplain")?.toBoolean() ?: savedNick.isNotBlank()
+
             // 🛡️ SINCRONIZACIÓN CON EL VOLUMEN DEL SISTEMA (SÓLO SI ES LA PRIMERA CARGA)
             if (win.AndroidApp != null && win.AndroidApp.getSystemVolume != null) {
                 try {
@@ -54,7 +57,8 @@ object RadioPersistence {
                 activeProfile = profile,
                 isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
                 squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.90f,
-                systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 0.90f
+                systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 0.90f,
+                hasAcceptedMicExplain = hasMicExplain
             )
         } catch(e: Exception) { RadioState() }
     }
@@ -82,6 +86,7 @@ object RadioPersistence {
             localStorage.setItem("activeProfile", s.activeProfile.name)
             localStorage.setItem("squelch", s.squelch.toString())
             localStorage.setItem("sysVol", s.systemVolume.toString())
+            localStorage.setItem("hasMicExplain", s.hasAcceptedMicExplain.toString())
         } catch(e: Exception) {}
 
         if (win.app != null) {
@@ -116,8 +121,19 @@ object RadioPersistence {
     }
 
     fun logout() {
+        val win: dynamic = window
+        try {
+            val hwID = if (win.AndroidApp != null && win.AndroidApp.getAndroidId != null) win.AndroidApp.getAndroidId() as? String else localStorage.getItem("web_device_id")
+            if (win.app != null && win.app.db != null) {
+                if (win.app.sessionID != null) {
+                    win.app.db.ref("users/" + win.app.sessionID).remove()
+                }
+                if (hwID != null && hwID != "") {
+                    win.app.db.ref("devices/" + hwID).remove()
+                }
+            }
+        } catch(e: Exception) {}
         localStorage.clear()
-        js("""if(window.app && window.app.db && window.app.sessionID) { window.app.db.ref("users/" + window.app.sessionID).remove(); }""")
         js("window.location.reload();")
     }
 }

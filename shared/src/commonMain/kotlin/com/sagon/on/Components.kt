@@ -188,12 +188,22 @@ fun LuxeButton(
         shape = RoundedCornerShape(16.dp),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
             if (icon != null) {
                 Icon(icon, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(12.dp))
             }
-            Text(text, fontWeight = FontWeight.Black, fontSize = fontSize, letterSpacing = 1.sp)
+            Text(
+                text = text,
+                fontWeight = FontWeight.Black,
+                fontSize = fontSize,
+                letterSpacing = 1.sp,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
@@ -376,6 +386,133 @@ fun BlacklistDialog(blockedUsers: Set<String>, users: List<RemoteUser>, onUnbloc
         },
         confirmButton = { LuxeButton("CERRAR", onDismiss) }
     )
+}
+
+@Composable
+fun BatteryChecklistDialog(
+    statusJson: String,
+    onIgnoreBattery: () -> Unit,
+    onOpenNotif: () -> Unit,
+    onOpenAutoStart: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val isIgnoringBattery = statusJson.contains("\"isIgnoringBattery\":true")
+    val notifsEnabled = statusJson.contains("\"notifsEnabled\":true")
+    val isCustomOs = statusJson.contains("\"isXiaomiOrCustom\":true")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = LuxeColors.DeepSea,
+        modifier = Modifier.padding(12.dp).border(2.dp, LuxeColors.Gold.copy(0.6f), RoundedCornerShape(28.dp)),
+        icon = { Icon(Icons.Rounded.GppMaybe, null, tint = LuxeColors.Gold, modifier = Modifier.size(44.dp)) },
+        title = { Text("DIAGNÓSTICO SEGUNDO PLANO", fontWeight = FontWeight.Black, fontSize = 17.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    "Para evitar que Android corte la voz al apagar la pantalla, verifica tu lista de configuración:",
+                    color = Color.White.copy(0.8f),
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // 1. MODO BATERÍA
+                ChecklistItem(
+                    title = "1. Batería Sin Restricciones",
+                    description = if (isIgnoringBattery) "Configuración correcta. Canal de voz protegido." else "Pendiente: Cambia a 'Sin Restricciones'.",
+                    isOk = isIgnoringBattery,
+                    actionText = if (isIgnoringBattery) "✓ CORRECTO" else "AJUSTAR BATERÍA",
+                    onAction = onIgnoreBattery
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                // 2. NOTIFICACIONES
+                ChecklistItem(
+                    title = "2. Notificaciones y Alertas",
+                    description = if (notifsEnabled) "Alertas y servicio de red activos." else "Pendiente: Permitir notificaciones.",
+                    isOk = notifsEnabled,
+                    actionText = if (notifsEnabled) "✓ ACTIVAS" else "PERMITIR AVISOS",
+                    onAction = onOpenNotif
+                )
+
+                if (isCustomOs) {
+                    Spacer(Modifier.height(10.dp))
+
+                    // 3. INICIO AUTOMÁTICO (Xiaomi/Poco/Samsung/Huawei)
+                    ChecklistItem(
+                        title = "3. Inicio Automático / Autorun",
+                        description = "Recomendado para MIUI/HyperOS/Samsung para evitar el cierre por reposo.",
+                        isOk = false,
+                        actionText = "ABRIR INICIO AUTOMÁTICO",
+                        onAction = onOpenAutoStart
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            LuxeButton("CONFIGURAR TODO EN AJUSTES", { onIgnoreBattery() }, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+        },
+        dismissButton = {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                TextButton(onClick = onDismiss) {
+                    Text("ENTENDIDO, LUEGO", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 12.sp, textAlign = TextAlign.Center)
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun ChecklistItem(
+    title: String,
+    description: String,
+    isOk: Boolean,
+    actionText: String,
+    onAction: () -> Unit
+) {
+    Surface(
+        color = if (isOk) Color(0xFF10B981).copy(0.1f) else LuxeColors.Gold.copy(0.08f),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, if (isOk) Color(0xFF10B981).copy(0.4f) else LuxeColors.Gold.copy(0.3f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (isOk) Icons.Rounded.CheckCircle else Icons.Rounded.Warning,
+                contentDescription = null,
+                tint = if (isOk) Color(0xFF10B981) else LuxeColors.Gold,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp)
+                Text(description, color = Color.White.copy(0.7f), fontSize = 10.sp, lineHeight = 14.sp)
+            }
+            Spacer(Modifier.width(8.dp))
+            if (!isOk) {
+                Surface(
+                    onClick = onAction,
+                    color = LuxeColors.Gold,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        actionText,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 9.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                    )
+                }
+            } else {
+                Text("✓ OK", color = Color(0xFF10B981), fontWeight = FontWeight.Black, fontSize = 11.sp)
+            }
+        }
+    }
 }
 
 @Composable

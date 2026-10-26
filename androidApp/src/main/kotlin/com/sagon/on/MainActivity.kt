@@ -1122,6 +1122,61 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
 
                             @JavascriptInterface
+                            fun getBatteryCheckStatus(): String {
+                                val pm = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+                                val isIgnoringBattery = pm.isIgnoringBatteryOptimizations(packageName)
+                                val notifsEnabled = androidx.core.app.NotificationManagerCompat.from(this@MainActivity).areNotificationsEnabled()
+                                val manufacturer = android.os.Build.MANUFACTURER.lowercase(java.util.Locale.ROOT)
+                                val brand = android.os.Build.BRAND.lowercase(java.util.Locale.ROOT)
+                                val isXiaomiOrCustom = manufacturer.contains("xiaomi") || manufacturer.contains("redmi") || manufacturer.contains("poco") ||
+                                                       manufacturer.contains("samsung") || manufacturer.contains("huawei") ||
+                                                       brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco")
+                                return "{\"isIgnoringBattery\":$isIgnoringBattery,\"notifsEnabled\":$notifsEnabled,\"isXiaomiOrCustom\":$isXiaomiOrCustom}"
+                            }
+
+                            @JavascriptInterface
+                            fun openNotificationSettings() {
+                                post {
+                                    try {
+                                        val intent = android.content.Intent().apply {
+                                            action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                                            putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)
+                                        }
+                                        startActivity(intent)
+                                    } catch (e: Exception) {
+                                        try {
+                                            val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                data = android.net.Uri.parse("package:$packageName")
+                                            }
+                                            startActivity(intent)
+                                        } catch (e2: Exception) {}
+                                    }
+                                }
+                            }
+
+                            @JavascriptInterface
+                            fun openAutoStartSettings() {
+                                post {
+                                    try {
+                                        val xiaomiIntent = android.content.Intent().apply {
+                                            component = android.content.ComponentName(
+                                                "com.miui.securitycenter",
+                                                "com.miui.permcenter.autostart.AutoStartManagementActivity"
+                                            )
+                                        }
+                                        startActivity(xiaomiIntent)
+                                    } catch (e: Exception) {
+                                        try {
+                                            val appSettingsIntent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                data = android.net.Uri.parse("package:$packageName")
+                                            }
+                                            startActivity(appSettingsIntent)
+                                        } catch (e2: Exception) {}
+                                    }
+                                }
+                            }
+
+                            @JavascriptInterface
                             fun requestIgnoreBatteryOptimizations() {
                                 post {
                                     try {

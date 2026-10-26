@@ -789,10 +789,6 @@ fun RadioDialogs(
         }
         RadioDialogType.SELECT_NICK -> NickSelectorDialog(
             initialNick = nick,
-            onConfirm = { newNick ->
-                onNickChange(newNick)
-                onDismiss()
-            },
             onDismiss = onDismiss
         )
         RadioDialogType.SETTINGS -> AlertDialog(
@@ -1072,24 +1068,32 @@ private fun WelcomeOnboarding(nick: String, onStart: () -> Unit) {
 }
 
 @Composable
-private fun NickSelectorDialog(initialNick: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
-    var tempNick by remember { mutableStateOf(initialNick) }
+private fun NickSelectorDialog(initialNick: String, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = LuxeColors.DeepSea,
-        title = { Text("CAMBIAR INDICATIVO", fontWeight = FontWeight.Black, color = LuxeColors.Gold) },
+        modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+        title = { Text("🔒 INDICATIVO VINCULADO", fontWeight = FontWeight.Black, color = LuxeColors.Gold) },
         text = {
-            OutlinedTextField(
-                value = tempNick,
-                onValueChange = { if (it.length <= 15) tempNick = it.uppercase() },
-                label = { Text("TU NICK") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LuxeColors.Gold, focusedTextColor = Color.White)
-            )
+            Column {
+                Text(
+                    "Tu indicativo actual es $initialNick y está registrado y vinculado a este dispositivo.",
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "Para proteger la potencia (Watts) acumulada en tu terminal, no es posible cambiar el indicativo al vuelo. " +
+                    "Si deseas cambiarlo de forma definitiva, debes utilizar la opción 'OLVIDAR MI INDICATIVO' desde Ajustes de equipo.",
+                    color = Color.White.copy(0.7f),
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp
+                )
+            }
         },
         confirmButton = {
-            LuxeButton("GUARDAR", { onConfirm(tempNick) }, tempNick.isNotBlank(), Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+            LuxeButton("ENTENDIDO", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
         }
     )
 }

@@ -57,6 +57,7 @@ fun RadioDialogs(
     onMic: (Boolean, Float) -> Unit,
     onPendingDialogChange: (RadioDialogType?, String?) -> Unit,
     onNickChange: (String) -> Unit = {},
+    onReport: (String) -> Unit = {},
     users: List<RemoteUser>,
     nick: String,
     channelToDelete: String? = null,
@@ -672,14 +673,15 @@ fun RadioDialogs(
                             Spacer(Modifier.height(12.dp))
                             
                             LuxeButton(
-                                text = "REPORTAR USUARIO",
+                                text = "REPORTAR PORTADORA",
                                 onClick = { 
-                                    onNotification(AppNotification("REPORTE ENVIADO", "Tu queja sobre ${targetUser.nick} ha sido recibida por el equipo de control.", NotificationType.Success))
+                                    onReport(targetUser.nick)
+                                    onNotification(AppNotification("REPORTAR PORTADORA", "Reporte de portadora contra ${targetUser.nick} enviado a la red.", NotificationType.Success))
                                     onDismiss() 
                                 },
                                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                                containerColor = Color.White.copy(0.05f),
-                                contentColor = Color.White,
+                                containerColor = LuxeColors.Gold.copy(0.1f),
+                                contentColor = LuxeColors.Gold,
                                 icon = Icons.Rounded.Report
                             )
                             

@@ -301,7 +301,16 @@ object RadioAudioManager {
                 if (window.app.ctx.state !== 'running') window.app.ctx.resume();
 
                 var now = window.app.ctx.currentTime;
+                var nowTime = Date.now();
                 var sessionRef = window.app.db ? window.app.db.ref("users/" + window.app.sessionID) : null;
+
+                // 🛡️ COMPROBACIÓN DE COOLDOWN ANTI-PORTADORA (5s)
+                if (active && window.app.pttCooldownUntil && nowTime < window.app.pttCooldownUntil) {
+                    var remainingSec = Math.ceil((window.app.pttCooldownUntil - nowTime) / 1000);
+                    if (window.playUiSound) window.playUiSound("ptt_blocked");
+                    if (window.dispatch_notification) window.dispatch_notification("⏳ COOLDOWN ANTI-PORTADORA", "Espera " + remainingSec + "s antes de transmitir de nuevo.", "warning");
+                    return;
+                }
 
                 if (active) {
                     if (window.app.rogerReleaseTimeout) {
@@ -311,6 +320,41 @@ object RadioAudioManager {
                     window.app.pttStateInternal = true; 
                     window.app.isTransmittingInternal = true; 
                     window.app.isBeeping = false;
+
+                    // 1. TEMPORIZADOR DE CORTE AUTOMÁTICO DE 60 SEGUNDOS (MAX PTT TIMEOUT)
+                    if (window.app.txMaxTimeout) clearTimeout(window.app.txMaxTimeout);
+                    window.app.txMaxTimeout = setTimeout(function() {
+                        console.log("⏱️ Max PTT Timeout (60s) alcanzado");
+                        window.app.pttCooldownUntil = Date.now() + 5000; // 5s Cooldown
+                        if (window.dispatch_notification) window.dispatch_notification("⏱️ LÍMITE DE TRANSMISIÓN (60s)", "Límite de tiempo alcanzado. Espera 5s de descanso.", "warning");
+                        if (window.playUiSound) window.playUiSound("ptt_off");
+                        window.broadcastPTT(false, true, power);
+                    }, 60000);
+
+                    // 2. DETECTOR DE PORTADORA MUDA EN SILENCIO DE 15 SEGUNDOS (VAD SILENCE)
+                    if (window.app.silenceCheckInterval) clearInterval(window.app.silenceCheckInterval);
+                    window.app.silenceStartTime = null;
+                    window.app.silenceCheckInterval = setInterval(function() {
+                        if (!window.app.pttStateInternal) {
+                            clearInterval(window.app.silenceCheckInterval);
+                            window.app.silenceCheckInterval = null;
+                            return;
+                        }
+                        var currentMicVol = window.app.currentMicLevel || 0;
+                        if (currentMicVol < 0.02) {
+                            if (!window.app.silenceStartTime) window.app.silenceStartTime = Date.now();
+                            if (Date.now() - window.app.silenceStartTime >= 15000) {
+                                console.log("🎙️ Portadora muda de 15s detectada");
+                                clearInterval(window.app.silenceCheckInterval);
+                                window.app.silenceCheckInterval = null;
+                                window.app.pttCooldownUntil = Date.now() + 3000;
+                                if (window.dispatch_notification) window.dispatch_notification("🎙️ PORTADORA MUDA DETECTADA", "Se ha liberado la frecuencia tras 15s sin habla.", "warning");
+                                window.broadcastPTT(false, true, power);
+                            }
+                        } else {
+                            window.app.silenceStartTime = null; // Voz detectada, reiniciar temporizador
+                        }
+                    }, 500);
 
                     // 🔴 NOTIFICAR A COMPOSE UI (PANTALLA Y BOTÓN EN ROJO "AIRE")
                     if (window.dispatch_ptt_sync) window.dispatch_ptt_sync(true);
@@ -323,6 +367,17 @@ object RadioAudioManager {
                     if (window.updateMoniGain) window.updateMoniGain();
                 } else {
                     window.app.pttStateInternal = false;
+
+                    // Limpiar temporizadores de corte automático y silencio
+                    if (window.app.txMaxTimeout) {
+                        clearTimeout(window.app.txMaxTimeout);
+                        window.app.txMaxTimeout = null;
+                    }
+                    if (window.app.silenceCheckInterval) {
+                        clearInterval(window.app.silenceCheckInterval);
+                        window.app.silenceCheckInterval = null;
+                    }
+                    window.app.silenceStartTime = null;
 
                     // 1. Cortar micrófono inmediatamente para no transmitir respiración/ruido tras soltar PTT
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now, 0.01);

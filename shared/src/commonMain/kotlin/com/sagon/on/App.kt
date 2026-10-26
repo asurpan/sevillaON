@@ -447,6 +447,7 @@ fun App(
                                 if (payload != null) channelToDelete = payload
                             },
                             onNickChange = { nick = it },
+                            onReport = onReport,
                             users = remoteUsers,
                             nick = nick,
                             channelToDelete = channelToDelete,

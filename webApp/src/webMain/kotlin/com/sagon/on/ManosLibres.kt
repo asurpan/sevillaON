@@ -87,6 +87,7 @@ object ManosLibres {
                     }
                     if (sum > 0) { peakLevel = max / 128; hasValidData = true; }
                 }
+                window.app.currentMicLevel = peakLevel;
 
                 var manualPtt = window.app.pttStateInternal && !isTransmitting;
                 var rxActive = window.app.rxActiveInternal || false;

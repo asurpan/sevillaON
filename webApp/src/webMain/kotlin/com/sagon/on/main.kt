@@ -200,8 +200,47 @@ fun main() {
         val remoteTransmitterName = remember { mutableStateOf<String?>(null) }
         val usersNotified = remember { mutableSetOf<String>() }
 
+        val communityMutedSet = remember { mutableSetOf<String>() }
+        win.dispatch_community_mute = { mutedNick: String ->
+            if (mutedNick.isNotEmpty() && !communityMutedSet.contains(mutedNick)) {
+                communityMutedSet.add(mutedNick)
+                val updatedBlocks = radioState.value.blockedUsers + mutedNick
+                radioState.value = radioState.value.copy(blockedUsers = updatedBlocks)
+                showSystemNotification(
+                    "⚠️ SANCIONADO POR LA COMUNIDAD",
+                    "El usuario $mutedNick ha sido silenciado automáticamente tras recibir 3 reportes de portadora."
+                )
+                if (win.playUiSound != null) win.playUiSound("alert")
+            }
+        }
+
         LaunchedEffect(Unit) {
             js("if (window.checkHardwareRestore) window.checkHardwareRestore(function(n) { if (n) window.location.reload(); });")
+            js("""
+                if (window.app && window.app.db) {
+                    window.app.db.ref("reports").on("value", function(snapshot) {
+                        var data = snapshot.val();
+                        if (!data) return;
+                        var now = Date.now();
+                        var nicks = Object.keys(data);
+                        nicks.forEach(function(targetNick) {
+                            var userReports = data[targetNick];
+                            if (!userReports) return;
+                            var reporters = Object.keys(userReports);
+                            var recentCount = 0;
+                            reporters.forEach(function(rId) {
+                                var time = userReports[rId];
+                                if (now - time < 300000) recentCount++;
+                            });
+                            if (recentCount >= 3) {
+                                if (window.dispatch_community_mute) {
+                                    window.dispatch_community_mute(targetNick);
+                                }
+                            }
+                        });
+                    });
+                }
+            """)
             while(true) {
                 delay(5000)
                 val app = window.asDynamic().app
@@ -358,7 +397,14 @@ fun main() {
                 if (a && radioState.value.isDiscreteModeEnabled) { val newState = radioState.value.copy(isDiscreteModeEnabled = false); radioState.value = newState; if (win.app != null) win.app.discreteMode = false }
                 RadioAudioManager.setPtt(a, r, p) 
             },
-            onReport = { },
+            onReport = { targetNick ->
+                val win: dynamic = window
+                if (win.app != null && win.app.db != null && targetNick.isNotEmpty()) {
+                    val sanitizedTarget = js("targetNick.replace(/[.#${'$'}\\[\\]]/g, '_')") as String
+                    val reporterId = js("(win.app.sessionID || 'anon').replace(/[.#${'$'}\\[\\]]/g, '_')") as String
+                    win.app.db.ref("reports/" + sanitizedTarget + "/" + reporterId).set(Date.now())
+                }
+            },
             onBlockUser = { },
             onNotificationDismiss = { },
             onReplayRequest = { RadioAudioManager.playReplay() },

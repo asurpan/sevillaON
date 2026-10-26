@@ -128,13 +128,11 @@ actual fun tryOpenNativeApp() {
         return
     }
 
-    // 🛡️ REGLA: Si es Android en navegador Chrome, redirigir a la App / Google Play
+    // 🛡️ REGLA: Si se abre desde un teléfono Android, redirigir DIRECTAMENTE a la Google Play Store
     if (userAgent.contains("ANDROID") && !currentUrl.contains("forceWeb=true")) {
         try {
             val playStoreUrl = "https://play.google.com/store/apps/details?id=com.sagon.on&pcampaignid=web_share"
-            val search = win.location.search.toString()
-            val intentUrl = "intent://open" + search + "#Intent;scheme=onairspain;package=com.sagon.on;S.browser_fallback_url=" + win.encodeURIComponent(playStoreUrl) + ";end"
-            win.location.href = intentUrl
+            win.location.href = playStoreUrl
         } catch(e: dynamic) {}
     }
 }

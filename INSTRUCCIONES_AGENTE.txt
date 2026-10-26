@@ -27,7 +27,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 
 ### 📡 VETERANÍA Y RED
 - **ICE Servers Reforzados (4G/5G)**: Es obligatorio el uso de servidores STUN/TURN con transporte TCP (puerto 443) para garantizar la comunicación en redes móviles restrictivas (CG-NAT).
-- **Progreso de Potencia**: +0.002 pwr / 5s de charla. No regalar veteranía; se gana modulando.
+- **Progreso de Potencia**: +0.00000833 pwr / 5s de charla (~50 horas de transmisión activa de habla para alcanzar 50W Élite). No regalar veteranía; se gana modulando.
 - **Llamada Inteligente**: Solo el ID más bajo llama al más alto. Sagrado para estabilidad en 4G.
 - **Persistencia de Nick**: El indicativo del usuario DEBE guardarse en `localStorage` bajo la clave `indicativo` inmediatamente después de la validación. Esto evita que el usuario tenga que re-identificarse en cada sesión web.
 - **Indicativo Único (Hard-Lock)**: Queda TERMINANTEMENTE PROHIBIDO permitir duplicados de Nicks activos en diferentes dispositivos. El sistema debe verificar en Firebase si un Nick ya tiene una sesión activa (lastSeen < 45s) con un ID distinto antes de permitir la entrada. Cada indicativo es ÚNICO y está vinculado a su hardware.

@@ -390,7 +390,7 @@ fun main() {
                         "📡 Descubre la Frecuencia de tu ciudad. Entra ahora y saluda a las estaciones abiertas."
                     )
                     val randomPhrase = phrases.random()
-                    val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + (if (!subtone.isNullOrEmpty()) "&subtone=" + subtone else "")
+                    val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + (if (!subtone.isNullOrEmpty()) "&subtone=" + subtone else "") + "&v=57"
                     val shareText = "$randomPhrase\n\n📻 *ON AIR SPAIN*\n📍 *$city* | 🔊 *CH $channel*\n\n$url"
                     val nav = win.navigator
                     if (nav != null && nav.share != null) {

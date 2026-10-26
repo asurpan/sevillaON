@@ -1076,12 +1076,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                     val subText = if (subtone != null && subtone != "0000") " | 🔐 *$subtone*" else ""
 
                                     val shareText = if (city == "RADAR") {
-                                        "📡 ¡Vigilancia Hertz Activa! *ON AIR SPAIN*\nAnalizando presencia biológica en directo... 🧬\n\nÚnete: https://asurpan.github.io/sevillaON/?v=58"
+                                        "📡 ¡Vigilancia Hertz Activa! *ON AIR SPAIN*\nAnalizando presencia biológica... 🧬\n\nhttps://asurpan.github.io/sevillaON/?v=58"
                                     } else {
                                         val shortTopic = if (topic.length > 70) topic.take(67) + "..." else topic
                                         "🎙️ *DEBATE EN VIVO — $cleanCity*\n\n" +
                                         "💬 \"$shortTopic\"\n\n" +
-                                        "📡 *ON AIR SPAIN* | 🗺️ *$cleanCity* • *CH $channel*$subText\n" +
                                         "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=58"
                                     }
 

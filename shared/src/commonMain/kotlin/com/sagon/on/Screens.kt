@@ -668,7 +668,7 @@ fun RadioPanel(
                                 Spacer(Modifier.height(4.dp))
                                 Text("WATTS", color = Color.White.copy(0.45f), fontSize = 8.sp, fontWeight = FontWeight.Black)
                                 Text(
-                                    text = "${if(isTransmitting) (state.veteranPower * 15f).toInt() else if(rx) 9 else 0}", 
+                                    text = "${if(isTransmitting) (state.veteranPower * 50f).toInt() else if(rx) 9 else 0}", 
                                     color = if(isTransmitting) Color.Red else if(rx) LuxeColors.Gold else Color.White.copy(0.3f), 
                                     fontSize = 20.sp, 
                                     fontWeight = FontWeight.Black,

@@ -111,7 +111,7 @@ fun RadioDialogs(
             titleContentColor = LuxeColors.Gold,
             modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
             icon = { Icon(Icons.Rounded.Speed, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
-            title = { Text("POTENCIA Y VATAJE (W)", fontWeight = FontWeight.Black) },
+            title = { Text("POTENCIA Y VATAJE (50W)", fontWeight = FontWeight.Black) },
             text = {
                 Column {
                     Text(
@@ -123,22 +123,22 @@ fun RadioDialogs(
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "• Las estaciones nuevas empiezan con 0.7W.\n• El rango VETERANO se alcanza a los 0.85W.\n• Con 0.85W desbloqueas la creación de códigos de privacidad (Subtonos).\n• El máximo permitido es 15W.",
+                        "• Estaciones nuevas: 10W iniciales.\n• Rango VETERANO: 35W de potencia.\n• Nivel ÉLITE AMPLIFICADOR: 50W máximos.\n• Mayor Vataje (50W) domina la frecuencia sobre señales débiles.",
                         fontSize = 12.sp,
-                        color = Color.White.copy(0.7f),
+                        color = Color.White.copy(0.8f),
                         lineHeight = 18.sp
                     )
                     Spacer(Modifier.height(16.dp))
                     Surface(
-                        color = LuxeColors.Gold.copy(0.1f),
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f))
+                        color = Color(0xFF00E5FF).copy(0.12f),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(0.4f))
                     ) {
                         Text(
-                            "Dato actual: Tu potencia es de ${(state.veteranPower * 15f).toInt()} W",
+                            "Dato actual: Tu potencia es de ${(state.veteranPower * 50f).toInt()} W",
                             modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                            color = LuxeColors.Gold,
-                            fontSize = 11.sp,
+                            color = Color(0xFF00E5FF),
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Black,
                             textAlign = TextAlign.Center
                         )

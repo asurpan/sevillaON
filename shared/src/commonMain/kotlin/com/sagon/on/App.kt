@@ -413,9 +413,9 @@ fun App(
                         modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(12.dp)),
                         title = { 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.AutoMirrored.Rounded.ExitToApp, null, tint = LuxeColors.Gold)
+                                Icon(Icons.AutoMirrored.Rounded.ExitToApp, null, tint = Color(0xFF00E5FF))
                                 Spacer(Modifier.width(12.dp))
-                                Text("ESTADO DE LA RADIO", fontWeight = FontWeight.Black, fontSize = 16.sp)
+                                Text("ESTADO DE LA RADIO", fontWeight = FontWeight.Black, fontSize = 16.sp, color = Color(0xFF00E5FF))
                             }
                         },
                         text = { 
@@ -430,7 +430,7 @@ fun App(
                                 },
                                 enabled = true,
                                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                                containerColor = LuxeColors.Gold,
+                                containerColor = Color(0xFF00E5FF),
                                 contentColor = Color.Black
                             )
                         },

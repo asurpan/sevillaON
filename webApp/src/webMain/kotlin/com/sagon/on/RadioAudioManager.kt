@@ -531,6 +531,49 @@ object RadioAudioManager {
                         gain.gain.setTargetAtTime(isTx ? 1.2 : 1.0, window.app.ctx.currentTime, 0.05);
                     }
                 });
+
+                // 📻 BATIDO HETERODINO DE RF EN PISOTONES (ZUMBIDO OSCILANTE DE 27MHz)
+                var activeTxPeers = peers.filter(p => window.remoteTxStates && window.remoteTxStates[p] === true);
+                if (activeTxPeers.length >= 2 && !window.app.pttStateInternal) {
+                    var ctx = window.app.ctx;
+                    var now = ctx.currentTime;
+                    if (!window.app.heterodyneOsc) {
+                        var osc = ctx.createOscillator();
+                        var lfo = ctx.createOscillator();
+                        var lfoGain = ctx.createGain();
+                        var gain = ctx.createGain();
+
+                        osc.type = "sawtooth"; 
+                        osc.frequency.setValueAtTime(780, now);
+
+                        lfo.type = "sine";
+                        lfo.frequency.setValueAtTime(3.8, now);
+                        lfoGain.gain.setValueAtTime(140, now);
+                        lfo.connect(lfoGain);
+                        lfoGain.connect(osc.frequency);
+
+                        gain.gain.value = 0;
+                        osc.connect(gain);
+                        if (window.app.masterOut) gain.connect(window.app.masterOut);
+
+                        osc.start(now);
+                        lfo.start(now);
+
+                        window.app.heterodyneOsc = osc;
+                        window.app.heterodyneGain = gain;
+                    }
+
+                    var p1 = (window.app.remotePowers && window.app.remotePowers[activeTxPeers[0]]) ? window.app.remotePowers[activeTxPeers[0]] : 0.7;
+                    var p2 = (window.app.remotePowers && window.app.remotePowers[activeTxPeers[1]]) ? window.app.remotePowers[activeTxPeers[1]] : 0.7;
+                    var powerDiff = Math.abs(p1 - p2);
+
+                    var targetGain = (powerDiff < 0.25) ? 0.08 : 0.02;
+                    if (window.app.heterodyneGain) window.app.heterodyneGain.gain.setTargetAtTime(targetGain, now, 0.08);
+                } else {
+                    if (window.app.heterodyneGain) {
+                        window.app.heterodyneGain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.08);
+                    }
+                }
             }
             setInterval(updateRemotePriorities, 100);
 

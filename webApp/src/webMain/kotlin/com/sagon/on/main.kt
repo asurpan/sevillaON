@@ -119,8 +119,8 @@ fun main() {
                             var cleanNick = window.app.nick || "RADIO";
                             var currentPwr = parseFloat(localStorage.getItem("vetPwr_" + cleanNick)) || 0.7;
                             if (currentPwr < 1.0) {
-                                // 🛡️ PROGRESIÓN DE VETERANÍA REAL: Requiere ~25 horas de transmisión activa para alcanzar los 50W Élite
-                                currentPwr = Math.min(1.0, currentPwr + 0.0000166);
+                                // 🛡️ PROGRESIÓN DE VETERANÍA REAL: Requiere ~50 horas de transmisión activa de habla para alcanzar los 50W Élite (~5 meses de uso habitual)
+                                currentPwr = Math.min(1.0, currentPwr + 0.00000833);
                                 localStorage.setItem("vetPwr_" + cleanNick, currentPwr.toString());
                                 localStorage.setItem("vetPwr", currentPwr.toString());
                                 updates.pwr = currentPwr;

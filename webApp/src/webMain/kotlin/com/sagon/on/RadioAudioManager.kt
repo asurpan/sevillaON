@@ -610,10 +610,13 @@ object RadioSignaling {
                     pairs.forEach((f, i) => { f.forEach(freq => { var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); o.type = "sine"; o.frequency.setValueAtTime(freq, now + (i * 0.12)); g.gain.setValueAtTime(0, now + (i * 0.12)); g.gain.linearRampToValueAtTime(0.15, now + (i * 0.12) + 0.01); g.gain.linearRampToValueAtTime(0, now + (i * 0.12) + 0.1); o.connect(g); g.connect(window.app.masterOut); o.start(now + (i * 0.12)); o.stop(now + (i * 0.12) + 0.12); }); });
                     return;
                 }
-                var isRoger = (type === "ptt_off" || type === "rx_off");
-                var freq = isRoger ? 1955 : 1800;
-                var duration = isRoger ? 0.3 : 0.08;
-                var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); o.type = "triangle"; o.frequency.setValueAtTime(freq, now); g.gain.setValueAtTime(isRoger ? 0.12 : 0.08, now); g.gain.setValueAtTime(0, now + duration); o.connect(g); g.connect(window.app.masterOut); o.start(now); o.stop(now + duration);
+                if (type === "ptt_off" || type === "rx_off") {
+                    var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); 
+                    o.type = "triangle"; o.frequency.setValueAtTime(1955, now); 
+                    g.gain.setValueAtTime(0.12, now); g.gain.setValueAtTime(0, now + 0.30); 
+                    o.connect(g); g.connect(window.app.masterOut); o.start(now); o.stop(now + 0.30);
+                    return;
+                }
             };
         """)
     }

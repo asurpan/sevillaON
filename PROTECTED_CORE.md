@@ -12,7 +12,7 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Hardware Keep-Alive (Motor 5Hz)**: Mantener el oscilador **infrasónico de 5Hz** inaudible en la salida física para evitar el modo suspensión del chip de audio. Debe silenciarse automáticamente cuando se detecta voz real entrante.
 
 2. **Motor de Veteranía y Pisado Real (V12.5)**:
-    - **Progresión de Potencia**: +0.002 pwr por cada 5 segundos de TX. Rango: 0.7 (Novato) a 1.0 (Élite).
+    - **Progresión de Potencia**: +0.00000833 pwr por cada 5 segundos de TX (~50 horas de transmisión activa de habla para alcanzar 50W). Rango: 0.7 (Novato) a 1.0 (Élite).
     - **Efecto Pisado (Dynamic Distortion)**: Diferencia > 0.05 activa el `WaveShaper` de distorsión armónica. La voz débil debe sonar "crushed" (rota) y de fondo. Diferencia > 0.25 activa aplastamiento total.
 
 3. **Gestión de Memoria Replay (One-Shot V4.2)**:

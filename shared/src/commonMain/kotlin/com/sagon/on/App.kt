@@ -423,7 +423,7 @@ fun App(
                         },
                         confirmButton = {
                             LuxeButton(
-                                text = "MINIMIZAR Y DEJAR EN SEGUNDO PLANO",
+                                text = "MINIMIZAR RADIO",
                                 onClick = { 
                                     onExternalExitRequest(false, false) 
                                     showExitDialog = false

@@ -361,9 +361,17 @@ fun MicRequestDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         containerColor = LuxeColors.DeepSea,
         modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
-        title = { Text("MICRÓFONO", fontWeight = FontWeight.Black, color = Color.White) },
-        text = { Text("Necesitamos acceso al micrófono para que puedas transmitir tu voz.", fontSize = 13.sp, color = Color.White.copy(0.7f)) },
-        confirmButton = { LuxeButton("PERMITIR", onAccept, true, Modifier.fillMaxWidth().height(48.dp)) }
+        title = { Text("🎙️ MICRÓFONO Y TRANSMISIÓN", fontWeight = FontWeight.Black, color = LuxeColors.Gold, fontSize = 16.sp) },
+        text = { 
+            Text(
+                "Para transmitir tu voz en directo por las ondas de radio, tu teléfono Android te solicitará permiso de micrófono.\n\n" +
+                "🛡️ PRIVACIDAD TOTAL: ON AIR SPAIN NUNCA graba ni almacena tus conversaciones. El micrófono solo se activa en tiempo real mientras mantengas pulsado el botón HABLAR (PTT).", 
+                fontSize = 12.sp, 
+                color = Color.White.copy(0.9f),
+                lineHeight = 17.sp
+            ) 
+        },
+        confirmButton = { LuxeButton("ACTIVAR TRANSMISIÓN EN VIVO", onAccept, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black) }
     )
 }
 

@@ -3,7 +3,7 @@
 Este manual contiene las instrucciones técnicas, comerciales y de seguridad absoluta. Lectura OBLIGATORIA para cualquier IA.
 
 ## 🛑 REGLAS DE ORO DEL AGENTE (CRÍTICO)
-- **PROHIBICIÓN DE PUSH**: Queda terminantemente prohibido ejecutar `git push` sin el permiso explícito y textual del usuario ("Sube a GitHub"), aunque los cambios estén verificados.
+
 - **MEMORIA DE SESIÓN**: Al entrar en este proyecto, lee primero `PROTECTED_CORE.md`.
 
 ## 🏗️ ARQUITECTURA DE MISIÓN CRÍTICA

@@ -1080,37 +1080,23 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             fun requestIgnoreBatteryOptimizations() {
                                 post {
                                     try {
-                                        // 1. Abrir solicitud estándar de optimización de batería (Sin restricciones)
+                                        // 🛡️ Abrir exclusivamente la solicitud de Batería Sin Restricciones (Doze Mode)
                                         val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                                             data = android.net.Uri.parse("package:$packageName")
                                         }
                                         startActivity(intent)
-
-                                        // 2. Si es dispositivo Xiaomi / Redmi / POCO (HyperOS / MIUI), abrir también "Inicio Automático"
-                                        val manufacturer = android.os.Build.MANUFACTURER.lowercase(java.util.Locale.ROOT)
-                                        val brand = android.os.Build.BRAND.lowercase(java.util.Locale.ROOT)
-                                        if (manufacturer.contains("xiaomi") || manufacturer.contains("redmi") || manufacturer.contains("poco") ||
-                                            brand.contains("xiaomi") || brand.contains("redmi") || brand.contains("poco")) {
-                                            try {
-                                                val xiaomiIntent = android.content.Intent().apply {
-                                                    component = android.content.ComponentName(
-                                                        "com.miui.securitycenter",
-                                                        "com.miui.permcenter.autostart.AutoStartManagementActivity"
-                                                    )
-                                                }
-                                                startActivity(xiaomiIntent)
-                                            } catch (e: Exception) {
-                                                try {
-                                                    val appSettingsIntent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                                        data = android.net.Uri.parse("package:$packageName")
-                                                    }
-                                                    startActivity(appSettingsIntent)
-                                                } catch (e2: Exception) {}
-                                            }
-                                        }
                                     } catch (e: Exception) {
-                                        val intent = android.content.Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                                        startActivity(intent)
+                                        try {
+                                            val intent = android.content.Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                            startActivity(intent)
+                                        } catch (e2: Exception) {
+                                            try {
+                                                val intent = android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                    data = android.net.Uri.parse("package:$packageName")
+                                                }
+                                                startActivity(intent)
+                                            } catch (e3: Exception) {}
+                                        }
                                     }
                                 }
                             }

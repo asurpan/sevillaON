@@ -316,6 +316,8 @@ fun main() {
 
         val voxPttState = remember { mutableStateOf(false) }
         val backPressCountState = remember { mutableStateOf(0) }
+        val isReplayReadyState = remember { mutableStateOf(false) }
+        val replayProgressState = remember { mutableStateOf(0f) }
 
         RadioBridge.setupDispatchers(
             win = win,
@@ -399,8 +401,8 @@ fun main() {
                 } catch(e: Exception) { }
             },
             onChatUpdate = { },
-            onReplayProgress = { },
-            onReplayAvailable = { },
+            onReplayProgress = { progress -> replayProgressState.value = progress },
+            onReplayAvailable = { available -> isReplayReadyState.value = available },
             onChatOpen = { },
             onMicFailure = { },
             onIntegrityStatus = { },
@@ -410,7 +412,20 @@ fun main() {
             onRoomUpdate = { },
             onPttLive = { },
             onVolumeSync = { newVol -> if (win.setMasterVolume != null) win.setMasterVolume(newVol) },
-            onDiagRequest = { RadioDiagData() }
+            onDiagRequest = { RadioDiagData() },
+            onIsRoomEmpty = {
+                val mySessionId = (win.app?.sessionID as? String ?: "")
+                remoteUsersState.none { it.id != mySessionId }
+            },
+            onControlActive = { name, active ->
+                if (active) {
+                    remoteTransmitterName.value = name
+                } else {
+                    if (remoteTransmitterName.value?.startsWith("BASE ") == true || remoteTransmitterName.value?.startsWith("CONTROL ") == true) {
+                        remoteTransmitterName.value = null
+                    }
+                }
+            }
         )
 
         val isDuplicateTabAlert = remember { mutableStateOf(false) }
@@ -437,13 +452,19 @@ fun main() {
             onMoniVolumeChange = { vol -> if(win.app != null) { win.app.moniVolume = vol; win.app.moniActive = (vol > 0) }; js("if(window.updateMoniGain) window.updateMoniGain();") },
             onEchoChange = { _, _ -> },
             onCityChange = { newCity ->
+                RadioAudioManager.clearReplay()
                 if (win.app != null && win.app.db != null && win.app.sessionID != null) {
                     win.app.currentCity = newCity
                     win.app.db.ref("users/" + win.app.sessionID).update(js("{city: newCity, channel: newCity}"))
                     js("if(window.initFirebaseListener) window.initFirebaseListener();")
                 }
             },
-            onChannelChange = { newCh -> if (win.app != null && win.app.db != null && win.app.sessionID != null) { win.app.db.ref("users/" + win.app.sessionID).update(js("{channel: newCh}")) } },
+            onChannelChange = { newCh ->
+                RadioAudioManager.clearReplay()
+                if (win.app != null && win.app.db != null && win.app.sessionID != null) {
+                    win.app.db.ref("users/" + win.app.sessionID).update(js("{channel: newCh}"))
+                }
+            },
             onSendMessage = { t, tg -> RadioNetworkManager.sendMessage(t, tg) },
             onDeleteMessage = { id, tg -> RadioNetworkManager.deleteMessage(id, tg) },
             onPrivateChatRequest = { },
@@ -454,6 +475,7 @@ fun main() {
                     win.app.voxActive = newState.isVoxEnabled
                     win.app.voxSens = newState.voxSensitivity
                     win.app.rogerEnabled = newState.isRogerBeepEnabled
+                    win.app.isBotEnabled = newState.isBotEnabled
                     win.app.discreteMode = newState.isDiscreteModeEnabled
                     localStorage.setItem("roger", newState.isRogerBeepEnabled.toString())
                 }
@@ -545,8 +567,8 @@ fun main() {
             isCodedRx = false,
             externalPtt = voxPttState.value,
             externalPttBlocked = false,
-            replayProgress = 0f,
-            isReplayReady = false,
+            replayProgress = replayProgressState.value,
+            isReplayReady = isReplayReadyState.value,
             remoteUsers = remoteUsersState,
             myId = (win.app?.sessionID as? String) ?: "",
             remoteTransmitterName = remoteTransmitterName.value,

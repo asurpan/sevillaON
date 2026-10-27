@@ -82,6 +82,7 @@ data class RadioState(
     val hasAcceptedMicExplain: Boolean = false,
     val isDspEnabled: Boolean = true,
     val dspLevel: Float = 0.5f,
+    val isBotEnabled: Boolean = true,
     val isReverbEnabled: Boolean = false,
     val reverbLevel: Float = 0.5f,
     val isNightMode: Boolean = false,

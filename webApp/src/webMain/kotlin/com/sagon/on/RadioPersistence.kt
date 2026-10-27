@@ -57,6 +57,7 @@ object RadioPersistence {
                 isInterfaceLocked = localStorage.getItem("isLocked")?.toBoolean() ?: false,
                 veteranPower = localStorage.getItem("vetPwr")?.toFloatOrNull() ?: 0.02f,
                 isDspEnabled = localStorage.getItem("dspEnabled")?.toBoolean() ?: true,
+                isBotEnabled = localStorage.getItem("botEnabled")?.toBoolean() ?: true,
                 activeProfile = profile,
                 isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
                 squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.90f,
@@ -86,6 +87,7 @@ object RadioPersistence {
             localStorage.setItem("voxActive", s.isVoxEnabled.toString())
             localStorage.setItem("moniActive", s.isMonitorEnabled.toString())
             localStorage.setItem("dspEnabled", s.isDspEnabled.toString())
+            localStorage.setItem("botEnabled", s.isBotEnabled.toString())
             localStorage.setItem("disMode", s.isDiscreteModeEnabled.toString())
             localStorage.setItem("activeProfile", s.activeProfile.name)
             localStorage.setItem("squelch", s.squelch.toString())
@@ -104,6 +106,7 @@ object RadioPersistence {
             win.app.rfGain = s.rfGain
             win.app.squelch = s.squelch
             win.app.rogerEnabled = s.isRogerBeepEnabled
+            win.app.isBotEnabled = s.isBotEnabled
             
             // 🛡️ ACTUALIZACIÓN DE VOLUMEN MAESTRO
             if (win.setMasterVolume != null) {

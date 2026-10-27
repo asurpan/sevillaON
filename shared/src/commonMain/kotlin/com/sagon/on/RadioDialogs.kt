@@ -899,6 +899,12 @@ fun RadioDialogs(
                         Switch(checked = state.isDspEnabled, onCheckedChange = { onStateChange(state.copy(isDspEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
                     }
 
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Bot de Canal / Control de Voz", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Switch(checked = state.isBotEnabled, onCheckedChange = { onStateChange(state.copy(isBotEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
+                    }
+
                     Spacer(Modifier.height(20.dp))
 
                     Text("SISTEMA", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
@@ -1031,7 +1037,7 @@ fun RadioDialogs(
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     Text("⚙️ GUÍA RÁPIDA DE FUNCIONES", fontWeight = FontWeight.Black, fontSize = 11.sp, color = LuxeColors.Gold)
                     Spacer(Modifier.height(8.dp))
-                    Text("• 📻 Banda Ciudadana: Sintoniza los 40 canales en directo de tu ciudad.\n• 📡 Red de Malla P2P: Comunicación de emergencia móvil a móvil sin internet ni 4G.\n• 👂 Modo Oreja: Silencia altavoces y escucha de forma privada pegando el móvil a tu oreja.\n• 🎛️ Procesador DSP & Replay: Ecualización HiFi y rebobinado de los últimos 30s de voz.\n• 🔋 S-Meter: Medidor de potencia e intensidad de señal.", fontSize = 11.sp, color = Color.White.copy(0.85f))
+                    Text("• 📻 Banda Ciudadana (CB 27MHz): 40 canales con modulación FM, S-Meter con portadora fija real e indicadores de pisotón según la potencia del emisor.\n• 🔋 Sistema de Potencia (Watts): Ganas vatios reales acumulando tiempo de transmisión (PTT). Las estaciones Base y el Bot operan a 50W (S9+30dB).\n• 🤖 Bot de Canal / Operador Base: Te da la bienvenida al entrar a un canal libre, comprueba si tu micrófono tiene permisos activos y te asiste con reportes de señal. Puedes desactivarlo en Ajustes.\n• 📡 Red de Malla P2P: Comunicación móvil a móvil de emergencia sin necesidad de 4G.\n• 👂 Modo Oreja: Escucha privada acercando el teléfono a la oreja.\n• 🎛️ Procesador DSP & Replay: Ecualización de voz HiFi y rebobinado de los últimos 30 segundos.", fontSize = 11.sp, color = Color.White.copy(0.85f))
                     Spacer(Modifier.height(16.dp))
                     Text("👨‍💻 SOPORTE TÉCNICO Y DESARROLLO", fontWeight = FontWeight.Black, fontSize = 11.sp, color = LuxeColors.Gold)
                     Spacer(Modifier.height(4.dp))

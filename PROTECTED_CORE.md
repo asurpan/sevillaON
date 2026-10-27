@@ -39,6 +39,11 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Pestaña Única**: Detección de pestaña duplicada con bloqueo total de interfaz para evitar ecos.
     - **Redirección Android Web -> App Nativa**: Navegadores en Android NUNCA ejecutan la radio Web (`webApp.js` no se carga). Deben abrir la App Nativa o la Play Store mediante Intent URL, mientras que iOS/Safari y PC Desktop ejecutan la versión Web.
 
+8. **Sistema de Portadora Fija, Potencia de Agente/Bot y Pisotones CB 27MHz (REGLA DE ORO)**:
+    - **Portadora Fija en RX**: En recepción (RX), los LEDs del S-Meter deben permanecer **TOTALMENTE FIJOS Y SÓLIDOS** marcando la potencia RF de señal. Está prohibido introducir oscilaciones, parpadeos o modulaciones falsas a la barra de LEDs en RX.
+    - **Potencia Máxima de Agente / Bot / Estación Base (50W)**: Toda respuesta automática o transmisión de Bot / Estación de Control (`BASE ...` o `CONTROL ...`) se emite automáticamente con **potencia a tope (50 Watts / cbSignalFactor = 1.0f)**. Enciende los **20 LEDs fijos** (S9+30dB en verde/amarillo/rojo) y marca 50W.
+    - **Sistema de Pisotones (Override)**: Las estaciones con mayor millaje/vatios se imponen fijando un nivel de LEDs más alto, imitando el comportamiento exacto de una radio CB de 27 MHz.
+
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al autor. NO apliques parches que eliminen los nodos inaudibles o el bridge silencioso, ya que son los pilares que mantienen la voz viva en móviles modernos.
 

@@ -426,6 +426,7 @@ object RadioAudioManager {
                             if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.15);
                             if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.15);
                             if (window.updateMoniGain) window.updateMoniGain();
+                            if (window.checkControlStationResponse) window.checkControlStationResponse();
                         }, 550);
 
                     } else {
@@ -441,6 +442,7 @@ object RadioAudioManager {
                         if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, now, 0.15);
                         if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.15);
                         if (window.updateMoniGain) window.updateMoniGain();
+                        if (window.checkControlStationResponse) window.checkControlStationResponse();
                     }
                 }
             };
@@ -661,6 +663,7 @@ object RadioAudioManager {
     }
 
     fun playReplay() { js("window.playReplay();") }
+    fun clearReplay() { js("if(window.clearReplayBuffer) window.clearReplayBuffer();") }
 }
 
 object RadioSignaling {
@@ -768,6 +771,79 @@ object ReplayEngine {
                 }
                 startChunk();
             };
+            window.controlResponseIndex = 0;
+            window.checkControlStationResponse = function() {
+                if (!window.app) return;
+                if (window.app.isBotEnabled === false) return; // 🛡️ DESACTIVADO POR EL USUARIO
+                if (window.dispatch_is_room_empty && !window.dispatch_is_room_empty()) return;
+                if (window.app.isControlSpeaking) return;
+
+                var userNick = (window.app.nick || "RADIO").toString().trim().toUpperCase();
+                var rawCity = (window.app.currentCity || "SEVILLA").toString().split("-")[0].trim().toUpperCase();
+
+                // 🛡️ COMPROBACIÓN DE MICRÓFONO / PERMISO DE VOZ
+                var micGranted = window.app.diag && window.app.diag.micPermission === "granted";
+                var hasAudioTracks = window.app.ctx && window.app.micAnalyser; // Comprobación técnica de stream
+                var textToSpeak = "";
+
+                if (!micGranted || !hasAudioTracks) {
+                    textToSpeak = "¡Atención estación " + userNick + "! Aquí base " + rawCity + ". No recibimos modulación de tu equipo. Comprueba el permiso de micrófono o pulsa Hablar para verificar.";
+                } else {
+                    var idx = window.controlResponseIndex || 0;
+                    if (idx === 0) {
+                        textToSpeak = "¡Bienvenido " + userNick + "! Te escucho Essse nueve fuerte y claro. Estamos en el canal de " + rawCity + ". Frecuencia libre y a la escucha.";
+                    } else if (idx === 1) {
+                        textToSpeak = "¡Excelente modulación, " + userNick + "! Te anotamos cinco vatios de potencia extra en la emisora de " + rawCity + ". ¡Adelante con tu cambio!";
+                    } else if (idx === 2) {
+                        textToSpeak = "Estación " + userNick + ", estás en el canal oficial de " + rawCity + ". Pulsa el botón Compartir para invitar a tus amigos por WhatsApp y abrir rueda en directo.";
+                    } else {
+                        textToSpeak = "Emisora de " + rawCity + " a la escucha para " + userNick + ". ¡Adelante!";
+                    }
+                    window.controlResponseIndex = idx + 1;
+                }
+
+                setTimeout(function() {
+                    if (!('speechSynthesis' in window)) return;
+                    window.speechSynthesis.cancel();
+
+                    var u = new SpeechSynthesisUtterance(textToSpeak);
+                    u.lang = 'es-ES';
+                    u.rate = 0.92;
+                    u.pitch = 0.88;
+
+                    u.onstart = function() {
+                        window.app.isControlSpeaking = true;
+                        if (window.dispatch_control_active) {
+                            window.dispatch_control_active("BASE " + rawCity, true);
+                        }
+                        if (window.playUiSound) window.playUiSound("switch"); // 🛡️ Sonido sutil de canal en lugar de beep molesto
+                    };
+
+                    u.onend = function() {
+                        window.app.isControlSpeaking = false;
+                        if (window.dispatch_control_active) {
+                            window.dispatch_control_active(null, false);
+                        }
+                        if (window.playUiSound) window.playUiSound("rx_off");
+                    };
+
+                    u.onerror = function() {
+                        window.app.isControlSpeaking = false;
+                        if (window.dispatch_control_active) {
+                            window.dispatch_control_active(null, false);
+                        }
+                    };
+
+                    window.speechSynthesis.speak(u);
+                }, 1200);
+            };
+
+            window.clearReplayBuffer = function() {
+                replayBlobs = [];
+                window.controlResponseIndex = 0;
+                if (window.dispatch_replay_available) window.dispatch_replay_available(false);
+                if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
+            };
             window.playReplay = function() {
                 if (replayBlobs.length === 0) {
                     if (window.dispatch_notification) {
@@ -793,9 +869,11 @@ object ReplayEngine {
                     if (window.app.masterRxGain) {
                         window.app.masterRxGain.gain.setTargetAtTime(3.5, window.app.ctx.currentTime, 0.3);
                     }
+                    if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
                 }
                 function playNext() {
                     if (index >= playlist.length) { finishReplay(); return; }
+                    if (window.dispatch_replay_progress) window.dispatch_replay_progress((index + 1) / playlist.length);
                     var url = URL.createObjectURL(playlist[index]); var audio = new Audio(url); var source = window.app.ctx.createMediaElementSource(audio); source.connect(window.app.masterOut); audio.playbackRate = 1.15;
                     audio.onended = function() { URL.revokeObjectURL(url); source.disconnect(); index++; playNext(); };
                     audio.play().catch(finishReplay);

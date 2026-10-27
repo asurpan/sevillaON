@@ -493,21 +493,29 @@ fun RadioPanel(
                                     }
                                 }
 
-                                // 🔋 S-METER TÁCTICO 27MHz (MÁXIMA VISIBILIDAD DE LEDS - ALTURA 22dp)
+                                // 🚨 REGLA DE ORO CB 27MHz: PORTADORA FIJA Y PISOTÓN BASE (NO ALTERAR LÓGICA DE LEDS FIJOS)
+                                // 1. En RX la portadora mantiene los LEDs TOTALMENTE FIJOS marcando el nivel RF real del emisor.
+                                // 2. Agente / Bot / Base (BASE/CONTROL) transmite SIEMPRE con potencia a tope (50W -> 20 LEDs Fijos S9+30dB).
+                                // 3. Pisotón: Las estaciones de mayor potencia se imponen fijando un nivel de LEDs superior.
                                 Row(
                                     modifier = Modifier.fillMaxWidth().height(22.dp).padding(vertical = 1.dp), 
                                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
-                                    val remoteUser = users.find { it.nick.equals(transmitterNick, ignoreCase = true) }
-                                    val remotePower = remoteUser?.txPower ?: 0.7f
-                                    val sameCity = remoteUser != null && remoteUser.city.split("-")[0] == state.city.split("-")[0]
-                                    val sameChannel = remoteUser != null && remoteUser.channel == state.channel
+                                    val isControlBase = transmitterNick?.startsWith("BASE ") == true || 
+                                                         transmitterNick?.startsWith("CONTROL ") == true || 
+                                                         transmitterNick?.contains("BASE", ignoreCase = true) == true
 
-                                    // 📶 ESCALA CB 27MHz: Misma calle/barrio (S9+30dB) vs Ciudad vs Provincia
+                                    val remoteUser = users.find { it.nick.equals(transmitterNick, ignoreCase = true) }
+                                    val remotePower = if (isControlBase) 1.0f else (remoteUser?.txPower ?: 0.7f)
+                                    val sameCity = isControlBase || (remoteUser != null && remoteUser.city.split("-")[0] == state.city.split("-")[0])
+                                    val sameChannel = isControlBase || (remoteUser != null && remoteUser.channel == state.channel)
+
+                                    // 📶 ESCALA RIGUROSA CB 27MHz: Portadora fija marcando potencia RF exacta (Pisotón Base 50W S9+30dB = 20 LEDs Fijos)
                                     val cbSignalFactor = when {
-                                        sameChannel && sameCity -> 1.0f // 💥 Misma calle / Mismo barrio: SARTENAZO A TOPE (S9+30dB)
-                                        sameCity -> 0.85f * (remotePower / 0.7f).coerceIn(0.8f, 1.1f) // Mismo pueblo / ciudad: S8-S9
-                                        else -> 0.50f * (remotePower / 0.7f).coerceIn(0.5f, 0.9f) // Otra ciudad / Provincia: S5
+                                        isControlBase -> 1.0f // 💥 ESTACIÓN BASE / BOT (50W): PORTADORA FIJA A TOPE (20 LEDs - S9+30dB)
+                                        sameChannel && sameCity -> (0.85f + (remotePower * 0.15f)).coerceIn(0.85f, 1.0f) // SARTENAZO SEGÚN POTENCIA
+                                        sameCity -> (0.65f + (remotePower * 0.20f)).coerceIn(0.65f, 0.85f) // Mismo pueblo / ciudad
+                                        else -> (0.40f + (remotePower * 0.15f)).coerceIn(0.40f, 0.55f) // Otra provincia
                                     }
 
                                     val signalLevel = if (isTransmitting) mic else if (rx) cbSignalFactor.coerceIn(0.25f, 1.0f) else 0f
@@ -687,10 +695,13 @@ fun RadioPanel(
                                     modifier = Modifier.size(22.dp).clickable { onStateChange(state.copy(isInterfaceLocked = !state.isInterfaceLocked)) }
                                 )
                                 Spacer(Modifier.height(4.dp))
+                                val isControlBaseActive = rx && (transmitterNick?.startsWith("BASE ") == true || 
+                                                             transmitterNick?.startsWith("CONTROL ") == true || 
+                                                             transmitterNick?.contains("BASE", ignoreCase = true) == true)
                                 Text("WATTS", color = Color.White.copy(0.45f), fontSize = 8.sp, fontWeight = FontWeight.Black)
                                 Text(
-                                    text = "${if(isTransmitting) (state.veteranPower * 50f).toInt() else if(rx) 9 else 0}", 
-                                    color = if(isTransmitting) Color.Red else if(rx) LuxeColors.Gold else Color.White.copy(0.3f), 
+                                    text = "${if(isTransmitting) (state.veteranPower * 50f).toInt() else if(isControlBaseActive) 50 else if(rx) 9 else 0}", 
+                                    color = if(isTransmitting || isControlBaseActive) Color.Red else if(rx) LuxeColors.Gold else Color.White.copy(0.3f), 
                                     fontSize = 20.sp, 
                                     fontWeight = FontWeight.Black,
                                     modifier = Modifier.combinedClickable(

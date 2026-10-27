@@ -60,17 +60,18 @@ fun main() {
         window.checkHardwareRestore = function(onRestored) {
             var hwID = (window.AndroidApp && window.AndroidApp.getAndroidId) ? window.AndroidApp.getAndroidId() : localStorage.getItem("web_device_id");
             if (!hwID || !window.app || !window.app.db) return;
-            var localNick = localStorage.getItem("indicativo");
-            if (!localNick || localNick.trim() === "") {
-                window.app.db.ref("devices/" + hwID).once("value").then(function(snapshot) {
-                    var val = snapshot.val();
-                    if (val && val.nick && val.nick.trim() !== "") {
-                        console.log("📻 Auto-Restauración Hardware via ANDROID_ID:", val.nick);
-                        localStorage.setItem("indicativo", val.nick);
-                        if (onRestored) onRestored(val.nick);
+            window.app.db.ref("devices/" + hwID).once("value").then(function(snapshot) {
+                var val = snapshot.val();
+                if (val && val.nick && val.nick.trim() !== "") {
+                    var restoredNick = val.nick.trim().toUpperCase();
+                    console.log("📻 Auto-Restauración Hardware via ANDROID_ID:", restoredNick);
+                    localStorage.setItem("indicativo", restoredNick);
+                    if (window.dispatch_hardware_restored) {
+                        window.dispatch_hardware_restored(restoredNick);
                     }
-                });
-            }
+                    if (onRestored) onRestored(restoredNick);
+                }
+            });
         };
 
         window.remoteTxStates = {};
@@ -368,11 +369,21 @@ fun main() {
         val isDuplicateTabAlert = remember { mutableStateOf(false) }
         win.dispatch_duplicate_tab = { isDup: Boolean -> if (isDup) isDuplicateTabAlert.value = true }
 
+        val savedNickState = remember { mutableStateOf(localStorage.getItem("indicativo") ?: "") }
+        win.dispatch_hardware_restored = { restoredNick: String -> 
+            if (restoredNick.isNotEmpty()) savedNickState.value = restoredNick 
+        }
+
         App(
-            savedNick = localStorage.getItem("indicativo") ?: "",
+            savedNick = savedNickState.value,
             initialState = radioState.value,
             forceInitialScreen = false,
             isFirstTime = false,
+            isDuplicateTab = isDuplicateTabAlert.value,
+            onClaimTab = { 
+                isDuplicateTabAlert.value = false
+                js("if(window.claimTabControl) window.claimTabControl();")
+            },
             onPermissionRequest = { RadioNetworkManager.connect(it); js("window.ensureMicAccess()"); js("if(window.app) window.app.canPlaySounds = true;") },
             onLogout = { RadioPersistence.logout() },
             onNoiseVolumeChange = { if(win.setNoiseVolume != null) win.setNoiseVolume(it) },
@@ -456,11 +467,21 @@ fun main() {
             showInstallPrompt = remember {
                 val win: dynamic = window
                 val ua = (win.navigator?.userAgent as? String ?: "").uppercase()
-                ua.contains("ANDROID") && win.AndroidApp == null
+                val isAndroidBrowser = ua.contains("ANDROID") && win.AndroidApp == null
+                val isIos = ua.contains("IPHONE") || ua.contains("IPAD") || ua.contains("IPOD")
+                
+                // Auto-redirección si es Android navegando por la web para abrir la App Nativa / Play Store
+                if (isAndroidBrowser && !isIos) {
+                    val playStoreUrl = "https://play.google.com/store/apps/details?id=com.sagon.on&pcampaignid=web_share"
+                    val intentUrl = "intent://open#Intent;scheme=onairspain;package=com.sagon.on;S.browser_fallback_url=" + win.encodeURIComponent(playStoreUrl) + ";end"
+                    win.location.href = intentUrl
+                }
+                
+                // Solo mostrar banner en Android Navegador (NO en iPhone/iOS ni en App Nativa)
+                isAndroidBrowser && !isIos
             },
             onInstallConfirm = {
                 val win: dynamic = window
-                // 🛡️ BORRAR Y DESCONECTAR SESIÓN WEB PARA EVITAR DUPLICADOS AL ABRIR LA APP NATIVA
                 if (win.app != null) {
                     if (win.app.db != null && win.app.sessionID != null) {
                         try { win.app.db.ref("users/" + win.app.sessionID).remove() } catch (e: dynamic) {}

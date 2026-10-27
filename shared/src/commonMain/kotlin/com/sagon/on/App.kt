@@ -99,7 +99,9 @@ fun App(
     onChatOpenConsumed: () -> Unit = {},
     onChatTargetConsumed: () -> Unit = {},
     voxActive: Boolean = false,
-    initialState: RadioState
+    initialState: RadioState,
+    isDuplicateTab: Boolean = false,
+    onClaimTab: () -> Unit = {}
 ) {
     var screenState by remember { 
         mutableStateOf(
@@ -117,6 +119,16 @@ fun App(
     var showNotificationConsent by remember { mutableStateOf(false) }
     var showBatteryWarning by remember { mutableStateOf(false) }
     var showExitDialog by remember { mutableStateOf(false) }
+
+    // 🛡️ AUTO-RESTAURACIÓN DE NICK VINCULADO AL DISPOSITIVO
+    LaunchedEffect(savedNick) {
+        if (savedNick.isNotBlank()) {
+            nick = savedNick
+            if (screenState == Screen.Welcome) {
+                screenState = Screen.RadioCB
+            }
+        }
+    }
 
     // 🛡️ CONEXIÓN ÚNICA: Solo conectar al iniciar o cambiar de Nick, no en cada recomposición
     LaunchedEffect(nick) {
@@ -301,6 +313,34 @@ fun App(
                         onOpenNotif = { onOpenNotifSettings() },
                         onOpenAutoStart = { onOpenAutoStartSettings() },
                         onDismiss = { showBatteryWarning = false }
+                    )
+                }
+
+                if (isDuplicateTab) {
+                    AlertDialog(
+                        onDismissRequest = {},
+                        containerColor = LuxeColors.DeepSea,
+                        modifier = Modifier.padding(16.dp).border(2.dp, LuxeColors.Gold, RoundedCornerShape(24.dp)),
+                        icon = { Icon(Icons.Rounded.Warning, null, tint = LuxeColors.Gold, modifier = Modifier.size(40.dp)) },
+                        title = { Text("RADIO ABIERTA EN OTRA PESTAÑA", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center) },
+                        text = {
+                            Text(
+                                "La emisora ya se encuentra conectada en otra pestaña de tu navegador.\n\nPara evitar interferencias y ecos, cierra la otra pestaña o pulsa el botón para usar la radio en esta ventana.",
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                textAlign = TextAlign.Center
+                            )
+                        },
+                        confirmButton = {
+                            LuxeButton(
+                                text = "USAR EN ESTA PESTAÑA",
+                                onClick = onClaimTab,
+                                enabled = true,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                containerColor = LuxeColors.Gold,
+                                contentColor = Color.Black
+                            )
+                        }
                     )
                 }
 

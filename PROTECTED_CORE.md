@@ -32,6 +32,11 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **SEO Marca**: Mantener términos *DSELECTRONICA, reparar emisora Sevilla, ligar radio, conocer gente*.
     - **Derecho de Admisión**: Mantener el diálogo de borrado de datos con lenguaje disuasorio y advertencia de **BAN-HARDWARE**.
 
+7. **Identidad Unificada por Hardware y Redirecciones**:
+    - **Hardware Unificado (Un móvil = Un usuario)**: La consulta `devices/$deviceID` en Firebase AUTO-RESTAURA el indicativo si el dispositivo ya fue registrado, impidiendo crear múltiples usuarios desde el mismo teléfono.
+    - **Pestaña Única**: Detección de pestaña duplicada con bloqueo total de interfaz para evitar ecos.
+    - **Redirección Android Web -> App Nativa**: Navegadores en Android deben abrir la App Nativa o la Play Store mediante Intent URL, mientras que iOS/Safari ejecuta la versión Web.
+
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al autor. NO apliques parches que eliminen los nodos inaudibles o el bridge silencioso, ya que son los pilares que mantienen la voz viva en móviles modernos.
 

@@ -397,6 +397,7 @@ fun BatteryChecklistDialog(
     onDismiss: () -> Unit
 ) {
     var statusJson by remember { mutableStateOf(statusJsonProvider()) }
+    var autoStartClicked by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -408,6 +409,7 @@ fun BatteryChecklistDialog(
     val isIgnoringBattery = statusJson.contains("\"isIgnoringBattery\":true")
     val notifsEnabled = statusJson.contains("\"notifsEnabled\":true")
     val isCustomOs = statusJson.contains("\"isXiaomiOrCustom\":true")
+    val isAutoStartOk = autoStartClicked || isIgnoringBattery
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -418,7 +420,7 @@ fun BatteryChecklistDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    "Para evitar que Android corte la voz al apagar la pantalla, verifica la lista de configuración:",
+                    "Para evitar que Android corte la voz al apagar la pantalla, verifica los ajustes del sistema:",
                     color = Color.White.copy(0.8f),
                     fontSize = 11.sp,
                     lineHeight = 16.sp,
@@ -429,9 +431,9 @@ fun BatteryChecklistDialog(
                 // 1. MODO BATERÍA
                 ChecklistItem(
                     title = "1. Batería Sin Restricciones",
-                    description = if (isIgnoringBattery) "Configuración correcta. Canal de voz protegido." else "Pendiente: Cambia a 'Sin Restricciones'.",
+                    description = if (isIgnoringBattery) "✓ Correcto: La radio no se cortará en reposo." else "Pendiente: Pulsa para seleccionar 'Sin Restricciones'.",
                     isOk = isIgnoringBattery,
-                    actionText = if (isIgnoringBattery) "✓ CORRECTO" else "AJUSTAR BATERÍA",
+                    actionText = if (isIgnoringBattery) "✓ OPTIMIZADO" else "AJUSTAR",
                     onAction = onIgnoreBattery
                 )
 
@@ -440,9 +442,9 @@ fun BatteryChecklistDialog(
                 // 2. NOTIFICACIONES
                 ChecklistItem(
                     title = "2. Notificaciones y Alertas",
-                    description = if (notifsEnabled) "Alertas y servicio de red activos." else "Pendiente: Permitir notificaciones.",
+                    description = if (notifsEnabled) "✓ Activas: Avisos y servicio de voz en segundo plano." else "Pendiente: Activa el permiso de avisos.",
                     isOk = notifsEnabled,
-                    actionText = if (notifsEnabled) "✓ ACTIVAS" else "PERMITIR AVISOS",
+                    actionText = if (notifsEnabled) "✓ ACTIVAS" else "PERMITIR",
                     onAction = onOpenNotif
                 )
 
@@ -452,18 +454,29 @@ fun BatteryChecklistDialog(
                     // 3. INICIO AUTOMÁTICO (Xiaomi/Poco/Samsung/Huawei)
                     ChecklistItem(
                         title = "3. Inicio Automático / Autorun",
-                        description = "Recomendado para MIUI/HyperOS/Samsung para evitar el cierre por reposo.",
-                        isOk = false,
-                        actionText = "ABRIR AUTORUN",
-                        onAction = onOpenAutoStart
+                        description = if (isAutoStartOk) "✓ Activado o verificado para HyperOS/MIUI/Samsung." else "Recomendado para Xiaomi/HyperOS para evitar cierres.",
+                        isOk = isAutoStartOk,
+                        actionText = if (isAutoStartOk) "✓ VERIFICADO" else "AUTORUN",
+                        onAction = {
+                            autoStartClicked = true
+                            onOpenAutoStart()
+                        }
                     )
                 }
             }
         },
         confirmButton = {
             LuxeButton(
-                text = "CONFIGURAR AJUSTES",
-                onClick = { onIgnoreBattery() },
+                text = if (isIgnoringBattery && notifsEnabled) "✓ ENTRAR A LA RADIO" else "CONFIGURAR AJUSTES",
+                onClick = { 
+                    if (!isIgnoringBattery) {
+                        onIgnoreBattery()
+                    } else if (!notifsEnabled) {
+                        onOpenNotif()
+                    } else {
+                        onDismiss()
+                    }
+                },
                 enabled = true,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 containerColor = LuxeColors.Gold,
@@ -474,7 +487,7 @@ fun BatteryChecklistDialog(
         dismissButton = {
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 TextButton(onClick = onDismiss) {
-                    Text("ENTENDIDO, LUEGO", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp, textAlign = TextAlign.Center)
+                    Text("CERRAR AVISO", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp, textAlign = TextAlign.Center)
                 }
             }
         }

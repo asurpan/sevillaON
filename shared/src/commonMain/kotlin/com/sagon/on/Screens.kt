@@ -34,6 +34,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -249,6 +251,18 @@ fun RadioPanel(
         label = "DiscreteAlpha"
     )
 
+    // ⏪ ANIMACIÓN REPLAY REPRODUCIENDO (PARPADEO RÍTMICO)
+    val replayTransition = rememberInfiniteTransition(label = "ReplayBlink")
+    val replayAlpha by replayTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.20f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(350, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ReplayAlpha"
+    )
+
     var hasSeenDiscreteExplain by remember { mutableStateOf(false) }
     val handleDiscreteToggle = {
         val nextVal = !state.isDiscreteModeEnabled
@@ -335,31 +349,37 @@ fun RadioPanel(
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val isPlaying = replayProgress > 0f
-                        val brightnessFactor = if (isPlaying) (1f - replayProgress).coerceIn(0.2f, 1f) else 1f
                         
-                        // ⏪ BOTÓN DE REPLAY (SIEMPRE ACTIVO Y RESPONSIVO)
+                        // ⏪ BOTÓN DE REPLAY (ILUMINACIÓN Y PARPADEO RÍTMICO AL REPRODUCIR)
                         Surface(
                             onClick = { onReplay() }, 
-                            color = if (isReplayReady || isPlaying) LuxeColors.Gold.copy(alpha = 0.25f * brightnessFactor) else Color.White.copy(0.08f), 
+                            color = if (isPlaying) LuxeColors.Gold.copy(alpha = 0.35f * replayAlpha) else if (isReplayReady) LuxeColors.Gold.copy(0.20f) else Color.White.copy(0.08f), 
                             shape = CircleShape, 
-                            border = BorderStroke(1.dp, if (isReplayReady || isPlaying) LuxeColors.Gold else Color.White.copy(0.2f)), 
-                            modifier = Modifier.size(32.dp).drawBehind {
-                                if (isReplayReady || isPlaying) {
+                            border = BorderStroke(if (isPlaying) 2.dp else 1.dp, if (isPlaying) LuxeColors.Gold.copy(alpha = replayAlpha) else if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.2f)), 
+                            modifier = Modifier.size(34.dp).drawBehind {
+                                if (isPlaying) {
                                     drawCircle(
-                                        color = LuxeColors.Gold.copy(alpha = 0.25f * brightnessFactor),
-                                        radius = size.maxDimension * 0.5f,
+                                        color = LuxeColors.Gold.copy(alpha = 0.30f * replayAlpha),
+                                        radius = size.maxDimension * (0.5f + 0.2f * replayAlpha),
                                         center = center
                                     )
                                 }
                             }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                if (isPlaying) CircularProgressIndicator(progress = { replayProgress }, modifier = Modifier.fillMaxSize(), color = LuxeColors.Gold.copy(alpha = brightnessFactor), strokeWidth = 2.dp)
+                                if (isPlaying) {
+                                    CircularProgressIndicator(
+                                        progress = { replayProgress }, 
+                                        modifier = Modifier.fillMaxSize(), 
+                                        color = LuxeColors.Gold.copy(alpha = replayAlpha), 
+                                        strokeWidth = 2.5.dp
+                                    )
+                                }
                                 Icon(
-                                    Icons.Rounded.History, 
-                                    null, 
-                                    tint = if (isReplayReady || isPlaying) LuxeColors.Gold else Color.White.copy(0.7f), 
-                                    modifier = Modifier.size(16.dp)
+                                    imageVector = if (isPlaying) Icons.Rounded.GraphicEq else Icons.Rounded.History, 
+                                    contentDescription = "Replay", 
+                                    tint = if (isPlaying) LuxeColors.Gold.copy(alpha = replayAlpha) else if (isReplayReady) LuxeColors.Gold else Color.White.copy(0.7f), 
+                                    modifier = Modifier.size(if (isPlaying) 18.dp else 16.dp).scale(if (isPlaying) 0.85f + 0.25f * replayAlpha else 1f)
                                 )
                             }
                         }
@@ -873,6 +893,7 @@ fun RadioPanel(
                         )
                     }
 
+                    val haptic = LocalHapticFeedback.current
                     Surface(
                         modifier = Modifier
                             .weight(1.5f)
@@ -882,9 +903,15 @@ fun RadioPanel(
                                 detectTapGestures(
                                     onPress = {
                                         if (!isPttBlockedByRx) {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                             vibratePtt()
                                             pttLocked = true
-                                            try { awaitRelease() } finally { pttLocked = false }
+                                            try { 
+                                                awaitRelease() 
+                                            } finally { 
+                                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                pttLocked = false 
+                                            }
                                         }
                                     }
                                 )
@@ -937,7 +964,12 @@ fun RadioPanel(
                     }
                     
                     Surface(
-                        onClick = { vibratePtt(); pttLocked = !pttLocked; onStateChange(state.copy(isPttLatched = pttLocked)) }, 
+                        onClick = { 
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            vibratePtt()
+                            pttLocked = !pttLocked
+                            onStateChange(state.copy(isPttLatched = pttLocked)) 
+                        }, 
                         modifier = Modifier.size(84.dp), 
                         shape = RoundedCornerShape(20.dp), 
                         color = if (pttLocked) Color.Red.copy(0.2f) else Color.White.copy(0.05f), 

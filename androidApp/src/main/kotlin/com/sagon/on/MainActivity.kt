@@ -757,13 +757,18 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             fun vibratePtt() {
                                 runOnUiThread {
                                     try {
+                                        webViewInstance?.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                                        webViewInstance?.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+
                                         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
                                         if (vibrator.hasVibrator()) {
-                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                vibrator.vibrate(android.os.VibrationEffect.createOneShot(35, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                                vibrator.vibrate(android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_CLICK))
+                                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                vibrator.vibrate(android.os.VibrationEffect.createOneShot(50, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
                                             } else {
                                                 @Suppress("DEPRECATION")
-                                                vibrator.vibrate(35)
+                                                vibrator.vibrate(50)
                                             }
                                         }
                                     } catch (e: Exception) {}

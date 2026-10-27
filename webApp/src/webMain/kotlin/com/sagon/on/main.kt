@@ -467,17 +467,11 @@ fun main() {
             showInstallPrompt = remember {
                 val win: dynamic = window
                 val ua = (win.navigator?.userAgent as? String ?: "").uppercase()
-                val isAndroidBrowser = ua.contains("ANDROID") && win.AndroidApp == null
+                val isWebView = ua.contains("WV") || ua.contains("ANDROIDAPP") || win.AndroidApp != null
+                val isAndroidBrowser = ua.contains("ANDROID") && !isWebView
                 val isIos = ua.contains("IPHONE") || ua.contains("IPAD") || ua.contains("IPOD")
                 
-                // Auto-redirección si es Android navegando por la web para abrir la App Nativa / Play Store
-                if (isAndroidBrowser && !isIos) {
-                    val playStoreUrl = "https://play.google.com/store/apps/details?id=com.sagon.on&pcampaignid=web_share"
-                    val intentUrl = "intent://open#Intent;scheme=onairspain;package=com.sagon.on;S.browser_fallback_url=" + win.encodeURIComponent(playStoreUrl) + ";end"
-                    win.location.href = intentUrl
-                }
-                
-                // Solo mostrar banner en Android Navegador (NO en iPhone/iOS ni en App Nativa)
+                // Solo mostrar banner de instalación en un navegador Android externo (NO en la App Nativa ni en iPhone)
                 isAndroidBrowser && !isIos
             },
             onInstallConfirm = {

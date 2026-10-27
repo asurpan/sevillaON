@@ -28,19 +28,29 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Cache Gradle & Kotlin JS Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.konan
+            webApp/build/js
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: wrapper
-          cache-read-only: false
           add-job-summary: true
-          # Caché de configuración desactivada por incompatibilidad con Kotlin JS
 
       - name: Make gradlew executable
         run: chmod +x gradlew
 
       - name: Build Web App (JS)
-        run: ./gradlew :webApp:jsBrowserDistribution --stacktrace -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseParallelGC"
+        run: ./gradlew :webApp:jsBrowserDistribution --build-cache --parallel -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseParallelGC"
 
       - name: Prepare Static Artifact
         run: |

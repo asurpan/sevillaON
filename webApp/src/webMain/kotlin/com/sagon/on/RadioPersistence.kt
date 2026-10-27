@@ -40,6 +40,9 @@ object RadioPersistence {
                 } catch(e: Exception) {}
             }
 
+            val bgStyleStr = localStorage.getItem("bgStyle")
+            val bgStyle = BackgroundStyle.entries.find { it.id == bgStyleStr } ?: BackgroundStyle.DEEP_SEA
+
             RadioState(
                 city = finalCity,
                 channel = initialChannel,
@@ -58,7 +61,8 @@ object RadioPersistence {
                 isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
                 squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.90f,
                 systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 0.90f,
-                hasAcceptedMicExplain = hasMicExplain
+                hasAcceptedMicExplain = hasMicExplain,
+                backgroundStyle = bgStyle
             )
         } catch(e: Exception) { RadioState() }
     }
@@ -87,6 +91,7 @@ object RadioPersistence {
             localStorage.setItem("squelch", s.squelch.toString())
             localStorage.setItem("sysVol", s.systemVolume.toString())
             localStorage.setItem("hasMicExplain", s.hasAcceptedMicExplain.toString())
+            localStorage.setItem("bgStyle", s.backgroundStyle.id)
         } catch(e: Exception) {}
 
         if (win.app != null) {

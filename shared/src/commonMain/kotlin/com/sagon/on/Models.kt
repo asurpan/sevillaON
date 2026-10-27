@@ -87,8 +87,26 @@ data class RadioState(
     val isNightMode: Boolean = false,
     val isChatVisible: Boolean = false,
     val unreadCount: Int = 0,
-    val activeProfile: ActivityProfile = ActivityProfile.NORMAL
+    val activeProfile: ActivityProfile = ActivityProfile.NORMAL,
+    val backgroundStyle: BackgroundStyle = BackgroundStyle.DEEP_SEA
 )
+
+enum class BackgroundStyle(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val overlayType: String = "NONE"
+) {
+    DEEP_SEA("deep_sea", "Luxe Deep Sea", "Azul marino táctico original", "NONE"),
+    LUXE_GOLD("luxe_gold", "Luxe Cyan Royal", "Degradado azul brillante con destellos", "NONE"),
+    MILITARY("military", "Verde Militar Táctico", "Camuflaje de aviación militar", "NONE"),
+    NEON_ROSA("neon_rosa", "Rosa Cyberpunk", "Neón magenta-rosa de alto contraste", "NONE"),
+    CIRCUIT("circuit", "Circuito PCB Electrónico", "Textura de placa electrónica integrada", "CIRCUIT"),
+    CARBON("carbon", "Fibra de Carbono 3D", "Trama entramada de carbono técnico", "CARBON"),
+    WALKIE_ABS("walkie_abs", "Walkie-Talkie Rugoso", "Plástico técnico ABS de equipo profesional", "ABS_WALKIE"),
+    STEEL("steel", "Acero Cepillado", "Textura metálica de chasis de emisora", "STEEL"),
+    OLED_BLACK("oled_black", "Negro OLED Puro", "Negro absoluto para ahorro de batería", "NONE")
+}
 
 data class AppNotification(
     val title: String,

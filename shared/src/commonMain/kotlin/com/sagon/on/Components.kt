@@ -561,6 +561,89 @@ private fun ChecklistItem(
 }
 
 @Composable
+fun AppBackground(
+    style: BackgroundStyle,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val backgroundBrush = when (style) {
+        BackgroundStyle.DEEP_SEA -> LuxeColors.BackgroundGradient
+        BackgroundStyle.LUXE_GOLD -> Brush.verticalGradient(listOf(Color(0xFF0284C7), Color(0xFF0F172A), Color(0xFF020617)))
+        BackgroundStyle.MILITARY -> Brush.verticalGradient(listOf(Color(0xFF142E18), Color(0xFF0B1F0E), Color(0xFF051207)))
+        BackgroundStyle.NEON_ROSA -> Brush.verticalGradient(listOf(Color(0xFF831843), Color(0xFF500724), Color(0xFF18020C)))
+        BackgroundStyle.CIRCUIT -> Brush.verticalGradient(listOf(Color(0xFF064E3B), Color(0xFF022C22), Color(0xFF011A14)))
+        BackgroundStyle.CARBON -> Brush.verticalGradient(listOf(Color(0xFF27272A), Color(0xFF18181B), Color(0xFF09090B)))
+        BackgroundStyle.WALKIE_ABS -> Brush.verticalGradient(listOf(Color(0xFF3F3F46), Color(0xFF27272A), Color(0xFF18181B)))
+        BackgroundStyle.STEEL -> Brush.verticalGradient(listOf(Color(0xFF52525B), Color(0xFF3F3F46), Color(0xFF18181B)))
+        BackgroundStyle.OLED_BLACK -> Brush.linearGradient(listOf(Color.Black, Color.Black))
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(backgroundBrush)
+            .drawWithCache {
+                onDrawWithContent {
+                    drawContent()
+                    when (style.overlayType) {
+                        "CIRCUIT" -> {
+                            val strokeWidth = 1.5.dp.toPx()
+                            val lineColor = Color(0xFF10B981).copy(0.12f)
+                            val dotColor = Color(0xFF34D399).copy(0.25f)
+                            val w = size.width
+                            val h = size.height
+                            
+                            for (i in 0..12) {
+                                val y = h * (i / 12f)
+                                drawLine(lineColor, Offset(0f, y), Offset(w * 0.4f, y), strokeWidth)
+                                drawLine(lineColor, Offset(w * 0.4f, y), Offset(w * 0.6f, y + 40f), strokeWidth)
+                                drawLine(lineColor, Offset(w * 0.6f, y + 40f), Offset(w, y + 40f), strokeWidth)
+                                drawCircle(dotColor, 3.dp.toPx(), Offset(w * 0.4f, y))
+                                drawCircle(dotColor, 3.dp.toPx(), Offset(w * 0.6f, y + 40f))
+                            }
+                        }
+                        "CARBON" -> {
+                            val color1 = Color.White.copy(0.03f)
+                            val color2 = Color.Black.copy(0.20f)
+                            val step = 12.dp.toPx()
+                            var x = 0f
+                            while (x < size.width) {
+                                var y = 0f
+                                while (y < size.height) {
+                                    drawRect(if ((x / step + y / step).toInt() % 2 == 0) color1 else color2, Offset(x, y), androidx.compose.ui.geometry.Size(step, step))
+                                    y += step
+                                }
+                                x += step
+                            }
+                        }
+                        "STEEL" -> {
+                            val lineColor = Color.White.copy(0.02f)
+                            var y = 0f
+                            while (y < size.height) {
+                                drawLine(lineColor, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                                y += 4.dp.toPx()
+                            }
+                        }
+                        "ABS_WALKIE" -> {
+                            val dotColor = Color.White.copy(0.015f)
+                            var y = 0f
+                            while (y < size.height) {
+                                var x = (y % 16f)
+                                while (x < size.width) {
+                                    drawCircle(dotColor, 1.dp.toPx(), Offset(x, y))
+                                    x += 12.dp.toPx()
+                                }
+                                y += 8.dp.toPx()
+                            }
+                        }
+                    }
+                }
+            },
+        content = content
+    )
+}
+
+@Composable
 fun LuxeNotificationOverlay(notification: AppNotification?, onDismiss: () -> Unit) {
     AnimatedVisibility(visible = notification != null, enter = slideInVertically() + fadeIn(), exit = slideOutVertically() + fadeOut()) {
         if (notification != null) {

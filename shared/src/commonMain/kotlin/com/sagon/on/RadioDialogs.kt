@@ -39,7 +39,7 @@ enum class RadioDialogType {
     INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, 
     BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, DISCRETE, SELECT_NICK, 
     HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, USER_ACTIONS, SQUELCH_CONTROL, GAIN_CONTROL, VOLUME_CONTROL,
-    DIAGNOSTIC, HELP
+    DIAGNOSTIC, HELP, BACKGROUND_THEME
 }
 
 @Composable
@@ -793,6 +793,69 @@ fun RadioDialogs(
             initialNick = nick,
             onDismiss = onDismiss
         )
+        RadioDialogType.BACKGROUND_THEME -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.padding(12.dp).border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+            icon = { Icon(Icons.Rounded.Palette, null, tint = LuxeColors.Gold, modifier = Modifier.size(36.dp)) },
+            title = { Text("ESTILO DE FONDO", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center) },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    BackgroundStyle.entries.forEach { bg ->
+                        val isSelected = state.backgroundStyle == bg
+                        Surface(
+                            onClick = { 
+                                onStateChange(state.copy(backgroundStyle = bg))
+                                triggerUiSound("switch")
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (isSelected) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f),
+                            border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) LuxeColors.Gold else Color.White.copy(0.1f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(
+                                            when (bg) {
+                                                BackgroundStyle.DEEP_SEA -> LuxeColors.BackgroundGradient
+                                                BackgroundStyle.LUXE_GOLD -> androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF0284C7), Color(0xFF020617)))
+                                                BackgroundStyle.MILITARY -> androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF142E18), Color(0xFF051207)))
+                                                BackgroundStyle.NEON_ROSA -> androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF831843), Color(0xFF18020C)))
+                                                BackgroundStyle.CIRCUIT -> androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF064E3B), Color(0xFF011A14)))
+                                                BackgroundStyle.CARBON -> androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF27272A), Color(0xFF09090B)))
+                                                BackgroundStyle.WALKIE_ABS -> androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF3F3F46), Color(0xFF18181B)))
+                                                BackgroundStyle.STEEL -> androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF52525B), Color(0xFF18181B)))
+                                                BackgroundStyle.OLED_BLACK -> androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color.Black, Color.Black))
+                                            },
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                        .border(1.dp, Color.White.copy(0.2f), RoundedCornerShape(8.dp))
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(bg.title, color = Color.White, fontWeight = FontWeight.Black, fontSize = 13.sp)
+                                    Text(bg.subtitle, color = Color.White.copy(0.6f), fontSize = 10.sp)
+                                }
+                                if (isSelected) {
+                                    Icon(Icons.Rounded.CheckCircle, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                LuxeButton("ACEPTAR", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
+            }
+        )
         RadioDialogType.SETTINGS -> AlertDialog(
             onDismissRequest = onDismiss,
             containerColor = LuxeColors.DeepSea,
@@ -852,6 +915,17 @@ fun RadioDialogs(
                             colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold)
                         )
                     }
+
+                    Spacer(Modifier.height(12.dp))
+                    LuxeButton(
+                        text = "🎨 CAMBIAR ESTILO DE FONDO",
+                        onClick = { onPendingDialogChange(RadioDialogType.BACKGROUND_THEME, null) },
+                        enabled = true,
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        containerColor = LuxeColors.Gold.copy(0.2f),
+                        contentColor = LuxeColors.Gold,
+                        fontSize = 12.sp
+                    )
 
                     Spacer(Modifier.height(20.dp))
                     

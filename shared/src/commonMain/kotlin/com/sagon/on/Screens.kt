@@ -314,7 +314,7 @@ fun RadioPanel(
     LaunchedEffect(pttLocked) { onMic(pttLocked, state.veteranPower) }
     LaunchedEffect(state.squelch, state.rfGain, rx, isTransmitting) { onNoise(noiseVol) }
 
-    Box(modifier = Modifier.fillMaxSize().background(LuxeColors.DeepSea)) {
+    AppBackground(style = state.backgroundStyle) {
         Column(modifier = Modifier.fillMaxSize()) {
             // --- BLOQUE SUPERIOR (Información y S-Meter) ---
             Column(

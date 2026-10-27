@@ -633,6 +633,11 @@ object RadioAudioManager {
 
             window.ensureMicAccess = function() {
                 console.log("🎙️ Solicitando acceso al micrófono...");
+                try {
+                    if (window.AndroidApp && window.AndroidApp.requestMicPermission) {
+                        window.AndroidApp.requestMicPermission();
+                    }
+                } catch(e) {}
                 if (window.initAudio) window.initAudio();
                 if (window.app.ctx && window.app.ctx.state !== 'running') {
                     window.app.ctx.resume().then(() => { 

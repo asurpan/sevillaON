@@ -795,6 +795,20 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
 
                             @JavascriptInterface
+                            fun requestMicPermission() {
+                                runOnUiThread {
+                                    try {
+                                        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) 
+                                            != PackageManager.PERMISSION_GRANTED) {
+                                            requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                        } else {
+                                            launchForegroundRadioService()
+                                        }
+                                    } catch (e: Exception) {}
+                                }
+                            }
+
+                            @JavascriptInterface
                             fun hasMicrophonePermission(): Boolean {
                                 return ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
                             }
@@ -1384,16 +1398,18 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                         webChromeClient = object : WebChromeClient() {
                             override fun onPermissionRequest(request: PermissionRequest) {
-                                if (request.resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
-                                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) 
-                                        == PackageManager.PERMISSION_GRANTED) {
-                                        request.grant(request.resources)
+                                runOnUiThread {
+                                    if (request.resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) {
+                                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) 
+                                            == PackageManager.PERMISSION_GRANTED) {
+                                            request.grant(request.resources)
+                                        } else {
+                                            permissionRequest = request
+                                            requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                        }
                                     } else {
-                                        permissionRequest = request
-                                        requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                        request.grant(request.resources)
                                     }
-                                } else {
-                                    request.grant(request.resources)
                                 }
                             }
 

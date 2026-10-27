@@ -857,28 +857,82 @@ fun RadioPanel(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(modifier = Modifier.fillMaxWidth().height(70.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val pttColor = if(isTransmitting) Color.Red else LuxeColors.Gold
+                    val pttColor = if (isTransmitting) Color(0xFFEF4444) else LuxeColors.Gold
+                    val pttGradient = if (isTransmitting) {
+                        Brush.radialGradient(
+                            colors = listOf(Color(0xFF991B1B), Color(0xFF450A0A), Color(0xFF180202)),
+                            radius = 220f
+                        )
+                    } else {
+                        Brush.radialGradient(
+                            colors = listOf(
+                                pttColor.copy(0.35f),
+                                Color(0xFF0891B2).copy(0.20f),
+                                Color(0xFF020617).copy(0.90f)
+                            ),
+                            radius = 240f
+                        )
+                    }
+
                     Surface(
-                        modifier = Modifier.weight(1.5f).fillMaxHeight().scale(pttScale).pointerInput(Unit) {
-                            detectTapGestures(
-                                onPress = {
-                                    if (!isPttBlockedByRx) {
-                                        vibratePtt()
-                                        pttLocked = true
-                                        try { awaitRelease() } finally { pttLocked = false }
+                        modifier = Modifier
+                            .weight(1.5f)
+                            .fillMaxHeight()
+                            .scale(pttScale)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onPress = {
+                                        if (!isPttBlockedByRx) {
+                                            vibratePtt()
+                                            pttLocked = true
+                                            try { awaitRelease() } finally { pttLocked = false }
+                                        }
                                     }
-                                }
-                            )
-                        }, 
-                        shape = RoundedCornerShape(20.dp), 
-                        color = pttColor.copy(0.15f), 
-                        border = BorderStroke(3.dp, pttColor.copy(0.5f))
+                                )
+                            }, 
+                        shape = RoundedCornerShape(22.dp), 
+                        color = Color.Transparent, 
+                        border = BorderStroke(2.5.dp, Brush.verticalGradient(listOf(pttColor, pttColor.copy(0.3f))))
                     ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(pttGradient)
+                                .drawBehind {
+                                    // 📻 TEXTURA MICRO-REJILLA TÁCTICA DE WALKIE
+                                    val gridColor = pttColor.copy(0.08f)
+                                    var x = 0f
+                                    val step = 8.dp.toPx()
+                                    while (x < size.width) {
+                                        drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), 1.dp.toPx())
+                                        x += step
+                                    }
+                                    var y = 0f
+                                    while (y < size.height) {
+                                        drawLine(gridColor, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
+                                        y += step
+                                    }
+                                    // 🌟 GLOSSY SHINE SUPERIOR
+                                    drawRect(
+                                        brush = Brush.verticalGradient(
+                                            listOf(Color.White.copy(0.15f), Color.Transparent),
+                                            startY = 0f,
+                                            endY = size.height * 0.45f
+                                        )
+                                    )
+                                }, 
+                            contentAlignment = Alignment.Center
+                        ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.Mic, null, tint = pttColor, modifier = Modifier.size(28.dp))
                                 Spacer(Modifier.width(12.dp))
-                                Text(if(isTransmitting) "AIRE" else "HABLAR", color = pttColor, fontWeight = FontWeight.Black, fontSize = 16.sp)
+                                Text(
+                                    if (isTransmitting) "AIRE" else "HABLAR", 
+                                    color = if (isTransmitting) Color.White else pttColor, 
+                                    fontWeight = FontWeight.Black, 
+                                    fontSize = 16.sp,
+                                    letterSpacing = 1.5.sp
+                                )
                             }
                         }
                     }

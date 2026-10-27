@@ -10,6 +10,7 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Decoding Bridge**: Se debe conectar cada stream remoto a un nodo `dummy` de volumen **0.01** (Aumentado para Chrome Mobile) directo a la salida física. Esto engaña al navegador para que mantenga la decodificación activa y los LEDs brillen.
     - **ICE/TURN 4G Reforzado**: El ruteo WebRTC debe incluir servidores TURN-TCP para saltar CG-NAT de operadoras móviles.
     - **Hardware Keep-Alive (Motor 5Hz)**: Mantener el oscilador **infrasónico de 5Hz** inaudible en la salida física para evitar el modo suspensión del chip de audio. Debe silenciarse automáticamente cuando se detecta voz real entrante.
+    - **Tono de Modo Oreja (Piripi)**: Al activar el Modo Oreja se ejecuta obligatoriamente la señal audible "incoming" (piripi) y la vibración háptica de 35ms.
 
 2. **Motor de Veteranía y Pisado Real (V12.5)**:
     - **Progresión de Potencia (Gamificación)**: Inicio en 1W (0.02 pwr) -> Máximo 50W (1.0 pwr). Progresión: +0.00000833 pwr por cada 5 segundos de TX (~50h de voz activa). Cada +1 Watt ganado genera notificación y sonido de logro (Dopamina UX).

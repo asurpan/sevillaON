@@ -661,7 +661,7 @@ object RadioAudioManager {
 object RadioSignaling {
     fun install() {
         js("""
-            window.app.canPlaySounds = false; 
+            window.app.canPlaySounds = true; 
             window.playUiSound = function(type) {
                 // 📳 RESPUESTA HÁPTICA / VIBRACIÓN TÁCTIL SUTIL EN PTT Y BOTONES (15 ms)
                 try {

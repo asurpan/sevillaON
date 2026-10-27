@@ -251,14 +251,13 @@ fun RadioPanel(
 
     var hasSeenDiscreteExplain by remember { mutableStateOf(false) }
     val handleDiscreteToggle = {
-        if (!state.isDiscreteModeEnabled && !hasSeenDiscreteExplain) {
-            triggerUiSound("switch")
+        val nextVal = !state.isDiscreteModeEnabled
+        onStateChange(state.copy(isDiscreteModeEnabled = nextVal))
+        vibratePtt()
+        triggerUiSound(if (nextVal) "incoming" else "switch")
+        if (nextVal && !hasSeenDiscreteExplain) {
             hasSeenDiscreteExplain = true
             onPendingDialogChange(RadioDialogType.DISCRETE, null)
-        } else {
-            val nextVal = !state.isDiscreteModeEnabled
-            onStateChange(state.copy(isDiscreteModeEnabled = nextVal))
-            triggerUiSound(if (nextVal) "incoming" else "switch")
         }
     }
 

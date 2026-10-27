@@ -771,6 +771,21 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
 
                             @JavascriptInterface
+                            fun playUiSound(type: String) {
+                                post {
+                                    try {
+                                        if (type == "incoming" || type == "alert") {
+                                            val toneGen = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80)
+                                            toneGen.startTone(android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 250)
+                                        } else if (type == "switch" || type == "click") {
+                                            val toneGen = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 40)
+                                            toneGen.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 30)
+                                        }
+                                    } catch (e: Exception) {}
+                                }
+                            }
+
+                            @JavascriptInterface
                             fun copyToClipboard(text: String) {
                                 runOnUiThread {
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager

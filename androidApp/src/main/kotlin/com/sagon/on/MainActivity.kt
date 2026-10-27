@@ -512,7 +512,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         intent.data?.toString()?.let { url ->
             val finalUrl = if (url.startsWith("onairspain://")) {
                 val params = url.substringAfter("?", "")
-                "https://asurpan.github.io/sevillaON/" + (if (params.isNotEmpty()) "?$params" else "")
+                "https://asurpan.github.io/sevillaON/?native=true" + (if (params.isNotEmpty()) "&$params" else "")
             } else url
             webViewInstance?.loadUrl(finalUrl)
         }
@@ -1393,11 +1393,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                         // --- 🚀 MODO PRODUCCIÓN (GITHUB) ---
                         postDelayed({
-                            val githubUrl = "https://asurpan.github.io/sevillaON/"
+                            val githubUrl = "https://asurpan.github.io/sevillaON/?native=true"
                             val incomingUrl = intent.data?.toString()
                             val startUrl = if (incomingUrl != null && incomingUrl.startsWith("onairspain://")) {
                                 val params = incomingUrl.substringAfter("?", "")
-                                githubUrl + (if (params.isNotEmpty()) "?$params" else "")
+                                githubUrl + (if (params.isNotEmpty()) "&$params" else "")
                             } else if (incomingUrl != null) {
                                 incomingUrl
                             } else {

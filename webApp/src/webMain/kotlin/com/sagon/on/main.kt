@@ -228,7 +228,7 @@ fun main() {
         }
 
         LaunchedEffect(Unit) {
-            js("if (window.checkHardwareRestore) window.checkHardwareRestore(function(n) { if (n) window.location.reload(); });")
+            js("if (window.checkHardwareRestore) window.checkHardwareRestore(function(n) { if (n && window.dispatch_hardware_restored) window.dispatch_hardware_restored(n); });")
             js("""
                 if (window.app && window.app.db) {
                     window.app.db.ref("reports").on("value", function(snapshot) {

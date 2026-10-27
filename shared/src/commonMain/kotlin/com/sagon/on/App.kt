@@ -296,11 +296,17 @@ fun App(
                     NotificationConsentDialog(
                         onAccept = {
                             showNotificationConsent = false
+                            val newState = radioState.copy(hasAcceptedMicExplain = true)
+                            radioState = newState
+                            onStateSave(newState)
                             onNotificationPermissionRequest()
                             if (onBatteryCheckRequest()) showBatteryWarning = true
                         },
                         onDismiss = { 
                             showNotificationConsent = false
+                            val newState = radioState.copy(hasAcceptedMicExplain = true)
+                            radioState = newState
+                            onStateSave(newState)
                             if (onBatteryCheckRequest()) showBatteryWarning = true
                         }
                     )

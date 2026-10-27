@@ -776,9 +776,24 @@ object ReplayEngine {
                     return;
                 }
                 if (isPlaying) return;
-                isPlaying = true; var playlist = [...replayBlobs]; replayBlobs = []; if (window.dispatch_replay_available) window.dispatch_replay_available(false);
+                isPlaying = true; 
+                
+                // 🎧 DUCKING TÁCTICO: Atenuar voces de radio en directo al 5% para oír el Replay impecable
+                if (window.app.masterRxGain) {
+                    window.app.masterRxGain.gain.setTargetAtTime(0.05, window.app.ctx.currentTime, 0.1);
+                }
+                
+                var playlist = [...replayBlobs]; 
+                replayBlobs = []; 
+                if (window.dispatch_replay_available) window.dispatch_replay_available(false);
                 var index = 0;
-                function finishReplay() { isPlaying = false; window.app.masterRxGain.gain.setTargetAtTime(3.5, window.app.ctx.currentTime, 0.3); }
+                
+                function finishReplay() { 
+                    isPlaying = false; 
+                    if (window.app.masterRxGain) {
+                        window.app.masterRxGain.gain.setTargetAtTime(3.5, window.app.ctx.currentTime, 0.3);
+                    }
+                }
                 function playNext() {
                     if (index >= playlist.length) { finishReplay(); return; }
                     var url = URL.createObjectURL(playlist[index]); var audio = new Audio(url); var source = window.app.ctx.createMediaElementSource(audio); source.connect(window.app.masterOut); audio.playbackRate = 1.15;

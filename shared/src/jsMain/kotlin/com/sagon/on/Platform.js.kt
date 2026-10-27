@@ -86,7 +86,14 @@ actual fun playWelcomeSequence() {
 
 actual fun vibratePtt() {
     val win: dynamic = window
-    if(win.vibratePtt != null) win.vibratePtt()
+    try {
+        if (win.navigator != null && win.navigator.vibrate != null) {
+            win.navigator.vibrate(30)
+        }
+        if (win.AndroidApp != null && win.AndroidApp.vibratePtt != null) {
+            win.AndroidApp.vibratePtt()
+        }
+    } catch(e: dynamic) {}
 }
 
 actual fun triggerUiSound(type: String) {

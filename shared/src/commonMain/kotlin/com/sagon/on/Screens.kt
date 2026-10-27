@@ -863,6 +863,7 @@ fun RadioPanel(
                             detectTapGestures(
                                 onPress = {
                                     if (!isPttBlockedByRx) {
+                                        vibratePtt()
                                         pttLocked = true
                                         try { awaitRelease() } finally { pttLocked = false }
                                     }
@@ -883,7 +884,7 @@ fun RadioPanel(
                     }
                     
                     Surface(
-                        onClick = { pttLocked = !pttLocked; onStateChange(state.copy(isPttLatched = pttLocked)) }, 
+                        onClick = { vibratePtt(); pttLocked = !pttLocked; onStateChange(state.copy(isPttLatched = pttLocked)) }, 
                         modifier = Modifier.size(84.dp), 
                         shape = RoundedCornerShape(20.dp), 
                         color = if (pttLocked) Color.Red.copy(0.2f) else Color.White.copy(0.05f), 

@@ -754,6 +754,23 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
 
                             @JavascriptInterface
+                            fun vibratePtt() {
+                                runOnUiThread {
+                                    try {
+                                        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+                                        if (vibrator.hasVibrator()) {
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                vibrator.vibrate(android.os.VibrationEffect.createOneShot(35, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                                            } else {
+                                                @Suppress("DEPRECATION")
+                                                vibrator.vibrate(35)
+                                            }
+                                        }
+                                    } catch (e: Exception) {}
+                                }
+                            }
+
+                            @JavascriptInterface
                             fun copyToClipboard(text: String) {
                                 runOnUiThread {
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager

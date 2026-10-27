@@ -60,113 +60,150 @@ fun main() {
         window.checkHardwareRestore = function(onRestored) {
             var hwID = (window.AndroidApp && window.AndroidApp.getAndroidId) ? window.AndroidApp.getAndroidId() : localStorage.getItem("web_device_id");
             if (!hwID || !window.app || !window.app.db) return;
-            window.app.db.ref("devices/" + hwID).once("value").then(function(snapshot) {
+            window.app.db.ref("registered_devices/" + hwID).once("value").then(function(snapshot) {
                 var val = snapshot.val();
                 if (val && val.nick && val.nick.trim() !== "") {
                     var restoredNick = val.nick.trim().toUpperCase();
-                    console.log("📻 Auto-Restauración Hardware via ANDROID_ID:", restoredNick);
+                    console.log("📻 Auto-Restauración Hardware via registered_devices:", restoredNick);
                     localStorage.setItem("indicativo", restoredNick);
                     if (window.dispatch_hardware_restored) {
                         window.dispatch_hardware_restored(restoredNick);
                     }
                     if (onRestored) onRestored(restoredNick);
+                } else {
+                    var savedLocalNick = localStorage.getItem("indicativo");
+                    if (savedLocalNick && savedLocalNick.trim() !== "") {
+                        var localNickClean = savedLocalNick.trim().toUpperCase();
+                        window.app.db.ref("registered_devices/" + hwID).set({
+                            nick: localNickClean,
+                            deviceId: hwID,
+                            updatedAt: Date.now()
+                        });
+                        if (window.dispatch_hardware_restored) {
+                            window.dispatch_hardware_restored(localNickClean);
+                        }
+                        if (onRestored) onRestored(localNickClean);
+                    }
                 }
             });
         };
 
         window.remoteTxStates = {};
         window.connectRadio = function(nick) {
-            if (window.app.peer && !window.app.peer.destroyed) {
-                if (window.app.peer.disconnected) window.app.peer.reconnect();
-                window.app.nick = nick.toUpperCase();
-                return;
-            }
-
             var hwID = (window.AndroidApp && window.AndroidApp.getAndroidId) ? window.AndroidApp.getAndroidId() : null;
             var deviceID = hwID || localStorage.getItem("web_device_id") || ("web_" + Math.random().toString(36).substring(2, 12));
             localStorage.setItem("web_device_id", deviceID);
-            
-            var cleanNick = (nick || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
-            localStorage.setItem("indicativo", cleanNick); 
-            
-            var sessionID = (cleanNick + "_" + deviceID).trim();
-            window.app.nick = cleanNick;
-            window.app.deviceID = deviceID;
-            window.app.sessionID = sessionID;
-            
-            console.log("🚀 Iniciando Radio v9.2 (Pure-Link):", sessionID);
-            if (window.initAudio) window.initAudio();
-            
-            if (window.app.db) {
-                window.app.db.ref("users/" + sessionID).set({
-                    nick: cleanNick,
-                    city: localStorage.getItem("lastCity") || "SEVILLA",
-                    tx: false,
-                    pwr: parseFloat(localStorage.getItem("vetPwr_" + cleanNick)) || 0.7,
-                    roger: (localStorage.getItem("roger") === "true"),
-                    lastSeen: Date.now()
-                });
-                window.app.db.ref("devices/" + deviceID).set({
-                    nick: cleanNick,
-                    updatedAt: Date.now()
-                });
-                window.app.currentCity = localStorage.getItem("lastCity") || "SEVILLA";
-                window.app.db.ref("users/" + sessionID).onDisconnect().remove();
 
-                setInterval(function() {
-                    if(window.app.db && window.app.sessionID) {
-                        var updates = { lastSeen: Date.now() };
-                        if (window.app.pttStateInternal) {
-                            var cleanNick = window.app.nick || "RADIO";
-                            var currentPwr = parseFloat(localStorage.getItem("vetPwr_" + cleanNick)) || 0.7;
-                            if (currentPwr < 1.0) {
-                                // 🛡️ PROGRESIÓN DE VETERANÍA REAL: Requiere ~50 horas de transmisión activa de habla para alcanzar los 50W Élite (~5 meses de uso habitual)
-                                currentPwr = Math.min(1.0, currentPwr + 0.00000833);
-                                localStorage.setItem("vetPwr_" + cleanNick, currentPwr.toString());
-                                localStorage.setItem("vetPwr", currentPwr.toString());
-                                updates.pwr = currentPwr;
+            function doConnect(finalNick) {
+                if (window.app.peer && !window.app.peer.destroyed) {
+                    if (window.app.peer.disconnected) window.app.peer.reconnect();
+                    window.app.nick = finalNick.toUpperCase();
+                    return;
+                }
+
+                var cleanNick = (finalNick || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
+                localStorage.setItem("indicativo", cleanNick); 
+                if (window.dispatch_hardware_restored) {
+                    window.dispatch_hardware_restored(cleanNick);
+                }
+                
+                var sessionID = (cleanNick + "_" + deviceID).trim();
+                window.app.nick = cleanNick;
+                window.app.deviceID = deviceID;
+                window.app.sessionID = sessionID;
+                
+                console.log("🚀 Iniciando Radio (Pure-Link):", sessionID);
+                if (window.initAudio) window.initAudio();
+                
+                if (window.app.db) {
+                    window.app.db.ref("users/" + sessionID).set({
+                        nick: cleanNick,
+                        deviceId: deviceID,
+                        city: localStorage.getItem("lastCity") || "SEVILLA",
+                        tx: false,
+                        pwr: parseFloat(localStorage.getItem("vetPwr_" + cleanNick)) || 0.7,
+                        roger: (localStorage.getItem("roger") === "true"),
+                        lastSeen: Date.now()
+                    });
+                    window.app.db.ref("registered_devices/" + deviceID).set({
+                        nick: cleanNick,
+                        deviceId: deviceID,
+                        updatedAt: Date.now()
+                    });
+                    window.app.currentCity = localStorage.getItem("lastCity") || "SEVILLA";
+                    window.app.db.ref("users/" + sessionID).onDisconnect().remove();
+
+                    setInterval(function() {
+                        if(window.app.db && window.app.sessionID) {
+                            var updates = { lastSeen: Date.now() };
+                            if (window.app.pttStateInternal) {
+                                var currentNick = window.app.nick || "RADIO";
+                                var currentPwr = parseFloat(localStorage.getItem("vetPwr_" + currentNick)) || 0.7;
+                                if (currentPwr < 1.0) {
+                                    currentPwr = Math.min(1.0, currentPwr + 0.00000833);
+                                    localStorage.setItem("vetPwr_" + currentNick, currentPwr.toString());
+                                    localStorage.setItem("vetPwr", currentPwr.toString());
+                                    updates.pwr = currentPwr;
+                                }
                             }
+                            window.app.db.ref("users/" + window.app.sessionID).update(updates);
                         }
-                        window.app.db.ref("users/" + window.app.sessionID).update(updates);
-                    }
-                }, 5000);
-                if (window.initFirebaseListener) window.initFirebaseListener();
+                    }, 5000);
+                    if (window.initFirebaseListener) window.initFirebaseListener();
+                }
+                
+                if (typeof Peer !== 'undefined') {
+                    window.app.peer = new Peer(sessionID, { 
+                        secure: true,
+                        config: { 
+                            'iceServers': [
+                                { 'urls': 'stun:stun.l.google.com:19302' },
+                                { 'urls': 'stun:stun1.l.google.com:19302' },
+                                { 'urls': 'stun:stun2.l.google.com:19302' },
+                                { 'urls': 'stun:stun3.l.google.com:19302' },
+                                { 'urls': 'stun:stun4.l.google.com:19302' },
+                                { 'urls': 'stun:stun.cloudflare.com:3478' },
+                                { 'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
+                                { 'urls': 'turn:openrelay.metered.ca:443', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
+                                { 'urls': 'turn:openrelay.metered.ca:443?transport=tcp', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
+                            ],
+                            'iceTransportPolicy': 'all',
+                            'iceCandidatePoolSize': 10
+                        }
+                    });
+
+                    window.app.peer.on('error', function(err) {
+                        console.error("🛑 PeerJS Error:", err.type);
+                        if (err.type === 'disconnected' || err.type === 'network') {
+                            window.app.peer.destroy();
+                            setTimeout(function() { window.connectRadio(window.app.nick); }, 3000);
+                        }
+                    });
+
+                    window.app.peer.on("call", function(call) {
+                        console.log("🚀 PeerJS: Recibiendo de:", call.peer);
+                        window.app.activeCalls[call.peer] = call;
+                        call.answer(window.getStream());
+                        if (window.setupCallStream) window.setupCallStream(call);
+                    });
+                }
             }
-            
-            if (typeof Peer !== 'undefined') {
-                window.app.peer = new Peer(sessionID, { 
-                    secure: true,
-                    config: { 
-                        'iceServers': [
-                            { 'urls': 'stun:stun.l.google.com:19302' },
-                            { 'urls': 'stun:stun1.l.google.com:19302' },
-                            { 'urls': 'stun:stun2.l.google.com:19302' },
-                            { 'urls': 'stun:stun3.l.google.com:19302' },
-                            { 'urls': 'stun:stun4.l.google.com:19302' },
-                            { 'urls': 'stun:stun.cloudflare.com:3478' },
-                            { 'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
-                            { 'urls': 'turn:openrelay.metered.ca:443', 'username': 'openrelayproject', 'credential': 'openrelayproject' },
-                            { 'urls': 'turn:openrelay.metered.ca:443?transport=tcp', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
-                        ],
-                        'iceTransportPolicy': 'all',
-                        'iceCandidatePoolSize': 10
-                    }
-                });
 
-                window.app.peer.on('error', function(err) {
-                    console.error("🛑 PeerJS Error:", err.type);
-                    if (err.type === 'disconnected' || err.type === 'network') {
-                        window.app.peer.destroy();
-                        setTimeout(function() { window.connectRadio(window.app.nick); }, 3000);
+            // 🛡️ HARD-LOCK: SI EL DISPOSITIVO YA TIENE NICK REGISTRADO EN FIREBASE, FORZAR ESE NICK
+            if (window.app && window.app.db) {
+                window.app.db.ref("registered_devices/" + deviceID).once("value").then(function(snapshot) {
+                    var val = snapshot.val();
+                    var chosenNick = nick;
+                    if (val && val.nick && val.nick.trim() !== "") {
+                        chosenNick = val.nick.trim().toUpperCase();
+                        console.log("🔒 HARDWARE BLOQUEADO - Forzando Nick registrado:", chosenNick);
                     }
+                    doConnect(chosenNick);
+                }).catch(function() {
+                    doConnect(nick);
                 });
-
-                window.app.peer.on("call", function(call) {
-                    console.log("🚀 PeerJS: Recibiendo de:", call.peer);
-                    window.app.activeCalls[call.peer] = call;
-                    call.answer(window.getStream());
-                    if (window.setupCallStream) window.setupCallStream(call);
-                });
+            } else {
+                doConnect(nick);
             }
         };
 

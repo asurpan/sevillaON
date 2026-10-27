@@ -129,6 +129,7 @@ object RadioPersistence {
                     win.app.db.ref("users/" + win.app.sessionID).remove()
                 }
                 if (hwID != null && hwID != "") {
+                    win.app.db.ref("registered_devices/" + hwID).remove()
                     win.app.db.ref("devices/" + hwID).remove()
                 }
             }

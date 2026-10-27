@@ -433,6 +433,23 @@
     </audio>
 
     <script>
+        // 📱 REDIRECCIÓN OBLIGATORIA PARA NAVEGADORES ANDROID -> APP NATIVA / PLAY STORE
+        (function() {
+            var ua = navigator.userAgent || "";
+            var isAndroid = /Android/i.test(ua);
+            var isIos = /iPhone|iPad|iPod/i.test(ua);
+            var isNativeApp = window.AndroidApp || ua.indexOf("OnAirSpainNative") !== -1 || window.location.search.indexOf("native=true") !== -1;
+
+            if (isAndroid && !isIos && !isNativeApp) {
+                var playStoreUrl = "https://play.google.com/store/apps/details?id=com.sagon.on&pcampaignid=web_share";
+                var intentUrl = "intent://open#Intent;scheme=onairspain;package=com.sagon.on;S.browser_fallback_url=" + encodeURIComponent(playStoreUrl) + ";end";
+                window.location.href = intentUrl;
+                setTimeout(function() {
+                    window.location.href = playStoreUrl;
+                }, 800);
+            }
+        })();
+
         // 📱 AUTO-ARRANQUE DIRECTO EN LA APP NATIVA DE ANDROID (SINTONIZACIÓN INMEDIATA)
         function checkAutoLaunchNative() {
             const isNative = window.AndroidApp || navigator.userAgent.indexOf("OnAirSpainNative") !== -1 || window.location.search.indexOf("native=true") !== -1;

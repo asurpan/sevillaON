@@ -25,6 +25,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **BLOQUEO DE RUTAS Y VOLUMEN**: Queda TERMINANTEMENTE PROHIBIDO modificar los enrutados de audio (rutas de nodos). Estas rutas están BLINDADAS.
 - **Sincronización Discreta**: El PTT DEBE desactivar atómicamente el modo discreto tanto en la UI como en el motor de audio (`window.app.discreteMode = false`) para evitar bloqueos de flujo.
 - **Tono de Modo Oreja (Piripi / Incoming)**: Al activar el Modo Oreja (Modo Discreto) DEBE reproducirse SIEMPRE el tono melódico piripi ("incoming"), emitirse vibración háptica de 35ms y activarse el estado `isDiscreteModeEnabled = true` inmediatamente.
+- **Solicitud Nativa de Micrófono Android 11+ (UI Thread)**: En la app nativa Android, la solicitud de permiso de micrófono (`RECORD_AUDIO`) DEBE invocarse SIEMPRE directamente a través de `window.AndroidApp.requestMicPermission()` ejecutado en el hilo de interfaz (`runOnUiThread`). Queda PROHIBIDO confiar únicamente en `WebChromeClient.onPermissionRequest` para evitar bloqueos silenciosos en capas MIUI (Xiaomi) y One UI (Samsung).
 
 ### 📡 VETERANÍA Y RED
 - **ICE Servers Reforzados (4G/5G)**: Es obligatorio el uso de servidores STUN/TURN con transporte TCP (puerto 443) para garantizar la comunicación en redes móviles restrictivas (CG-NAT).

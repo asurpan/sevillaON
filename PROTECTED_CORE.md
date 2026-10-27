@@ -11,6 +11,7 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **ICE/TURN 4G Reforzado**: El ruteo WebRTC debe incluir servidores TURN-TCP para saltar CG-NAT de operadoras móviles.
     - **Hardware Keep-Alive (Motor 5Hz)**: Mantener el oscilador **infrasónico de 5Hz** inaudible en la salida física para evitar el modo suspensión del chip de audio. Debe silenciarse automáticamente cuando se detecta voz real entrante.
     - **Tono de Modo Oreja (Piripi)**: Al activar el Modo Oreja se ejecuta obligatoriamente la señal audible "incoming" (piripi) y la vibración háptica de 35ms.
+    - **Permiso de Micrófono Android 11+ (MIUI/OneUI)**: Invocación obligatoria mediante `@JavascriptInterface fun requestMicPermission()` en `runOnUiThread`. Evita la cancelación silenciosa de permisos de WebView en Xiaomi y Samsung.
 
 2. **Motor de Veteranía y Pisado Real (V12.5)**:
     - **Progresión de Potencia (Gamificación)**: Inicio en 1W (0.02 pwr) -> Máximo 50W (1.0 pwr). Progresión: +0.00000833 pwr por cada 5 segundos de TX (~50h de voz activa). Cada +1 Watt ganado genera notificación y sonido de logro (Dopamina UX).

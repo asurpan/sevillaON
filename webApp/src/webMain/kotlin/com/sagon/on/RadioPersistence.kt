@@ -52,7 +52,7 @@ object RadioPersistence {
                 isMonitorEnabled = localStorage.getItem("moniActive")?.toBoolean() ?: false,
                 isEcoMode = localStorage.getItem("ecoMode")?.toBoolean() ?: false,
                 isInterfaceLocked = localStorage.getItem("isLocked")?.toBoolean() ?: false,
-                veteranPower = localStorage.getItem("vetPwr")?.toFloatOrNull() ?: 0.7f,
+                veteranPower = localStorage.getItem("vetPwr")?.toFloatOrNull() ?: 0.02f,
                 isDspEnabled = localStorage.getItem("dspEnabled")?.toBoolean() ?: true,
                 activeProfile = profile,
                 isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",

@@ -121,7 +121,7 @@ fun main() {
                         deviceId: deviceID,
                         city: localStorage.getItem("lastCity") || "SEVILLA",
                         tx: false,
-                        pwr: parseFloat(localStorage.getItem("vetPwr_" + cleanNick)) || 0.7,
+                        pwr: parseFloat(localStorage.getItem("vetPwr_" + cleanNick)) || 0.02,
                         roger: (localStorage.getItem("roger") === "true"),
                         lastSeen: Date.now()
                     });
@@ -138,12 +138,22 @@ fun main() {
                             var updates = { lastSeen: Date.now() };
                             if (window.app.pttStateInternal) {
                                 var currentNick = window.app.nick || "RADIO";
-                                var currentPwr = parseFloat(localStorage.getItem("vetPwr_" + currentNick)) || 0.7;
-                                if (currentPwr < 1.0) {
-                                    currentPwr = Math.min(1.0, currentPwr + 0.00000833);
-                                    localStorage.setItem("vetPwr_" + currentNick, currentPwr.toString());
-                                    localStorage.setItem("vetPwr", currentPwr.toString());
-                                    updates.pwr = currentPwr;
+                                var oldPwr = parseFloat(localStorage.getItem("vetPwr_" + currentNick)) || 0.02;
+                                var oldWatt = Math.floor(oldPwr * 50);
+                                if (oldPwr < 1.0) {
+                                    var newPwr = Math.min(1.0, oldPwr + 0.00000833);
+                                    var newWatt = Math.floor(newPwr * 50);
+                                    localStorage.setItem("vetPwr_" + currentNick, newPwr.toString());
+                                    localStorage.setItem("vetPwr", newPwr.toString());
+                                    updates.pwr = newPwr;
+                                    
+                                    // ⚡ GAMIFICACIÓN / RECOMPENSA DOPAMINA AL SUBIR DE VATIO
+                                    if (newWatt > oldWatt && newWatt <= 50) {
+                                        if (window.dispatch_notification) {
+                                            window.dispatch_notification("⚡ ¡AUMENTO DE POTENCIA!", "¡Felicidades! Tu emisora ha alcanzado los " + newWatt + " Watts de potencia.", "success");
+                                        }
+                                        if (window.playUiSound) window.playUiSound("roger");
+                                    }
                                 }
                             }
                             window.app.db.ref("users/" + window.app.sessionID).update(updates);

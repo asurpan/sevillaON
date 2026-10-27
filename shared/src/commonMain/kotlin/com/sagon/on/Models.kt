@@ -76,7 +76,7 @@ data class RadioState(
     val isEcoMode: Boolean = false,
     val squelch: Float = 0.90f,
     val rfGain: Float = 0.50f,
-    val veteranPower: Float = 0.7f, 
+    val veteranPower: Float = 0.02f, // 1W Inicial para Novatos (0.02 * 50W = 1W)
     val isInterfaceLocked: Boolean = false, 
     val isDiscreteModeEnabled: Boolean = false,
     val hasAcceptedMicExplain: Boolean = false,

@@ -124,7 +124,7 @@ fun RadioDialogs(
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "• Estaciones nuevas: 10W iniciales.\n• Rango VETERANO: 35W de potencia.\n• Nivel ÉLITE AMPLIFICADOR: 50W máximos.\n• Mayor Vataje (50W) domina la frecuencia sobre señales débiles.",
+                        "• Estaciones nuevas: 1W inicial.\n• Progresión: Ganas vatios acumulando tiempo modulando (PTT).\n• Rango VETERANO: 35W de potencia.\n• Nivel ÉLITE AMPLIFICADOR: 50W máximos.\n• Mayor Vataje (50W) domina la frecuencia sobre señales débiles.",
                         fontSize = 12.sp,
                         color = Color.White.copy(0.8f),
                         lineHeight = 18.sp

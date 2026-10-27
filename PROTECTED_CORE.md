@@ -12,7 +12,7 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Hardware Keep-Alive (Motor 5Hz)**: Mantener el oscilador **infrasónico de 5Hz** inaudible en la salida física para evitar el modo suspensión del chip de audio. Debe silenciarse automáticamente cuando se detecta voz real entrante.
 
 2. **Motor de Veteranía y Pisado Real (V12.5)**:
-    - **Progresión de Potencia**: +0.00000833 pwr por cada 5 segundos de TX (~50 horas de transmisión activa de habla para alcanzar 50W). Rango: 0.7 (Novato) a 1.0 (Élite).
+    - **Progresión de Potencia (Gamificación)**: Inicio en 1W (0.02 pwr) -> Máximo 50W (1.0 pwr). Progresión: +0.00000833 pwr por cada 5 segundos de TX (~50h de voz activa). Cada +1 Watt ganado genera notificación y sonido de logro (Dopamina UX).
     - **Efecto Pisado (Dynamic Distortion)**: Diferencia > 0.05 activa el `WaveShaper` de distorsión armónica. La voz débil debe sonar "crushed" (rota) y de fondo. Diferencia > 0.25 activa aplastamiento total.
 
 3. **Gestión de Memoria Replay (One-Shot V4.2)**:
@@ -33,9 +33,9 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Derecho de Admisión**: Mantener el diálogo de borrado de datos con lenguaje disuasorio y advertencia de **BAN-HARDWARE**.
 
 7. **Identidad Unificada por Hardware y Redirecciones**:
-    - **Hardware Unificado (Un móvil = Un usuario)**: La consulta `devices/$deviceID` en Firebase AUTO-RESTAURA el indicativo si el dispositivo ya fue registrado, impidiendo crear múltiples usuarios desde el mismo teléfono.
+    - **Hardware Unificado (Un móvil = Un usuario)**: La consulta `registered_devices/$deviceID` en Firebase AUTO-RESTAURA el indicativo si el dispositivo ya fue registrado, IMPIDIENDO crear múltiples usuarios desde el mismo teléfono. La función `connectRadio` y `checkHardwareRestore` fuerzan el nick registrado automáticamente.
     - **Pestaña Única**: Detección de pestaña duplicada con bloqueo total de interfaz para evitar ecos.
-    - **Redirección Android Web -> App Nativa**: Navegadores en Android deben abrir la App Nativa o la Play Store mediante Intent URL, mientras que iOS/Safari ejecuta la versión Web.
+    - **Redirección Android Web -> App Nativa**: Navegadores en Android NUNCA ejecutan la radio Web (`webApp.js` no se carga). Deben abrir la App Nativa o la Play Store mediante Intent URL, mientras que iOS/Safari y PC Desktop ejecutan la versión Web.
 
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al autor. NO apliques parches que eliminen los nodos inaudibles o el bridge silencioso, ya que son los pilares que mantienen la voz viva en móviles modernos.

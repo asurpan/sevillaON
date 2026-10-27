@@ -27,10 +27,11 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 
 ### 📡 VETERANÍA Y RED
 - **ICE Servers Reforzados (4G/5G)**: Es obligatorio el uso de servidores STUN/TURN con transporte TCP (puerto 443) para garantizar la comunicación en redes móviles restrictivas (CG-NAT).
-- **Progreso de Potencia**: +0.00000833 pwr / 5s de charla (~50 horas de transmisión activa de habla para alcanzar 50W Élite). No regalar veteranía; se gana modulando.
+- **Progreso de Potencia (Gamificación 1W -> 50W)**: Estaciones nuevas empiezan en **1W** (0.02 pwr). Progresión: +0.00000833 pwr / 5s de habla PTT (~50 horas para los 50W Élite). Cada vez que el usuario sube +1 Watt entero, el sistema emite una notificación de logro y tono de recompensa. No regalar potencia; se gana modulando.
 - **Llamada Inteligente**: Solo el ID más bajo llama al más alto. Sagrado para estabilidad en 4G.
 - **Persistencia de Nick**: El indicativo del usuario DEBE guardarse en `localStorage` bajo la clave `indicativo` inmediatamente después de la validación. Esto evita que el usuario tenga que re-identificarse en cada sesión web.
-- **Indicativo Único (Hard-Lock)**: Queda TERMINANTEMENTE PROHIBIDO permitir duplicados de Nicks activos en diferentes dispositivos. El sistema debe verificar en Firebase si un Nick ya tiene una sesión activa (lastSeen < 45s) con un ID distinto antes de permitir la entrada. Cada indicativo es ÚNICO y está vinculado a su hardware.
+- **Indicativo Único (Hard-Lock)**: Queda TERMINANTEMENTE PROHIBIDO permitir duplicados de Nicks activos o crear usuarios distintos desde el mismo dispositivo. Un teléfono identificado por su `ANDROID_ID` en Firebase (`registered_devices/$deviceID`) SOLO TIENE UN INDICATIVO. El sistema DEBE forzar automáticamente el indicativo ya vinculado sin mostrar pantallas de registro.
+- **Navegador Android Obligado a App Nativa**: Un navegador móvil en Android (Chrome/Firefox/Samsung) NUNCA debe ejecutar la radio Web. Debe redirigir FORZOSAMENTE a abrir la App Nativa (`intent://open`) o a la Google Play Store. La versión Web solo se permite en iPhone/iOS y PC.
 - **Advertencia de Olvido**: Si el usuario intenta "olvidar" su indicativo o borrar datos, el sistema DEBE mostrar una advertencia crítica informando de que perderá toda su potencia (Watts) y veteranía acumulada de forma IRRECUPERABLE.
 - **Módulo Mesh**: No integrar en la clase principal. Debe permanecer como un recurso de emergencia independiente.
 

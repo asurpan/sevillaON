@@ -778,8 +778,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                             @JavascriptInterface
                             fun stopSpeak() {
-                                if (tts != null) {
-                                    tts?.stop()
+                                runOnUiThread {
+                                    try {
+                                        if (tts != null) {
+                                            tts?.stop()
+                                        }
+                                        webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); }", null)
+                                    } catch (e: Exception) {}
                                 }
                             }
 

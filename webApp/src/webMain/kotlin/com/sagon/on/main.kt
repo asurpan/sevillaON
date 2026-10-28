@@ -396,8 +396,12 @@ fun main() {
                     }
                     remoteUsersState.clear(); remoteUsersState.addAll(list)
                     val activeRemoteTx = list.find { it.isTransmitting && it.id != win.app.sessionID }
-                    remoteTransmitterName.value = activeRemoteTx?.nick
-                    if (win.app != null) win.app.rxActiveInternal = (activeRemoteTx != null)
+                    if (activeRemoteTx != null) {
+                        remoteTransmitterName.value = activeRemoteTx.nick
+                    } else if (remoteTransmitterName.value?.startsWith("BASE ") != true && remoteTransmitterName.value?.startsWith("CONTROL ") != true) {
+                        remoteTransmitterName.value = null
+                    }
+                    if (win.app != null) win.app.rxActiveInternal = (activeRemoteTx != null || remoteTransmitterName.value != null)
                 } catch(e: Exception) { }
             },
             onChatUpdate = { },

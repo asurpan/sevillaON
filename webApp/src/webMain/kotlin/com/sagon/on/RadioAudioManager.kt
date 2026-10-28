@@ -313,11 +313,11 @@ object RadioAudioManager {
                 }
 
                 if (active) {
-                    // 🛡️ CORTE INMEDIATO DEL BOT SI EL USUARIO PULSA PTT PARA HABLAR
-                    if (window.app.isControlSpeaking) {
+                    // 🛡️ CORTE RADICAL E INMEDIATO DE VOZ Y PORTADORA DEL BOT AL PULSAR PTT
+                    if (window.app.isControlSpeaking || window.speechSynthesis.speaking) {
                         window.app.isControlSpeaking = false;
-                        if (window.speechSynthesis && window.speechSynthesis.cancel) window.speechSynthesis.cancel();
-                        if (window.AndroidApp && window.AndroidApp.stopSpeak) window.AndroidApp.stopSpeak();
+                        try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
+                        try { if (window.AndroidApp && window.AndroidApp.stopSpeak) window.AndroidApp.stopSpeak(); } catch(e) {}
                         if (window.dispatch_control_active) window.dispatch_control_active(null, false);
                     }
 
@@ -793,21 +793,27 @@ object ReplayEngine {
                 var userNick = (window.app.nick || "RADIO").toString().trim().toUpperCase();
                 var rawCity = (window.app.currentCity || "SEVILLA").toString().split("-")[0].trim().toUpperCase();
 
-                // 🛡️ COMPROBACIÓN DE MICRÓFONO / PERMISO DE VOZ
+                // 🛡️ DETECCIÓN DUAL: PERMISO + MEDIDO REAL DE ENERGÍA DE VOZ (peakLevel)
                 var micGranted = window.app.diag && window.app.diag.micPermission === "granted";
-                var hasAudioTracks = window.app.ctx && window.app.micAnalyser; // Comprobación técnica de stream
+                var hasAudioTracks = window.app.ctx && window.app.micAnalyser;
+                var micEnergy = window.app.currentMicLevel || 0; // Medidor en tiempo real del oscilador
                 var textToSpeak = "";
 
                 if (!micGranted || !hasAudioTracks) {
-                    textToSpeak = "¡Atención estación " + userNick + "! Aquí estación de control de " + rawCity + ". Este es un operador automático para verificar tu equipo y señal. No recibimos modulación de tu micrófono, revisa los permisos.";
+                    textToSpeak = "¡Atención estación " + userNick + "! Aquí estación de control de " + rawCity + ". No detectamos permiso de micrófono. Te abro la solicitud de permiso en pantalla.";
+                    if (window.ensureMicAccess) window.ensureMicAccess(); // 🚀 DISPARA LA VENTANA DE PERMISO NATIVO AUTOMÁTICAMENTE
+                } else if (micEnergy < 0.005) {
+                    // Micro abierto pero mudo (sin voz ni modulación)
+                    textToSpeak = "Estación " + userNick + ", recibo la portadora de tu equipo pero sin audio de voz. Pulsa el botón Hablar y habla alto para verificar tu modulación.";
                 } else {
+                    // ¡Micro abierto Y modulando con voz real!
                     var idx = window.controlResponseIndex || 0;
                     if (idx === 0) {
-                        textToSpeak = "¡Hola " + userNick + "! Aquí operador automático de pruebas para " + rawCity + ". Te recibo S9 fuerte y claro. Frecuencia verificada. Se desactivará automáticamente cuando entre otro usuario.";
+                        textToSpeak = "¡Hola " + userNick + "! Te recibo fuerte y claro CON señal 9+30 y radio 5  con modulación perfecta. Estas emitiendo Perfecto . Yo me  desactivare cuando entre otro usuario.";
                     } else if (idx === 1) {
-                        textToSpeak = "Estación " + userNick + ", reporte de señal perfecto. Canal oficial de " + rawCity + " comprobado y activo.";
+                        textToSpeak = "Estación " + userNick + ", reporte de señal  llegas POtente en  audio y voz perfecto con tu equipo. invita a otros usuarios compartiendo el canal para empezar a volar por la ciudad con tu VOZ.";
                     } else {
-                        textToSpeak = "Operador de control de " + rawCity + " comprobado para " + userNick + ". Puedes transmitir para verificar tu potencia.";
+                        textToSpeak = "Estación " + userNick + ", tu transmisión y potencia llegan con total claridad al repetidor de " + rawCity + ". Todo correcto ahh! me encanta.";
                     }
                     window.controlResponseIndex = idx + 1;
                 }

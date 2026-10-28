@@ -769,10 +769,17 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         addJavascriptInterface(object {
                             @JavascriptInterface
                             fun speak(text: String, rate: Float, pitch: Float) {
+                                speak(text, rate, pitch, 0.60f)
+                            }
+
+                            @JavascriptInterface
+                            fun speak(text: String, rate: Float, pitch: Float, volume: Float) {
                                 if (isTtsReady && tts != null) {
                                     tts?.setSpeechRate(rate)
                                     tts?.setPitch(pitch)
-                                    tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "on_air_tts")
+                                    val params = Bundle()
+                                    params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume.coerceIn(0f, 1f))
+                                    tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, "on_air_tts")
                                 }
                             }
 

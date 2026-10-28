@@ -497,6 +497,10 @@ object RadioAudioManager {
                             remoteAudio.volume = 0.2;
                             setTimeout(() => { remoteAudio.volume = 0.01; }, 1000);
                         });
+                    } else {
+                        // 🛡️ REANUDACIÓN FORZOSA DE AUDIO REMOTE STREAM
+                        remoteAudio.volume = 0.2;
+                        setTimeout(() => { remoteAudio.volume = 0.01; }, 1000);
                     }
                     if (window.app.masterOut) window.app.masterOut.connect(window.app.ctx.destination);
                 });
@@ -803,6 +807,13 @@ object ReplayEngine {
                 }
 
                 setTimeout(function() {
+                    // 🤖 COMPROBACIÓN NATIVA ANDROID vs WEB SPEECH SYNTHESIS
+                    if (window.AndroidApp && window.AndroidApp.speak) {
+                        if (window.playUiSound) window.playUiSound("switch");
+                        window.AndroidApp.speak(textToSpeak, 0.92, 0.88);
+                        return;
+                    }
+
                     if (!('speechSynthesis' in window)) return;
                     window.speechSynthesis.cancel();
 

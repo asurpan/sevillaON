@@ -44,7 +44,11 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Potencia Máxima de Agente / Bot / Estación Base (50W)**: Toda respuesta automática o transmisión de Bot / Estación de Control (`BASE ...` o `CONTROL ...`) se emite automáticamente con **potencia a tope (50 Watts / cbSignalFactor = 1.0f)**. Enciende los **20 LEDs fijos** (S9+30dB en verde/amarillo/rojo) y marca 50W.
     - **Sistema de Pisotones (Override)**: Las estaciones con mayor millaje/vatios se imponen fijando un nivel de LEDs más alto, imitando el comportamiento exacto de una radio CB de 27 MHz.
 
+9. **Blindaje Audio WebRTC Android 11+ y Motor TTS Nativo (REGLA CRÍTICA)**:
+    - **Desbloqueo de Audio Remoto (Reanudación Forzosa)**: Para evitar que el sistema operativo en Android 11+ bloquee el flujo de voz entrante mientras la señal se ve cogida, es OBLIGATORIO mantener la reanudación forzosa del volumen del nodo `remoteAudio` (`remoteAudio.volume = 0.2` seguido de `0.01` dummy) en el evento `call.on('stream')`.
+    - **Invocación TTS Nativo en Android**: Las locuciones del Bot/Estación Base en Android se deben dirigir OBLIGATORIAMENTE a través del puente nativo `window.AndroidApp.speak(text, rate, pitch)` enlazado con `TextToSpeech` de Android, asegurando la respuesta auditiva y el evento visual `BASE LOCAL`.
+
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al autor. NO apliques parches que eliminen los nodos inaudibles o el bridge silencioso, ya que son los pilares que mantienen la voz viva en móviles modernos.
 
-**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y OPTIMIZADO (V15.0).**
+**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y OPTIMIZADO (V16.0 ELITE).**

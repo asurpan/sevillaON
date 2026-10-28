@@ -80,6 +80,29 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             val result = tts?.setLanguage(Locale("es", "ES"))
             if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
                 isTtsReady = true
+                tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+                    override fun onStart(utteranceId: String?) {
+                        if (utteranceId == "on_air_tts") {
+                            runOnUiThread {
+                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active('BASE LOCAL', true); }", null)
+                            }
+                        }
+                    }
+                    override fun onDone(utteranceId: String?) {
+                        if (utteranceId == "on_air_tts") {
+                            runOnUiThread {
+                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); }", null)
+                            }
+                        }
+                    }
+                    override fun onError(utteranceId: String?) {
+                        if (utteranceId == "on_air_tts") {
+                            runOnUiThread {
+                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); }", null)
+                            }
+                        }
+                    }
+                })
             }
         }
     }

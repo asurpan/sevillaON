@@ -816,6 +816,9 @@ object ReplayEngine {
                     // 🤖 COMPROBACIÓN NATIVA ANDROID vs WEB SPEECH SYNTHESIS
                     if (window.AndroidApp && window.AndroidApp.speak) {
                         if (window.playUiSound) window.playUiSound("switch");
+                        if (window.dispatch_control_active) {
+                            window.dispatch_control_active("BASE " + rawCity, true);
+                        }
                         window.AndroidApp.speak(textToSpeak, 0.92, 0.88);
                         return;
                     }

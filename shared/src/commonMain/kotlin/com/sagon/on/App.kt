@@ -470,7 +470,10 @@ fun App(
                             .clickable(
                                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                                 indication = null,
-                                onClick = { /* Lock */ }
+                                onClick = { 
+                                    pendingDialog = null
+                                    channelToDelete = null
+                                }
                             )
                     ) {
                         RadioDialogs(

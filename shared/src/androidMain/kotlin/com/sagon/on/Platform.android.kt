@@ -90,3 +90,31 @@ actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
         }
     }
 }
+
+actual fun fetchGeminiApi(endpoint: String, jsonBody: String, callback: (String?) -> Unit) {
+    tourismScope.launch {
+        try {
+            val url = java.net.URL(endpoint)
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+            connection.doOutput = true
+            connection.connectTimeout = 4000
+            connection.readTimeout = 4000
+            
+            connection.outputStream.use { os ->
+                val input = jsonBody.toByteArray(charset("UTF-8"))
+                os.write(input, 0, input.size)
+            }
+            
+            val responseText = connection.inputStream.bufferedReader().readText()
+            withContext(Dispatchers.Main) {
+                callback(responseText)
+            }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                callback(null)
+            }
+        }
+    }
+}

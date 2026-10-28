@@ -34,3 +34,5 @@ expect fun showSystemNotification(title: String, message: String)
 expect fun fetchTourismInfo(city: String, callback: (String?) -> Unit)
 
 expect fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit)
+
+expect fun fetchGeminiApi(endpoint: String, jsonBody: String, callback: (String?) -> Unit)

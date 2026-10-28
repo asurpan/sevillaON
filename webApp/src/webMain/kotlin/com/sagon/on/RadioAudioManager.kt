@@ -313,6 +313,14 @@ object RadioAudioManager {
                 }
 
                 if (active) {
+                    // 🛡️ CORTE INMEDIATO DEL BOT SI EL USUARIO PULSA PTT PARA HABLAR
+                    if (window.app.isControlSpeaking) {
+                        window.app.isControlSpeaking = false;
+                        if (window.speechSynthesis && window.speechSynthesis.cancel) window.speechSynthesis.cancel();
+                        if (window.AndroidApp && window.AndroidApp.stopSpeak) window.AndroidApp.stopSpeak();
+                        if (window.dispatch_control_active) window.dispatch_control_active(null, false);
+                    }
+
                     if (window.app.rogerReleaseTimeout) {
                         clearTimeout(window.app.rogerReleaseTimeout);
                         window.app.rogerReleaseTimeout = null;
@@ -778,7 +786,7 @@ object ReplayEngine {
             window.controlResponseIndex = 0;
             window.checkControlStationResponse = function() {
                 if (!window.app) return;
-                if (window.app.isBotEnabled === false) return; // 🛡️ DESACTIVADO POR EL USUARIO
+                if (window.app.isBotEnabled === false) return; // 🛡️ DESACTIVADO POR EL USUARIO EN AJUSTES
                 if (window.dispatch_is_room_empty && !window.dispatch_is_room_empty()) return;
                 if (window.app.isControlSpeaking) return;
 
@@ -791,17 +799,15 @@ object ReplayEngine {
                 var textToSpeak = "";
 
                 if (!micGranted || !hasAudioTracks) {
-                    textToSpeak = "¡Atención estación " + userNick + "! Aquí base " + rawCity + ". No recibimos modulación de tu equipo. Comprueba el permiso de micrófono o pulsa Hablar para verificar.";
+                    textToSpeak = "¡Atención estación " + userNick + "! Aquí estación de control de " + rawCity + ". Este es un operador automático para verificar tu equipo y señal. No recibimos modulación de tu micrófono, revisa los permisos.";
                 } else {
                     var idx = window.controlResponseIndex || 0;
                     if (idx === 0) {
-                        textToSpeak = "¡Bienvenido " + userNick + "! Te escucho Essse nueve fuerte y claro. Estamos en el canal de " + rawCity + ". Frecuencia libre y a la escucha.";
+                        textToSpeak = "¡Hola " + userNick + "! Aquí operador automático de pruebas para " + rawCity + ". Te recibo S9 fuerte y claro. Frecuencia verificada. Se desactivará automáticamente cuando entre otro usuario.";
                     } else if (idx === 1) {
-                        textToSpeak = "¡Excelente modulación, " + userNick + "! Te anotamos cinco vatios de potencia extra en la emisora de " + rawCity + ". ¡Adelante con tu cambio!";
-                    } else if (idx === 2) {
-                        textToSpeak = "Estación " + userNick + ", estás en el canal oficial de " + rawCity + ". Pulsa el botón Compartir para invitar a tus amigos por WhatsApp y abrir rueda en directo.";
+                        textToSpeak = "Estación " + userNick + ", reporte de señal perfecto. Canal oficial de " + rawCity + " comprobado y activo.";
                     } else {
-                        textToSpeak = "Emisora de " + rawCity + " a la escucha para " + userNick + ". ¡Adelante!";
+                        textToSpeak = "Operador de control de " + rawCity + " comprobado para " + userNick + ". Puedes transmitir para verificar tu potencia.";
                     }
                     window.controlResponseIndex = idx + 1;
                 }

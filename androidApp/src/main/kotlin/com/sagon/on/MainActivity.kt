@@ -777,6 +777,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
 
                             @JavascriptInterface
+                            fun stopSpeak() {
+                                if (tts != null) {
+                                    tts?.stop()
+                                }
+                            }
+
+                            @JavascriptInterface
                             fun vibratePtt() {
                                 runOnUiThread {
                                     try {

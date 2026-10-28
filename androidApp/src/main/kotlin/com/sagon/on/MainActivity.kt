@@ -648,6 +648,15 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             showAdBanner(true)
         }
 
+        // 🧠 IA TÁCTICA: Configuración de claves seguras desde BuildConfig (local.properties)
+        try {
+            val geminiKeysRaw = com.sagon.on.BuildConfig.GEMINI_API_KEYS
+            if (geminiKeysRaw.isNotBlank()) {
+                val keysList = geminiKeysRaw.split(",").map { it.trim() }
+                GeminiRadioService.configureKeys(keysList)
+            }
+        } catch (e: Exception) {}
+
         // 🛡️ GUARDIÁN DE SEGUNDO PLANO Y REPRODUCTOR MULTIMEDIA PERMANENTE
         try {
             launchForegroundRadioService()

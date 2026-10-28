@@ -225,6 +225,7 @@ fun RadioPanel(
     externalPttBlocked: Boolean,
     replayProgress: Float,
     isReplayReady: Boolean,
+    chatMessages: List<ChatMessage> = emptyList(),
     onSendMessage: (String, String?) -> Unit,
     onReport: (String) -> Unit,
     onBlock: (String) -> Unit,
@@ -867,6 +868,13 @@ fun RadioPanel(
                         }
                     }
                 }
+
+                // --- 💬 MINI-CHAT TÁCTICO INTEGRADO (CÓMODO Y PRÁCTICO) ---
+                InlineTacticalChat(
+                    chatMessages = chatMessages,
+                    onSendMessage = onSendMessage,
+                    onPlaySound = onPlaySound
+                )
             }
 
             // --- BLOQUE INFERIOR FIJO (PTT + CANDADO DE BLOQUEO) ---
@@ -1037,6 +1045,117 @@ fun TacticalDockIcon(
         }
         Spacer(Modifier.height(4.dp))
         Text(text = label, color = if (isActive) LuxeColors.Gold else Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+    }
+}
+
+@Composable
+fun InlineTacticalChat(
+    chatMessages: List<ChatMessage>,
+    onSendMessage: (String, String?) -> Unit,
+    onPlaySound: (String) -> Unit
+) {
+    var textInput by remember { mutableStateOf("") }
+
+    Surface(
+        color = Color(0xFF0F172A).copy(alpha = 0.85f),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(alpha = 0.3f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+            val latestMsg = chatMessages.lastOrNull { !it.isSystem }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.Black.copy(0.3f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.Chat,
+                    contentDescription = null,
+                    tint = Color(0xFF00E5FF),
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = if (latestMsg != null) "${latestMsg.senderNick}: ${latestMsg.text}" else "💬 Chat de canal activo. Escribe sin hablar...",
+                    color = if (latestMsg != null) Color.White else Color.White.copy(0.5f),
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                BasicTextField(
+                    value = textInput,
+                    onValueChange = { textInput = it },
+                    textStyle = TextStyle(color = Color.White, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold),
+                    cursorBrush = SolidColor(Color(0xFF00E5FF)),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Send
+                    ),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                        onSend = {
+                            if (textInput.isNotBlank()) {
+                                onSendMessage(textInput.trim(), null)
+                                onPlaySound("switch")
+                                textInput = ""
+                            }
+                        }
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Black.copy(0.4f))
+                        .border(1.dp, Color.White.copy(0.15f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    decorationBox = { innerTextField ->
+                        Box(contentAlignment = Alignment.CenterStart) {
+                            if (textInput.isEmpty()) {
+                                Text("Escribir mensaje directo...", color = Color.White.copy(0.4f), fontSize = 10.5.sp)
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+
+                Spacer(Modifier.width(6.dp))
+
+                Surface(
+                    onClick = {
+                        if (textInput.isNotBlank()) {
+                            onSendMessage(textInput.trim(), null)
+                            onPlaySound("switch")
+                            textInput = ""
+                        }
+                    },
+                    color = if (textInput.isNotBlank()) Color(0xFF00E5FF) else Color.White.copy(0.1f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.Send,
+                            contentDescription = "Enviar",
+                            tint = if (textInput.isNotBlank()) Color.Black else Color.White.copy(0.3f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

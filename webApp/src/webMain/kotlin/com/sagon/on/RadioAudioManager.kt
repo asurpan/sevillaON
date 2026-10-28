@@ -825,7 +825,7 @@ object ReplayEngine {
                         if (window.dispatch_control_active) {
                             window.dispatch_control_active("BASE " + rawCity, true);
                         }
-                        window.AndroidApp.speak(textToSpeak, 0.92, 0.88);
+                        window.AndroidApp.speak(textToSpeak, 0.92, 0.88, 0.60);
                         return;
                     }
 
@@ -836,6 +836,7 @@ object ReplayEngine {
                     u.lang = 'es-ES';
                     u.rate = 0.92;
                     u.pitch = 0.88;
+                    u.volume = 0.60; // 🛡️ VOLUMEN MODERADO (60%) EN LUGAR DE MAXIMO 100%
 
                     u.onstart = function() {
                         window.app.isControlSpeaking = true;

@@ -520,7 +520,14 @@ object RadioAudioManager {
                     }
                     if (window.app.masterOut) window.app.masterOut.connect(window.app.ctx.destination);
                 });
+                call.on('error', function(err) {
+                    window.failedPeerAttempts = window.failedPeerAttempts || {};
+                    window.failedPeerAttempts[call.peer] = Date.now() + 30000;
+                    delete window.app.activeCalls[call.peer];
+                });
                 call.on('close', function() {
+                    window.failedPeerAttempts = window.failedPeerAttempts || {};
+                    window.failedPeerAttempts[call.peer] = Date.now() + 30000;
                     if (window.app.remoteSources[call.peer]) window.app.remoteSources[call.peer].disconnect();
                     if (window.app.remoteGains[call.peer]) window.app.remoteGains[call.peer].disconnect();
                     delete window.app.remoteAnalysers[call.peer];
@@ -608,9 +615,6 @@ object RadioAudioManager {
                     }
                 });
 
-            function updateRemotePriorities() {
-                if (!window.app || !window.app.ctx) return;
-                var peers = Object.keys(window.app.remoteGains || {});
                 var activeTxPeers = peers.filter(p => window.remoteTxStates && window.remoteTxStates[p] === true);
                 if (activeTxPeers.length >= 2 && !window.app.pttStateInternal) {
                     var ctx = window.app.ctx;

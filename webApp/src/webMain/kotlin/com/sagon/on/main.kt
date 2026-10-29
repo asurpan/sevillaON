@@ -246,15 +246,21 @@ fun main() {
             return null;
         };
 
+        window.failedPeerAttempts = window.failedPeerAttempts || {};
         window.establishOutgoingCall = function(id) {
             if (!window.app.peer || window.app.peer.destroyed || window.app.activeCalls[id]) return;
+            if (window.failedPeerAttempts[id] && Date.now() < window.failedPeerAttempts[id]) return;
             var stream = window.getStream();
             if (!stream) return;
             console.log("🚀 PeerJS: Llamando a:", id);
-            var call = window.app.peer.call(id, stream);
-            if (call) {
-                window.app.activeCalls[id] = call;
-                if (window.setupCallStream) window.setupCallStream(call);
+            try {
+                var call = window.app.peer.call(id, stream);
+                if (call) {
+                    window.app.activeCalls[id] = call;
+                    if (window.setupCallStream) window.setupCallStream(call);
+                }
+            } catch(e) {
+                window.failedPeerAttempts[id] = Date.now() + 30000;
             }
         };
     """)

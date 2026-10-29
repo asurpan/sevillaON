@@ -1398,6 +1398,16 @@ fun InlineTacticalChat(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 8.dp)
+                            .pointerInput(Unit) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                                        if (event.type == androidx.compose.ui.input.pointer.PointerEventType.Press || event.type == androidx.compose.ui.input.pointer.PointerEventType.Move) {
+                                            try { focusRequester.requestFocus() } catch (_: Exception) {}
+                                        }
+                                    }
+                                }
+                            }
                     ) {
                         items(sortedChips) { chip ->
                             Surface(
@@ -1406,7 +1416,7 @@ fun InlineTacticalChat(
                                     chipUsageMap = chipUsageMap + (chip to (currentCount + 1))
                                     onSendMessage(chip, targetNick)
                                     onPlaySound("chat_msg")
-                                    try { focusRequester.requestFocus() } catch (_: Exception) {}
+                                    onChatOpenChange(false)
                                 },
                                 color = Color.Black.copy(0.4f),
                                 shape = RoundedCornerShape(12.dp),

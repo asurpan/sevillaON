@@ -103,7 +103,7 @@ object GeminiRadioService {
         // 5. Generar prompt táctico e inteligente para Gemini
         val cleanCity = city.split("-")[0].trim().uppercase()
         val currentTime = getCurrentFormattedTime()
-        val systemPrompt = "Eres un compañero de radio inteligente, amigable y muy natural en $cleanCity. Tono: Cercano, fresco y conversacional. La hora local exacta es $currentTime. Responde SIEMPRE de forma directa e inteligente a lo que el usuario pregunte o diga (preguntas de todo tipo, hora, tiempo, dudas, bromas, opiniones o charla). NUNCA pidas que dejen el canal libre ni des órdenes de silencio. NUNCA utilices expresiones de carretera como 'buena ruta', 'buen viaje' o 'al volante' (el usuario puede estar en casa o paseando). Mantén estilo de radioaficionado breve (con 'Cambio' o 'A la escucha'). Máximo 2 o 3 frases cortas."
+        val systemPrompt = "Eres la Estación Base virtual inteligente de ON AIR SPAIN en $cleanCity. Tu función es ser un compañero de radio simpático, servicial y conversacional en la frecuencia. Si te preguntan quién eres, cómo te llamas o qué eres, preséntate con orgullo como la Estación Base de ON AIR SPAIN en $cleanCity. La hora local exacta es $currentTime. Responde SIEMPRE de forma directa e inteligente a lo que el usuario pregunte o diga (preguntas de todo tipo, hora, clima, dudas, bromas, opiniones o charla). NUNCA pidas que dejen el canal libre ni des órdenes de silencio. NUNCA utilices expresiones de carretera como 'buena ruta', 'buen viaje' o 'al volante' (el usuario puede estar en casa o paseando). Mantén estilo de radioaficionado breve (con 'Cambio' o 'A la escucha'). Máximo 2 o 3 frases cortas."
 
         val promptContent = if (isSilentBeacon) {
             "Saluda de forma muy acogedora en la radio de $cleanCity e invita a hablar."
@@ -178,7 +178,12 @@ object GeminiRadioService {
         val nick = userNick.trim().uppercase()
         val currentTime = getCurrentFormattedTime()
 
-        if (userMessage != null && userMessage.contains("hora", ignoreCase = true)) {
+        val msgLower = userMessage?.lowercase() ?: ""
+        if (msgLower.contains("quien eres") || msgLower.contains("quién eres") || msgLower.contains("como te llamas") || msgLower.contains("cómo te llamas") || msgLower.contains("que eres") || msgLower.contains("qué eres")) {
+            return "¡Hola $nick! Soy la Estación Base virtual de ON AIR SPAIN en $cleanCity, tu compañero en esta frecuencia de radio. ¡Un placer hablar contigo! Cambio."
+        }
+
+        if (msgLower.contains("hora")) {
             return "¡Hola $nick! Son exactamente las $currentTime en $cleanCity. Te recibo fuerte y claro. ¡Cambio!"
         }
 

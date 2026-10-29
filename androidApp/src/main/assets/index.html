@@ -506,15 +506,10 @@
         }
 
         (function() {
-            const isFile = window.location.protocol === 'file:';
+            const urlParams = new URLSearchParams(window.location.search);
+            const v = urlParams.get('v') || Date.now();
             const script = document.createElement('script');
-            if (isFile) {
-                script.src = 'webApp.js';
-            } else {
-                const urlParams = new URLSearchParams(window.location.search);
-                const v = urlParams.get('v') || Date.now();
-                script.src = 'webApp.js?v=' + v;
-            }
+            script.src = 'webApp.js?v=' + v;
 
             // 🛡️ GARANTÍA DE ELIMINACIÓN DE LOADER (EVITA BUCLE)
             function removeLoader() {

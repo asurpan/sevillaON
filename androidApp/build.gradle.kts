@@ -107,3 +107,17 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 }
+
+val copyWebAssets = tasks.register<Copy>("copyWebAssets") {
+    dependsOn(":webApp:jsBrowserDevelopmentExecutableDistribution")
+    from(project(":webApp").layout.buildDirectory.dir("dist/js/developmentExecutable"))
+    from(rootDir.resolve("index.html"))
+    from(rootDir.resolve("logo.png"))
+    from(rootDir.resolve("manifest.json"))
+    from(rootDir.resolve("sw.js"))
+    into(layout.projectDirectory.dir("src/main/assets"))
+}
+
+tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
+    dependsOn(copyWebAssets)
+}

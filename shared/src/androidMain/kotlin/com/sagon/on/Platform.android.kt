@@ -68,38 +68,25 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
 actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     tourismScope.launch {
         try {
-            val cleanCity = city.split("-")[0].trim()
-            val encodedCity = java.net.URLEncoder.encode(cleanCity, "UTF-8")
-            
-            // 📰 1. INTENTAR PRIMERO MÁXIMA NOTICIA DE IMPACTO Y ÚLTIMA HORA EN ESPAÑA
-            val topUrl = java.net.URL("https://api.rss2json.com/v1/api.json?rss_url=" + java.net.URLEncoder.encode("https://news.google.com/rss/search?q=ultima+hora+España+cuando:1d&hl=es&gl=ES&ceid=ES:es", "UTF-8"))
-            val connection = topUrl.openConnection() as java.net.HttpURLConnection
+            // 📰 CARGAR DIRECTAMENTE EL RSS OFICIAL DE GOOGLE NEWS ESPAÑA (TITULARES DE MÁXIMO IMPACTO NACIONAL)
+            val url = java.net.URL("https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es")
+            val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "GET"
-            connection.connectTimeout = 3000
-            connection.readTimeout = 3000
-            val jsonText = connection.inputStream.bufferedReader().readText()
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+            connection.connectTimeout = 4000
+            connection.readTimeout = 4000
+            val xmlText = connection.inputStream.bufferedReader().readText()
             
             var headline: String? = null
-            if (jsonText.contains("\"title\":\"")) {
-                val rawTitle = jsonText.substringAfter("\"title\":\"", "").substringBefore("\",\"pubDate\"")
-                val cleanTitle = rawTitle.substringBefore(" - ").replace("\\\"", "\"").trim()
-                if (cleanTitle.length > 10 && !cleanTitle.contains("Google News", ignoreCase = true)) {
+            if (xmlText.contains("<item>")) {
+                val itemBlock = xmlText.substringAfter("<item>").substringBefore("</item>")
+                val rawTitle = itemBlock.substringAfter("<title>").substringBefore("</title>")
+                val cleanTitle = rawTitle.substringBefore(" - ")
+                    .replace("<![CDATA[", "")
+                    .replace("]]>", "")
+                    .trim()
+                if (cleanTitle.length > 10) {
                     headline = cleanTitle
-                }
-            }
-
-            // 📰 2. SI NO HAY NOTICIA NACIONAL DE IMPACTO, BUSCAR NOTICIA DE LA CIUDAD
-            if (headline == null) {
-                val cityUrl = java.net.URL("https://api.rss2json.com/v1/api.json?rss_url=https://news.google.com/rss/search?q=${encodedCity}+cuando:1d&hl=es&gl=ES&ceid=ES:es")
-                val cityConn = cityUrl.openConnection() as java.net.HttpURLConnection
-                cityConn.requestMethod = "GET"
-                cityConn.connectTimeout = 3000
-                cityConn.readTimeout = 3000
-                val cityJson = cityConn.inputStream.bufferedReader().readText()
-                if (cityJson.contains("\"title\":\"")) {
-                    val rawTitle = cityJson.substringAfter("\"title\":\"", "").substringBefore("\",\"pubDate\"")
-                    val cleanTitle = rawTitle.substringBefore(" - ").replace("\\\"", "\"").trim()
-                    if (cleanTitle.length > 10) headline = cleanTitle
                 }
             }
 

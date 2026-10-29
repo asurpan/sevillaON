@@ -1277,34 +1277,28 @@ fun InlineTacticalChat(
         }
     }
 
-    // 🚀 BANDEROLA / MODAL FLOTANTE ULTRA-RÁPIDO QUE SUBE CON EL TECLADO Y SE MUESTRA SOBRE EL PTT
+    // 🚀 BANDEROLA / MODAL FLOTANTE INSTANTÁNEO QUE SUBE CON EL TECLADO NATIVO A 120 FPS
     if (isChatOpen) {
         val focusRequester = remember { FocusRequester() }
-        LaunchedEffect(isChatOpen) {
+        LaunchedEffect(Unit) {
             focusRequester.requestFocus()
         }
 
-        androidx.compose.ui.window.Dialog(
-            onDismissRequest = { onChatOpenChange(false) },
-            properties = androidx.compose.ui.window.DialogProperties(
-                usePlatformDefaultWidth = false
-            )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.65f))
+                .clickable { onChatOpenChange(false) },
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Box(
+            Surface(
+                color = Color(0xFF0F172A),
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.60f))
-                    .clickable { onChatOpenChange(false) },
-                contentAlignment = Alignment.BottomCenter
+                    .fillMaxWidth()
+                    .clickable(enabled = false) {}
             ) {
-                Surface(
-                    color = Color(0xFF0F172A),
-                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-                    border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(enabled = false) {}
-                ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
@@ -1510,7 +1504,6 @@ fun InlineTacticalChat(
             }
         }
     }
-}
 }
 
 @Composable

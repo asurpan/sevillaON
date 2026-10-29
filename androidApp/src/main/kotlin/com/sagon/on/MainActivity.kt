@@ -77,10 +77,12 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = tts?.setLanguage(Locale("es", "ES"))
-            if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
-                isTtsReady = true
-                tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+            var result = tts?.setLanguage(Locale("es", "ES"))
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                result = tts?.setLanguage(Locale.getDefault())
+            }
+            isTtsReady = true
+            tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {
                         if (utteranceId == "on_air_tts") {
                             runOnUiThread {
@@ -103,7 +105,6 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         }
                     }
                 })
-            }
         }
     }
 
@@ -817,12 +818,21 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                             @JavascriptInterface
                             fun speak(text: String, rate: Float, pitch: Float, volume: Float) {
-                                if (isTtsReady && tts != null) {
-                                    tts?.setSpeechRate(rate)
-                                    tts?.setPitch(pitch)
-                                    val params = Bundle()
-                                    params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume.coerceIn(0f, 1f))
-                                    tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, "on_air_tts")
+                                runOnUiThread {
+                                    try {
+                                        if (tts == null) {
+                                            tts = TextToSpeech(this@MainActivity, this@MainActivity)
+                                        }
+                                        if (isTtsReady && tts != null) {
+                                            tts?.setSpeechRate(rate)
+                                            tts?.setPitch(pitch)
+                                            val params = Bundle()
+                                            params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume.coerceIn(0f, 1f))
+                                            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, "on_air_tts")
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("ON_AIR_TTS", "TTS error: ${e.message}")
+                                    }
                                 }
                             }
 

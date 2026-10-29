@@ -618,10 +618,40 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         return super.onKeyUp(keyCode, event)
     }
     // =======================================================
+    private fun registerSensorsIfNecessary() {
+        sensorManager?.let { sm ->
+            val magSensor = sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+            val accSensor = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            val pressSensor = sm.getDefaultSensor(Sensor.TYPE_PRESSURE)
+            sm.unregisterListener(sensorListener)
+            sm.registerListener(sensorListener, magSensor, SensorManager.SENSOR_DELAY_UI)
+            sm.registerListener(sensorListener, accSensor, SensorManager.SENSOR_DELAY_UI)
+            sm.registerListener(sensorListener, pressSensor, SensorManager.SENSOR_DELAY_UI)
+        }
+    }
+
+    private fun unregisterSensors() {
+        try {
+            sensorManager?.unregisterListener(sensorListener)
+        } catch (_: Exception) {}
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterSensors()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        registerSensorsIfNecessary()
+    }
 
     override fun onDestroy() {
         super.onDestroy()
-        wifiScanReceiver?.let { unregisterReceiver(it) }
+        unregisterSensors()
+        wifiScanReceiver?.let {
+            try { unregisterReceiver(it) } catch (_: Exception) {}
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -647,6 +677,15 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         MobileAds.initialize(this) {
             showAdBanner(true)
         }
+
+        // 🧠 IA TÁCTICA: Configuración de claves seguras desde BuildConfig (local.properties)
+        try {
+            val geminiKeysRaw = com.sagon.on.BuildConfig.GEMINI_API_KEYS
+            if (geminiKeysRaw.isNotBlank()) {
+                val keysList = geminiKeysRaw.split(",").map { it.trim() }
+                GeminiRadioService.configureKeys(keysList)
+            }
+        } catch (e: Exception) {}
 
         // 🛡️ GUARDIÁN DE SEGUNDO PLANO Y REPRODUCTOR MULTIMEDIA PERMANENTE
         try {

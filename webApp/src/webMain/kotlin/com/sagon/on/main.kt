@@ -22,6 +22,13 @@ fun main() {
     if (win.app_initialized == true) return
     win.app_initialized = true
 
+    win.getGeminiRadioResponse = { city: String, nick: String, msg: dynamic, isBeacon: Boolean, callback: (String) -> Unit ->
+        val safeMsg = msg?.toString()
+        GeminiRadioService.processRadioMessage(city, nick, safeMsg, isBeacon) { response ->
+            callback(response)
+        }
+    }
+
     // 🛡️ CREACIÓN INMEDIATA DEL OBJETO APP Y CONTROL DE PESTAÑA ÚNICA
     js("""
         window.app = window.app || { 

@@ -367,6 +367,10 @@ object RadioAudioManager {
                     if (window.dispatch_ptt_sync) window.dispatch_ptt_sync(true);
                     if (window.dispatch_ptt_live) window.dispatch_ptt_live(true);
 
+                    if (window.AndroidApp && window.AndroidApp.setNativePtt) {
+                        try { window.AndroidApp.setNativePtt(true); } catch(e) {}
+                    }
+
                     if (sessionRef) sessionRef.update({ tx: true, pwr: power || 0.7 });
                     if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
                     if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01);
@@ -374,6 +378,10 @@ object RadioAudioManager {
                     if (window.updateMoniGain) window.updateMoniGain();
                 } else {
                     window.app.pttStateInternal = false;
+
+                    if (window.AndroidApp && window.AndroidApp.setNativePtt) {
+                        try { window.AndroidApp.setNativePtt(false); } catch(e) {}
+                    }
 
                     // Limpiar temporizadores de corte automático y silencio
                     if (window.app.txMaxTimeout) {
@@ -799,51 +807,31 @@ object ReplayEngine {
                 var micEnergy = window.app.currentMicLevel || 0; // Medidor en tiempo real del oscilador
                 var textToSpeak = "";
 
-                if (!micGranted || !hasAudioTracks) {
-                    textToSpeak = "¡Atención estación " + userNick + "! Aquí estación de control de " + rawCity + ". No detectamos permiso de micrófono. Te abro la solicitud de permiso en pantalla.";
-                    if (window.ensureMicAccess) window.ensureMicAccess(); // 🚀 DISPARA LA VENTANA DE PERMISO NATIVO AUTOMÁTICAMENTE
-                } else if (micEnergy < 0.005) {
-                    // Micro abierto pero mudo (sin voz ni modulación)
-                    textToSpeak = "Estación " + userNick + ", recibo la portadora de tu equipo pero sin audio de voz. Pulsa el botón Hablar y habla alto para verificar tu modulación.";
-                } else {
-                    // ¡Micro abierto Y modulando con voz real!
-                    var idx = window.controlResponseIndex || 0;
-                    if (idx === 0) {
-                        textToSpeak = "¡Hola " + userNick + "! Te recibo fuerte y claro CON señal 9+30 y radio 5  con modulación perfecta. Estas emitiendo Perfecto . Yo me  desactivare cuando entre otro usuario.";
-                    } else if (idx === 1) {
-                        textToSpeak = "Estación " + userNick + ", reporte de señal  llegas POtente en  audio y voz perfecto con tu equipo. invita a otros usuarios compartiendo el canal para empezar a volar por la ciudad con tu VOZ.";
-                    } else {
-                        textToSpeak = "Estación " + userNick + ", tu transmisión y potencia llegan con total claridad al repetidor de " + rawCity + ". Todo correcto ahh! me encanta.";
-                    }
-                    window.controlResponseIndex = idx + 1;
-                }
-
-                setTimeout(function() {
-                    // 🤖 COMPROBACIÓN NATIVA ANDROID vs WEB SPEECH SYNTHESIS
+                function triggerSpeak(spokenText) {
                     if (window.AndroidApp && window.AndroidApp.speak) {
                         if (window.playUiSound) window.playUiSound("switch");
                         if (window.dispatch_control_active) {
                             window.dispatch_control_active("BASE " + rawCity, true);
                         }
-                        window.AndroidApp.speak(textToSpeak, 0.92, 0.88, 0.60);
+                        window.AndroidApp.speak(spokenText, 0.92, 0.88, 0.60);
                         return;
                     }
 
                     if (!('speechSynthesis' in window)) return;
                     window.speechSynthesis.cancel();
 
-                    var u = new SpeechSynthesisUtterance(textToSpeak);
+                    var u = new SpeechSynthesisUtterance(spokenText);
                     u.lang = 'es-ES';
                     u.rate = 0.92;
                     u.pitch = 0.88;
-                    u.volume = 0.60; // 🛡️ VOLUMEN MODERADO (60%) EN LUGAR DE MAXIMO 100%
+                    u.volume = 0.60;
 
                     u.onstart = function() {
                         window.app.isControlSpeaking = true;
                         if (window.dispatch_control_active) {
                             window.dispatch_control_active("BASE " + rawCity, true);
                         }
-                        if (window.playUiSound) window.playUiSound("switch"); // 🛡️ Sonido sutil de canal en lugar de beep molesto
+                        if (window.playUiSound) window.playUiSound("switch");
                     };
 
                     u.onend = function() {
@@ -862,7 +850,25 @@ object ReplayEngine {
                     };
 
                     window.speechSynthesis.speak(u);
-                }, 1200);
+                }
+
+                if (!micGranted || !hasAudioTracks) {
+                    textToSpeak = "¡Atención estación " + userNick + "! Aquí estación de control de " + rawCity + ". No detectamos permiso de micrófono. Te abro la solicitud de permiso en pantalla.";
+                    if (window.ensureMicAccess) window.ensureMicAccess();
+                    setTimeout(function() { triggerSpeak(textToSpeak); }, 1200);
+                } else if (micEnergy < 0.005) {
+                    textToSpeak = "Estación " + userNick + ", recibo la portadora de tu equipo pero sin audio de voz. Pulsa el botón Hablar y habla alto para verificar tu modulación.";
+                    setTimeout(function() { triggerSpeak(textToSpeak); }, 1200);
+                } else {
+                    if (window.getGeminiRadioResponse) {
+                        window.getGeminiRadioResponse(rawCity, userNick, "Prueba de modulación", false, function(resText) {
+                            setTimeout(function() { triggerSpeak(resText); }, 1200);
+                        });
+                    } else {
+                        textToSpeak = "Estación " + userNick + ", reporte de señal perfecto desde " + rawCity + ". Te recibo con modulación limpia y señal S9 en el repetidor. Cambio.";
+                        setTimeout(function() { triggerSpeak(textToSpeak); }, 1200);
+                    }
+                }
             };
 
             window.clearReplayBuffer = function() {

@@ -43,3 +43,7 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
 actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     callback(null)
 }
+
+actual fun fetchGeminiApi(endpoint: String, jsonBody: String, callback: (String?) -> Unit) {
+    callback(null)
+}

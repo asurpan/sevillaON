@@ -34,14 +34,16 @@ class RadioService : Service() {
                     isActive = true
                 }
             }
-            // 🛡️ CPU WAKELOCK: Mantiene la CPU despierta cuando la pantalla se apaga
+            // 🛡️ CPU WAKELOCK: Mantiene la CPU despierta de forma optimizada con timeout de seguridad
             val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
             wakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "ON_AIR_SPAIN:RadioWakeLock").apply {
-                acquire()
+                setReferenceCounted(false)
+                acquire(30 * 60 * 1000L) // 🛡️ Timeout de seguridad de 30 min para evitar drenaje indefinido
             }
             // 🛡️ WIFI LOCK: Evita que la antena Wi-Fi entre en reposo profundo
             val wm = applicationContext.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
             wifiLock = wm.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "ON_AIR_SPAIN:WifiLock").apply {
+                setReferenceCounted(false)
                 acquire()
             }
         } catch (e: Exception) {}
@@ -49,6 +51,13 @@ class RadioService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
+        
+        // Renovación de WakeLock de seguridad al iniciar comando
+        try {
+            if (wakeLock?.isHeld == false) {
+                wakeLock?.acquire(30 * 60 * 1000L)
+            }
+        } catch (e: Exception) {}
         
         val notificationIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)

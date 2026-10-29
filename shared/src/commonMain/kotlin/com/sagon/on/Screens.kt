@@ -225,6 +225,7 @@ fun RadioPanel(
     externalPttBlocked: Boolean,
     replayProgress: Float,
     isReplayReady: Boolean,
+    chatMessages: List<ChatMessage> = emptyList(),
     onSendMessage: (String, String?) -> Unit,
     onReport: (String) -> Unit,
     onBlock: (String) -> Unit,
@@ -235,9 +236,11 @@ fun RadioPanel(
     onPendingDialogChange: (RadioDialogType?, String?) -> Unit
 ) {
     var pttLocked by remember { mutableStateOf(state.isPttLatched) }
+    var isPttPressed by remember { mutableStateOf(false) }
     var isPttBlockedByRx by remember { mutableStateOf(false) }
+    var privateChatTargetNick by remember { mutableStateOf<String?>(null) }
     
-    val pttScale by animateFloatAsState(if (pttLocked) 0.94f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "PttSqueeze")
+    val pttScale by animateFloatAsState(if (isPttPressed || pttLocked) 0.94f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "PttSqueeze")
 
     // 🛡️ ANIMACIÓN MODO DISCRETO (PARPADEO SUAVE)
     val discreteTransition = rememberInfiniteTransition(label = "DiscreteBlink")
@@ -275,7 +278,21 @@ fun RadioPanel(
         }
     }
 
-    LaunchedEffect(externalPttBlocked) { if (externalPttBlocked) isPttBlockedByRx = true }
+    LaunchedEffect(externalPttBlocked) {
+        if (externalPttBlocked) {
+            isPttBlockedByRx = true
+            if (pttLocked) {
+                pttLocked = false
+                onStateChange(state.copy(isPttLatched = false))
+            }
+        }
+    }
+    LaunchedEffect(externalPtt) {
+        if (!externalPtt && pttLocked && !isPttPressed) {
+            pttLocked = false
+            onStateChange(state.copy(isPttLatched = false))
+        }
+    }
     LaunchedEffect(isPttBlockedByRx) { if (isPttBlockedByRx) { delay(800); isPttBlockedByRx = false } }
 
     val currentOnStateChange by rememberUpdatedState(onStateChange)
@@ -283,7 +300,7 @@ fun RadioPanel(
     val currentRadioState by rememberUpdatedState(state)
 
     // 🛡️ REGLA DE ORO: EL PTT SIEMPRE DETIENE EL ESCANEO Y EL MODO DISCRETO
-    val isTransmitting = (pttLocked || externalPtt || isBeeping) && !isPttBlockedByRx
+    val isTransmitting = (isPttPressed || pttLocked || externalPtt || isBeeping) && !isPttBlockedByRx
     LaunchedEffect(isTransmitting) {
         if (isTransmitting) {
             if (state.isScanning || state.isDiscreteModeEnabled) {
@@ -324,7 +341,8 @@ fun RadioPanel(
     
     val noiseVol = if (!rx && !isTransmitting) (if (state.squelch > state.rfGain) 0f else (state.rfGain - state.squelch)).coerceIn(0f, 1f) else 0f
     
-    LaunchedEffect(pttLocked) { onMic(pttLocked, state.veteranPower) }
+    val isPttActive = (isPttPressed || pttLocked || externalPtt) && !isPttBlockedByRx
+    LaunchedEffect(isPttActive) { onMic(isPttActive, state.veteranPower) }
     LaunchedEffect(state.squelch, state.rfGain, rx, isTransmitting) { onNoise(noiseVol) }
 
     AppBackground(style = state.backgroundStyle) {
@@ -859,7 +877,7 @@ fun RadioPanel(
                                 user = user, 
                                 isMe = (user.id == myId), 
                                 onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, 
-                                onPrivateChat = { }, 
+                                onPrivateChat = { privateChatTargetNick = user.nick }, 
                                 onReport = { onReport(user.id) }, 
                                 onBlock = { onBlock(user.id) },
                                 onAvatarClick = { onPendingDialogChange(RadioDialogType.USER_ACTIONS, user.id) }
@@ -867,6 +885,15 @@ fun RadioPanel(
                         }
                     }
                 }
+
+                // --- 💬 MINI-CHAT TÁCTICO INTEGRADO (CÓMODO Y PRÁCTICO) ---
+                InlineTacticalChat(
+                    chatMessages = chatMessages,
+                    targetNick = privateChatTargetNick,
+                    onTargetChange = { privateChatTargetNick = it },
+                    onSendMessage = onSendMessage,
+                    onPlaySound = onPlaySound
+                )
             }
 
             // --- BLOQUE INFERIOR FIJO (PTT + CANDADO DE BLOQUEO) ---
@@ -916,12 +943,12 @@ fun RadioPanel(
                                         if (!isPttBlockedByRx) {
                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                             vibratePtt()
-                                            pttLocked = true
+                                            isPttPressed = true
                                             try { 
                                                 awaitRelease() 
                                             } finally { 
                                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                pttLocked = false 
+                                                isPttPressed = false 
                                             }
                                         }
                                     }
@@ -1037,6 +1064,161 @@ fun TacticalDockIcon(
         }
         Spacer(Modifier.height(4.dp))
         Text(text = label, color = if (isActive) LuxeColors.Gold else Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+    }
+}
+
+@Composable
+fun InlineTacticalChat(
+    chatMessages: List<ChatMessage>,
+    targetNick: String? = null,
+    onTargetChange: (String?) -> Unit = {},
+    onSendMessage: (String, String?) -> Unit,
+    onPlaySound: (String) -> Unit
+) {
+    var textInput by remember { mutableStateOf("") }
+
+    Surface(
+        color = Color(0xFF0F172A).copy(alpha = 0.85f),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, if (targetNick != null) LuxeColors.Gold.copy(0.6f) else Color(0xFF00E5FF).copy(alpha = 0.3f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+            if (targetNick != null) {
+                Surface(
+                    color = LuxeColors.Gold.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp)
+                        .clickable { onTargetChange(null) }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Lock,
+                            contentDescription = "Privado",
+                            tint = LuxeColors.Gold,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "PRIVADO A $targetNick (Toca para volver a Canal Público)",
+                            color = LuxeColors.Gold,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "Cerrar",
+                            tint = LuxeColors.Gold,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
+            } else {
+                val latestMsg = chatMessages.lastOrNull { !it.isSystem }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Black.copy(0.3f))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.Chat,
+                        contentDescription = null,
+                        tint = Color(0xFF00E5FF),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = if (latestMsg != null) "${latestMsg.senderNick}: ${latestMsg.text}" else "💬 Chat de canal activo. Escribe sin hablar...",
+                        color = if (latestMsg != null) Color.White else Color.White.copy(0.5f),
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                BasicTextField(
+                    value = textInput,
+                    onValueChange = { textInput = it },
+                    textStyle = TextStyle(color = Color.White, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold),
+                    cursorBrush = SolidColor(if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Send
+                    ),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                        onSend = {
+                            if (textInput.isNotBlank()) {
+                                onSendMessage(textInput.trim(), targetNick)
+                                onPlaySound("switch")
+                                textInput = ""
+                            }
+                        }
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Black.copy(0.4f))
+                        .border(1.dp, if (targetNick != null) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.15f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    decorationBox = { innerTextField ->
+                        Box(contentAlignment = Alignment.CenterStart) {
+                            if (textInput.isEmpty()) {
+                                Text(
+                                    if (targetNick != null) "Escribir mensaje privado a $targetNick..." else "Escribir mensaje directo...",
+                                    color = Color.White.copy(0.4f),
+                                    fontSize = 10.5.sp
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+
+                Spacer(Modifier.width(6.dp))
+
+                Surface(
+                    onClick = {
+                        if (textInput.isNotBlank()) {
+                            onSendMessage(textInput.trim(), targetNick)
+                            onPlaySound("switch")
+                            textInput = ""
+                        }
+                    },
+                    color = if (textInput.isNotBlank()) (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)) else Color.White.copy(0.1f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.Send,
+                            contentDescription = "Enviar",
+                            tint = if (textInput.isNotBlank()) Color.Black else Color.White.copy(0.3f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -395,6 +395,7 @@ fun App(
                                 externalPttBlocked = externalPttBlocked,
                                 replayProgress = replayProgress,
                                 isReplayReady = isReplayReady,
+                                chatMessages = chatMessages,
                                 onSendMessage = onSendMessage,
                                 onReport = onReport,
                                 onBlock = { id -> 

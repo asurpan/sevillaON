@@ -27,3 +27,9 @@ actual fun getCurrentHour(): Int = java.util.Calendar.getInstance().get(java.uti
 actual fun setVirtualOperatorText(text: String) {}
 
 actual fun showSystemNotification(title: String, message: String) {}
+
+actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) { callback(null) }
+
+actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) { callback(null) }
+
+actual fun fetchGeminiApi(endpoint: String, jsonBody: String, callback: (String?) -> Unit) { callback(null) }

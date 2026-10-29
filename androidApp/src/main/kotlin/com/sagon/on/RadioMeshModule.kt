@@ -35,6 +35,7 @@ class RadioMeshModule(private val context: Context) {
     private var audioRecord: AudioRecord? = null
     private var audioTrack: AudioTrack? = null
     private var receiverThread: Thread? = null
+    private var rxSocket: DatagramSocket? = null
 
     private val intentFilter = IntentFilter().apply {
         addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
@@ -103,6 +104,7 @@ class RadioMeshModule(private val context: Context) {
         receiverThread = thread {
             try {
                 val socket = DatagramSocket(MESH_PORT)
+                rxSocket = socket
                 val buffer = ByteArray(1024)
                 
                 val audioAttributes = AudioAttributes.Builder()
@@ -135,6 +137,8 @@ class RadioMeshModule(private val context: Context) {
             } catch (e: Exception) {
                 Log.e("ON_AIR_MESH", "Error RX Mesh: ${e.message}")
             } finally {
+                try { rxSocket?.close() } catch (_: Exception) {}
+                rxSocket = null
                 audioTrack?.stop()
                 audioTrack?.release()
                 audioTrack = null
@@ -145,6 +149,10 @@ class RadioMeshModule(private val context: Context) {
     fun stopEmergencyMode() {
         isEmergencyModeActive = false
         isTransmitting = false
+        try {
+            rxSocket?.close()
+        } catch (_: Exception) {}
+        rxSocket = null
         receiverThread?.interrupt()
         receiverThread = null
         manager?.stopPeerDiscovery(channel, null)

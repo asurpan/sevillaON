@@ -351,69 +351,65 @@ fun App(
 
 
 
-                Crossfade(
-                    targetState = if (!isAppReady) null else screenState,
-                    modifier = Modifier.fillMaxSize()
-                ) { target ->
-                    if (target == null) {
-                        LoadingScreen(radioState.isNightMode)
-                    } else {
-                        when (target) {
-                            Screen.Welcome -> WelcomeScreen(
-                                nick = nick, 
-                                onNickChange = { nick = it }, 
-                                totalUsers = remoteUsers.size,
-                                hasAcceptedMic = radioState.hasAcceptedMicExplain,
-                                onMicAccept = {
-                                    radioState = radioState.copy(hasAcceptedMicExplain = true)
+                val currentScreen = if (!isAppReady) null else screenState
+                if (currentScreen == null) {
+                    LoadingScreen(radioState.isNightMode)
+                } else {
+                    when (currentScreen) {
+                        Screen.Welcome -> WelcomeScreen(
+                            nick = nick, 
+                            onNickChange = { nick = it }, 
+                            totalUsers = remoteUsers.size,
+                            hasAcceptedMic = radioState.hasAcceptedMicExplain,
+                            onMicAccept = {
+                                radioState = radioState.copy(hasAcceptedMicExplain = true)
+                                screenState = Screen.RadioCB
+                            },
+                            onConnect = { 
+                                if (nick.isNotBlank()) {
                                     screenState = Screen.RadioCB
-                                },
-                                onConnect = { 
-                                    if (nick.isNotBlank()) {
-                                        screenState = Screen.RadioCB
-                                        onConnectRadio(nick)
-                                        startPermissionFlow()
-                                    }
-                                },
-                                isNightMode = radioState.isNightMode
-                            )
-                            Screen.RadioCB -> RadioPanel(
-                                nick = nick,
-                                mic = micLevel, 
-                                users = remoteUsers, 
-                                myId = myId,
-                                rx = remoteTransmitterName != null, 
-                                transmitterNick = remoteTransmitterName,
-                                isBeeping = isBeeping,
-                                onNoise = onNoiseVolumeChange, 
-                                onMic = { active, power -> onMicEnable(active, radioState.isRogerBeepEnabled, power) },
-                                onShare = { channel, subtone, proRole, platform -> onShareRequest(radioState.city, channel, subtone, proRole, platform, null) },
-                                onExit = { showExitDialog = true },
-                                state = radioState,
-                                onStateChange = { radioState = it },
-                                externalPtt = externalPtt,
-                                externalPttBlocked = externalPttBlocked,
-                                replayProgress = replayProgress,
-                                isReplayReady = isReplayReady,
-                                chatMessages = chatMessages,
-                                onSendMessage = onSendMessage,
-                                onReport = onReport,
-                                onBlock = { id -> 
-                                    radioState = radioState.copy(blockedUsers = radioState.blockedUsers + id)
-                                    onBlockUser(id)
-                                },
-                                onReplay = onReplayRequest,
-                                onNotification = { t, m, type -> 
-                                    localNotification = AppNotification(t, m, type)
-                                },
-                                onPlaySound = onPlaySound,
-                                pendingDialog = pendingDialog,
-                                onPendingDialogChange = { dialog, payload -> 
-                                    pendingDialog = dialog
-                                    if (payload != null) channelToDelete = payload
+                                    onConnectRadio(nick)
+                                    startPermissionFlow()
                                 }
-                            )
-                        }
+                            },
+                            isNightMode = radioState.isNightMode
+                        )
+                        Screen.RadioCB -> RadioPanel(
+                            nick = nick,
+                            mic = micLevel, 
+                            users = remoteUsers, 
+                            myId = myId,
+                            rx = remoteTransmitterName != null, 
+                            transmitterNick = remoteTransmitterName,
+                            isBeeping = isBeeping,
+                            onNoise = onNoiseVolumeChange, 
+                            onMic = { active, power -> onMicEnable(active, radioState.isRogerBeepEnabled, power) },
+                            onShare = { channel, subtone, proRole, platform -> onShareRequest(radioState.city, channel, subtone, proRole, platform, null) },
+                            onExit = { showExitDialog = true },
+                            state = radioState,
+                            onStateChange = { radioState = it },
+                            externalPtt = externalPtt,
+                            externalPttBlocked = externalPttBlocked,
+                            replayProgress = replayProgress,
+                            isReplayReady = isReplayReady,
+                            chatMessages = chatMessages,
+                            onSendMessage = onSendMessage,
+                            onReport = onReport,
+                            onBlock = { id -> 
+                                radioState = radioState.copy(blockedUsers = radioState.blockedUsers + id)
+                                onBlockUser(id)
+                            },
+                            onReplay = onReplayRequest,
+                            onNotification = { t, m, type -> 
+                                localNotification = AppNotification(t, m, type)
+                            },
+                            onPlaySound = onPlaySound,
+                            pendingDialog = pendingDialog,
+                            onPendingDialogChange = { dialog, payload -> 
+                                pendingDialog = dialog
+                                if (payload != null) channelToDelete = payload
+                            }
+                        )
                     }
                 }
 

@@ -325,6 +325,7 @@ fun main() {
         val backPressCountState = remember { mutableStateOf(0) }
         val isReplayReadyState = remember { mutableStateOf(false) }
         val replayProgressState = remember { mutableStateOf(0f) }
+        val chatMessagesState = remember { mutableStateListOf<ChatMessage>() }
 
         RadioBridge.setupDispatchers(
             win = win,
@@ -411,7 +412,36 @@ fun main() {
                     if (win.app != null) win.app.rxActiveInternal = (activeRemoteTx != null || remoteTransmitterName.value != null)
                 } catch(e: Exception) { }
             },
-            onChatUpdate = { },
+            onChatUpdate = { rawData ->
+                try {
+                    val list = mutableListOf<ChatMessage>()
+                    if (rawData != null) {
+                        val keys = js("Object").keys(rawData)
+                        for (i in 0 until (keys.length as Int)) {
+                            val k = keys[i] as String
+                            val m = rawData[k] ?: continue
+                            val sender = (m.senderNick as? String ?: "ANÓNIMO").trim().uppercase()
+                            val text = (m.text as? String ?: "").trim()
+                            val ts = (m.timestamp as? Double ?: 0.0).toLong()
+                            val isSys = (m.isSystem as? Boolean ?: false)
+                            if (text.isNotEmpty()) {
+                                list.add(ChatMessage(id = k, senderNick = sender, text = text, timestamp = ts, isSystem = isSys))
+                            }
+                        }
+                        list.sortBy { it.timestamp }
+                    }
+                    val previousCount = chatMessagesState.size
+                    chatMessagesState.clear()
+                    chatMessagesState.addAll(list)
+                    if (list.size > previousCount && list.isNotEmpty()) {
+                        val lastMsg = list.last()
+                        val myNick = (win.app?.nick as? String ?: "").trim().uppercase()
+                        if (lastMsg.senderNick != myNick && !lastMsg.isSystem) {
+                            if (win.playUiSound != null) win.playUiSound("chat_msg")
+                        }
+                    }
+                } catch (e: Exception) {}
+            },
             onReplayProgress = { progress -> replayProgressState.value = progress },
             onReplayAvailable = { available -> isReplayReadyState.value = available },
             onChatOpen = { },
@@ -583,7 +613,7 @@ fun main() {
             remoteUsers = remoteUsersState,
             myId = (win.app?.sessionID as? String) ?: "",
             remoteTransmitterName = remoteTransmitterName.value,
-            chatMessages = emptyList(),
+            chatMessages = chatMessagesState,
             audioIntegrity = true,
             onAntennaTest = { },
             onRequestLocationPermission = { },

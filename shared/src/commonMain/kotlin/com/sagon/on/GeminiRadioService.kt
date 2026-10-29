@@ -132,15 +132,16 @@ object GeminiRadioService {
     private fun parseGeminiTextResponse(json: String?): String? {
         if (json.isNullOrBlank()) return null
         return try {
-            if (json.contains("\"text\":")) {
-                val startIndex = json.indexOf("\"text\":") + 7
-                val firstQuote = json.indexOf("\"", startIndex) + 1
-                val lastQuote = json.indexOf("\"", firstQuote)
-                if (firstQuote > 0 && lastQuote > firstQuote) {
-                    var text = json.substring(firstQuote, lastQuote)
-                    text = text.replace("\\n", " ").replace("\\\"", "\"").trim()
-                    if (text.isNotBlank()) return text
-                }
+            val regex = Regex(""""text"\s*:\s*"((?:[^"\\]|\\.)*)"""")
+            val match = regex.find(json)
+            if (match != null) {
+                var text = match.groupValues[1]
+                text = text.replace("\\\"", "\"")
+                           .replace("\\n", " ")
+                           .replace("\\r", " ")
+                           .replace("\\\\", "\\")
+                           .trim()
+                if (text.isNotBlank()) return text
             }
             null
         } catch (e: Exception) {

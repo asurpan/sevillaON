@@ -1013,11 +1013,15 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                         android.app.PendingIntent.FLAG_IMMUTABLE
                                     )
 
+                                    val defaultSoundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
                                     val notification = androidx.core.app.NotificationCompat.Builder(this@MainActivity, channelId)
                                         .setContentTitle(title)
                                         .setContentText(message)
-                                        .setSmallIcon(android.R.drawable.ic_dialog_info)
-                                        .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                                        .setSmallIcon(android.R.drawable.stat_notify_chat)
+                                        .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MAX)
+                                        .setSound(defaultSoundUri)
+                                        .setVibrate(longArrayOf(0, 150, 100, 150))
+                                        .setDefaults(androidx.core.app.NotificationCompat.DEFAULT_ALL)
                                         .setContentIntent(pendingIntent)
                                         .setAutoCancel(true)
                                         .build()

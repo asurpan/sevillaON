@@ -22,6 +22,8 @@ import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -1076,6 +1078,7 @@ fun InlineTacticalChat(
     onPlaySound: (String) -> Unit
 ) {
     var textInput by remember { mutableStateOf("") }
+    var isFloatingActive by remember { mutableStateOf(false) }
 
     Surface(
         color = Color(0xFF0F172A).copy(alpha = 0.85f),
@@ -1084,6 +1087,7 @@ fun InlineTacticalChat(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
+            .clickable { isFloatingActive = true }
     ) {
         Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
             if (targetNick != null) {
@@ -1123,31 +1127,51 @@ fun InlineTacticalChat(
                     }
                 }
             } else {
-                val latestMsg = chatMessages.lastOrNull { !it.isSystem }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                val nonSysMsgs = chatMessages.filter { !it.isSystem }.takeLast(3)
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color.Black.copy(0.3f))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .background(Color.Black.copy(0.35f))
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.Chat,
-                        contentDescription = null,
-                        tint = Color(0xFF00E5FF),
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = if (latestMsg != null) "${latestMsg.senderNick}: ${latestMsg.text}" else "💬 Chat de canal activo. Escribe sin hablar...",
-                        color = if (latestMsg != null) Color.White else Color.White.copy(0.5f),
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
+                    if (nonSysMsgs.isEmpty()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.Chat,
+                                contentDescription = null,
+                                tint = Color(0xFF00E5FF),
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "💬 Chat de canal activo. Toca para escribir...",
+                                color = Color.White.copy(0.5f),
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    } else {
+                        nonSysMsgs.forEach { msg ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "${msg.senderNick}: ",
+                                    color = Color(0xFF00E5FF),
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = msg.text,
+                                    color = Color.White,
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1155,66 +1179,199 @@ fun InlineTacticalChat(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.Black.copy(0.4f))
+                    .border(1.dp, if (targetNick != null) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.15f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 6.dp)
             ) {
-                BasicTextField(
-                    value = textInput,
-                    onValueChange = { textInput = it },
-                    textStyle = TextStyle(color = Color.White, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold),
-                    cursorBrush = SolidColor(if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                        imeAction = androidx.compose.ui.text.input.ImeAction.Send
-                    ),
-                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                        onSend = {
-                            if (textInput.isNotBlank()) {
-                                onSendMessage(textInput.trim(), targetNick)
-                                onPlaySound("switch")
-                                textInput = ""
-                            }
-                        }
-                    ),
+                Text(
+                    text = if (targetNick != null) "Toca para escribir a $targetNick..." else "Toca para escribir mensaje...",
+                    color = Color.White.copy(0.4f),
+                    fontSize = 10.5.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.Send,
+                    contentDescription = "Escribir",
+                    tint = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        }
+    }
+
+    // 🚀 BANDEROLA / MODAL FLOTANTE INDEPENDIENTE QUE SUBE CON EL TECLADO SIN MOVER LA RADIO
+    if (isFloatingActive) {
+        val focusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) {
+            delay(150)
+            focusRequester.requestFocus()
+        }
+
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { isFloatingActive = false },
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.50f))
+                    .clickable { isFloatingActive = false },
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Surface(
+                    color = Color(0xFF0F172A),
+                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                    border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
                     modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.Black.copy(0.4f))
-                        .border(1.dp, if (targetNick != null) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.15f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-                    decorationBox = { innerTextField ->
-                        Box(contentAlignment = Alignment.CenterStart) {
-                            if (textInput.isEmpty()) {
-                                Text(
-                                    if (targetNick != null) "Escribir mensaje privado a $targetNick..." else "Escribir mensaje directo...",
-                                    color = Color.White.copy(0.4f),
-                                    fontSize = 10.5.sp
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.ime)
+                        .clickable(enabled = false) {}
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        // Cabecera del chat flotante
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (targetNick != null) Icons.Rounded.Lock else Icons.AutoMirrored.Rounded.Chat,
+                                contentDescription = null,
+                                tint = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = if (targetNick != null) "CHAT PRIVADO CON $targetNick" else "CHAT DE CANAL ACTIVO",
+                                color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = { isFloatingActive = false },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = "Cerrar",
+                                    tint = Color.White.copy(0.7f),
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
-                            innerTextField()
                         }
-                    }
-                )
 
-                Spacer(Modifier.width(6.dp))
-
-                Surface(
-                    onClick = {
-                        if (textInput.isNotBlank()) {
-                            onSendMessage(textInput.trim(), targetNick)
-                            onPlaySound("switch")
-                            textInput = ""
+                        // Lista de mensajes recientes en el modal
+                        val modalMsgs = chatMessages.filter { !it.isSystem }.takeLast(4)
+                        if (modalMsgs.isNotEmpty()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color.Black.copy(0.4f))
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                modalMsgs.forEach { msg ->
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "${msg.senderNick}: ",
+                                            color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = msg.text,
+                                            color = Color.White,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(10.dp))
                         }
-                    },
-                    color = if (textInput.isNotBlank()) (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)) else Color.White.copy(0.1f),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.Send,
-                            contentDescription = "Enviar",
-                            tint = if (textInput.isNotBlank()) Color.Black else Color.White.copy(0.3f),
-                            modifier = Modifier.size(16.dp)
-                        )
+
+                        // Entrada de texto y botón enviar
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = textInput,
+                                onValueChange = { textInput = it },
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    color = Color.White,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                placeholder = {
+                                    Text(
+                                        if (targetNick != null) "Escribir privado a $targetNick..." else "Escribir mensaje de canal...",
+                                        color = Color.White.copy(0.4f),
+                                        fontSize = 12.sp
+                                    )
+                                },
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                    imeAction = androidx.compose.ui.text.input.ImeAction.Send
+                                ),
+                                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                                    onSend = {
+                                        if (textInput.isNotBlank()) {
+                                            onSendMessage(textInput.trim(), targetNick)
+                                            onPlaySound("chat_msg")
+                                            textInput = ""
+                                            isFloatingActive = false
+                                        }
+                                    }
+                                ),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Black.copy(0.6f),
+                                    unfocusedContainerColor = Color.Black.copy(0.4f),
+                                    focusedBorderColor = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                                    unfocusedBorderColor = Color.White.copy(0.2f),
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    cursorColor = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier
+                                    .focusRequester(focusRequester)
+                                    .weight(1f)
+                            )
+
+                            Spacer(Modifier.width(8.dp))
+
+                            Surface(
+                                onClick = {
+                                    if (textInput.isNotBlank()) {
+                                        onSendMessage(textInput.trim(), targetNick)
+                                        onPlaySound("chat_msg")
+                                        textInput = ""
+                                        isFloatingActive = false
+                                    }
+                                },
+                                color = if (textInput.isNotBlank()) (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)) else Color.White.copy(0.15f),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.size(42.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.Send,
+                                        contentDescription = "Enviar",
+                                        tint = if (textInput.isNotBlank()) Color.Black else Color.White.copy(0.3f),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

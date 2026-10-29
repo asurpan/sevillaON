@@ -721,6 +721,23 @@ object RadioSignaling {
                     return;
                 }
 
+                if (type === "chat_msg" || type === "chat") {
+                    // 🔔 BEEP TÁCTICO MELÓDICO Y AGRADABLE DE CHAT (Doble tono armónico C5 -> C6)
+                    try { if (navigator.vibrate) navigator.vibrate(25); } catch(e) {}
+                    var o1 = window.app.ctx.createOscillator(); var g1 = window.app.ctx.createGain();
+                    o1.type = "sine"; o1.frequency.setValueAtTime(523.25, now);
+                    g1.gain.setValueAtTime(0, now); g1.gain.linearRampToValueAtTime(0.08, now + 0.015);
+                    g1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                    o1.connect(g1); g1.connect(window.app.masterOut); o1.start(now); o1.stop(now + 0.12);
+
+                    var o2 = window.app.ctx.createOscillator(); var g2 = window.app.ctx.createGain();
+                    o2.type = "sine"; o2.frequency.setValueAtTime(1046.50, now + 0.08);
+                    g2.gain.setValueAtTime(0, now + 0.08); g2.gain.linearRampToValueAtTime(0.09, now + 0.095);
+                    g2.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                    o2.connect(g2); g2.connect(window.app.masterOut); o2.start(now + 0.08); o2.stop(now + 0.28);
+                    return;
+                }
+
                 if (type === "switch") {
                     // 🎛️ CLIC TÁCTIL SUAVE Y AGRADABLE (800Hz / 0.02 - SIN MOLESTAR)
                     var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain();

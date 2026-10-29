@@ -314,12 +314,10 @@ object RadioAudioManager {
 
                     if (active) {
                         // 🛡️ CORTE RADICAL E INMEDIATO DE VOZ Y PORTADORA DEL BOT AL PULSAR PTT
-                        if (window.app.isControlSpeaking || (window.speechSynthesis && window.speechSynthesis.speaking)) {
-                            window.app.isControlSpeaking = false;
-                            try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
-                            try { if (window.AndroidApp && window.AndroidApp.stopSpeak) window.AndroidApp.stopSpeak(); } catch(e) {}
-                            if (window.dispatch_control_active) try { window.dispatch_control_active(null, false); } catch(e) {}
-                        }
+                        window.app.isControlSpeaking = false;
+                        try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
+                        try { if (window.AndroidApp && window.AndroidApp.stopSpeak) window.AndroidApp.stopSpeak(); } catch(e) {}
+                        if (window.dispatch_control_active) try { window.dispatch_control_active(null, false); } catch(e) {}
 
                         if (window.app.rogerReleaseTimeout) {
                             clearTimeout(window.app.rogerReleaseTimeout);

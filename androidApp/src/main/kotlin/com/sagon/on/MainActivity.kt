@@ -855,6 +855,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             fun stopSpeak() {
                                 runOnUiThread {
                                     try {
+                                        pendingTextToSpeak = null
                                         if (tts != null) {
                                             tts?.stop()
                                         }

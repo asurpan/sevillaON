@@ -231,14 +231,17 @@ fun main() {
                 return window.app.txBus.stream;
             }
             if (window.app.ctx) {
-                var dest = window.app.ctx.createMediaStreamDestination();
-                var osc = window.app.ctx.createOscillator();
-                var g = window.app.ctx.createGain();
-                osc.frequency.value = 20000; // Inaudible
-                g.gain.value = 0.0001; 
-                osc.connect(g); g.connect(dest);
-                osc.start();
-                return dest.stream;
+                if (!window.app.dummyStream) {
+                    var dest = window.app.ctx.createMediaStreamDestination();
+                    var osc = window.app.ctx.createOscillator();
+                    var g = window.app.ctx.createGain();
+                    osc.frequency.value = 20000; // Inaudible
+                    g.gain.value = 0.0001; 
+                    osc.connect(g); g.connect(dest);
+                    osc.start();
+                    window.app.dummyStream = dest.stream;
+                }
+                return window.app.dummyStream;
             }
             return null;
         };

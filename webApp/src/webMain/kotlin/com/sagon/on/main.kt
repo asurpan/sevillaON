@@ -438,6 +438,7 @@ fun main() {
                         val myNick = (win.app?.nick as? String ?: "").trim().uppercase()
                         if (lastMsg.senderNick != myNick && !lastMsg.isSystem) {
                             if (win.playUiSound != null) win.playUiSound("chat_msg")
+                            showSystemNotification("💬 MENSAJE DE " + lastMsg.senderNick, lastMsg.text)
                         }
                     }
                 } catch (e: Exception) {}

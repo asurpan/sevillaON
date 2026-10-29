@@ -343,8 +343,9 @@ fun RadioPanel(
     
     val noiseVol = if (!rx && !isTransmitting) (if (state.squelch > state.rfGain) 0f else (state.rfGain - state.squelch)).coerceIn(0f, 1f) else 0f
     
-    val isPttActive = (isPttPressed || pttLocked || externalPtt) && !isPttBlockedByRx
-    LaunchedEffect(isPttActive) { onMic(isPttActive, state.veteranPower) }
+    // 🛡️ SEPARACIÓN DE PTT TÁCTIL UI Y ESTADO DE TRANSMISIÓN DE RED (EVITA BUCLE INFINITO)
+    val isUiPttActive = (isPttPressed || pttLocked) && !isPttBlockedByRx
+    LaunchedEffect(isUiPttActive) { onMic(isUiPttActive, state.veteranPower) }
     LaunchedEffect(state.squelch, state.rfGain, rx, isTransmitting) { onNoise(noiseVol) }
 
     AppBackground(style = state.backgroundStyle) {
@@ -1373,6 +1374,38 @@ fun InlineTacticalChat(
                                         }
                                     }
                                 ),
+                                trailingIcon = {
+                                    AnimatedVisibility(
+                                        visible = textInput.isNotBlank(),
+                                        enter = fadeIn() + scaleIn(),
+                                        exit = fadeOut() + scaleOut()
+                                    ) {
+                                        IconButton(
+                                            onClick = {
+                                                if (textInput.isNotBlank()) {
+                                                    onSendMessage(textInput.trim(), targetNick)
+                                                    onPlaySound("chat_msg")
+                                                    textInput = ""
+                                                    isFloatingActive = false
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .padding(end = 4.dp)
+                                                .size(34.dp)
+                                                .background(
+                                                    if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                                                    CircleShape
+                                                )
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Rounded.Send,
+                                                contentDescription = "Enviar",
+                                                tint = Color.Black,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                },
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedContainerColor = Color.Black.copy(0.6f),
                                     unfocusedContainerColor = Color.Black.copy(0.4f),
@@ -1384,34 +1417,9 @@ fun InlineTacticalChat(
                                 ),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier
+                                    .fillMaxWidth()
                                     .focusRequester(focusRequester)
-                                    .weight(1f)
                             )
-
-                            Spacer(Modifier.width(8.dp))
-
-                            Surface(
-                                onClick = {
-                                    if (textInput.isNotBlank()) {
-                                        onSendMessage(textInput.trim(), targetNick)
-                                        onPlaySound("chat_msg")
-                                        textInput = ""
-                                        isFloatingActive = false
-                                    }
-                                },
-                                color = if (textInput.isNotBlank()) (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)) else Color.White.copy(0.15f),
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.size(42.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.Send,
-                                        contentDescription = "Enviar",
-                                        tint = if (textInput.isNotBlank()) Color.Black else Color.White.copy(0.3f),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
                         }
                     }
                 }

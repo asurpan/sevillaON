@@ -41,6 +41,9 @@ object RadioNetworkManager {
                 var chatPath = target ? ("private_messages/" + window.sanitizePath([nick, target].sort()[0]) + "_" + window.sanitizePath([nick, target].sort()[1])) 
                                       : ("messages/" + window.sanitizePath(city) + "/" + window.sanitizePath(channel));
                 
+                if (window.currentChatPath === chatPath) return;
+                window.currentChatPath = chatPath;
+
                 if (window.currentChatRef) try { window.currentChatRef.off(); } catch(e) {}
                 window.currentChatRef = window.app.db.ref(chatPath).limitToLast(50);
                 window.currentChatRef.on('value', function(snapshot) { 
@@ -68,6 +71,9 @@ object RadioNetworkManager {
         }
 
         if (win.app?.db != null) {
+            if (win.updateChatListener != null) {
+                win.updateChatListener(target)
+            }
             val m: dynamic = js("{}")
             m.senderNick = nick
             m.text = text

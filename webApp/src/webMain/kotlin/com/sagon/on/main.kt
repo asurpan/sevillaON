@@ -167,6 +167,7 @@ fun main() {
                         }
                     }, 5000);
                     if (window.initFirebaseListener) window.initFirebaseListener();
+                    if (window.updateChatListener) window.updateChatListener(null);
                 }
                 
                 if (typeof Peer !== 'undefined') {

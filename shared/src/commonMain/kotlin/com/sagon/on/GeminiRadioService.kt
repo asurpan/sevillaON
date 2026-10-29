@@ -85,7 +85,7 @@ object GeminiRadioService {
                 cooldownUntilTimestamp = now + COOLDOWN_DURATION_MS
                 consecutiveUserTalkCount = 0
                 val cleanCity = city.split("-")[0].trim().uppercase()
-                onResult("¡Excelente modulación $userNick! Invita a tus amigos y colegas compartiendo el canal para montar aquí una buena rueda en $cleanCity. ¡A la escucha! Cambio.")
+                onResult("¡Excelente modulación $userNick! Aquí FELIPE. Invita a tus amigos y colegas compartiendo el canal para montar aquí una buena rueda en $cleanCity. ¡A la escucha! Cambio.")
                 return
             }
         }
@@ -103,7 +103,7 @@ object GeminiRadioService {
         // 5. Generar prompt táctico e inteligente para Gemini
         val cleanCity = city.split("-")[0].trim().uppercase()
         val currentTime = getCurrentFormattedTime()
-        val systemPrompt = "Eres la Estación Base virtual inteligente de ON AIR SPAIN en $cleanCity. Tu función es ser un compañero de radio simpático, servicial y conversacional en la frecuencia. Si te preguntan quién eres, cómo te llamas o qué eres, preséntate con orgullo como la Estación Base de ON AIR SPAIN en $cleanCity. La hora local exacta es $currentTime. Responde SIEMPRE de forma directa e inteligente a lo que el usuario pregunte o diga (preguntas de todo tipo, hora, clima, dudas, bromas, opiniones o charla). NUNCA pidas que dejen el canal libre ni des órdenes de silencio. NUNCA utilices expresiones de carretera como 'buena ruta', 'buen viaje' o 'al volante' (el usuario puede estar en casa o paseando). Mantén estilo de radioaficionado breve (con 'Cambio' o 'A la escucha'). Máximo 2 o 3 frases cortas."
+        val systemPrompt = "Te llamas FELIPE y eres el operador virtual y compañero de radio de la Estación Base ON AIR SPAIN en $cleanCity. Tono: Simpático, cercano, alegre y servicial. Tu indicativo de radio es 'FELIPE, Estación Base $cleanCity'. Si te preguntan quién eres, cómo te llamas o qué eres, preséntate alegremente diciendo: '¡Hola $userNick! Soy FELIPE, tu compañero de radio en ON AIR SPAIN $cleanCity'. La hora local exacta es $currentTime. Responde SIEMPRE de forma directa e inteligente a lo que el usuario pregunte o diga (preguntas de todo tipo, hora, clima, dudas, bromas, opiniones o charla). NUNCA pidas que dejen el canal libre ni des órdenes de silencio. NUNCA utilices expresiones de carretera como 'buena ruta', 'buen viaje' o 'al volante' (el usuario puede estar en casa o paseando). Mantén estilo de radioaficionado breve (con 'Cambio' o 'A la escucha'). Máximo 2 o 3 frases cortas."
 
         val promptContent = if (isSilentBeacon) {
             "Saluda de forma muy acogedora en la radio de $cleanCity e invita a hablar."
@@ -179,28 +179,28 @@ object GeminiRadioService {
         val currentTime = getCurrentFormattedTime()
 
         val msgLower = userMessage?.lowercase() ?: ""
-        if (msgLower.contains("quien eres") || msgLower.contains("quién eres") || msgLower.contains("como te llamas") || msgLower.contains("cómo te llamas") || msgLower.contains("que eres") || msgLower.contains("qué eres")) {
-            return "¡Hola $nick! Soy la Estación Base virtual de ON AIR SPAIN en $cleanCity, tu compañero en esta frecuencia de radio. ¡Un placer hablar contigo! Cambio."
+        if (msgLower.contains("quien eres") || msgLower.contains("quién eres") || msgLower.contains("como te llamas") || msgLower.contains("cómo te llamas") || msgLower.contains("que eres") || msgLower.contains("qué eres") || msgLower.contains("quien habla")) {
+            return "¡Hola $nick! Soy FELIPE, el operador virtual de la Estación Base ON AIR en $cleanCity. ¡Un placer saludarte por la frecuencia! Cambio."
         }
 
         if (msgLower.contains("hora")) {
-            return "¡Hola $nick! Son exactamente las $currentTime en $cleanCity. Te recibo fuerte y claro. ¡Cambio!"
+            return "¡Hola $nick! Aquí FELIPE. Son exactamente las $currentTime en $cleanCity. Te recibo fuerte y claro. ¡Cambio!"
         }
 
         if (isSilentBeacon) {
             val beacons = listOf(
-                "¡Hola a todos en $cleanCity! Son las $currentTime y la frecuencia está activa. ¡Anímate a compartir el canal!",
-                "¡Buenas por $cleanCity! Frecuencia libre a las $currentTime. Trae a tus colegas para montar rueda. A la escucha.",
-                "¡Hola $cleanCity! Buena cobertura a las $currentTime. Frecuencia abierta, invita a tu gente a unirse. Cambio."
+                "¡Hola a todos en $cleanCity! Aquí FELIPE. Son las $currentTime y la frecuencia está activa. ¡Anímate a compartir el canal y hablemos!",
+                "¡Buenas por $cleanCity! FELIPE a la escucha a las $currentTime. Trae a tus colegas compartiendo el canal para montar rueda. Cambio.",
+                "¡Hola $cleanCity! Aquí FELIPE con buena cobertura a las $currentTime. Frecuencia abierta, invita a tu gente. Cambio."
             )
             return beacons.random()
         }
 
         val responses = listOf(
-            "¡Hola $nick! Te escucho genial a las $currentTime en $cleanCity. ¡Comparte el canal con tus amigos y montamos rueda! Cambio.",
-            "¡Buenas $nick! Te recibo alto y claro a las $currentTime desde $cleanCity. Invita a tus colegas a la frecuencia. ¡Adelante! Cambio.",
-            "¡Qué tal $nick! Llegas con señal fuerte por $cleanCity. Pasa la voz a tus amigos para que se unan. ¡Cambio!",
-            "¡Recibido $nick! Se te escucha estupendamente por $cleanCity a las $currentTime. Comparte el enlace y hablamos. Cambio."
+            "¡Hola $nick! Aquí FELIPE. Te escucho genial a las $currentTime en $cleanCity. ¡Comparte el canal y montamos rueda! Cambio.",
+            "¡Buenas $nick! FELIPE te recibe alto y claro a las $currentTime desde $cleanCity. Invita a tus colegas a la frecuencia. ¡Adelante! Cambio.",
+            "¡Qué tal $nick! Aquí FELIPE. Llegas con señal fuerte por $cleanCity. Pasa la voz a tus amigos para que se unan. ¡Cambio!",
+            "¡Recibido $nick! FELIPE te escucha estupendamente por $cleanCity a las $currentTime. Comparte el enlace y hablamos. Cambio."
         )
         return responses.random()
     }

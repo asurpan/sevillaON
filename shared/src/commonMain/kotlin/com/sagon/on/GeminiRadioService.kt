@@ -27,6 +27,10 @@ object GeminiRadioService {
     private const val MAX_HOURLY_REQUESTS = 25
     private const val ONE_HOUR_MS = 60 * 60 * 1000L
 
+    // 🧠 HISTORIAL RECIENTE PARA DIÁLOGO INTELIGENTE CON MEMORIA (ÚLTIMAS 6 INTERACCIONES)
+    private val conversationHistory = mutableListOf<String>()
+    private const val MAX_HISTORY_SIZE = 6
+
     fun configureKeys(keys: List<String>) {
         this.apiKeys = keys.filter { it.isNotBlank() }
         this.currentKeyIndex = 0
@@ -96,15 +100,19 @@ object GeminiRadioService {
 
         hourlyRequestCount++
 
-        // 5. Generar prompt táctico para Gemini
+        // 5. Generar prompt táctico e inteligente para Gemini
         val cleanCity = city.split("-")[0].trim().uppercase()
         val currentTime = getCurrentFormattedTime()
-        val systemPrompt = "Eres un compañero de radio amigable, acogedor y cercano en $cleanCity. Tono: Entusiasta, cercano y fresco. La hora actual local es $currentTime. Si el usuario te pregunta la hora, qué hora es o qué tiempo o fecha hace, respóndele indicando la hora exacta ($currentTime) de forma clara y amable por radio. NUNCA pidas que dejen el canal libre ni des órdenes de silencio. NUNCA utilices expresiones de carretera o conducción como 'buena ruta', 'buen viaje', 'al volante' o 'en la carretera' (el usuario puede estar en casa, caminando o trabajando). Anima siempre al usuario a seguir hablando, a invitar y compartir el canal con sus amigos para traer a más gente a la rueda. NUNCA digas 'Atención estación' ni frases robóticas. Di '¡Hola $userNick!', '¡Buenas $userNick!'. Respuestas de máximo 2 frases cortas."
+        val systemPrompt = "Eres un compañero de radio inteligente, amigable y muy natural en $cleanCity. Tono: Cercano, fresco y conversacional. La hora local exacta es $currentTime. Responde SIEMPRE de forma directa e inteligente a lo que el usuario pregunte o diga (preguntas de todo tipo, hora, tiempo, dudas, bromas, opiniones o charla). NUNCA pidas que dejen el canal libre ni des órdenes de silencio. NUNCA utilices expresiones de carretera como 'buena ruta', 'buen viaje' o 'al volante' (el usuario puede estar en casa o paseando). Mantén estilo de radioaficionado breve (con 'Cambio' o 'A la escucha'). Máximo 2 o 3 frases cortas."
 
         val promptContent = if (isSilentBeacon) {
-            "Saluda de forma muy acogedora en la radio de $cleanCity e invita a hablar y a compartir el canal con amigos."
+            "Saluda de forma muy acogedora en la radio de $cleanCity e invita a hablar."
         } else {
-            "Usuario $userNick en $cleanCity dice: \"${userMessage ?: "Hola, prueba de radio"}\". Responde como un colega entusiasta animándole a hablar y a invitar a sus amigos a la frecuencia."
+            val userText = userMessage ?: "Hola, prueba de radio"
+            val historyContext = if (conversationHistory.isNotEmpty()) {
+                "Historial de conversación previo en el canal:\n" + conversationHistory.takeLast(MAX_HISTORY_SIZE).joinToString("\n") + "\n\n"
+            } else ""
+            "${historyContext}El usuario $userNick en $cleanCity dice por la radio: \"$userText\". Responde de forma inteligente, útil y coherente a su mensaje."
         }
 
         // Ejecutar llamada HTTP a la API de Gemini con manejo automático de errores
@@ -114,6 +122,13 @@ object GeminiRadioService {
         fetchGeminiApi(endpoint, payload) { response ->
             val extractedText = parseGeminiTextResponse(response)
             if (extractedText != null) {
+                if (!isSilentBeacon && userMessage != null) {
+                    conversationHistory.add("$userNick: $userMessage")
+                    conversationHistory.add("Emisora: $extractedText")
+                    while (conversationHistory.size > MAX_HISTORY_SIZE) {
+                        conversationHistory.removeAt(0)
+                    }
+                }
                 onResult(extractedText)
             } else {
                 // Si la clave falló, rotar a la siguiente clave y usar respuesta de respaldo

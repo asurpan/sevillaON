@@ -324,7 +324,7 @@ fun main() {
                 if (app != null && app.peer != null && !app.peer.destroyed && !app.peer.disconnected) {
                     remoteUsersState.forEach { user ->
                         if (user.id != app.sessionID && app.activeCalls[user.id] == null) {
-                            if (app.sessionID < user.id) window.asDynamic().establishOutgoingCall(user.id)
+                            window.asDynamic().establishOutgoingCall(user.id)
                         }
                     }
                 }
@@ -391,8 +391,7 @@ fun main() {
                                 if (now - (u.lastSeen as? Double ?: 0.0) > 45000 && !isCallActive) continue 
                                 
                                 val isMe = (k == win.app.sessionID)
-                                val audioIsTx = if (isMe) (win.app?.isTransmittingInternal == true) else (win.remoteTxStates != null && win.remoteTxStates[k] == true)
-                                val isTransmitting = if (isMe) (win.app?.isTransmittingInternal == true) else (u.tx == true || audioIsTx)
+                                val isTransmitting = if (isMe) (win.app?.isTransmittingInternal == true) else (u.tx == true)
                                 win.app.remotePowers[k] = (u.pwr as? Double ?: 0.7).toFloat()
                                 val prevState = win.remoteTxStates[k] ?: false
                                 if (prevState && !isTransmitting && !isMe && u.roger == true) win.playUiSound("rx_off")

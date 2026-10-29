@@ -369,6 +369,7 @@ fun App(
                                 },
                                 onConnect = { 
                                     if (nick.isNotBlank()) {
+                                        screenState = Screen.RadioCB
                                         onConnectRadio(nick)
                                         startPermissionFlow()
                                     }

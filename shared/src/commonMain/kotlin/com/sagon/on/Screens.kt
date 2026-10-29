@@ -1406,6 +1406,7 @@ fun InlineTacticalChat(
                                     chipUsageMap = chipUsageMap + (chip to (currentCount + 1))
                                     onSendMessage(chip, targetNick)
                                     onPlaySound("chat_msg")
+                                    try { focusRequester.requestFocus() } catch (_: Exception) {}
                                 },
                                 color = Color.Black.copy(0.4f),
                                 shape = RoundedCornerShape(12.dp),

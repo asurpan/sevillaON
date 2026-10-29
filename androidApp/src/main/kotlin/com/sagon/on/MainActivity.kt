@@ -416,17 +416,22 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private val sensorListener = object : SensorEventListener {
         private var gravity: FloatArray? = null
         private var geomagnetic: FloatArray? = null
+        private var lastCalcTime = 0L
+        private val RMatrix = FloatArray(9)
+        private val IMatrix = FloatArray(9)
+        private val orientationArr = FloatArray(3)
 
         override fun onSensorChanged(event: SensorEvent) {
+            val now = System.currentTimeMillis()
             if (event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
-                geomagnetic = event.values.clone()
-                // Calcular magnitud del campo magnético (Tesla micro)
+                if (geomagnetic == null) geomagnetic = FloatArray(3)
+                System.arraycopy(event.values, 0, geomagnetic!!, 0, 3)
+                
                 val x = event.values[0]
                 val y = event.values[1]
                 val z = event.values[2]
                 val magnitude = Math.sqrt((x * x + y * y + z * z).toDouble()).toFloat()
                 
-                // --- 🛡️ HARD-LOCK: MOTOR DE DETECCIÓN QUIRÚRGICA (PROTEGIDO) ---
                 if (magnetBaseline == 0f) {
                     magnetBaseline = magnitude
                 } else {
@@ -434,32 +439,25 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 }
 
                 val delta = Math.abs(magnitude - magnetBaseline)
-                // Respuesta exponencial para precisión milimétrica (pop-in/pop-out)
                 val rawValue = (delta / 6.5f).coerceIn(0f, 1f)
                 magnetValue = rawValue * rawValue
 
-                // 🧭 DIRECCIONALIDAD ESTABLE: Solo actualizamos si hay señal clara
                 if (delta > 1.8f) { 
                     deviceHeading = Math.toDegrees(Math.atan2(y.toDouble(), x.toDouble())).toFloat()
                 }
-                // --- 🔒 FIN HARD-LOCK ---
             } else if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-                gravity = event.values.clone()
+                if (gravity == null) gravity = FloatArray(3)
+                System.arraycopy(event.values, 0, gravity!!, 0, 3)
             }
 
-            if (gravity != null && geomagnetic != null) {
-                val R = FloatArray(9)
-                val I = FloatArray(9)
-                if (SensorManager.getRotationMatrix(R, I, gravity, geomagnetic)) {
-                    val orientation = FloatArray(3)
-                    SensorManager.getOrientation(R, orientation)
-                    // Azimuth (heading) en grados 0-360
-                    var heading = Math.toDegrees(orientation[0].toDouble()).toFloat()
+            if (now - lastCalcTime > 100 && gravity != null && geomagnetic != null) {
+                lastCalcTime = now
+                if (SensorManager.getRotationMatrix(RMatrix, IMatrix, gravity, geomagnetic)) {
+                    SensorManager.getOrientation(RMatrix, orientationArr)
+                    var heading = Math.toDegrees(orientationArr[0].toDouble()).toFloat()
                     if (heading < 0) heading += 360f
                     deviceHeading = heading
-                    
-                    // Pitch (inclinación) en grados. 0 = Horizontal, -90/90 = Vertical
-                    val pitch = Math.toDegrees(orientation[1].toDouble()).toFloat()
+                    val pitch = Math.toDegrees(orientationArr[1].toDouble()).toFloat()
                     deviceTilt = Math.abs(pitch)
                 }
             }
@@ -657,9 +655,9 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             val accSensor = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
             val pressSensor = sm.getDefaultSensor(Sensor.TYPE_PRESSURE)
             sm.unregisterListener(sensorListener)
-            sm.registerListener(sensorListener, magSensor, SensorManager.SENSOR_DELAY_UI)
-            sm.registerListener(sensorListener, accSensor, SensorManager.SENSOR_DELAY_UI)
-            sm.registerListener(sensorListener, pressSensor, SensorManager.SENSOR_DELAY_UI)
+            sm.registerListener(sensorListener, magSensor, SensorManager.SENSOR_DELAY_NORMAL)
+            sm.registerListener(sensorListener, accSensor, SensorManager.SENSOR_DELAY_NORMAL)
+            sm.registerListener(sensorListener, pressSensor, SensorManager.SENSOR_DELAY_NORMAL)
         }
     }
 

@@ -744,8 +744,9 @@ object ReplayEngine {
                 var replayAnalyser = window.app.ctx.createAnalyser();
                 replayAnalyser.fftSize = 256;
                 window.app.replayCompressor.connect(replayAnalyser);
-                function monitor() { if (replayAnalyser) { var d = new Uint8Array(replayAnalyser.fftSize); replayAnalyser.getByteTimeDomainData(d); for(var i=0; i<d.length; i++) { if (Math.abs(d[i] - 128) > 3) { activityDetected = true; break; } } } requestAnimationFrame(monitor); }
-                monitor();
+                var reuseDomainData = new Uint8Array(256);
+                function monitor() { if (replayAnalyser) { replayAnalyser.getByteTimeDomainData(reuseDomainData); for(var i=0; i<reuseDomainData.length; i++) { if (Math.abs(reuseDomainData[i] - 128) > 3) { activityDetected = true; break; } } } }
+                setInterval(monitor, 250);
                 function startChunk() {
                     var chunks = []; var hasVoiceInThisChunk = false; activityDetected = false; 
                     try {

@@ -849,9 +849,9 @@ object ReplayEngine {
                     } else {
                         var idx = window.controlResponseIndex || 0;
                         if (idx === 0) {
-                            textToSpeak = "¡Hola " + userNick + "! Te recibo fuerte y claro con modulación perfecta por " + rawCity + ". ¡Adelante! Cambio.";
+                            textToSpeak = "¡Hola " + userNick + "! Te recibo fuerte y claro por " + rawCity + ". ¡Comparte el canal con tus amigos y hablemos! Cambio.";
                         } else {
-                            textToSpeak = "¡Buenas " + userNick + "! Señal excelente por la frecuencia de " + rawCity + ". ¡Un saludo! Cambio.";
+                            textToSpeak = "¡Buenas " + userNick + "! Señal excelente por la frecuencia de " + rawCity + ". Invita a tus colegas a la frecuencia. ¡Un saludo! Cambio.";
                         }
                         window.controlResponseIndex = idx + 1;
                     }

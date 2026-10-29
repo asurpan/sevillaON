@@ -81,7 +81,7 @@ object GeminiRadioService {
                 cooldownUntilTimestamp = now + COOLDOWN_DURATION_MS
                 consecutiveUserTalkCount = 0
                 val cleanCity = city.split("-")[0].trim().uppercase()
-                onResult("Estación $userNick, canal ocupado. Dejamos frecuencia libre para otras estaciones de $cleanCity. Cambio y corto.")
+                onResult("¡Excelente modulación $userNick! Invita a tus amigos y colegas compartiendo el canal para montar aquí una buena rueda en $cleanCity. ¡A la escucha! Cambio.")
                 return
             }
         }
@@ -98,12 +98,12 @@ object GeminiRadioService {
 
         // 5. Generar prompt táctico para Gemini
         val cleanCity = city.split("-")[0].trim().uppercase()
-        val systemPrompt = "Eres un compañero de radio simpático, ameno y natural en $cleanCity. Tono: Amigable, cercano y fresco. NUNCA digas 'Atención estación', 'Estación [nick]' ni frases robóticas. Di '¡Hola $userNick!', '¡Buenas $userNick!'. Respuestas de máximo 2 frases cortas."
+        val systemPrompt = "Eres un compañero de radio amigable, acogedor y cercano en $cleanCity. Tono: Entusiasta, cercano y fresco. NUNCA pidas que dejen el canal libre ni des órdenes de silencio. Anima siempre al usuario a seguir hablando, a invitar y compartir el canal con sus amigos para traer a más gente a la rueda. NUNCA digas 'Atención estación' ni frases robóticas. Di '¡Hola $userNick!', '¡Buenas $userNick!'. Respuestas de máximo 2 frases cortas."
 
         val promptContent = if (isSilentBeacon) {
-            "Saluda de forma amigable en la radio de $cleanCity e invita a hablar."
+            "Saluda de forma muy acogedora en la radio de $cleanCity e invita a hablar y a compartir el canal con amigos."
         } else {
-            "Usuario $userNick en $cleanCity dice: \"${userMessage ?: "Hola, prueba de radio"}\". Responde como un colega simpático por radio."
+            "Usuario $userNick en $cleanCity dice: \"${userMessage ?: "Hola, prueba de radio"}\". Responde como un colega entusiasta animándole a hablar y a invitar a sus amigos a la frecuencia."
         }
 
         // Ejecutar llamada HTTP a la API de Gemini con manejo automático de errores
@@ -162,18 +162,18 @@ object GeminiRadioService {
 
         if (isSilentBeacon) {
             val beacons = listOf(
-                "¡Hola a todos en $cleanCity! Frecuencia de radio activa. Adelante la estación que llame.",
-                "¡Buenas por $cleanCity! Recordatorio: mantener canal despejado. A la escucha.",
-                "¡Hola $cleanCity! Buena cobertura en la zona. Frecuencia abierta. Cambio."
+                "¡Hola a todos en $cleanCity! Frecuencia de radio activa. ¡Anímate a compartir el canal con tus amigos y hablemos!",
+                "¡Buenas por $cleanCity! Frecuencia libre. Trae a tus colegas compartiendo la app para montar una buena rueda. A la escucha.",
+                "¡Hola $cleanCity! Buena cobertura en la zona. Frecuencia abierta, invita a tu gente a unirse. Cambio."
             )
             return beacons.random()
         }
 
         val responses = listOf(
-            "¡Hola $nick! Te escucho genial aquí en $cleanCity. Tu voz llega súper clara y potente. ¡Un saludo! Cambio.",
-            "¡Buenas $nick! Te recibo alto y claro desde $cleanCity. Modulas perfecto por la radio. ¡Adelante! Cambio.",
-            "¡Qué tal $nick! Llegas con señal fuerte y sonido muy limpio por el canal de $cleanCity. ¡Buena ruta! Cambio.",
-            "¡Recibido $nick! Se te escucha estupendamente por $cleanCity. Todo correcto por aquí. Cambio."
+            "¡Hola $nick! Te escucho genial aquí en $cleanCity. ¡Comparte el canal con tus amigos y montamos buena rueda! Cambio.",
+            "¡Buenas $nick! Te recibo alto y claro desde $cleanCity. Invita a tus colegas a la frecuencia. ¡Adelante! Cambio.",
+            "¡Qué tal $nick! Llegas con señal fuerte por $cleanCity. Pasa la voz a tus amigos para que se unan. ¡Cambio!",
+            "¡Recibido $nick! Se te escucha estupendamente por $cleanCity. Comparte el enlace con tu grupo y hablamos. Cambio."
         )
         return responses.random()
     }

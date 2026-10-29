@@ -162,26 +162,45 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
 
 actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     val cleanCity = city.split("-")[0].trim()
-    val url = "https://api.rss2json.com/v1/api.json?rss_url=" + 
+    val nationalUrl = "https://api.rss2json.com/v1/api.json?rss_url=" + 
+        window.asDynamic().encodeURIComponent("https://news.google.com/rss/search?q=ultima+hora+España+cuando:1d&hl=es&gl=ES&ceid=ES:es")
+    val cityUrl = "https://api.rss2json.com/v1/api.json?rss_url=" + 
         window.asDynamic().encodeURIComponent("https://news.google.com/rss/search?q=${cleanCity}+cuando:1d&hl=es&gl=ES&ceid=ES:es")
-    
+
     js("""
-        fetch(url)
+        fetch(nationalUrl)
             .then(response => response.json())
             .then(data => {
-                if (data && data.items && data.items.length > 0) {
-                    var title = data.items[0].title;
-                    if (title) {
-                        var cleanTitle = title.split(" - ")[0].trim();
-                        callback(cleanTitle);
-                    } else {
-                        callback(null);
-                    }
+                if (data && data.items && data.items.length > 0 && data.items[0].title) {
+                    var title = data.items[0].title.split(" - ")[0].trim();
+                    callback(title);
                 } else {
-                    callback(null);
+                    fetch(cityUrl)
+                        .then(r => r.json())
+                        .then(cityData => {
+                            if (cityData && cityData.items && cityData.items.length > 0 && cityData.items[0].title) {
+                                var cTitle = cityData.items[0].title.split(" - ")[0].trim();
+                                callback(cTitle);
+                            } else {
+                                callback(null);
+                            }
+                        })
+                        .catch(err => callback(null));
                 }
             })
-            .catch(error => callback(null));
+            .catch(error => {
+                fetch(cityUrl)
+                    .then(r => r.json())
+                    .then(cityData => {
+                        if (cityData && cityData.items && cityData.items.length > 0 && cityData.items[0].title) {
+                            var cTitle = cityData.items[0].title.split(" - ")[0].trim();
+                            callback(cTitle);
+                        } else {
+                            callback(null);
+                        }
+                    })
+                    .catch(err => callback(null));
+            });
     """)
 }
 

@@ -1148,9 +1148,8 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                     } else if (city == "RADAR") {
                                         "📡 ¡Vigilancia Hertz Activa! *ON AIR SPAIN*\nAnalizando presencia biológica... 🧬\n\nhttps://asurpan.github.io/sevillaON/?v=58"
                                     } else {
-                                        val shortTopic = if (topic.length > 70) topic.take(67) + "..." else topic
                                         "🎙️ *DEBATE EN VIVO — $cleanCity*\n\n" +
-                                        "💬 \"$shortTopic\"\n\n" +
+                                        "💬 \"$topic\"\n\n" +
                                         "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=58"
                                     }
 

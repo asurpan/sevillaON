@@ -498,43 +498,51 @@ fun RadioDialogs(
             containerColor = LuxeColors.DeepSea,
             titleContentColor = LuxeColors.Gold,
             textContentColor = Color.White,
-            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(16.dp)),
+            modifier = Modifier
+                .imePadding()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(16.dp)),
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("CREAR O UNIRSE A CANAL PRIVADO", fontWeight = FontWeight.Black, fontSize = 15.sp)
+                    Text("CREAR O UNIRSE A CANAL PRIVADO", fontWeight = FontWeight.Black, fontSize = 14.sp)
                 }
             },
             text = {
-                Column {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
-                        "Introduce un código de 4 dígitos o pulsa 'Código Aleatorio' para crear una frecuencia privada para tu grupo.",
-                        fontSize = 11.5.sp,
-                        lineHeight = 16.sp,
+                        "Introduce 4 dígitos o pulsa 'Aleatorio' para tu grupo.",
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp,
                         color = Color.White.copy(0.8f)
                     )
-                    Spacer(Modifier.height(14.dp))
-                    OutlinedTextField(
-                        value = tempSubtone,
-                        onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() } ) tempSubtone = it },
-                        placeholder = { Text("0000 (Canal Público)", color = Color.White.copy(0.3f)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = LuxeColors.Gold,
-                            unfocusedBorderColor = Color.White.copy(0.2f)
-                        )
-                    )
-                    Spacer(Modifier.height(10.dp))
+                    
                     Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
+                        OutlinedTextField(
+                            value = tempSubtone,
+                            onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() } ) tempSubtone = it },
+                            placeholder = { Text("0000", color = Color.White.copy(0.3f), fontSize = 12.sp) },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            singleLine = true,
+                            textStyle = TextStyle(color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = LuxeColors.Gold,
+                                unfocusedBorderColor = Color.White.copy(0.2f)
+                            )
+                        )
+
                         Surface(
                             onClick = {
                                 val randomPin = (1000..9999).random().toString()
@@ -543,39 +551,39 @@ fun RadioDialogs(
                             color = LuxeColors.Gold.copy(0.15f),
                             shape = RoundedCornerShape(10.dp),
                             border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f)),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.height(48.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp),
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Rounded.Casino, null, tint = LuxeColors.Gold, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Rounded.Casino, null, tint = LuxeColors.Gold, modifier = Modifier.size(15.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text("CÓDIGO ALEATORIO", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text("ALEATORIO", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                             }
                         }
+                    }
 
-                        if (state.subtone != "0000") {
-                            Surface(
-                                onClick = {
-                                    onStateChange(state.copy(subtone = "0000"))
-                                    onDismiss()
-                                },
-                                color = Color.White.copy(0.10f),
-                                shape = RoundedCornerShape(10.dp),
-                                border = BorderStroke(1.dp, Color.White.copy(0.2f)),
-                                modifier = Modifier.weight(1f)
+                    if (state.subtone != "0000") {
+                        Surface(
+                            onClick = {
+                                onStateChange(state.copy(subtone = "0000"))
+                                onDismiss()
+                            },
+                            color = Color.White.copy(0.10f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, Color.White.copy(0.2f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(Icons.Rounded.Public, null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("SALIR A PÚBLICO", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                }
+                                Icon(Icons.Rounded.Public, null, tint = Color.White, modifier = Modifier.size(13.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("SALIR A PÚBLICO", color = Color.White, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                             }
                         }
                     }
@@ -590,16 +598,17 @@ fun RadioDialogs(
                         onDismiss()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Gold),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.height(40.dp)
                 ) {
-                    Icon(Icons.Rounded.Share, null, tint = Color.Black, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("ACTIVAR Y COMPARTIR", color = Color.Black, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                    Icon(Icons.Rounded.Share, null, tint = Color.Black, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("ACTIVAR Y COMPARTIR", color = Color.Black, fontSize = 11.sp, fontWeight = FontWeight.Black)
                 }
             },
             dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("CANCELAR", color = Color.White.copy(0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                TextButton(onClick = onDismiss, modifier = Modifier.height(40.dp)) {
+                    Text("CANCELAR", color = Color.White.copy(0.6f), fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -611,52 +620,85 @@ fun RadioDialogs(
                 containerColor = LuxeColors.DeepSea, 
                 titleContentColor = LuxeColors.Gold, 
                 textContentColor = Color.White, 
-                modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(12.dp)),
+                modifier = Modifier
+                    .imePadding()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(12.dp)),
                 title = { 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold)
-                        Spacer(Modifier.width(12.dp))
-                        Text("CÓDIGO PRIVADO", fontWeight = FontWeight.Black, fontSize = 16.sp)
+                        Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("CÓDIGO PRIVADO", fontWeight = FontWeight.Black, fontSize = 14.sp)
                     }
                 },
                 text = {
-                    Column {
-                        Text("Crea un grupo privado en ${state.city}.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LuxeColors.Gold)
-                        Spacer(Modifier.height(20.dp))
-                        OutlinedTextField(
-                            value = newChannelSubtone,
-                            onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) newChannelSubtone = it },
-                            placeholder = { Text("EJ: 1234", color = Color.White.copy(0.2f)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = LuxeColors.Gold,
-                                unfocusedBorderColor = Color.White.copy(0.1f)
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text("Crea un grupo privado en ${state.city}.", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = LuxeColors.Gold)
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = newChannelSubtone,
+                                onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) newChannelSubtone = it },
+                                placeholder = { Text("EJ: 1234", color = Color.White.copy(0.2f), fontSize = 12.sp) },
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                singleLine = true,
+                                textStyle = TextStyle(color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedBorderColor = LuxeColors.Gold,
+                                    unfocusedBorderColor = Color.White.copy(0.1f)
+                                )
                             )
-                        )
+
+                            Surface(
+                                onClick = {
+                                    val randomPin = (1000..9999).random().toString()
+                                    newChannelSubtone = randomPin
+                                },
+                                color = LuxeColors.Gold.copy(0.15f),
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f)),
+                                modifier = Modifier.height(48.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Rounded.Casino, null, tint = LuxeColors.Gold, modifier = Modifier.size(15.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("ALEATORIO", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                }
+                            }
+                        }
                         
                         if (state.subtone != "0000") {
-                            Spacer(Modifier.height(16.dp))
                             Surface(
                                 onClick = { 
                                     onStateChange(state.copy(subtone = "0000"))
                                     onDismiss()
                                 },
                                 color = LuxeColors.Red.copy(0.1f),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 border = BorderStroke(1.dp, LuxeColors.Red.copy(0.3f)),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
                                     "SALIR DEL CÓDIGO PRIVADO", 
-                                    modifier = Modifier.padding(12.dp), 
+                                    modifier = Modifier.padding(10.dp), 
                                     textAlign = TextAlign.Center,
                                     color = Color.Red,
-                                    fontSize = 11.sp,
+                                    fontSize = 10.5.sp,
                                     fontWeight = FontWeight.Black
                                 )
                             }
@@ -691,7 +733,7 @@ fun RadioDialogs(
                         }
                     },
                     text = {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                             Text("¿Qué deseas hacer con esta estación?", color = Color.White.copy(0.7f), fontSize = 13.sp, textAlign = TextAlign.Center)
                             Spacer(Modifier.height(20.dp))
                             

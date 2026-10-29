@@ -1277,31 +1277,37 @@ fun InlineTacticalChat(
         }
     }
 
-    // 🚀 BANDEROLA / MODAL FLOTANTE INSTANTÁNEO QUE SUBE CON EL TECLADO NATIVO A 120 FPS
+    // 🚀 BANDEROLA / MODAL FLOTANTE NATIVO
     if (isChatOpen) {
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) {
             focusRequester.requestFocus()
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.65f))
-                .clickable { onChatOpenChange(false) },
-            contentAlignment = Alignment.BottomCenter
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { onChatOpenChange(false) },
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false
+            )
         ) {
-            Surface(
-                color = Color(0xFF0F172A),
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-                border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(enabled = false) {}
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.65f))
+                    .clickable { onChatOpenChange(false) },
+                contentAlignment = Alignment.BottomCenter
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                Surface(
+                    color = Color(0xFF0F172A),
+                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                    border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = false) {}
                 ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
                     // Cabecera del chat flotante
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -1365,40 +1371,25 @@ fun InlineTacticalChat(
                         Spacer(Modifier.height(8.dp))
                     }
 
-                    // 🚀 BARRA DE CHIPS INTELIGENTE CON AUTO-ORDENACIÓN SEGÚN USO
-                    val defaultChips = remember {
+                    // 🚀 BARRA DE 4 CHIPS ESENCIALES (CERO DESPLAZAMIENTO, FIT PERFECTO EN PANTALLA)
+                    val tacticalChips = remember {
                         listOf(
                             "👍 10-4",
                             "🎙️ ROGER",
-                            "📶 S9+",
                             "👋 73's",
-                            "📻 QTH",
-                            "🤠 Wey",
-                            "😜 Joio",
-                            "🎨 Artista",
-                            "🚗 RUTA",
-                            "☕ TAZA"
+                            "📻 QSL"
                         )
                     }
 
-                    var chipUsageMap by remember { mutableStateOf(mapOf<String, Int>()) }
-
-                    val sortedChips = remember(chipUsageMap) {
-                        defaultChips.sortedByDescending { chipUsageMap[it] ?: 0 }
-                    }
-
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
                             .padding(bottom = 8.dp)
                     ) {
-                        sortedChips.forEach { chip ->
+                        tacticalChips.forEach { chip ->
                             Surface(
                                 onClick = {
-                                    val currentCount = chipUsageMap[chip] ?: 0
-                                    chipUsageMap = chipUsageMap + (chip to (currentCount + 1))
                                     onSendMessage(chip, targetNick)
                                     onPlaySound("chat_msg")
                                     onChatOpenChange(false)
@@ -1413,9 +1404,9 @@ fun InlineTacticalChat(
                                 Text(
                                     text = chip,
                                     color = Color.White,
-                                    fontSize = 11.sp,
+                                    fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                 )
                             }
                         }
@@ -1504,6 +1495,7 @@ fun InlineTacticalChat(
             }
         }
     }
+}
 }
 
 @Composable

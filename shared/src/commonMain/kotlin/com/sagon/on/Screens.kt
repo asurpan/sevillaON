@@ -941,21 +941,24 @@ fun RadioPanel(
                             .fillMaxHeight()
                             .scale(pttScale)
                             .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onPress = {
-                                        if (!isPttBlockedByRx) {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            vibratePtt()
-                                            isPttPressed = true
-                                            try { 
-                                                awaitRelease() 
-                                            } finally { 
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent()
+                                        val change = event.changes.firstOrNull() ?: continue
+                                        if (change.changedToDown()) {
+                                            if (!isPttBlockedByRx) {
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                vibratePtt()
+                                                isPttPressed = true
+                                            }
+                                        } else if (change.changedToUp() || !change.pressed) {
+                                            if (isPttPressed) {
                                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                isPttPressed = false 
+                                                isPttPressed = false
                                             }
                                         }
                                     }
-                                )
+                                }
                             }, 
                         shape = RoundedCornerShape(22.dp), 
                         color = Color.Transparent, 

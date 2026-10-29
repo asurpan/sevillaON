@@ -1520,9 +1520,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
                         }
 
-                        // --- 🚀 MODO PRODUCCIÓN (GITHUB) ---
+                        // --- 🚀 MODO PRODUCCIÓN (GITHUB CON ANTI-CACHÉ Y DUREZA) ---
+                        clearCache(true)
                         postDelayed({
-                            val githubUrl = "https://asurpan.github.io/sevillaON/?native=true"
+                            val githubUrl = "https://asurpan.github.io/sevillaON/?native=true&nocache=${System.currentTimeMillis()}"
                             val incomingUrl = intent.data?.toString()
                             val startUrl = if (incomingUrl != null && incomingUrl.startsWith("onairspain://")) {
                                 val params = incomingUrl.substringAfter("?", "")

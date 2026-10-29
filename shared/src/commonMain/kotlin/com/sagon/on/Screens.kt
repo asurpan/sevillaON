@@ -777,15 +777,32 @@ fun RadioPanel(
 
                 // Funciones Avanzadas (Minimizadas por defecto)
                 var showTools by remember { mutableStateOf(false) }
+                val toolsBlink = rememberInfiniteTransition(label = "ToolsBlink")
+                val toolsAlpha by toolsBlink.animateFloat(
+                    initialValue = 1.0f,
+                    targetValue = 0.35f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(750, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "BlinkTools"
+                )
+                val currentHeaderAlpha = if (showTools) toolsAlpha else 0.5f
+
                 Row(modifier = Modifier.fillMaxWidth().clickable { showTools = !showTools }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                    Text("FUNCIONES AVANZADAS", color = LuxeColors.Gold.copy(0.5f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
-                    Icon(if (showTools) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = LuxeColors.Gold.copy(0.5f), modifier = Modifier.size(16.dp))
+                    Text(
+                        text = if (showTools) "▲ FUNCIONES AVANZADAS ▲" else "▼ FUNCIONES AVANZADAS ▼", 
+                        color = LuxeColors.Gold.copy(alpha = currentHeaderAlpha), 
+                        fontSize = 10.sp, 
+                        fontWeight = FontWeight.Black, 
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Icon(if (showTools) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null, tint = LuxeColors.Gold.copy(alpha = currentHeaderAlpha), modifier = Modifier.size(16.dp))
                 }
 
                 AnimatedVisibility(visible = showTools) {
-                    LazyRow(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        item { MiniTacticalIcon(icon = if (state.subtone != "0000") Icons.Rounded.Lock else Icons.Rounded.LockOpen, label = if (state.subtone != "0000") "PRIVADO" else "CLAVE", isActive = state.subtone != "0000", onClick = { onPendingDialogChange(RadioDialogType.SUBTONO, null) }) }
-                        item { MiniTacticalIcon(icon = if (state.isDiscreteModeEnabled) Icons.Rounded.HearingDisabled else Icons.Rounded.Hearing, label = "DISC", isActive = state.isDiscreteModeEnabled, onClick = { handleDiscreteToggle() }) }
+                    LazyRow(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         item { MiniTacticalIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX, null) }) }
                         item { MiniTacticalIcon(icon = Icons.Rounded.Headset, label = "MONI", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) onStateChange(state.copy(isMonitorEnabled = false)) else onPendingDialogChange(RadioDialogType.MONI, null) }) }
                         item { MiniTacticalIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { onPendingDialogChange(RadioDialogType.DSP, null) }) }
@@ -959,11 +976,11 @@ fun RadioPanel(
                             strokeWidth = 1.dp.toPx()
                         )
                     }
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
-                    .padding(bottom = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .padding(bottom = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(modifier = Modifier.fillMaxWidth().height(70.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.fillMaxWidth().height(56.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     val pttColor = if (isTransmitting) Color(0xFFEF4444) else LuxeColors.Gold
                     val pttGradient = if (isTransmitting) {
                         Brush.radialGradient(

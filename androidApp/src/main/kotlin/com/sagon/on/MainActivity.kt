@@ -73,6 +73,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private var isTtsReady = false
     private var pendingTextToSpeak: String? = null
 
+    // ⚙️ CONMUTADOR DE ENTORNO (CAMBIA AQUÍ PARA MÓVIL)
+    // true  = Carga en directo desde Servidor GitHub Pages (Producción/Servidor)
+    // false = Carga en directo desde Assets Locales compilados (Desarrollo Local)
+    private val USE_GITHUB_REMOTE_SERVER = true
+
     // --- 🛡️ MÓDULO DE SUPERVIVENCIA P2P (INDEPENDIENTE) ---
     private val meshModule: RadioMeshModule by lazy { RadioMeshModule(this) }
 
@@ -1545,17 +1550,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
                         }
 
-                        // --- 🚀 MODO PRODUCCIÓN (CARGA LOCAL DE ASSETS CON FALLBACK EN RED) ---
+                        // --- 🚀 MODO PRODUCCIÓN / DESARROLLO CONMUTABLE ---
                         clearCache(true)
                         postDelayed({
                             val githubUrl = "https://asurpan.github.io/sevillaON/?native=true&nocache=${System.currentTimeMillis()}"
                             val localAssetUrl = "file:///android_asset/index.html?native=true&v=${System.currentTimeMillis()}"
-                            val hasLocalAsset = try {
-                                context.assets.open("index.html").use { true }
-                            } catch (_: Exception) {
-                                false
-                            }
-                            val baseUrl = if (hasLocalAsset) localAssetUrl else githubUrl
+                            
+                            val baseUrl = if (USE_GITHUB_REMOTE_SERVER) githubUrl else localAssetUrl
                             val incomingUrl = intent.data?.toString()
                             val startUrl = if (incomingUrl != null && incomingUrl.startsWith("onairspain://")) {
                                 val params = incomingUrl.substringAfter("?", "")

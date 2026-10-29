@@ -789,6 +789,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         settings.databaseEnabled = true
                         settings.allowFileAccess = true
                         settings.allowContentAccess = true
+                        @Suppress("DEPRECATION")
+                        settings.allowFileAccessFromFileURLs = true
+                        @Suppress("DEPRECATION")
+                        settings.allowUniversalAccessFromFileURLs = true
                         settings.mediaPlaybackRequiresUserGesture = false
                         settings.cacheMode = WebSettings.LOAD_NO_CACHE
                         

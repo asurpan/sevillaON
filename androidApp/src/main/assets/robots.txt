@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://asurpan.github.io/sevillaON/sitemap.xml

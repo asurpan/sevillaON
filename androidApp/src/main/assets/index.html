@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ON AIR SPAIN | Radio CB 27MHz & Emisora Digital en Directo</title>
+    <meta name="description" content="ON AIR SPAIN: La emisora de radio CB 27MHz digital para hablar en directo por voz. Sintoniza tu ciudad, modula en vivo y comparte buenos ratos en frecuencia. 100% Gratis.">
+    <meta name="google-site-verification" content="9312739a0adb99dd" />
+    <meta name="keywords" content="radio cb online, emisora 27mhz, walkie talkie gratis, hablar por voz en directo, radio ciudadana españa, sintonizar ciudad, ptt españa, radioaficionados españa">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="ON AIR SPAIN">
+    <link rel="canonical" href="https://asurpan.github.io/sevillaON/">
+
+    <!-- Open Graph / Facebook / WhatsApp / Social Share Preview -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ON AIR SPAIN">
+    <meta property="og:url" content="https://asurpan.github.io/sevillaON/">
+    <meta property="og:title" content="📻 ON AIR SPAIN — Radio CB 27MHz en Directo">
+    <meta property="og:description" content="🎙️ DEBATE EN DIRECTO POR VOZ EN TU CIUDAD. Sintoniza la emisora CB 27MHz libre y gratuita. Entra a dar tu opinión por radio. 100% Gratis.">
+    <meta property="og:image" content="https://asurpan.github.io/sevillaON/banner_v2.jpg">
+    <meta property="og:image:secure_url" content="https://asurpan.github.io/sevillaON/banner_v2.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <link rel="image_src" href="https://asurpan.github.io/sevillaON/banner_v2.jpg">
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ONAIRSPAIN">
+    <meta property="twitter:site" content="@ONAIRSPAIN">
+    <meta name="twitter:domain" content="asurpan.github.io">
+    <meta property="twitter:domain" content="asurpan.github.io">
+    <meta name="twitter:url" content="https://asurpan.github.io/sevillaON/">
+    <meta property="twitter:url" content="https://asurpan.github.io/sevillaON/">
+    <meta name="twitter:title" content="📻 ON AIR SPAIN — Radio CB 27MHz en Directo">
+    <meta property="twitter:title" content="📻 ON AIR SPAIN — Radio CB 27MHz en Directo">
+    <meta name="twitter:description" content="Sintoniza tu ciudad en directo por voz. Emisora de Radio CB 27MHz y Walkie Talkie gratis.">
+    <meta property="twitter:description" content="Sintoniza tu ciudad en directo por voz. Emisora de Radio CB 27MHz y Walkie Talkie gratis.">
+    <meta name="twitter:image" content="https://asurpan.github.io/sevillaON/banner_v2.jpg">
+    <meta property="twitter:image" content="https://asurpan.github.io/sevillaON/banner_v2.jpg">
+    <meta name="twitter:image:src" content="https://asurpan.github.io/sevillaON/banner_v2.jpg">
+
+    <!-- Favicon & Manifest -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0F172A">
+
+    <!-- iOS PWA Optimizations -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ON AIR">
+    <meta name="format-detection" content="telephone=no">
+
+    <!-- Schema.org for Google & Gemini AI Indexing -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "ON AIR SPAIN",
+      "alternateName": ["Radio CB 27MHz España", "Walkie Talkie P2P Emergencia"],
+      "url": "https://asurpan.github.io/sevillaON/",
+      "downloadUrl": "https://play.google.com/store/apps/details?id=com.sagon.on&pcampaignid=web_share",
+      "description": "Emisora de Radio CB 27MHz y Walkie Talkie gratis para hablar en directo por voz. Incluye Red de Malla P2P de emergencia sin internet ni 4G, Modo Oreja y Procesador DSP HiFi.",
+      "applicationCategory": "CommunicationApplication",
+      "operatingSystem": "Android, iOS, Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0.00",
+        "priceCurrency": "EUR"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "ON AIR SPAIN"
+      }
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --pool-blue: #0EA5E9;
+            --pool-dark: #020617;
+            --pool-surface: #0F172A;
+            --pool-glass: rgba(255, 255, 255, 0.03);
+            --pool-border: rgba(14, 165, 233, 0.2);
+            --neon-glow: 0 0 20px rgba(14, 165, 233, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%; height: 100%;
+            background-color: var(--pool-dark);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .pool-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 30%, #082f49 0%, var(--pool-dark) 70%);
+            z-index: -1;
+        }
+
+        #radio-root {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+            visibility: hidden;
+        }
+        #radio-root > * { pointer-events: auto; }
+
+        #landing-ui {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            transition: transform 1s ease-in-out, opacity 0.8s ease-in-out;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid var(--pool-blue);
+            box-shadow: var(--neon-glow);
+        }
+
+        .logo-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: white;
+        }
+
+        .hero {
+            text-align: center;
+            max-width: 900px;
+            margin-bottom: 40px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            background: rgba(14, 165, 233, 0.1);
+            border: 1px solid var(--pool-border);
+            border-radius: 50px;
+            color: var(--pool-blue);
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: clamp(26px, 5.5vw, 52px);
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 18px;
+            background: linear-gradient(180deg, #FFF 0%, rgba(255,255,255,0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: clamp(13px, 2.5vw, 17px);
+            color: rgba(255, 255, 255, 0.65);
+            line-height: 1.5;
+            margin-bottom: 28px;
+            padding: 0 5%;
+        }
+
+        .btn-primary {
+            padding: 20px 40px;
+            background: var(--pool-blue);
+            color: white;
+            font-weight: 900;
+            border-radius: 16px;
+            text-decoration: none;
+            font-size: 18px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: var(--neon-glow);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(14, 165, 233, 0.6);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 100px;
+        }
+
+        .feature-card {
+            background: var(--pool-glass);
+            border: 1px solid var(--pool-border);
+            padding: 40px;
+            border-radius: 32px;
+            backdrop-filter: blur(10px);
+            transition: all 0.4s ease;
+            text-align: left;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: rgba(14, 165, 233, 0.05);
+            border-color: var(--pool-blue);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(14, 165, 233, 0.1);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin-bottom: 25px;
+            color: var(--pool-blue);
+        }
+
+        .feature-card h3 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        .feature-card p {
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.5;
+            font-size: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%) !important;
+            color: #FFFFFF !important;
+            font-weight: 900 !important;
+            width: 100% !important;
+            max-width: 380px !important;
+            padding: 16px 24px !important;
+            border-radius: 14px !important;
+            border: none !important;
+            font-size: 15px !important;
+            letter-spacing: 1.2px !important;
+            box-shadow: 0 0 25px rgba(14, 165, 233, 0.45) !important;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 600px) {
+            #landing-ui {
+                padding: 24px 20px !important;
+                min-height: 100vh !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            header {
+                margin-bottom: 0 !important;
+            }
+            .logo-img {
+                width: 44px !important;
+                height: 44px !important;
+            }
+            .logo-text {
+                font-size: 16px !important;
+            }
+            .hero {
+                margin-top: auto !important;
+                margin-bottom: auto !important;
+                width: 100% !important;
+                text-align: center !important;
+            }
+            .badge {
+                padding: 6px 14px !important;
+                font-size: 11px !important;
+                margin-bottom: 16px !important;
+            }
+            h1 {
+                font-size: 30px !important;
+                line-height: 1.25 !important;
+                margin-bottom: 16px !important;
+            }
+            .hero p {
+                font-size: 14px !important;
+                line-height: 1.5 !important;
+                margin-bottom: 28px !important;
+            }
+            .btn-primary {
+                padding: 16px 24px !important;
+                font-size: 15px !important;
+            }
+        }
+
+        #app-loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--pool-dark);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.25s ease;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(14, 165, 233, 0.1);
+            border-top: 4px solid var(--pool-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+
+        @media (max-width: 600px) {
+            #landing-ui { padding: 20px 15px; }
+            header { margin-bottom: 30px; }
+            .hero { margin-bottom: 40px; }
+            .hero p { padding: 0; margin-bottom: 30px; font-size: 16px; }
+            .badge { margin-bottom: 16px; }
+            h1 { font-size: 36px; margin-bottom: 20px; }
+            .features-grid { gap: 15px; margin-bottom: 40px; }
+            .feature-card { padding: 25px; border-radius: 20px; }
+            .feature-icon { width: 45px; height: 45px; font-size: 24px; margin-bottom: 15px; }
+            .feature-card h3 { font-size: 18px; }
+            .feature-card p { font-size: 14px; }
+            .btn-primary { width: 100%; justify-content: center; padding: 16px 20px; font-size: 16px; }
+            section[style*="margin-bottom: 80px"] { margin-bottom: 40px !important; padding: 25px !important; }
+            section[style*="font-size: 32px"] h2 { font-size: 24px !important; }
+        }
+    </style>
+
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+    <div class="pool-bg"></div>
+
+    <div id="app-loader">
+        <div class="spinner"></div>
+        <p style="font-weight: 700; letter-spacing: 2px; color: var(--pool-blue); font-size: 10px; text-align: center; width: 100%; margin: 0 auto;">CONECTANDO CON TU CIUDAD EN DIRECTO...</p>
+    </div>
+
+    <div id="landing-ui">
+        <header>
+            <div class="logo-box">
+                <img src="logo.png" class="logo-img" alt="Logo">
+                <span class="logo-text">ON AIR SPAIN</span>
+            </div>
+            <div style="color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 700;">Radio CB Digital</div>
+        </header>
+
+        <section class="hero">
+            <div class="badge">EMISORA EN DIRECTO</div>
+            <h1>Escucha tu Ciudad <br><span style="color: var(--pool-blue);">en Directo</span></h1>
+            <p>La emisora de radio CB digital libre y abierta. Sintoniza tu provincia, modula en vivo y comparte buenos ratos con las estaciones de tu zona. Sin perfiles falsos ni registros obligatorios.</p>
+
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <button class="btn-primary" onclick="launchRadio()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                        <line x1="8" y1="22" x2="16" y2="22"></line>
+                    </svg>
+                    <span>🎙️ SINTONIZAR EMISORA DE RADIO</span>
+                </button>
+            </div>
+        </section>
+
+        <footer style="margin-top: auto; padding: 20px 0; color: rgba(255,255,255,0.2); font-size: 11px; text-align: center;">
+            &copy; 2026 ON AIR SPAIN - Ingeniería de Radio Profesional.
+        </footer>
+    </div>
+
+    <div id="radio-root"></div>
+
+    <!-- 🛡️ MOTOR DE SUPERVIVENCIA GLOBAL (ANDROID/IOS/CHROME) -->
+    <audio id="ios-survival-audio" loop playsinline>
+        <source src="data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" type="audio/wav">
+    </audio>
+
+    <script>
+        // 📱 REDIRECCIÓN OBLIGATORIA PARA NAVEGADORES ANDROID -> APP NATIVA / PLAY STORE (EXCEPTO EN ENTORNO LOCALHOST)
+        (function() {
+            var ua = navigator.userAgent || "";
+            var isAndroid = /Android/i.test(ua);
+            var isIos = /iPhone|iPad|iPod/i.test(ua);
+            var isNativeApp = window.AndroidApp || ua.indexOf("OnAirSpainNative") !== -1 || window.location.search.indexOf("native=true") !== -1;
+            var isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname.indexOf("192.168.") !== -1;
+
+            if (isAndroid && !isIos && !isNativeApp && !isLocalhost) {
+                var playStoreUrl = "https://play.google.com/store/apps/details?id=com.sagon.on&pcampaignid=web_share";
+                var intentUrl = "intent://open#Intent;scheme=onairspain;package=com.sagon.on;S.browser_fallback_url=" + encodeURIComponent(playStoreUrl) + ";end";
+                window.location.href = intentUrl;
+                setTimeout(function() {
+                    window.location.href = playStoreUrl;
+                }, 800);
+            }
+        })();
+
+        // 📱 AUTO-ARRANQUE DIRECTO EN LA APP NATIVA DE ANDROID (SINTONIZACIÓN INMEDIATA)
+        function checkAutoLaunchNative() {
+            const isNative = window.AndroidApp || navigator.userAgent.indexOf("OnAirSpainNative") !== -1 || window.location.search.indexOf("native=true") !== -1;
+            if (isNative) {
+                const landing = document.getElementById('landing-ui');
+                const radio = document.getElementById('radio-root');
+                if (landing) landing.style.display = 'none';
+                if (radio) {
+                    radio.style.visibility = 'visible';
+                    radio.style.opacity = '1';
+                }
+            }
+        }
+
+        window.addEventListener("DOMContentLoaded", function() {
+            checkAutoLaunchNative();
+        });
+
+        // 🔒 RE-ACTIVACIÓN AUTOMÁTICA EN CHROME/ANDROID
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                if (window.app && window.app.ctx && window.app.ctx.state === 'suspended') {
+                    window.app.ctx.resume();
+                }
+                if (window.app && window.app.requestWakeLock) window.app.requestWakeLock();
+                const survivalAudio = document.getElementById('ios-survival-audio');
+                if (survivalAudio && survivalAudio.paused) survivalAudio.play().catch(e => {});
+            }
+        });
+
+        function launchRadio() {
+            const landing = document.getElementById('landing-ui');
+            const radio = document.getElementById('radio-root');
+            const survivalAudio = document.getElementById('ios-survival-audio');
+
+            if (survivalAudio) survivalAudio.play().catch(e => {});
+
+            if (landing) {
+                landing.style.transform = 'translateY(-30px)';
+                landing.style.opacity = '0';
+                setTimeout(() => {
+                    landing.classList.add('hidden');
+                    if (radio) {
+                        radio.style.visibility = 'visible';
+                        setTimeout(() => { radio.style.opacity = '1'; }, 50);
+                    }
+                }, 300);
+            } else if (radio) {
+                radio.style.visibility = 'visible';
+                radio.style.opacity = '1';
+            }
+            if (window.app && window.app.ctx) window.app.ctx.resume();
+        }
+
+        (function() {
+            const isFile = window.location.protocol === 'file:';
+            const script = document.createElement('script');
+            if (isFile) {
+                script.src = 'webApp.js';
+            } else {
+                const urlParams = new URLSearchParams(window.location.search);
+                const v = urlParams.get('v') || Date.now();
+                script.src = 'webApp.js?v=' + v;
+            }
+
+            // 🛡️ GARANTÍA DE ELIMINACIÓN DE LOADER (EVITA BUCLE)
+            function removeLoader() {
+                const loader = document.getElementById('app-loader');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => { if (loader.parentNode) loader.parentNode.removeChild(loader); }, 200);
+                }
+                checkAutoLaunchNative();
+            }
+
+            script.onload = () => {
+                setTimeout(removeLoader, 400);
+            };
+
+            // Temp de seguridad máxima (1.2s max)
+            setTimeout(removeLoader, 1200);
+
+            document.body.appendChild(script);
+        })();
+    </script>
+</body>
+</html>

@@ -38,9 +38,14 @@ object RadioNetworkManager {
                 var nick = localStorage.getItem("indicativo") || "ANÓNIMO";
                 var city = localStorage.getItem("lastCity") || "SEVILLA";
                 var channel = localStorage.getItem("lastChannel") || city;
+                var subtone = localStorage.getItem("lastSubtone") || "0000";
+                var channelKey = (subtone && subtone !== "0000") ? (channel + "_" + subtone) : channel;
                 var chatPath = target ? ("private_messages/" + window.sanitizePath([nick, target].sort()[0]) + "_" + window.sanitizePath([nick, target].sort()[1])) 
-                                      : ("messages/" + window.sanitizePath(city) + "/" + window.sanitizePath(channel));
+                                      : ("messages/" + window.sanitizePath(city) + "/" + window.sanitizePath(channelKey));
                 
+                if (window.currentChatPath === chatPath) return;
+                window.currentChatPath = chatPath;
+
                 if (window.currentChatRef) try { window.currentChatRef.off(); } catch(e) {}
                 window.currentChatRef = window.app.db.ref(chatPath).limitToLast(50);
                 window.currentChatRef.on('value', function(snapshot) { 
@@ -59,15 +64,20 @@ object RadioNetworkManager {
         val nick = (localStorage.getItem("indicativo") ?: "ANÓNIMO").trim().uppercase()
         val city = localStorage.getItem("lastCity") ?: "SEVILLA"
         val channel = localStorage.getItem("lastChannel") ?: city
+        val subtone = localStorage.getItem("lastSubtone") ?: "0000"
+        val channelKey = if (subtone != "0000") "${channel}_$subtone" else channel
         
         val chatPath = if (target != null) {
             val sortedNicks = listOf(nick, target).sorted()
             "private_messages/${win.sanitizePath(sortedNicks[0])}_${win.sanitizePath(sortedNicks[1])}"
         } else {
-            "messages/${win.sanitizePath(city)}/${win.sanitizePath(channel)}"
+            "messages/${win.sanitizePath(city)}/${win.sanitizePath(channelKey)}"
         }
 
         if (win.app?.db != null) {
+            if (win.updateChatListener != null) {
+                win.updateChatListener(target)
+            }
             val m: dynamic = js("{}")
             m.senderNick = nick
             m.text = text
@@ -81,12 +91,14 @@ object RadioNetworkManager {
         val nick = (localStorage.getItem("indicativo") ?: "ANÓNIMO").trim().uppercase()
         val city = localStorage.getItem("lastCity") ?: "SEVILLA"
         val channel = localStorage.getItem("lastChannel") ?: city
+        val subtone = localStorage.getItem("lastSubtone") ?: "0000"
+        val channelKey = if (subtone != "0000") "${channel}_$subtone" else channel
         
         val chatPath = if (target != null) {
             val sortedNicks = listOf(nick, target).sorted()
             "private_messages/${win.sanitizePath(sortedNicks[0])}_${win.sanitizePath(sortedNicks[1])}"
         } else {
-            "messages/${win.sanitizePath(city)}/${win.sanitizePath(channel)}"
+            "messages/${win.sanitizePath(city)}/${win.sanitizePath(channelKey)}"
         }
 
         if (win.app?.db != null) {

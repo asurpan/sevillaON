@@ -103,12 +103,7 @@ fun App(
     isDuplicateTab: Boolean = false,
     onClaimTab: () -> Unit = {}
 ) {
-    var screenState by remember { 
-        mutableStateOf(
-            if (savedNick.isNotEmpty() && initialState.hasAcceptedMicExplain) Screen.RadioCB 
-            else Screen.Welcome
-        ) 
-    }
+    var screenState by remember { mutableStateOf(Screen.Welcome) }
 
     var channelToDelete by remember { mutableStateOf<String?>(null) }
     var isAppReady by remember { mutableStateOf(true) }
@@ -124,15 +119,12 @@ fun App(
     LaunchedEffect(savedNick) {
         if (savedNick.isNotBlank()) {
             nick = savedNick
-            if (screenState == Screen.Welcome) {
-                screenState = Screen.RadioCB
-            }
         }
     }
 
-    // 🛡️ CONEXIÓN ÚNICA: Solo conectar al iniciar o cambiar de Nick, no en cada recomposición
-    LaunchedEffect(nick) {
-        if (nick.isNotBlank()) {
+    // 🛡️ CONEXIÓN ÚNICA: Solo conectar al estar dentro de la pantalla de Radio (Screen.RadioCB)
+    LaunchedEffect(nick, screenState) {
+        if (nick.isNotBlank() && screenState == Screen.RadioCB) {
             delay(1000) // Esperar estabilidad
             onConnectRadio(nick)
         }
@@ -257,7 +249,13 @@ fun App(
         }
     }
 
-    LaunchedEffect(radioState) { onStateSave(radioState) }
+    var lastSavedState by remember { mutableStateOf(initialState) }
+    LaunchedEffect(radioState) {
+        if (radioState != lastSavedState) {
+            lastSavedState = radioState
+            onStateSave(radioState)
+        }
+    }
     LaunchedEffect(radioState.city) { onCityChange(radioState.city) }
     LaunchedEffect(radioState.subtone) { onSubtoneChange(radioState.subtone) }
     LaunchedEffect(radioState.channel) { onChannelChange(radioState.channel) }
@@ -395,6 +393,7 @@ fun App(
                                 externalPttBlocked = externalPttBlocked,
                                 replayProgress = replayProgress,
                                 isReplayReady = isReplayReady,
+                                chatMessages = chatMessages,
                                 onSendMessage = onSendMessage,
                                 onReport = onReport,
                                 onBlock = { id -> 

@@ -618,10 +618,40 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         return super.onKeyUp(keyCode, event)
     }
     // =======================================================
+    private fun registerSensorsIfNecessary() {
+        sensorManager?.let { sm ->
+            val magSensor = sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+            val accSensor = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            val pressSensor = sm.getDefaultSensor(Sensor.TYPE_PRESSURE)
+            sm.unregisterListener(sensorListener)
+            sm.registerListener(sensorListener, magSensor, SensorManager.SENSOR_DELAY_UI)
+            sm.registerListener(sensorListener, accSensor, SensorManager.SENSOR_DELAY_UI)
+            sm.registerListener(sensorListener, pressSensor, SensorManager.SENSOR_DELAY_UI)
+        }
+    }
+
+    private fun unregisterSensors() {
+        try {
+            sensorManager?.unregisterListener(sensorListener)
+        } catch (_: Exception) {}
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterSensors()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        registerSensorsIfNecessary()
+    }
 
     override fun onDestroy() {
         super.onDestroy()
-        wifiScanReceiver?.let { unregisterReceiver(it) }
+        unregisterSensors()
+        wifiScanReceiver?.let {
+            try { unregisterReceiver(it) } catch (_: Exception) {}
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -647,6 +677,15 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         MobileAds.initialize(this) {
             showAdBanner(true)
         }
+
+        // 🧠 IA TÁCTICA: Configuración de claves seguras desde BuildConfig (local.properties)
+        try {
+            val geminiKeysRaw = com.sagon.on.BuildConfig.GEMINI_API_KEYS
+            if (geminiKeysRaw.isNotBlank()) {
+                val keysList = geminiKeysRaw.split(",").map { it.trim() }
+                GeminiRadioService.configureKeys(keysList)
+            }
+        } catch (e: Exception) {}
 
         // 🛡️ GUARDIÁN DE SEGUNDO PLANO Y REPRODUCTOR MULTIMEDIA PERMANENTE
         try {
@@ -974,11 +1013,15 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                         android.app.PendingIntent.FLAG_IMMUTABLE
                                     )
 
+                                    val defaultSoundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
                                     val notification = androidx.core.app.NotificationCompat.Builder(this@MainActivity, channelId)
                                         .setContentTitle(title)
                                         .setContentText(message)
-                                        .setSmallIcon(android.R.drawable.ic_dialog_info)
-                                        .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                                        .setSmallIcon(android.R.drawable.stat_notify_chat)
+                                        .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MAX)
+                                        .setSound(defaultSoundUri)
+                                        .setVibrate(longArrayOf(0, 150, 100, 150))
+                                        .setDefaults(androidx.core.app.NotificationCompat.DEFAULT_ALL)
                                         .setContentIntent(pendingIntent)
                                         .setAutoCancel(true)
                                         .build()
@@ -1066,9 +1109,14 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                 post {
                                     val topic = getDailyDebateTopic(city)
                                     val cleanCity = city.split("-")[0].uppercase()
-                                    val subText = if (subtone != null && subtone != "0000") " | 🔐 *$subtone*" else ""
 
-                                    val shareText = if (city == "RADAR") {
+                                    val shareText = if (subtone != null && subtone != "0000") {
+                                        "🎙️ *ENTRAR A MI CANAL PRIVADO EN ON AIR SPAIN*\n\n" +
+                                        "🔑 *Código / Subtono Privado:* $subtone\n" +
+                                        "📻 *Ciudad:* $cleanCity | *Canal:* $channel\n\n" +
+                                        "👉 Toca el enlace para entrar directo a la frecuencia privada:\n" +
+                                        "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&v=58"
+                                    } else if (city == "RADAR") {
                                         "📡 ¡Vigilancia Hertz Activa! *ON AIR SPAIN*\nAnalizando presencia biológica... 🧬\n\nhttps://asurpan.github.io/sevillaON/?v=58"
                                     } else {
                                         val shortTopic = if (topic.length > 70) topic.take(67) + "..." else topic
@@ -1472,9 +1520,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
                         }
 
-                        // --- 🚀 MODO PRODUCCIÓN (GITHUB) ---
+                        // --- 🚀 MODO PRODUCCIÓN (GITHUB CON ANTI-CACHÉ Y DUREZA) ---
+                        clearCache(true)
                         postDelayed({
-                            val githubUrl = "https://asurpan.github.io/sevillaON/?native=true"
+                            val githubUrl = "https://asurpan.github.io/sevillaON/?native=true&nocache=${System.currentTimeMillis()}"
                             val incomingUrl = intent.data?.toString()
                             val startUrl = if (incomingUrl != null && incomingUrl.startsWith("onairspain://")) {
                                 val params = incomingUrl.substringAfter("?", "")

@@ -22,6 +22,13 @@ fun main() {
     if (win.app_initialized == true) return
     win.app_initialized = true
 
+    win.getGeminiRadioResponse = { city: String, nick: String, msg: dynamic, isBeacon: Boolean, callback: (String) -> Unit ->
+        val safeMsg = msg?.toString()
+        GeminiRadioService.processRadioMessage(city, nick, safeMsg, isBeacon) { response ->
+            callback(response)
+        }
+    }
+
     // 🛡️ CREACIÓN INMEDIATA DEL OBJETO APP Y CONTROL DE PESTAÑA ÚNICA
     js("""
         window.app = window.app || { 
@@ -160,6 +167,7 @@ fun main() {
                         }
                     }, 5000);
                     if (window.initFirebaseListener) window.initFirebaseListener();
+                    if (window.updateChatListener) window.updateChatListener(null);
                 }
                 
                 if (typeof Peer !== 'undefined') {
@@ -223,27 +231,36 @@ fun main() {
                 return window.app.txBus.stream;
             }
             if (window.app.ctx) {
-                var dest = window.app.ctx.createMediaStreamDestination();
-                var osc = window.app.ctx.createOscillator();
-                var g = window.app.ctx.createGain();
-                osc.frequency.value = 20000; // Inaudible
-                g.gain.value = 0.0001; 
-                osc.connect(g); g.connect(dest);
-                osc.start();
-                return dest.stream;
+                if (!window.app.dummyStream) {
+                    var dest = window.app.ctx.createMediaStreamDestination();
+                    var osc = window.app.ctx.createOscillator();
+                    var g = window.app.ctx.createGain();
+                    osc.frequency.value = 20000; // Inaudible
+                    g.gain.value = 0.0001; 
+                    osc.connect(g); g.connect(dest);
+                    osc.start();
+                    window.app.dummyStream = dest.stream;
+                }
+                return window.app.dummyStream;
             }
             return null;
         };
 
+        window.failedPeerAttempts = window.failedPeerAttempts || {};
         window.establishOutgoingCall = function(id) {
             if (!window.app.peer || window.app.peer.destroyed || window.app.activeCalls[id]) return;
+            if (window.failedPeerAttempts[id] && Date.now() < window.failedPeerAttempts[id]) return;
             var stream = window.getStream();
             if (!stream) return;
             console.log("🚀 PeerJS: Llamando a:", id);
-            var call = window.app.peer.call(id, stream);
-            if (call) {
-                window.app.activeCalls[id] = call;
-                if (window.setupCallStream) window.setupCallStream(call);
+            try {
+                var call = window.app.peer.call(id, stream);
+                if (call) {
+                    window.app.activeCalls[id] = call;
+                    if (window.setupCallStream) window.setupCallStream(call);
+                }
+            } catch(e) {
+                window.failedPeerAttempts[id] = Date.now() + 30000;
             }
         };
     """)
@@ -318,6 +335,7 @@ fun main() {
         val backPressCountState = remember { mutableStateOf(0) }
         val isReplayReadyState = remember { mutableStateOf(false) }
         val replayProgressState = remember { mutableStateOf(0f) }
+        val chatMessagesState = remember { mutableStateListOf<ChatMessage>() }
 
         RadioBridge.setupDispatchers(
             win = win,
@@ -366,7 +384,9 @@ fun main() {
                                 val k = keys[i] as String
                                 val u = users[k] ?: continue
                                 val userCityBase = (u.city as? String ?: "").split("-")[0]
-                                if (k != win.app.sessionID && myCityBase != userCityBase) continue
+                                val userSubtone = (u.subtone as? String ?: "0000")
+                                val mySubtone = radioState.value.subtone
+                                if (k != win.app.sessionID && (myCityBase != userCityBase || mySubtone != userSubtone)) continue
                                 val isCallActive = (win.app != null && win.app.activeCalls != null && win.app.activeCalls[k] != null)
                                 if (now - (u.lastSeen as? Double ?: 0.0) > 45000 && !isCallActive) continue 
                                 
@@ -404,7 +424,37 @@ fun main() {
                     if (win.app != null) win.app.rxActiveInternal = (activeRemoteTx != null || remoteTransmitterName.value != null)
                 } catch(e: Exception) { }
             },
-            onChatUpdate = { },
+            onChatUpdate = { rawData ->
+                try {
+                    val list = mutableListOf<ChatMessage>()
+                    if (rawData != null) {
+                        val keys = js("Object").keys(rawData)
+                        for (i in 0 until (keys.length as Int)) {
+                            val k = keys[i] as String
+                            val m = rawData[k] ?: continue
+                            val sender = (m.senderNick as? String ?: "ANÓNIMO").trim().uppercase()
+                            val text = (m.text as? String ?: "").trim()
+                            val ts = (m.timestamp as? Double ?: 0.0).toLong()
+                            val isSys = (m.isSystem as? Boolean ?: false)
+                            if (text.isNotEmpty()) {
+                                list.add(ChatMessage(id = k, senderNick = sender, text = text, timestamp = ts, isSystem = isSys))
+                            }
+                        }
+                        list.sortBy { it.timestamp }
+                    }
+                    val previousCount = chatMessagesState.size
+                    chatMessagesState.clear()
+                    chatMessagesState.addAll(list)
+                    if (list.size > previousCount && list.isNotEmpty()) {
+                        val lastMsg = list.last()
+                        val myNick = (win.app?.nick as? String ?: "").trim().uppercase()
+                        if (lastMsg.senderNick != myNick && !lastMsg.isSystem) {
+                            if (win.playUiSound != null) win.playUiSound("chat_msg")
+                            showSystemNotification("💬 MENSAJE DE " + lastMsg.senderNick, lastMsg.text)
+                        }
+                    }
+                } catch (e: Exception) {}
+            },
             onReplayProgress = { progress -> replayProgressState.value = progress },
             onReplayAvailable = { available -> isReplayReadyState.value = available },
             onChatOpen = { },
@@ -474,20 +524,26 @@ fun main() {
             onPrivateChatRequest = { },
             onPublicChatRequest = { },
             onStateSave = { newState -> 
-                RadioPersistence.saveState(newState); radioState.value = newState
-                if(win.app != null) { 
-                    win.app.voxActive = newState.isVoxEnabled
-                    win.app.voxSens = newState.voxSensitivity
-                    win.app.rogerEnabled = newState.isRogerBeepEnabled
-                    win.app.isBotEnabled = newState.isBotEnabled
-                    win.app.discreteMode = newState.isDiscreteModeEnabled
-                    localStorage.setItem("roger", newState.isRogerBeepEnabled.toString())
-                }
-                if (win.updateDspSettings != null) {
-                    win.updateDspSettings(newState.isDspEnabled, newState.dspLevel)
+                if (radioState.value != newState) {
+                    radioState.value = newState
+                    RadioPersistence.saveState(newState)
+                    if(win.app != null) { 
+                        win.app.voxActive = newState.isVoxEnabled
+                        win.app.voxSens = newState.voxSensitivity
+                        win.app.rogerEnabled = newState.isRogerBeepEnabled
+                        win.app.isBotEnabled = newState.isBotEnabled
+                        win.app.discreteMode = newState.isDiscreteModeEnabled
+                        localStorage.setItem("roger", newState.isRogerBeepEnabled.toString())
+                    }
+                    if (win.updateDspSettings != null) {
+                        win.updateDspSettings(newState.isDspEnabled, newState.dspLevel)
+                    }
                 }
             },
-            onConnectRadio = { RadioNetworkManager.connect(it) },
+            onConnectRadio = { nick ->
+                RadioNetworkManager.connect(nick)
+                js("if(window.app) window.app.isRadioActive = true;")
+            },
             onDiagRequest = { RadioDiagData() },
             onMicEnable = { a, r, p -> 
                 if (a && radioState.value.isDiscreteModeEnabled) { val newState = radioState.value.copy(isDiscreteModeEnabled = false); radioState.value = newState; if (win.app != null) win.app.discreteMode = false }
@@ -576,7 +632,7 @@ fun main() {
             remoteUsers = remoteUsersState,
             myId = (win.app?.sessionID as? String) ?: "",
             remoteTransmitterName = remoteTransmitterName.value,
-            chatMessages = emptyList(),
+            chatMessages = chatMessagesState,
             audioIntegrity = true,
             onAntennaTest = { },
             onRequestLocationPermission = { },
@@ -619,7 +675,13 @@ fun main() {
                     }
                 }
             },
-            onSubtoneChange = { }
+            onSubtoneChange = { newSub ->
+                if (win.app != null && win.app.db != null && win.app.sessionID != null) {
+                    val subVal = newSub
+                    win.app.db.ref("users/" + win.app.sessionID).update(js("{subtone: subVal}"))
+                    js("if(window.updateChatListener) window.updateChatListener(null);")
+                }
+            }
         )
     }
 }

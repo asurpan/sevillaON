@@ -184,3 +184,18 @@ actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
             .catch(error => callback(null));
     """)
 }
+
+actual fun fetchGeminiApi(endpoint: String, jsonBody: String, callback: (String?) -> Unit) {
+    js("""
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: jsonBody
+        })
+        .then(function(response) { return response.text(); })
+        .then(function(text) { callback(text); })
+        .catch(function(error) { callback(null); });
+    """)
+}

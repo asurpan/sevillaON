@@ -39,8 +39,22 @@ android {
         applicationId = "com.sagon.on"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 75
-        versionName = "75.Full"
+        versionCode = 77
+        versionName = "77.Full"
+
+        val localProps = Properties()
+        val localPropsFile = rootProject.file("local.properties")
+        if (localPropsFile.exists()) {
+            localPropsFile.inputStream().use { localProps.load(it) }
+        }
+        val geminiKey1 = localProps.getProperty("GEMINI_API_KEY_1") ?: localProps.getProperty("GEMINI_API_KEY") ?: ""
+        val geminiKey2 = localProps.getProperty("GEMINI_API_KEY_2") ?: ""
+        val geminiKey3 = localProps.getProperty("GEMINI_API_KEY_3") ?: ""
+        val combinedKeys = listOf(geminiKey1, geminiKey2, geminiKey3).filter { it.isNotBlank() }.joinToString(",")
+        buildConfigField("String", "GEMINI_API_KEYS", "\"$combinedKeys\"")
+    }
+    buildFeatures {
+        buildConfig = true
     }
     packaging {
         resources {

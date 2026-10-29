@@ -69,6 +69,11 @@ object ManosLibres {
                 }).catch(function(err) { return false; });
             };
 
+            var lastDispatchedLevel = -1.0;
+            var lastDispatchTime = 0;
+            var micDomainData = new Uint8Array(256);
+            var remoteDomainData = new Uint8Array(256);
+
             function loop() {
                 if(!window.app) {
                     requestAnimationFrame(loop);
@@ -79,11 +84,10 @@ object ManosLibres {
                 var hasValidData = false;
                 
                 if (window.app.micAnalyser) {
-                    var d = new Uint8Array(window.app.micAnalyser.fftSize);
-                    window.app.micAnalyser.getByteTimeDomainData(d);
+                    window.app.micAnalyser.getByteTimeDomainData(micDomainData);
                     var max = 0; var sum = 0;
-                    for(var i=0; i<d.length; i++) { 
-                        var v = Math.abs(d[i]-128); if(v > max) max = v; sum += d[i];
+                    for(var i=0; i<micDomainData.length; i++) { 
+                        var v = Math.abs(micDomainData[i]-128); if(v > max) max = v; sum += micDomainData[i];
                     }
                     if (sum > 0) { peakLevel = max / 128; hasValidData = true; }
                 }
@@ -129,14 +133,12 @@ object ManosLibres {
                         var maxRxMod = 0;
                         var maxPwr = 0;
                         
-                        // Encontrar la señal más fuerte
                         Object.keys(window.app.remoteAnalysers).forEach(function(id) {
                             var ana = window.app.remoteAnalysers[id];
                             var pwr = window.app.remotePowers[id] || 0.7;
                             
-                            var d = new Uint8Array(ana.fftSize);
-                            ana.getByteTimeDomainData(d);
-                            var m = 0; for(var i=0; i<d.length; i++) { var v = Math.abs(d[i]-128); if(v>m) m=v; }
+                            ana.getByteTimeDomainData(remoteDomainData);
+                            var m = 0; for(var i=0; i<remoteDomainData.length; i++) { var v = Math.abs(remoteDomainData[i]-128); if(v>m) m=v; }
                             var mod = (m / 128);
                             
                             if (pwr > maxPwr) {
@@ -145,24 +147,22 @@ object ManosLibres {
                             }
                         });
 
-                        // 📡 PORTADORA: Los LEDs marcan la potencia base (0.0 a 0.8 aprox)
                         var carrierLevel = Math.min(0.8, maxPwr); 
-                        // 🎙️ VOZ: La oscilación se suma arriba, llegando a los ROJOS (0.8 a 1.0)
                         var voiceOscillation = Math.min(0.2, maxRxMod * 0.5);
                         
                         finalLevel = carrierLevel + voiceOscillation;
                     }
-                    
-                    if (finalLevel == 0) {
-                        var noise = (window.app.currentNoiseTarget || 0);
-                        if (noise >= 0.02) {
-                            var lfo = Math.sin(Date.now() / 2000) * 0.02;
-                            var jitter = (Math.random() * 0.04);
-                            finalLevel = Math.max(0, Math.min(0.22, (noise * 0.6) + lfo + jitter));
-                        }
-                    }
                 }
-                if(window.dispatch_mic) window.dispatch_mic(finalLevel);
+
+                // 🛡️ REGLA ANTI-SISTEMA CONGELADO: Cuantizar y limitar actualizaciones a Compose (Max 10 fps)
+                var quantizedLevel = Math.round(finalLevel * 20) / 20.0; // Pasos de 0.05
+                var nowTime = Date.now();
+                if (Math.abs(quantizedLevel - lastDispatchedLevel) >= 0.05 || (nowTime - lastDispatchTime > 150)) {
+                    lastDispatchedLevel = quantizedLevel;
+                    lastDispatchTime = nowTime;
+                    if (window.dispatch_mic) window.dispatch_mic(quantizedLevel);
+                }
+
                 requestAnimationFrame(loop);
             }
             loop();

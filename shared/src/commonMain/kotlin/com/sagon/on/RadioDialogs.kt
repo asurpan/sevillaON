@@ -497,71 +497,108 @@ fun RadioDialogs(
             containerColor = LuxeColors.DeepSea,
             titleContentColor = LuxeColors.Gold,
             textContentColor = Color.White,
-            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(12.dp)),
-            title = { Text("CÓDIGO DE PRIVACIDAD", fontWeight = FontWeight.Black, fontSize = 16.sp) },
+            modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(16.dp)),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Lock, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("CREAR O UNIRSE A CANAL PRIVADO", fontWeight = FontWeight.Black, fontSize = 15.sp)
+                }
+            },
             text = {
                 Column {
-                    if (state.veteranPower < 0.85f) {
+                    Text(
+                        "Introduce un código de 4 dígitos o pulsa 'Código Aleatorio' para crear una frecuencia privada para tu grupo.",
+                        fontSize = 11.5.sp,
+                        lineHeight = 16.sp,
+                        color = Color.White.copy(0.8f)
+                    )
+                    Spacer(Modifier.height(14.dp))
+                    OutlinedTextField(
+                        value = tempSubtone,
+                        onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() } ) tempSubtone = it },
+                        placeholder = { Text("0000 (Canal Público)", color = Color.White.copy(0.3f)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = LuxeColors.Gold,
+                            unfocusedBorderColor = Color.White.copy(0.2f)
+                        )
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Surface(
-                            color = Color.Red.copy(0.1f),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, Color.Red.copy(0.3f)),
-                            modifier = Modifier.fillMaxWidth()
+                            onClick = {
+                                val randomPin = (1000..9999).random().toString()
+                                tempSubtone = randomPin
+                            },
+                            color = LuxeColors.Gold.copy(0.15f),
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f)),
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Rounded.Lock, null, tint = Color.Red, modifier = Modifier.size(32.dp))
-                                Spacer(Modifier.height(12.dp))
-                                Text("FUNCIÓN BLOQUEADA", color = Color.Red, fontWeight = FontWeight.Black, fontSize = 12.sp)
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    "Solo las estaciones con rango VETERANO (0.85W+) pueden crear canales privados.",
-                                    color = Color.White.copy(0.7f),
-                                    fontSize = 11.sp,
-                                    textAlign = TextAlign.Center,
-                                    lineHeight = 15.sp
-                                )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Rounded.Casino, null, tint = LuxeColors.Gold, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("CÓDIGO ALEATORIO", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
-                    } else {
-                        Text(
-                            "Al activar un código creas un canal privado.",
-                            fontSize = 12.sp,
-                            lineHeight = 16.sp,
-                            color = Color.White.copy(0.7f)
-                        )
-                        Spacer(Modifier.height(20.dp))
-                        OutlinedTextField(
-                            value = tempSubtone,
-                            onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() } ) tempSubtone = it },
-                            placeholder = { Text("0000", color = Color.White.copy(0.2f)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = LuxeColors.Gold,
-                                unfocusedBorderColor = Color.White.copy(0.1f)
-                            )
-                        )
+
+                        if (state.subtone != "0000") {
+                            Surface(
+                                onClick = {
+                                    onStateChange(state.copy(subtone = "0000"))
+                                    onDismiss()
+                                },
+                                color = Color.White.copy(0.10f),
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, Color.White.copy(0.2f)),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Rounded.Public, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("SALIR A PÚBLICO", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
                     }
                 }
             },
             confirmButton = {
-                if (state.veteranPower >= 0.85f && tempSubtone.length == 4) {
-                    TextButton(onClick = {
-                        val finalSub = tempSubtone.padStart(4, '0')
+                val finalSub = tempSubtone.padStart(4, '0')
+                Button(
+                    onClick = {
                         onStateChange(state.copy(subtone = finalSub))
                         onShare(state.channel, finalSub, null, null)
                         onDismiss()
-                    }) {
-                        Icon(Icons.Rounded.Share, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("ACTIVAR Y COMPARTIR", color = LuxeColors.Gold, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                } else if (state.veteranPower < 0.85f) {
-                    LuxeButton("ENTENDIDO", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), Color.White.copy(0.1f), Color.White)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Gold),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Rounded.Share, null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("ACTIVAR Y COMPARTIR", color = Color.Black, fontSize = 11.5.sp, fontWeight = FontWeight.Black)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("CANCELAR", color = Color.White.copy(0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         )

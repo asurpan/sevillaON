@@ -395,6 +395,7 @@ object RadioAudioManager {
                                     if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.15);
                                     if (window.updateMoniGain) window.updateMoniGain();
                                 } catch(e) {}
+                                if (window.checkControlStationResponse) try { window.checkControlStationResponse(); } catch(e) {}
                             }, 550);
                         } else {
                             window.app.isTransmittingInternal = false;
@@ -402,6 +403,7 @@ object RadioAudioManager {
                             if (window.dispatch_ptt_sync) try { window.dispatch_ptt_sync(false); } catch(e) {}
                             if (window.dispatch_ptt_live) try { window.dispatch_ptt_live(false); } catch(e) {}
                             try { if (sessionRef) sessionRef.update({ tx: false }); } catch(e) {}
+                            if (window.checkControlStationResponse) try { window.checkControlStationResponse(); } catch(e) {}
                         }
                     }
                 } catch(fatalErr) {

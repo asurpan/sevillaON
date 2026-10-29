@@ -893,10 +893,16 @@ fun RadioPanel(
                                 user = user, 
                                 isMe = (user.id == myId), 
                                 onFriendToggle = { onStateChange(state.copy(friends = if (user.isFriend) state.friends - user.nick else state.friends + user.nick)) }, 
-                                onPrivateChat = { privateChatTargetNick = user.nick }, 
+                                onPrivateChat = { 
+                                    privateChatTargetNick = user.nick
+                                    onStateChange(state.copy(isChatVisible = true))
+                                }, 
                                 onReport = { onReport(user.id) }, 
                                 onBlock = { onBlock(user.id) },
-                                onAvatarClick = { onPendingDialogChange(RadioDialogType.USER_ACTIONS, user.id) }
+                                onAvatarClick = { 
+                                    privateChatTargetNick = user.nick
+                                    onStateChange(state.copy(isChatVisible = true))
+                                }
                             ) 
                         }
                     }

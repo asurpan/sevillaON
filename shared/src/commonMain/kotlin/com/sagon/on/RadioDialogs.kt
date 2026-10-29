@@ -51,6 +51,7 @@ fun RadioDialogs(
     onAntennaTest: (Boolean) -> Unit,
     onReplay: () -> Unit,
     onPublicChat: () -> Unit,
+    onPrivateChat: (String) -> Unit = {},
     onShare: (String, String, String?, String?) -> Unit,
     onNotification: (AppNotification) -> Unit,
     onLogoutConfirm: () -> Unit,
@@ -692,8 +693,23 @@ fun RadioDialogs(
                     text = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                             Text("¿Qué deseas hacer con esta estación?", color = Color.White.copy(0.7f), fontSize = 13.sp, textAlign = TextAlign.Center)
-                            Spacer(Modifier.height(24.dp))
+                            Spacer(Modifier.height(20.dp))
                             
+                            LuxeButton(
+                                text = "💬 ENVIAR CHAT PRIVADO",
+                                onClick = {
+                                    onPrivateChat(targetUser.nick)
+                                    onStateChange(state.copy(isChatVisible = true))
+                                    onDismiss()
+                                },
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                containerColor = LuxeColors.Gold,
+                                contentColor = Color.Black,
+                                icon = Icons.AutoMirrored.Rounded.Chat
+                            )
+                            
+                            Spacer(Modifier.height(12.dp))
+
                             LuxeButton(
                                 text = if (state.friends.contains(targetUser.nick)) "QUITAR DE AMIGOS" else "MARCAR COMO AMIGO",
                                 onClick = {
@@ -702,8 +718,8 @@ fun RadioDialogs(
                                     onDismiss()
                                 },
                                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                                containerColor = if (state.friends.contains(targetUser.nick)) Color.Gray else LuxeColors.Gold,
-                                contentColor = Color.Black,
+                                containerColor = if (state.friends.contains(targetUser.nick)) Color.Gray else LuxeColors.Gold.copy(0.2f),
+                                contentColor = Color.White,
                                 icon = Icons.Rounded.Favorite
                             )
                             

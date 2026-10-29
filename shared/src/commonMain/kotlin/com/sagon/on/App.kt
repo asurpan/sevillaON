@@ -488,6 +488,7 @@ fun App(
                             onAntennaTest = onAntennaTest,
                             onReplay = onReplayRequest,
                             onPublicChat = onPublicChatRequest,
+                            onPrivateChat = onPrivateChatRequest,
                             onShare = { c, s, u, g -> onShareRequest(radioState.city, c, s, u, g, null) },
                             onNotification = { localNotification = it },
                             onLogoutConfirm = onLogout,

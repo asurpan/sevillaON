@@ -384,7 +384,9 @@ fun main() {
                                 val k = keys[i] as String
                                 val u = users[k] ?: continue
                                 val userCityBase = (u.city as? String ?: "").split("-")[0]
-                                if (k != win.app.sessionID && myCityBase != userCityBase) continue
+                                val userSubtone = (u.subtone as? String ?: "0000")
+                                val mySubtone = radioState.value.subtone
+                                if (k != win.app.sessionID && (myCityBase != userCityBase || mySubtone != userSubtone)) continue
                                 val isCallActive = (win.app != null && win.app.activeCalls != null && win.app.activeCalls[k] != null)
                                 if (now - (u.lastSeen as? Double ?: 0.0) > 45000 && !isCallActive) continue 
                                 
@@ -670,7 +672,13 @@ fun main() {
                     }
                 }
             },
-            onSubtoneChange = { }
+            onSubtoneChange = { newSub ->
+                if (win.app != null && win.app.db != null && win.app.sessionID != null) {
+                    val subVal = newSub
+                    win.app.db.ref("users/" + win.app.sessionID).update(js("{subtone: subVal}"))
+                    js("if(window.updateChatListener) window.updateChatListener(null);")
+                }
+            }
         )
     }
 }

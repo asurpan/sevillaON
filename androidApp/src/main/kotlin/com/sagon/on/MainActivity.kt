@@ -1109,9 +1109,14 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                 post {
                                     val topic = getDailyDebateTopic(city)
                                     val cleanCity = city.split("-")[0].uppercase()
-                                    val subText = if (subtone != null && subtone != "0000") " | 🔐 *$subtone*" else ""
 
-                                    val shareText = if (city == "RADAR") {
+                                    val shareText = if (subtone != null && subtone != "0000") {
+                                        "🎙️ *ENTRAR A MI CANAL PRIVADO EN ON AIR SPAIN*\n\n" +
+                                        "🔑 *Código / Subtono Privado:* $subtone\n" +
+                                        "📻 *Ciudad:* $cleanCity | *Canal:* $channel\n\n" +
+                                        "👉 Toca el enlace para entrar directo a la frecuencia privada:\n" +
+                                        "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&v=58"
+                                    } else if (city == "RADAR") {
                                         "📡 ¡Vigilancia Hertz Activa! *ON AIR SPAIN*\nAnalizando presencia biológica... 🧬\n\nhttps://asurpan.github.io/sevillaON/?v=58"
                                     } else {
                                         val shortTopic = if (topic.length > 70) topic.take(67) + "..." else topic

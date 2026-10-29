@@ -9,7 +9,8 @@ import kotlinx.browser.window
  */
 object RadioAudioManager {
     fun install() {
-        js("""
+        js(
+            """
             window.app = window.app || {};
             window.app.activeCalls = window.app.activeCalls || {};
             window.app.remoteSources = window.app.remoteSources || {};
@@ -295,163 +296,123 @@ object RadioAudioManager {
             };
 
             window.broadcastPTT = function(active, roger, power) {
-                if(!window.app) return;
-                if (!window.app.ctx && window.initAudio) window.initAudio();
-                if (!window.app.ctx) return; 
-                if (window.app.ctx.state !== 'running') window.app.ctx.resume();
+                try {
+                    if(!window.app) return;
+                    if (!window.app.ctx && window.initAudio) { try { window.initAudio(); } catch(e){} }
+                    
+                    var now = (window.app.ctx && typeof window.app.ctx.currentTime === 'number') ? window.app.ctx.currentTime : 0;
+                    var nowTime = Date.now();
+                    var sessionRef = window.app.db ? window.app.db.ref("users/" + window.app.sessionID) : null;
 
-                var now = window.app.ctx.currentTime;
-                var nowTime = Date.now();
-                var sessionRef = window.app.db ? window.app.db.ref("users/" + window.app.sessionID) : null;
-
-                // 🛡️ COMPROBACIÓN DE COOLDOWN ANTI-PORTADORA (5s)
-                if (active && window.app.pttCooldownUntil && nowTime < window.app.pttCooldownUntil) {
-                    var remainingSec = Math.ceil((window.app.pttCooldownUntil - nowTime) / 1000);
-                    if (window.playUiSound) window.playUiSound("ptt_blocked");
-                    if (window.dispatch_notification) window.dispatch_notification("⏳ COOLDOWN ANTI-PORTADORA", "Espera " + remainingSec + "s antes de transmitir de nuevo.", "warning");
-                    return;
-                }
-
-                if (active) {
-                    // 🛡️ CORTE RADICAL E INMEDIATO DE VOZ Y PORTADORA DEL BOT AL PULSAR PTT
-                    if (window.app.isControlSpeaking || window.speechSynthesis.speaking) {
-                        window.app.isControlSpeaking = false;
-                        try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
-                        try { if (window.AndroidApp && window.AndroidApp.stopSpeak) window.AndroidApp.stopSpeak(); } catch(e) {}
-                        if (window.dispatch_control_active) window.dispatch_control_active(null, false);
+                    // 🛡️ COMPROBACIÓN DE COOLDOWN ANTI-PORTADORA (5s)
+                    if (active && window.app.pttCooldownUntil && nowTime < window.app.pttCooldownUntil) {
+                        var remainingSec = Math.ceil((window.app.pttCooldownUntil - nowTime) / 1000);
+                        if (window.playUiSound) try { window.playUiSound("ptt_blocked"); } catch(e){}
+                        if (window.dispatch_notification) try { window.dispatch_notification("⏳ COOLDOWN ANTI-PORTADORA", "Espera " + remainingSec + "s antes de transmitir de nuevo.", "warning"); } catch(e){}
+                        return;
                     }
 
-                    if (window.app.rogerReleaseTimeout) {
-                        clearTimeout(window.app.rogerReleaseTimeout);
-                        window.app.rogerReleaseTimeout = null;
-                    }
-                    window.app.pttStateInternal = true; 
-                    window.app.isTransmittingInternal = true; 
-                    window.app.isBeeping = false;
-
-                    // 1. TEMPORIZADOR DE CORTE AUTOMÁTICO DE 60 SEGUNDOS (MAX PTT TIMEOUT)
-                    if (window.app.txMaxTimeout) clearTimeout(window.app.txMaxTimeout);
-                    window.app.txMaxTimeout = setTimeout(function() {
-                        console.log("⏱️ Max PTT Timeout (60s) alcanzado");
-                        if (window.dispatch_notification) window.dispatch_notification("⏱️ CAMBIO AUTOMÁTICO (60s)", "Tiempo de cambio alcanzado. Vuelve a pulsar PTT para continuar.", "info");
-                        if (window.playUiSound) window.playUiSound("ptt_off");
-                        window.broadcastPTT(false, true, power);
-                    }, 60000);
-
-                    // 2. DETECTOR DE PORTADORA MUDA EN SILENCIO DE 15 SEGUNDOS (VAD SILENCE)
-                    if (window.app.silenceCheckInterval) clearInterval(window.app.silenceCheckInterval);
-                    window.app.silenceStartTime = null;
-                    window.app.silenceCheckInterval = setInterval(function() {
-                        if (!window.app.pttStateInternal) {
-                            clearInterval(window.app.silenceCheckInterval);
-                            window.app.silenceCheckInterval = null;
-                            return;
+                    if (active) {
+                        // 🛡️ CORTE RADICAL E INMEDIATO DE VOZ Y PORTADORA DEL BOT AL PULSAR PTT
+                        if (window.app.isControlSpeaking || (window.speechSynthesis && window.speechSynthesis.speaking)) {
+                            window.app.isControlSpeaking = false;
+                            try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
+                            try { if (window.AndroidApp && window.AndroidApp.stopSpeak) window.AndroidApp.stopSpeak(); } catch(e) {}
+                            if (window.dispatch_control_active) try { window.dispatch_control_active(null, false); } catch(e) {}
                         }
-                        var currentMicVol = window.app.currentMicLevel || 0;
-                        if (currentMicVol < 0.02) {
-                            if (!window.app.silenceStartTime) window.app.silenceStartTime = Date.now();
-                            if (Date.now() - window.app.silenceStartTime >= 15000) {
-                                console.log("🎙️ Portadora muda de 15s detectada");
-                                clearInterval(window.app.silenceCheckInterval);
-                                window.app.silenceCheckInterval = null;
-                                window.app.pttCooldownUntil = Date.now() + 3000;
-                                if (window.dispatch_notification) window.dispatch_notification("🎙️ PORTADORA MUDA DETECTADA", "Se ha liberado la frecuencia tras 15s sin habla.", "warning");
-                                window.broadcastPTT(false, true, power);
-                            }
-                        } else {
-                            window.app.silenceStartTime = null; // Voz detectada, reiniciar temporizador
+
+                        if (window.app.rogerReleaseTimeout) {
+                            clearTimeout(window.app.rogerReleaseTimeout);
+                            window.app.rogerReleaseTimeout = null;
                         }
-                    }, 500);
-
-                    // 🔴 NOTIFICAR A COMPOSE UI (PANTALLA Y BOTÓN EN ROJO "AIRE")
-                    if (window.dispatch_ptt_sync) window.dispatch_ptt_sync(true);
-                    if (window.dispatch_ptt_live) window.dispatch_ptt_live(true);
-
-                    if (sessionRef) sessionRef.update({ tx: true, pwr: power || 0.7 });
-                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01);
-                    if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01);
-                    if (window.app.noise) window.app.noise.gain.setTargetAtTime(0, now, 0.01);
-                    if (window.updateMoniGain) window.updateMoniGain();
-                } else {
-                    window.app.pttStateInternal = false;
-
-                    // Limpiar temporizadores de corte automático y silencio
-                    if (window.app.txMaxTimeout) {
-                        clearTimeout(window.app.txMaxTimeout);
-                        window.app.txMaxTimeout = null;
-                    }
-                    if (window.app.silenceCheckInterval) {
-                        clearInterval(window.app.silenceCheckInterval);
-                        window.app.silenceCheckInterval = null;
-                    }
-                    window.app.silenceStartTime = null;
-
-                    // 1. Cortar micrófono inmediatamente para no transmitir respiración/ruido tras soltar PTT
-                    if (window.app.txGate) window.app.txGate.gain.setTargetAtTime(0, now, 0.01);
-
-                    var shouldPlayRoger = (roger === true || window.app.rogerEnabled === true);
-
-                    if (shouldPlayRoger && window.app.ctx) {
-                        window.app.isBeeping = true;
-                        window.app.isTransmittingInternal = true; // MANTENER PORTADORA Y PANTALLA EN ROJO DURANTE EL BEEP
-
-                        // 2. Generar el Roger Beep (Sutil local 14% / Potente por aire 20%)
-                        var beepOsc = window.app.ctx.createOscillator();
-                        var beepGain = window.app.ctx.createGain();
-                        
-                        beepOsc.type = "triangle";
-                        beepOsc.frequency.setValueAtTime(1955, now);
-                        beepGain.gain.setValueAtTime(0.20, now);
-                        beepGain.gain.setValueAtTime(0, now + 0.30);
-
-                        beepOsc.connect(beepGain);
-                        
-                        // 🎧 Salida Local Ajustada sutilmente a 14% para tus oídos
-                        var localBeepGain = window.app.ctx.createGain();
-                        localBeepGain.gain.setValueAtTime(0.14, now);
-                        localBeepGain.gain.setValueAtTime(0, now + 0.30);
-                        beepGain.connect(localBeepGain);
-
-                        if (window.app.masterOut) localBeepGain.connect(window.app.masterOut);
-                        if (window.app.txBus) beepGain.connect(window.app.txBus);
-
-                        beepOsc.start(now);
-                        beepOsc.stop(now + 0.30);
-
-                        // 3. APAGAR LA PORTADORA EN PANTALLA Y EN FIREBASE TRAS EL BEEP + COLA DE PORTADORA (550 ms)
-                        if (window.app.rogerReleaseTimeout) clearTimeout(window.app.rogerReleaseTimeout);
-                        window.app.rogerReleaseTimeout = setTimeout(function() {
-                            window.app.isTransmittingInternal = false;
-                            window.app.isBeeping = false;
-
-                            // 🟢 NOTIFICAR A COMPOSE UI QUE TERMINÓ EL BEEP Y LA COLA DE PORTADORA
-                            if (window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
-                            if (window.dispatch_ptt_live) window.dispatch_ptt_live(false);
-
-                            if (sessionRef) sessionRef.update({ tx: false });
-
-                            var endNow = window.app.ctx ? window.app.ctx.currentTime : now;
-                            if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.15);
-                            if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.15);
-                            if (window.updateMoniGain) window.updateMoniGain();
-                            if (window.checkControlStationResponse) window.checkControlStationResponse();
-                        }, 550);
-
-                    } else {
-                        // Cierre inmediato sin Roger Beep
-                        window.app.isTransmittingInternal = false;
+                        window.app.pttStateInternal = true; 
+                        window.app.isTransmittingInternal = true; 
                         window.app.isBeeping = false;
 
-                        if (window.dispatch_ptt_sync) window.dispatch_ptt_sync(false);
-                        if (window.dispatch_ptt_live) window.dispatch_ptt_live(false);
+                        // 1. TEMPORIZADOR DE CORTE AUTOMÁTICO DE 60 SEGUNDOS (MAX PTT TIMEOUT)
+                        if (window.app.txMaxTimeout) clearTimeout(window.app.txMaxTimeout);
+                        window.app.txMaxTimeout = setTimeout(function() {
+                            if (window.dispatch_notification) try { window.dispatch_notification("⏱️ CAMBIO AUTOMÁTICO (60s)", "Tiempo de cambio alcanzado.", "info"); } catch(e){}
+                            if (window.playUiSound) try { window.playUiSound("ptt_off"); } catch(e){}
+                            window.broadcastPTT(false, true, power);
+                        }, 60000);
 
-                        if (sessionRef) sessionRef.update({ tx: false });
+                        // 🔴 NOTIFICAR A COMPOSE UI (PANTALLA Y BOTÓN EN ROJO "AIRE")
+                        if (window.dispatch_ptt_sync) try { window.dispatch_ptt_sync(true); } catch(e) {}
+                        if (window.dispatch_ptt_live) try { window.dispatch_ptt_live(true); } catch(e) {}
 
-                        if (window.app.masterRxGain) window.app.masterRxGain.gain.setTargetAtTime(3.5, now, 0.15);
-                        if (window.app.noise) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, now, 0.15);
-                        if (window.updateMoniGain) window.updateMoniGain();
-                        if (window.checkControlStationResponse) window.checkControlStationResponse();
+                        try { if (sessionRef) sessionRef.update({ tx: true, pwr: power || 0.7 }); } catch(e) {}
+                        try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01); } catch(e) {}
+                        try { if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
+                        try { if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
+                        try { if (window.updateMoniGain) window.updateMoniGain(); } catch(e) {}
+                    } else {
+                        window.app.pttStateInternal = false;
+
+                        if (window.app.txMaxTimeout) { clearTimeout(window.app.txMaxTimeout); window.app.txMaxTimeout = null; }
+                        if (window.app.silenceCheckInterval) { clearInterval(window.app.silenceCheckInterval); window.app.silenceCheckInterval = null; }
+                        window.app.silenceStartTime = null;
+
+                        try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
+
+                        var shouldPlayRoger = (roger === true || window.app.rogerEnabled === true);
+
+                        if (shouldPlayRoger && window.app.ctx && window.app.ctx.state === 'running') {
+                            try {
+                                window.app.isBeeping = true;
+                                window.app.isTransmittingInternal = true;
+
+                                var beepOsc = window.app.ctx.createOscillator();
+                                var beepGain = window.app.ctx.createGain();
+                                beepOsc.type = "triangle";
+                                beepOsc.frequency.setValueAtTime(1955, now);
+                                beepGain.gain.setValueAtTime(0.20, now);
+                                beepGain.gain.setValueAtTime(0, now + 0.30);
+                                beepOsc.connect(beepGain);
+
+                                var localBeepGain = window.app.ctx.createGain();
+                                localBeepGain.gain.setValueAtTime(0.14, now);
+                                localBeepGain.gain.setValueAtTime(0, now + 0.30);
+                                beepGain.connect(localBeepGain);
+
+                                if (window.app.masterOut) localBeepGain.connect(window.app.masterOut);
+                                if (window.app.txBus) beepGain.connect(window.app.txBus);
+
+                                beepOsc.start(now);
+                                beepOsc.stop(now + 0.30);
+                            } catch(e) { console.error("Beep error", e); }
+
+                            if (window.app.rogerReleaseTimeout) clearTimeout(window.app.rogerReleaseTimeout);
+                            window.app.rogerReleaseTimeout = setTimeout(function() {
+                                window.app.isTransmittingInternal = false;
+                                window.app.isBeeping = false;
+                                if (window.dispatch_ptt_sync) try { window.dispatch_ptt_sync(false); } catch(e) {}
+                                if (window.dispatch_ptt_live) try { window.dispatch_ptt_live(false); } catch(e) {}
+                                try { if (sessionRef) sessionRef.update({ tx: false }); } catch(e) {}
+                                try {
+                                    var endNow = window.app.ctx ? window.app.ctx.currentTime : now;
+                                    if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.15);
+                                    if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.15);
+                                    if (window.updateMoniGain) window.updateMoniGain();
+                                } catch(e) {}
+                            }, 550);
+                        } else {
+                            window.app.isTransmittingInternal = false;
+                            window.app.isBeeping = false;
+                            if (window.dispatch_ptt_sync) try { window.dispatch_ptt_sync(false); } catch(e) {}
+                            if (window.dispatch_ptt_live) try { window.dispatch_ptt_live(false); } catch(e) {}
+                            try { if (sessionRef) sessionRef.update({ tx: false }); } catch(e) {}
+                        }
                     }
+                } catch(fatalErr) {
+                    console.error("broadcastPTT error", fatalErr);
+                    if (window.app) {
+                        window.app.pttStateInternal = false;
+                        window.app.isTransmittingInternal = false;
+                        window.app.isBeeping = false;
+                    }
+                    if (window.dispatch_ptt_sync) try { window.dispatch_ptt_sync(false); } catch(e) {}
+                    if (window.dispatch_ptt_live) try { window.dispatch_ptt_live(false); } catch(e) {}
                 }
             };
 

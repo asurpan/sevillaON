@@ -327,6 +327,7 @@ object RadioAudioManager {
                         }
                         window.app.pttStateInternal = true; 
                         window.app.isTransmittingInternal = true; 
+                        window.app.hasUserModulated = true; // 🎙️ MARCAR QUE EL USUARIO HA INTERACTUADO CON EL PTT
                         window.app.isBeeping = false;
 
                         // 1. TEMPORIZADOR DE CORTE AUTOMÁTICO DE 60 SEGUNDOS (MAX PTT TIMEOUT)
@@ -749,6 +750,7 @@ object ReplayEngine {
             window.controlResponseIndex = 0;
             window.checkControlStationResponse = function() {
                 if (!window.app) return;
+                if (!window.app.hasUserModulated) return; // 🛡️ EL BOT SOLO HABLA SI EL USUARIO HA INTERACTUADO PULSANDO EL PTT
                 if (window.app.isBotEnabled === false) return; // 🛡️ DESACTIVADO POR EL USUARIO EN AJUSTES
                 if (window.dispatch_is_room_empty && !window.dispatch_is_room_empty()) return;
                 if (window.app.isControlSpeaking) return;

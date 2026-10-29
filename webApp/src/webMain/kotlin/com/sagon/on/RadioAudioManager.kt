@@ -608,7 +608,9 @@ object RadioAudioManager {
                     }
                 });
 
-                // 📻 BATIDO HETERODINO DE RF EN PISOTONES (ZUMBIDO OSCILANTE DE 27MHz)
+            function updateRemotePriorities() {
+                if (!window.app || !window.app.ctx) return;
+                var peers = Object.keys(window.app.remoteGains || {});
                 var activeTxPeers = peers.filter(p => window.remoteTxStates && window.remoteTxStates[p] === true);
                 if (activeTxPeers.length >= 2 && !window.app.pttStateInternal) {
                     var ctx = window.app.ctx;
@@ -646,12 +648,12 @@ object RadioAudioManager {
                     var targetGain = (powerDiff < 0.25) ? 0.08 : 0.02;
                     if (window.app.heterodyneGain) window.app.heterodyneGain.gain.setTargetAtTime(targetGain, now, 0.08);
                 } else {
-                    if (window.app.heterodyneGain) {
+                    if (window.app.heterodyneGain && window.app.ctx) {
                         window.app.heterodyneGain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.08);
                     }
                 }
             }
-            setInterval(updateRemotePriorities, 100);
+            setInterval(updateRemotePriorities, 300);
 
             window.ensureMicAccess = function() {
                 console.log("🎙️ Solicitando acceso al micrófono...");

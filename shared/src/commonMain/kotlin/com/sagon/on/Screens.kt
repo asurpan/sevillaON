@@ -456,7 +456,7 @@ fun RadioPanel(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(172.dp)
+                        .height(188.dp)
                         .clip(RoundedCornerShape(20.dp)),
                     color = Color(0xFF020617),
                     border = BorderStroke(
@@ -641,7 +641,7 @@ fun RadioPanel(
                                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
                                             )
                                         }
-                                        Spacer(Modifier.height(4.dp))
+                                        Spacer(Modifier.height(3.dp))
                                         Surface(
                                             color = Color(0xFF00E5FF).copy(alpha = 0.12f),
                                             shape = RoundedCornerShape(10.dp),
@@ -649,7 +649,7 @@ fun RadioPanel(
                                             modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { onShare(state.channel, state.subtone, null, null) }
                                         ) {
                                             Row(
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.Center
                                             ) {
@@ -657,13 +657,13 @@ fun RadioPanel(
                                                     imageVector = Icons.Rounded.Share,
                                                     contentDescription = "Compartir Canal",
                                                     tint = Color(0xFF00E5FF),
-                                                    modifier = Modifier.size(18.dp).graphicsLayer { alpha = blinkAlpha.value }
+                                                    modifier = Modifier.size(16.dp).graphicsLayer { alpha = blinkAlpha.value }
                                                 )
                                                 Spacer(Modifier.width(6.dp))
                                                 Text(
                                                     text = state.city.split("-")[0],
                                                     color = Color.White,
-                                                    fontSize = 12.sp,
+                                                    fontSize = 11.sp,
                                                     fontWeight = FontWeight.Black,
                                                     letterSpacing = 1.sp,
                                                     maxLines = 1,
@@ -1224,28 +1224,30 @@ fun InlineTacticalChat(
                 }
             }
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.Black.copy(0.4f))
-                    .border(1.dp, if (targetNick != null) LuxeColors.Gold.copy(0.3f) else Color.White.copy(0.15f), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.Black.copy(0.55f))
+                    .border(1.5.dp, if (targetNick != null) LuxeColors.Gold.copy(0.6f) else Color(0xFF00E5FF).copy(0.5f), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 Text(
                     text = if (targetNick != null) "Toca para escribir a $targetNick..." else "Toca para escribir mensaje...",
-                    color = Color.White.copy(0.4f),
-                    fontSize = 10.5.sp,
+                    color = Color.White.copy(0.75f),
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Medium,
                     modifier = Modifier.weight(1f)
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.Send,
                     contentDescription = "Escribir",
                     tint = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

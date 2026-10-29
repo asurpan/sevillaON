@@ -1295,7 +1295,48 @@ fun InlineTacticalChat(
                                     }
                                 }
                             }
-                            Spacer(Modifier.height(10.dp))
+                            Spacer(Modifier.height(8.dp))
+                        }
+
+                        // 🚀 BARRA DE CHIPS DE RESPUESTA RÁPIDA (1-TAP INSTANTÁNEO)
+                        val tacticalChips = listOf(
+                            "👍 10-4",
+                            "🎙️ ROGER",
+                            "📶 S9+",
+                            "👋 73's",
+                            "📻 QTH",
+                            "🚗 RUTA",
+                            "☕ TAZA"
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                        ) {
+                            items(tacticalChips) { chip ->
+                                Surface(
+                                    onClick = {
+                                        onSendMessage(chip, targetNick)
+                                        onPlaySound("chat_msg")
+                                        isFloatingActive = false
+                                    },
+                                    color = Color.Black.copy(0.4f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (targetNick != null) LuxeColors.Gold.copy(0.5f) else Color(0xFF00E5FF).copy(0.5f)
+                                    )
+                                ) {
+                                    Text(
+                                        text = chip,
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                    )
+                                }
+                            }
                         }
 
                         // Entrada de texto y botón enviar

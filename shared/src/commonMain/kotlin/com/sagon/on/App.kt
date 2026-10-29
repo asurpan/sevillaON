@@ -130,9 +130,9 @@ fun App(
         }
     }
 
-    // 🛡️ CONEXIÓN ÚNICA: Solo conectar al iniciar o cambiar de Nick, no en cada recomposición
-    LaunchedEffect(nick) {
-        if (nick.isNotBlank()) {
+    // 🛡️ CONEXIÓN ÚNICA: Solo conectar al estar dentro de la pantalla de Radio (Screen.RadioCB)
+    LaunchedEffect(nick, screenState) {
+        if (nick.isNotBlank() && screenState == Screen.RadioCB) {
             delay(1000) // Esperar estabilidad
             onConnectRadio(nick)
         }

@@ -791,7 +791,17 @@ object ReplayEngine {
             var activityDetected = false;
             var isPlaying = false;
             window.initReplayRecorder = function() {
-                if (!window.app.ctx || !window.app.masterRecordBus || !window.app.replayCompressor) { setTimeout(window.initReplayRecorder, 1000); return; }
+                if (window.app && window.app.replayRecorderStarted) return;
+                if (!window.app.ctx || !window.app.masterRecordBus || !window.app.replayCompressor) {
+                    if (window.app.replayInitTimer) clearTimeout(window.app.replayInitTimer);
+                    window.app.replayInitTimer = setTimeout(window.initReplayRecorder, 2000);
+                    return;
+                }
+                if (window.app.replayInitTimer) {
+                    clearTimeout(window.app.replayInitTimer);
+                    window.app.replayInitTimer = null;
+                }
+                window.app.replayRecorderStarted = true;
                 var streamDest = window.app.ctx.createMediaStreamDestination();
                 window.app.replayCompressor.connect(streamDest);
                 var replayAnalyser = window.app.ctx.createAnalyser();

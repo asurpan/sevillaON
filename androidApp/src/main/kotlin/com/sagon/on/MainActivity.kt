@@ -790,7 +790,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         settings.allowFileAccess = true
                         settings.allowContentAccess = true
                         settings.mediaPlaybackRequiresUserGesture = false
-                        settings.cacheMode = WebSettings.LOAD_DEFAULT
+                        settings.cacheMode = WebSettings.LOAD_NO_CACHE
                         
                         // --- 🛡️ USER AGENT FIX: Appending instead of replacing for better API compatibility ---
                         val defaultUA = settings.userAgentString
@@ -836,23 +836,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                             @JavascriptInterface
                             fun vibratePtt() {
-                                runOnUiThread {
+                                post {
                                     try {
-                                        webViewInstance?.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
                                         webViewInstance?.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
-
-                                        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
-                                        if (vibrator.hasVibrator()) {
-                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                                vibrator.vibrate(android.os.VibrationEffect.createPredefined(android.os.VibrationEffect.EFFECT_CLICK))
-                                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                vibrator.vibrate(android.os.VibrationEffect.createOneShot(50, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
-                                            } else {
-                                                @Suppress("DEPRECATION")
-                                                vibrator.vibrate(50)
-                                            }
-                                        }
-                                    } catch (e: Exception) {}
+                                    } catch (_: Exception) {}
                                 }
                             }
 
@@ -863,9 +850,15 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                         if (type == "incoming" || type == "alert") {
                                             val toneGen = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80)
                                             toneGen.startTone(android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 250)
+                                            postDelayed({
+                                                try { toneGen.release() } catch (_: Exception) {}
+                                            }, 350)
                                         } else if (type == "switch" || type == "click") {
                                             val toneGen = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 40)
                                             toneGen.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 30)
+                                            postDelayed({
+                                                try { toneGen.release() } catch (_: Exception) {}
+                                            }, 100)
                                         }
                                     } catch (e: Exception) {}
                                 }
@@ -1032,7 +1025,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                             @JavascriptInterface
                             fun setNativePtt(active: Boolean) {
-                                runOnUiThread {
+                                post {
                                     meshModule.setEmergencyPtt(active)
                                 }
                             }
@@ -1520,18 +1513,25 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
                         }
 
-                        // --- 🚀 MODO PRODUCCIÓN (GITHUB CON ANTI-CACHÉ Y DUREZA) ---
+                        // --- 🚀 MODO PRODUCCIÓN (CARGA LOCAL DE ASSETS CON FALLBACK EN RED) ---
                         clearCache(true)
                         postDelayed({
                             val githubUrl = "https://asurpan.github.io/sevillaON/?native=true&nocache=${System.currentTimeMillis()}"
+                            val localAssetUrl = "file:///android_asset/index.html?native=true&v=${System.currentTimeMillis()}"
+                            val hasLocalAsset = try {
+                                context.assets.open("index.html").use { true }
+                            } catch (_: Exception) {
+                                false
+                            }
+                            val baseUrl = if (hasLocalAsset) localAssetUrl else githubUrl
                             val incomingUrl = intent.data?.toString()
                             val startUrl = if (incomingUrl != null && incomingUrl.startsWith("onairspain://")) {
                                 val params = incomingUrl.substringAfter("?", "")
-                                githubUrl + (if (params.isNotEmpty()) "&$params" else "")
+                                baseUrl + (if (params.isNotEmpty()) (if (baseUrl.contains("?")) "&$params" else "?$params") else "")
                             } else if (incomingUrl != null) {
                                 incomingUrl
                             } else {
-                                githubUrl
+                                baseUrl
                             }
                             loadUrl(startUrl)
                         }, 100)

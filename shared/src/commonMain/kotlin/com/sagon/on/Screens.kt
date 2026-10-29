@@ -296,6 +296,12 @@ fun RadioPanel(
         }
     }
     LaunchedEffect(isPttBlockedByRx) { if (isPttBlockedByRx) { delay(800); isPttBlockedByRx = false } }
+    LaunchedEffect(isPttPressed) {
+        if (isPttPressed) {
+            delay(60000)
+            isPttPressed = false
+        }
+    }
 
     val currentOnStateChange by rememberUpdatedState(onStateChange)
     val currentOnPlaySound by rememberUpdatedState(onPlaySound)
@@ -941,24 +947,21 @@ fun RadioPanel(
                             .fillMaxHeight()
                             .scale(pttScale)
                             .pointerInput(Unit) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        val event = awaitPointerEvent()
-                                        val change = event.changes.firstOrNull() ?: continue
-                                        if (change.changedToDown()) {
-                                            if (!isPttBlockedByRx) {
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                vibratePtt()
-                                                isPttPressed = true
-                                            }
-                                        } else if (change.changedToUp() || !change.pressed) {
-                                            if (isPttPressed) {
+                                detectTapGestures(
+                                    onPress = {
+                                        if (!isPttBlockedByRx) {
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            vibratePtt()
+                                            isPttPressed = true
+                                            try {
+                                                awaitRelease()
+                                            } finally {
                                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                                 isPttPressed = false
                                             }
                                         }
                                     }
-                                }
+                                )
                             }, 
                         shape = RoundedCornerShape(22.dp), 
                         color = Color.Transparent, 

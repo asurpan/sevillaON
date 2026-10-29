@@ -62,36 +62,52 @@ class RadioMeshModule(private val context: Context) {
     // 🎙️ TRANSMISIÓN DE VOZ EN MALLA (SIN RED)
     @SuppressLint("MissingPermission")
     fun setEmergencyPtt(active: Boolean) {
+        if (!isEmergencyModeActive) return
         if (active == isTransmitting) return
         isTransmitting = active
 
         if (active) {
             thread {
                 try {
+                    val hasMic = androidx.core.content.ContextCompat.checkSelfPermission(
+                        context, android.Manifest.permission.RECORD_AUDIO
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    if (!hasMic) return@thread
+
                     val sampleRate = 8000
                     val bufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-                    audioRecord = AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize)
+                    if (bufferSize <= 0) return@thread
+
+                    val rec = AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION, sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize)
+                    if (rec.state != AudioRecord.STATE_INITIALIZED) {
+                        rec.release()
+                        return@thread
+                    }
+                    audioRecord = rec
                     
-                    audioRecord?.startRecording()
+                    rec.startRecording()
                     val buffer = ByteArray(1024)
                     val socket = DatagramSocket()
                     socket.broadcast = true
-                    // Dirección de broadcast de WiFi Direct suele ser 192.168.49.255
                     val address = InetAddress.getByName("192.168.49.255") 
 
                     while (isTransmitting) {
-                        val read = audioRecord?.read(buffer, 0, buffer.size) ?: 0
+                        val read = rec.read(buffer, 0, buffer.size)
                         if (read > 0) {
                             val packet = DatagramPacket(buffer, read, address, MESH_PORT)
                             socket.send(packet)
                         }
                     }
-                    socket.close()
+                    try { socket.close() } catch (_: Exception) {}
                 } catch (e: Exception) {
                     Log.e("ON_AIR_MESH", "Error TX Mesh: ${e.message}")
                 } finally {
-                    audioRecord?.stop()
-                    audioRecord?.release()
+                    try {
+                        if (audioRecord?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                            audioRecord?.stop()
+                        }
+                    } catch (_: Exception) {}
+                    try { audioRecord?.release() } catch (_: Exception) {}
                     audioRecord = null
                 }
             }

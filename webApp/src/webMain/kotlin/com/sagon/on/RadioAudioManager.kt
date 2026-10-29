@@ -780,6 +780,19 @@ object ReplayEngine {
 
                 function deliverSpeech(textToSpeak) {
                     if (!textToSpeak) return;
+                    
+                    // 👂 MODO OREJA / DISCRETO ACTIVADO: Silenciar totalmente la voz del Bot
+                    if (window.app && window.app.discreteMode) {
+                        if (window.playUiSound) try { window.playUiSound("incoming"); } catch(e){}
+                        if (window.dispatch_control_active) {
+                            try { window.dispatch_control_active("BASE " + rawCity, true); } catch(e){}
+                            setTimeout(function() {
+                                try { window.dispatch_control_active(null, false); } catch(e){}
+                            }, 3000);
+                        }
+                        return; // 🛑 CORTAR VOZ DEL BOT EN MODO DISCRETO
+                    }
+
                     setTimeout(function() {
                         if (window.AndroidApp && window.AndroidApp.speak) {
                             if (window.playUiSound) try { window.playUiSound("switch"); } catch(e){}

@@ -539,6 +539,7 @@ fun main() {
             onPublicChatRequest = { },
             onStateSave = { newState -> 
                 if (radioState.value != newState) {
+                    val wasDiscrete = radioState.value.isDiscreteModeEnabled
                     radioState.value = newState
                     RadioPersistence.saveState(newState)
                     if(win.app != null) { 
@@ -548,6 +549,12 @@ fun main() {
                         win.app.isBotEnabled = newState.isBotEnabled
                         win.app.discreteMode = newState.isDiscreteModeEnabled
                         localStorage.setItem("roger", newState.isRogerBeepEnabled.toString())
+                        if (newState.isDiscreteModeEnabled && !wasDiscrete) {
+                            js("if(window.AndroidApp && window.AndroidApp.stopSpeak) try{ window.AndroidApp.stopSpeak(); }catch(e){}")
+                            js("if('speechSynthesis' in window) try{ window.speechSynthesis.cancel(); }catch(e){}")
+                            js("if(window.app) window.app.isControlSpeaking = false;")
+                            js("if(window.dispatch_control_active) try{ window.dispatch_control_active(null, false); }catch(e){}")
+                        }
                     }
                     if (win.updateDspSettings != null) {
                         win.updateDspSettings(newState.isDspEnabled, newState.dspLevel)

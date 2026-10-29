@@ -124,9 +124,6 @@ fun App(
     LaunchedEffect(savedNick) {
         if (savedNick.isNotBlank()) {
             nick = savedNick
-            if (screenState == Screen.Welcome) {
-                screenState = Screen.RadioCB
-            }
         }
     }
 

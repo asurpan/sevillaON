@@ -827,7 +827,7 @@ object ReplayEngine {
             };
             window.controlResponseIndex = 0;
             window.checkControlStationResponse = function() {
-                if (!window.app) return;
+                if (!window.app || window.app.isRadioActive !== true) return;
                 if (window.app.isBotEnabled === false) return; // 🛡️ DESACTIVADO POR EL USUARIO EN AJUSTES
                 if (window.dispatch_is_room_empty && !window.dispatch_is_room_empty()) return;
                 if (window.app.isControlSpeaking) return;

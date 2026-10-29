@@ -540,7 +540,10 @@ fun main() {
                     }
                 }
             },
-            onConnectRadio = { RadioNetworkManager.connect(it) },
+            onConnectRadio = { nick ->
+                RadioNetworkManager.connect(nick)
+                js("if(window.app) window.app.isRadioActive = true;")
+            },
             onDiagRequest = { RadioDiagData() },
             onMicEnable = { a, r, p -> 
                 if (a && radioState.value.isDiscreteModeEnabled) { val newState = radioState.value.copy(isDiscreteModeEnabled = false); radioState.value = newState; if (win.app != null) win.app.discreteMode = false }

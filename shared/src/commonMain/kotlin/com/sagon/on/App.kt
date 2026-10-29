@@ -103,12 +103,7 @@ fun App(
     isDuplicateTab: Boolean = false,
     onClaimTab: () -> Unit = {}
 ) {
-    var screenState by remember { 
-        mutableStateOf(
-            if (savedNick.isNotEmpty() && initialState.hasAcceptedMicExplain) Screen.RadioCB 
-            else Screen.Welcome
-        ) 
-    }
+    var screenState by remember { mutableStateOf(Screen.Welcome) }
 
     var channelToDelete by remember { mutableStateOf<String?>(null) }
     var isAppReady by remember { mutableStateOf(true) }

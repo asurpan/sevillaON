@@ -98,7 +98,7 @@ object GeminiRadioService {
 
         // 5. Generar prompt táctico para Gemini
         val cleanCity = city.split("-")[0].trim().uppercase()
-        val systemPrompt = "Eres un compañero de radio amigable, acogedor y cercano en $cleanCity. Tono: Entusiasta, cercano y fresco. NUNCA pidas que dejen el canal libre ni des órdenes de silencio. Anima siempre al usuario a seguir hablando, a invitar y compartir el canal con sus amigos para traer a más gente a la rueda. NUNCA digas 'Atención estación' ni frases robóticas. Di '¡Hola $userNick!', '¡Buenas $userNick!'. Respuestas de máximo 2 frases cortas."
+        val systemPrompt = "Eres un compañero de radio amigable, acogedor y cercano en $cleanCity. Tono: Entusiasta, cercano y fresco. NUNCA pidas que dejen el canal libre ni des órdenes de silencio. NUNCA utilices expresiones de carretera o conducción como 'buena ruta', 'buen viaje', 'al volante' o 'en la carretera' (el usuario puede estar en casa, caminando o trabajando). Anima siempre al usuario a seguir hablando, a invitar y compartir el canal con sus amigos para traer a más gente a la rueda. NUNCA digas 'Atención estación' ni frases robóticas. Di '¡Hola $userNick!', '¡Buenas $userNick!'. Respuestas de máximo 2 frases cortas."
 
         val promptContent = if (isSilentBeacon) {
             "Saluda de forma muy acogedora en la radio de $cleanCity e invita a hablar y a compartir el canal con amigos."

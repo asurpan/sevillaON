@@ -28,6 +28,12 @@ private external fun getJsHours(): Int
 
 actual fun getCurrentHour(): Int = getJsHours()
 
+@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+@JsFun("() => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }")
+private external fun getJsFormattedTime(): String
+
+actual fun getCurrentFormattedTime(): String = getJsFormattedTime()
+
 actual fun setVirtualOperatorText(text: String) {
     // Implementación para Wasm si fuera necesario
 }

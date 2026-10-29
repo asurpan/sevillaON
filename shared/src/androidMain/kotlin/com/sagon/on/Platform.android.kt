@@ -30,6 +30,8 @@ actual fun playWelcomeSequence() {}
 
 actual fun getCurrentHour(): Int = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
 
+actual fun getCurrentFormattedTime(): String = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+
 actual fun setVirtualOperatorText(text: String) {
     // En Android esto se podría inyectar en un motor TTS nativo si fuera necesario
     // Por ahora lo dejamos listo para el puente con la WebApp

@@ -24,6 +24,8 @@ actual fun playWelcomeSequence() {}
 
 actual fun getCurrentHour(): Int = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
 
+actual fun getCurrentFormattedTime(): String = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+
 actual fun setVirtualOperatorText(text: String) {}
 
 actual fun showSystemNotification(title: String, message: String) {}

@@ -89,7 +89,7 @@ object GeminiRadioService {
         // 4. Si se superó el límite horario o no hay claves de API, usar Caché de Respaldo Local (0€ Coste, 0% Fallo)
         val activeKey = getActiveKey()
         if (hourlyRequestCount >= MAX_HOURLY_REQUESTS || activeKey == null) {
-            val fallback = getFallbackTacticalResponse(city, userNick, isSilentBeacon)
+            val fallback = getFallbackTacticalResponse(city, userNick, isSilentBeacon, userMessage)
             onResult(fallback)
             return
         }
@@ -98,7 +98,8 @@ object GeminiRadioService {
 
         // 5. Generar prompt táctico para Gemini
         val cleanCity = city.split("-")[0].trim().uppercase()
-        val systemPrompt = "Eres un compañero de radio amigable, acogedor y cercano en $cleanCity. Tono: Entusiasta, cercano y fresco. NUNCA pidas que dejen el canal libre ni des órdenes de silencio. NUNCA utilices expresiones de carretera o conducción como 'buena ruta', 'buen viaje', 'al volante' o 'en la carretera' (el usuario puede estar en casa, caminando o trabajando). Anima siempre al usuario a seguir hablando, a invitar y compartir el canal con sus amigos para traer a más gente a la rueda. NUNCA digas 'Atención estación' ni frases robóticas. Di '¡Hola $userNick!', '¡Buenas $userNick!'. Respuestas de máximo 2 frases cortas."
+        val currentTime = getCurrentFormattedTime()
+        val systemPrompt = "Eres un compañero de radio amigable, acogedor y cercano en $cleanCity. Tono: Entusiasta, cercano y fresco. La hora actual local es $currentTime. Si el usuario te pregunta la hora, qué hora es o qué tiempo o fecha hace, respóndele indicando la hora exacta ($currentTime) de forma clara y amable por radio. NUNCA pidas que dejen el canal libre ni des órdenes de silencio. NUNCA utilices expresiones de carretera o conducción como 'buena ruta', 'buen viaje', 'al volante' o 'en la carretera' (el usuario puede estar en casa, caminando o trabajando). Anima siempre al usuario a seguir hablando, a invitar y compartir el canal con sus amigos para traer a más gente a la rueda. NUNCA digas 'Atención estación' ni frases robóticas. Di '¡Hola $userNick!', '¡Buenas $userNick!'. Respuestas de máximo 2 frases cortas."
 
         val promptContent = if (isSilentBeacon) {
             "Saluda de forma muy acogedora en la radio de $cleanCity e invita a hablar y a compartir el canal con amigos."
@@ -117,7 +118,7 @@ object GeminiRadioService {
             } else {
                 // Si la clave falló, rotar a la siguiente clave y usar respuesta de respaldo
                 rotateKey()
-                val fallback = getFallbackTacticalResponse(city, userNick, isSilentBeacon)
+                val fallback = getFallbackTacticalResponse(city, userNick, isSilentBeacon, userMessage)
                 onResult(fallback)
             }
         }
@@ -155,25 +156,31 @@ object GeminiRadioService {
     fun getFallbackTacticalResponse(
         city: String,
         userNick: String,
-        isSilentBeacon: Boolean
+        isSilentBeacon: Boolean,
+        userMessage: String? = null
     ): String {
         val cleanCity = city.split("-")[0].trim().uppercase()
         val nick = userNick.trim().uppercase()
+        val currentTime = getCurrentFormattedTime()
+
+        if (userMessage != null && userMessage.contains("hora", ignoreCase = true)) {
+            return "¡Hola $nick! Son exactamente las $currentTime en $cleanCity. Te recibo fuerte y claro. ¡Cambio!"
+        }
 
         if (isSilentBeacon) {
             val beacons = listOf(
-                "¡Hola a todos en $cleanCity! Frecuencia de radio activa. ¡Anímate a compartir el canal con tus amigos y hablemos!",
-                "¡Buenas por $cleanCity! Frecuencia libre. Trae a tus colegas compartiendo la app para montar una buena rueda. A la escucha.",
-                "¡Hola $cleanCity! Buena cobertura en la zona. Frecuencia abierta, invita a tu gente a unirse. Cambio."
+                "¡Hola a todos en $cleanCity! Son las $currentTime y la frecuencia está activa. ¡Anímate a compartir el canal!",
+                "¡Buenas por $cleanCity! Frecuencia libre a las $currentTime. Trae a tus colegas para montar rueda. A la escucha.",
+                "¡Hola $cleanCity! Buena cobertura a las $currentTime. Frecuencia abierta, invita a tu gente a unirse. Cambio."
             )
             return beacons.random()
         }
 
         val responses = listOf(
-            "¡Hola $nick! Te escucho genial aquí en $cleanCity. ¡Comparte el canal con tus amigos y montamos buena rueda! Cambio.",
-            "¡Buenas $nick! Te recibo alto y claro desde $cleanCity. Invita a tus colegas a la frecuencia. ¡Adelante! Cambio.",
+            "¡Hola $nick! Te escucho genial a las $currentTime en $cleanCity. ¡Comparte el canal con tus amigos y montamos rueda! Cambio.",
+            "¡Buenas $nick! Te recibo alto y claro a las $currentTime desde $cleanCity. Invita a tus colegas a la frecuencia. ¡Adelante! Cambio.",
             "¡Qué tal $nick! Llegas con señal fuerte por $cleanCity. Pasa la voz a tus amigos para que se unan. ¡Cambio!",
-            "¡Recibido $nick! Se te escucha estupendamente por $cleanCity. Comparte el enlace con tu grupo y hablamos. Cambio."
+            "¡Recibido $nick! Se te escucha estupendamente por $cleanCity a las $currentTime. Comparte el enlace y hablamos. Cambio."
         )
         return responses.random()
     }

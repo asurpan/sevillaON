@@ -27,6 +27,8 @@ expect fun playWelcomeSequence()
 
 expect fun getCurrentHour(): Int
 
+expect fun getCurrentFormattedTime(): String
+
 expect fun setVirtualOperatorText(text: String)
 
 expect fun showSystemNotification(title: String, message: String)

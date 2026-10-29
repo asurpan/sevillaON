@@ -105,6 +105,13 @@ actual fun getTimeMillis(): Long = kotlin.js.Date.now().toLong()
 
 actual fun getCurrentHour(): Int = kotlin.js.Date().getHours()
 
+actual fun getCurrentFormattedTime(): String {
+    val d = kotlin.js.Date()
+    val h = d.getHours().toString().padStart(2, '0')
+    val m = d.getMinutes().toString().padStart(2, '0')
+    return "$h:$m"
+}
+
 actual fun setVirtualOperatorText(text: String) {
     js("window.virtualOperatorPendingText = text;")
 }

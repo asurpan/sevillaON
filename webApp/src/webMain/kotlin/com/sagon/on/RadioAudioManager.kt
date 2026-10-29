@@ -836,16 +836,16 @@ object ReplayEngine {
                     var textToSpeak = "";
 
                     if (!micGranted || !hasAudioTracks) {
-                        textToSpeak = "¡Atención estación " + userNick + "! Aquí estación de control de " + rawCity + ". No detectamos permiso de micrófono. Te abro la solicitud de permiso en pantalla.";
+                        textToSpeak = "¡Hola " + userNick + "! Para que podamos escucharnos bien, activa el permiso de micrófono en tu pantalla.";
                         if (window.ensureMicAccess) window.ensureMicAccess();
                     } else if (micEnergy < 0.005) {
-                        textToSpeak = "Estación " + userNick + ", recibo la portadora de tu equipo pero sin audio de voz. Pulsa el botón Hablar y habla alto para verificar tu modulación.";
+                        textToSpeak = "¡Buenas " + userNick + "! Recibo tu señal pero no sale tu voz. Habla un poco más alto al pulsar el botón.";
                     } else {
                         var idx = window.controlResponseIndex || 0;
                         if (idx === 0) {
-                            textToSpeak = "¡Hola " + userNick + "! Te recibo fuerte y claro con señal 9+30 y modulación perfecta en " + rawCity + ". Cambio.";
+                            textToSpeak = "¡Hola " + userNick + "! Te recibo fuerte y claro con modulación perfecta por " + rawCity + ". ¡Adelante! Cambio.";
                         } else {
-                            textToSpeak = "Estación " + userNick + ", reporte de señal perfecto en la frecuencia de " + rawCity + ". Frecuencia despejada. Cambio.";
+                            textToSpeak = "¡Buenas " + userNick + "! Señal excelente por la frecuencia de " + rawCity + ". ¡Un saludo! Cambio.";
                         }
                         window.controlResponseIndex = idx + 1;
                     }

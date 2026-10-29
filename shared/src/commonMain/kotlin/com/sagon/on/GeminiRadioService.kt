@@ -98,12 +98,12 @@ object GeminiRadioService {
 
         // 5. Generar prompt táctico para Gemini
         val cleanCity = city.split("-")[0].trim().uppercase()
-        val systemPrompt = "Eres la Estación Base de Control de Radio CB en $cleanCity. Tono: Profesional, sobrio, conciso y táctico. Máximo 2 frases (menos de 20 palabras). Usa lenguaje de radio CB (cambio, recibido, QRZ, QTH, S-Meter)."
+        val systemPrompt = "Eres un compañero de radio simpático, ameno y natural en $cleanCity. Tono: Amigable, cercano y fresco. NUNCA digas 'Atención estación', 'Estación [nick]' ni frases robóticas. Di '¡Hola $userNick!', '¡Buenas $userNick!'. Respuestas de máximo 2 frases cortas."
 
         val promptContent = if (isSilentBeacon) {
-            "Genera una baliza informativa muy breve de la estación de control de $cleanCity invitando a modular."
+            "Saluda de forma amigable en la radio de $cleanCity e invita a hablar."
         } else {
-            "Usuario $userNick en $cleanCity transmite: \"${userMessage ?: "Prueba de radio"}\". Responde brevemente como estación base."
+            "Usuario $userNick en $cleanCity dice: \"${userMessage ?: "Hola, prueba de radio"}\". Responde como un colega simpático por radio."
         }
 
         // Ejecutar llamada HTTP a la API de Gemini con manejo automático de errores
@@ -162,19 +162,18 @@ object GeminiRadioService {
 
         if (isSilentBeacon) {
             val beacons = listOf(
-                "Estación Base de Control $cleanCity en Canal. Frecuencia activa con portadora limpia. Adelante la estación que llame.",
-                "Aquí Control $cleanCity. Recordatorio: mantener frecuencia despejada para llamadas de ruta y asistencia. A la escucha.",
-                "Boletín de Estación Base en $cleanCity. Visibilidad y cobertura óptimas en la zona. Frecuencia abierta para modulación. Cambio.",
-                "Llamada general en el canal de $cleanCity. Se solicita reporte de señal y modulación S-Meter para prueba de zona."
+                "¡Hola a todos en $cleanCity! Frecuencia de radio activa. Adelante la estación que llame.",
+                "¡Buenas por $cleanCity! Recordatorio: mantener canal despejado. A la escucha.",
+                "¡Hola $cleanCity! Buena cobertura en la zona. Frecuencia abierta. Cambio."
             )
             return beacons.random()
         }
 
         val responses = listOf(
-            "Recibido $nick en $cleanCity. Te escucho con modulación perfecta y señal S9 en el repetidor. Quedo a la escucha. Cambio.",
-            "Estación $nick, reporte de señal correcto desde $cleanCity. Llegas potente de audio en esta frecuencia. Adelante. Cambio.",
-            "Atención $nick, te recibo alto y claro en la zona de $cleanCity. Buena modulación de equipo. Saludos y buena ruta. Cambio.",
-            "Recibido $nick. Portadora y voz llegando con total claridad al control de $cleanCity. Frecuencia despejada. Cambio."
+            "¡Hola $nick! Te escucho genial aquí en $cleanCity. Tu voz llega súper clara y potente. ¡Un saludo! Cambio.",
+            "¡Buenas $nick! Te recibo alto y claro desde $cleanCity. Modulas perfecto por la radio. ¡Adelante! Cambio.",
+            "¡Qué tal $nick! Llegas con señal fuerte y sonido muy limpio por el canal de $cleanCity. ¡Buena ruta! Cambio.",
+            "¡Recibido $nick! Se te escucha estupendamente por $cleanCity. Todo correcto por aquí. Cambio."
         )
         return responses.random()
     }

@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.text.TextStyle
@@ -178,18 +179,23 @@ fun WelcomeScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            Button(
+            val focusManager = LocalFocusManager.current
+            Surface(
                 onClick = { 
+                    focusManager.clearFocus()
                     if (nick.trim().length >= 2) { 
-                        if (!hasAcceptedMic) onMicAccept(); onConnect(null) 
+                        onMicAccept()
+                        onConnect(null) 
                     } 
                 },
                 modifier = Modifier.fillMaxWidth().height(54.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = LuxeColors.Gold),
+                color = if (nick.trim().length >= 2) LuxeColors.Gold else LuxeColors.Gold.copy(0.4f),
                 shape = RoundedCornerShape(16.dp),
                 enabled = nick.trim().length >= 2
             ) {
-                Text("ENTRAR EN LA RADIO", fontWeight = FontWeight.Black, letterSpacing = 1.5.sp, fontSize = 14.sp, color = Color.Black)
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("ENTRAR EN LA RADIO", fontWeight = FontWeight.Black, letterSpacing = 1.5.sp, fontSize = 14.sp, color = Color.Black)
+                }
             }
 
             if (totalUsers > 0) {

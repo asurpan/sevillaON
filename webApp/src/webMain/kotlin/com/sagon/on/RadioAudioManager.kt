@@ -608,9 +608,6 @@ object RadioAudioManager {
                     }
                 });
 
-            function updateRemotePriorities() {
-                if (!window.app || !window.app.ctx) return;
-                var peers = Object.keys(window.app.remoteGains || {});
                 var activeTxPeers = peers.filter(p => window.remoteTxStates && window.remoteTxStates[p] === true);
                 if (activeTxPeers.length >= 2 && !window.app.pttStateInternal) {
                     var ctx = window.app.ctx;

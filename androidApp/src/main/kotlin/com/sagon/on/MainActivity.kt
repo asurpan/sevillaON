@@ -71,6 +71,7 @@ import java.util.Locale
 class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var isTtsReady = false
+    private var pendingTextToSpeak: String? = null
 
     // --- 🛡️ MÓDULO DE SUPERVIVENCIA P2P (INDEPENDIENTE) ---
     private val meshModule: RadioMeshModule by lazy { RadioMeshModule(this) }
@@ -105,6 +106,32 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         }
                     }
                 })
+            val pending = pendingTextToSpeak
+            if (pending != null) {
+                pendingTextToSpeak = null
+                performNativeSpeak(pending, 0.92f, 0.88f, 0.60f)
+            }
+        }
+    }
+
+    fun performNativeSpeak(text: String, rate: Float, pitch: Float, volume: Float) {
+        runOnUiThread {
+            try {
+                if (tts == null) {
+                    pendingTextToSpeak = text
+                    tts = TextToSpeech(this@MainActivity, this@MainActivity)
+                } else if (!isTtsReady) {
+                    pendingTextToSpeak = text
+                } else {
+                    tts?.setSpeechRate(rate)
+                    tts?.setPitch(pitch)
+                    val params = Bundle()
+                    params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume.coerceIn(0f, 1f))
+                    tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, "on_air_tts")
+                }
+            } catch (e: Exception) {
+                Log.e("ON_AIR_TTS", "TTS error: ${e.message}")
+            }
         }
     }
 
@@ -813,27 +840,12 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         addJavascriptInterface(object {
                             @JavascriptInterface
                             fun speak(text: String, rate: Float, pitch: Float) {
-                                speak(text, rate, pitch, 0.60f)
+                                performNativeSpeak(text, rate, pitch, 0.60f)
                             }
 
                             @JavascriptInterface
                             fun speak(text: String, rate: Float, pitch: Float, volume: Float) {
-                                runOnUiThread {
-                                    try {
-                                        if (tts == null) {
-                                            tts = TextToSpeech(this@MainActivity, this@MainActivity)
-                                        }
-                                        if (isTtsReady && tts != null) {
-                                            tts?.setSpeechRate(rate)
-                                            tts?.setPitch(pitch)
-                                            val params = Bundle()
-                                            params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume.coerceIn(0f, 1f))
-                                            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, "on_air_tts")
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e("ON_AIR_TTS", "TTS error: ${e.message}")
-                                    }
-                                }
+                                performNativeSpeak(text, rate, pitch, volume)
                             }
 
                             @JavascriptInterface
@@ -873,6 +885,12 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                             postDelayed({
                                                 try { toneGen.release() } catch (_: Exception) {}
                                             }, 100)
+                                        } else if (type == "chat_msg") {
+                                            val toneGen = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 50)
+                                            toneGen.startTone(android.media.ToneGenerator.TONE_PROP_ACK, 120)
+                                            postDelayed({
+                                                try { toneGen.release() } catch (_: Exception) {}
+                                            }, 200)
                                         }
                                     } catch (e: Exception) {}
                                 }

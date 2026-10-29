@@ -906,6 +906,8 @@ fun RadioPanel(
                     chatMessages = chatMessages,
                     targetNick = privateChatTargetNick,
                     onTargetChange = { privateChatTargetNick = it },
+                    isChatOpen = state.isChatVisible,
+                    onChatOpenChange = { open -> onStateChange(state.copy(isChatVisible = open)) },
                     onSendMessage = onSendMessage,
                     onPlaySound = onPlaySound
                 )
@@ -1087,11 +1089,12 @@ fun InlineTacticalChat(
     chatMessages: List<ChatMessage>,
     targetNick: String? = null,
     onTargetChange: (String?) -> Unit = {},
+    isChatOpen: Boolean = false,
+    onChatOpenChange: (Boolean) -> Unit = {},
     onSendMessage: (String, String?) -> Unit,
     onPlaySound: (String) -> Unit
 ) {
     var textInput by remember { mutableStateOf("") }
-    var isFloatingActive by remember { mutableStateOf(false) }
 
     Surface(
         color = Color(0xFF0F172A).copy(alpha = 0.85f),
@@ -1100,7 +1103,7 @@ fun InlineTacticalChat(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable { isFloatingActive = true }
+            .clickable { onChatOpenChange(true) }
     ) {
         Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
             if (targetNick != null) {
@@ -1215,224 +1218,214 @@ fun InlineTacticalChat(
         }
     }
 
-    // 🚀 BANDEROLA / MODAL FLOTANTE INDEPENDIENTE QUE SUBE CON EL TECLADO SIN MOVER LA RADIO
-    if (isFloatingActive) {
+    // 🚀 BANDEROLA / MODAL FLOTANTE ULTRA-RÁPIDO QUE SUBE CON EL TECLADO
+    if (isChatOpen) {
         val focusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) {
-            delay(150)
+        LaunchedEffect(isChatOpen) {
             focusRequester.requestFocus()
         }
 
-        androidx.compose.ui.window.Dialog(
-            onDismissRequest = { isFloatingActive = false },
-            properties = androidx.compose.ui.window.DialogProperties(
-                usePlatformDefaultWidth = false
-            )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.60f))
+                .clickable { onChatOpenChange(false) },
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Box(
+            Surface(
+                color = Color(0xFF0F172A),
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.50f))
-                    .clickable { isFloatingActive = false },
-                contentAlignment = Alignment.BottomCenter
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.ime)
+                    .clickable(enabled = false) {}
             ) {
-                Surface(
-                    color = Color(0xFF0F172A),
-                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-                    border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.ime)
-                        .clickable(enabled = false) {}
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                    // Cabecera del chat flotante
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
                     ) {
-                        // Cabecera del chat flotante
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                        Icon(
+                            imageVector = if (targetNick != null) Icons.Rounded.Lock else Icons.AutoMirrored.Rounded.Chat,
+                            contentDescription = null,
+                            tint = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = if (targetNick != null) "CHAT PRIVADO CON $targetNick" else "CHAT DE CANAL ACTIVO",
+                            color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = { onChatOpenChange(false) },
+                            modifier = Modifier.size(24.dp)
                         ) {
                             Icon(
-                                imageVector = if (targetNick != null) Icons.Rounded.Lock else Icons.AutoMirrored.Rounded.Chat,
-                                contentDescription = null,
-                                tint = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Cerrar",
+                                tint = Color.White.copy(0.7f),
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = if (targetNick != null) "CHAT PRIVADO CON $targetNick" else "CHAT DE CANAL ACTIVO",
-                                color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Black,
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(
-                                onClick = { isFloatingActive = false },
-                                modifier = Modifier.size(24.dp)
+                        }
+                    }
+
+                    // Lista de mensajes recientes en el modal
+                    val modalMsgs = chatMessages.filter { !it.isSystem }.takeLast(4)
+                    if (modalMsgs.isNotEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color.Black.copy(0.4f))
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            modalMsgs.forEach { msg ->
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "${msg.senderNick}: ",
+                                        color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = msg.text,
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    // 🚀 BARRA DE CHIPS DE RESPUESTA RÁPIDA (1-TAP INSTANTÁNEO)
+                    val tacticalChips = listOf(
+                        "👍 10-4",
+                        "🎙️ ROGER",
+                        "📶 S9+",
+                        "👋 73's",
+                        "📻 QTH",
+                        "🚗 RUTA",
+                        "☕ TAZA"
+                    )
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                    ) {
+                        items(tacticalChips) { chip ->
+                            Surface(
+                                onClick = {
+                                    onSendMessage(chip, targetNick)
+                                    onPlaySound("chat_msg")
+                                    onChatOpenChange(false)
+                                },
+                                color = Color.Black.copy(0.4f),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (targetNick != null) LuxeColors.Gold.copy(0.5f) else Color(0xFF00E5FF).copy(0.5f)
+                                )
                             ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = "Cerrar",
-                                    tint = Color.White.copy(0.7f),
-                                    modifier = Modifier.size(18.dp)
+                                Text(
+                                    text = chip,
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                                 )
                             }
                         }
+                    }
 
-                        // Lista de mensajes recientes en el modal
-                        val modalMsgs = chatMessages.filter { !it.isSystem }.takeLast(4)
-                        if (modalMsgs.isNotEmpty()) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(Color.Black.copy(0.4f))
-                                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                modalMsgs.forEach { msg ->
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = "${msg.senderNick}: ",
-                                            color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = msg.text,
-                                            color = Color.White,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(Modifier.height(8.dp))
-                        }
-
-                        // 🚀 BARRA DE CHIPS DE RESPUESTA RÁPIDA (1-TAP INSTANTÁNEO)
-                        val tacticalChips = listOf(
-                            "👍 10-4",
-                            "🎙️ ROGER",
-                            "📶 S9+",
-                            "👋 73's",
-                            "📻 QTH",
-                            "🚗 RUTA",
-                            "☕ TAZA"
-                        )
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp)
-                        ) {
-                            items(tacticalChips) { chip ->
-                                Surface(
-                                    onClick = {
-                                        onSendMessage(chip, targetNick)
+                    // Entrada de texto y botón enviar
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = textInput,
+                            onValueChange = { textInput = it },
+                            singleLine = true,
+                            textStyle = TextStyle(
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            placeholder = {
+                                Text(
+                                    if (targetNick != null) "Escribir privado a $targetNick..." else "Escribir mensaje de canal...",
+                                    color = Color.White.copy(0.4f),
+                                    fontSize = 12.sp
+                                )
+                            },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                imeAction = androidx.compose.ui.text.input.ImeAction.Send
+                            ),
+                            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                                onSend = {
+                                    if (textInput.isNotBlank()) {
+                                        onSendMessage(textInput.trim(), targetNick)
                                         onPlaySound("chat_msg")
-                                        isFloatingActive = false
-                                    },
-                                    color = Color.Black.copy(0.4f),
-                                    shape = RoundedCornerShape(12.dp),
-                                    border = BorderStroke(
-                                        1.dp,
-                                        if (targetNick != null) LuxeColors.Gold.copy(0.5f) else Color(0xFF00E5FF).copy(0.5f)
-                                    )
-                                ) {
-                                    Text(
-                                        text = chip,
-                                        color = Color.White,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                                    )
+                                        textInput = ""
+                                        onChatOpenChange(false)
+                                    }
                                 }
-                            }
-                        }
-
-                        // Entrada de texto y botón enviar
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            OutlinedTextField(
-                                value = textInput,
-                                onValueChange = { textInput = it },
-                                singleLine = true,
-                                textStyle = TextStyle(
-                                    color = Color.White,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                placeholder = {
-                                    Text(
-                                        if (targetNick != null) "Escribir privado a $targetNick..." else "Escribir mensaje de canal...",
-                                        color = Color.White.copy(0.4f),
-                                        fontSize = 12.sp
-                                    )
-                                },
-                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                                    imeAction = androidx.compose.ui.text.input.ImeAction.Send
-                                ),
-                                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
-                                    onSend = {
-                                        if (textInput.isNotBlank()) {
-                                            onSendMessage(textInput.trim(), targetNick)
-                                            onPlaySound("chat_msg")
-                                            textInput = ""
-                                            isFloatingActive = false
-                                        }
-                                    }
-                                ),
-                                trailingIcon = {
-                                    AnimatedVisibility(
-                                        visible = textInput.isNotBlank(),
-                                        enter = fadeIn() + scaleIn(),
-                                        exit = fadeOut() + scaleOut()
-                                    ) {
-                                        IconButton(
-                                            onClick = {
-                                                if (textInput.isNotBlank()) {
-                                                    onSendMessage(textInput.trim(), targetNick)
-                                                    onPlaySound("chat_msg")
-                                                    textInput = ""
-                                                    isFloatingActive = false
-                                                }
-                                            },
-                                            modifier = Modifier
-                                                .padding(end = 4.dp)
-                                                .size(34.dp)
-                                                .background(
-                                                    if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
-                                                    CircleShape
-                                                )
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Rounded.Send,
-                                                contentDescription = "Enviar",
-                                                tint = Color.Black,
-                                                modifier = Modifier.size(16.dp)
+                            ),
+                            trailingIcon = {
+                                AnimatedVisibility(
+                                    visible = textInput.isNotBlank(),
+                                    enter = fadeIn() + scaleIn(),
+                                    exit = fadeOut() + scaleOut()
+                                ) {
+                                    IconButton(
+                                        onClick = {
+                                            if (textInput.isNotBlank()) {
+                                                onSendMessage(textInput.trim(), targetNick)
+                                                onPlaySound("chat_msg")
+                                                textInput = ""
+                                                onChatOpenChange(false)
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .padding(end = 4.dp)
+                                            .size(34.dp)
+                                            .background(
+                                                if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                                                CircleShape
                                             )
-                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Rounded.Send,
+                                            contentDescription = "Enviar",
+                                            tint = Color.Black,
+                                            modifier = Modifier.size(16.dp)
+                                        )
                                     }
-                                },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Black.copy(0.6f),
-                                    unfocusedContainerColor = Color.Black.copy(0.4f),
-                                    focusedBorderColor = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
-                                    unfocusedBorderColor = Color.White.copy(0.2f),
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
-                                    cursorColor = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)
-                                ),
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequester)
-                            )
-                        }
+                                }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.Black.copy(0.6f),
+                                unfocusedContainerColor = Color.Black.copy(0.4f),
+                                focusedBorderColor = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                                unfocusedBorderColor = Color.White.copy(0.2f),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
+                        )
                     }
                 }
             }

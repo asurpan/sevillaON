@@ -657,6 +657,20 @@ object RadioSignaling {
                 if(!window.app.ctx || !window.app.canPlaySounds) return;
                 var now = window.app.ctx.currentTime;
 
+                if (type === "chat_msg") {
+                    // 💬 SONIDO CRISTALINO Y ARMONIOSO PARA MENSAJES DE CHAT (1046Hz -> 1318Hz -> 1567Hz)
+                    var tones = [1046, 1318, 1567];
+                    tones.forEach((freq, idx) => {
+                        var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain();
+                        o.type = "sine"; o.frequency.setValueAtTime(freq, now + (idx * 0.05));
+                        g.gain.setValueAtTime(0, now + (idx * 0.05));
+                        g.gain.linearRampToValueAtTime(0.08, now + (idx * 0.05) + 0.01);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.05) + 0.18);
+                        o.connect(g); g.connect(window.app.masterOut); o.start(now + (idx * 0.05)); o.stop(now + (idx * 0.05) + 0.20);
+                    });
+                    return;
+                }
+
                 if (type === "user_in" || type === "friend_in") {
                     // 🔔 CAMPANILLA CRISTALINA Y MELÓDICA DE BIENVENIDA DE USUARIO (784Hz -> 987Hz)
                     var isFriend = (type === "friend_in");

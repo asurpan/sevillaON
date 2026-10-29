@@ -1303,7 +1303,6 @@ fun InlineTacticalChat(
                     border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.ime)
                         .clickable(enabled = false) {}
                 ) {
                 Column(
@@ -1407,7 +1406,6 @@ fun InlineTacticalChat(
                                     chipUsageMap = chipUsageMap + (chip to (currentCount + 1))
                                     onSendMessage(chip, targetNick)
                                     onPlaySound("chat_msg")
-                                    onChatOpenChange(false)
                                 },
                                 color = Color.Black.copy(0.4f),
                                 shape = RoundedCornerShape(12.dp),

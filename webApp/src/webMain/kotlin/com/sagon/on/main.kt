@@ -516,17 +516,20 @@ fun main() {
             onPrivateChatRequest = { },
             onPublicChatRequest = { },
             onStateSave = { newState -> 
-                RadioPersistence.saveState(newState); radioState.value = newState
-                if(win.app != null) { 
-                    win.app.voxActive = newState.isVoxEnabled
-                    win.app.voxSens = newState.voxSensitivity
-                    win.app.rogerEnabled = newState.isRogerBeepEnabled
-                    win.app.isBotEnabled = newState.isBotEnabled
-                    win.app.discreteMode = newState.isDiscreteModeEnabled
-                    localStorage.setItem("roger", newState.isRogerBeepEnabled.toString())
-                }
-                if (win.updateDspSettings != null) {
-                    win.updateDspSettings(newState.isDspEnabled, newState.dspLevel)
+                if (radioState.value != newState) {
+                    radioState.value = newState
+                    RadioPersistence.saveState(newState)
+                    if(win.app != null) { 
+                        win.app.voxActive = newState.isVoxEnabled
+                        win.app.voxSens = newState.voxSensitivity
+                        win.app.rogerEnabled = newState.isRogerBeepEnabled
+                        win.app.isBotEnabled = newState.isBotEnabled
+                        win.app.discreteMode = newState.isDiscreteModeEnabled
+                        localStorage.setItem("roger", newState.isRogerBeepEnabled.toString())
+                    }
+                    if (win.updateDspSettings != null) {
+                        win.updateDspSettings(newState.isDspEnabled, newState.dspLevel)
+                    }
                 }
             },
             onConnectRadio = { RadioNetworkManager.connect(it) },

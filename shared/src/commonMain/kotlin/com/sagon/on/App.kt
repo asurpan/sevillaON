@@ -257,7 +257,13 @@ fun App(
         }
     }
 
-    LaunchedEffect(radioState) { onStateSave(radioState) }
+    var lastSavedState by remember { mutableStateOf(initialState) }
+    LaunchedEffect(radioState) {
+        if (radioState != lastSavedState) {
+            lastSavedState = radioState
+            onStateSave(radioState)
+        }
+    }
     LaunchedEffect(radioState.city) { onCityChange(radioState.city) }
     LaunchedEffect(radioState.subtone) { onSubtoneChange(radioState.subtone) }
     LaunchedEffect(radioState.channel) { onChannelChange(radioState.channel) }

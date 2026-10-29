@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     // ⚙️ CONMUTADOR DE ENTORNO (CAMBIA AQUÍ PARA MÓVIL)
     // true  = Carga en directo desde Servidor GitHub Pages (Producción/Servidor)
     // false = Carga en directo desde Assets Locales compilados (Desarrollo Local)
-    private val USE_GITHUB_REMOTE_SERVER = true
+    private val USE_GITHUB_REMOTE_SERVER = false
 
     // --- 🛡️ MÓDULO DE SUPERVIVENCIA P2P (INDEPENDIENTE) ---
     private val meshModule: RadioMeshModule by lazy { RadioMeshModule(this) }
@@ -99,14 +99,14 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                     override fun onDone(utteranceId: String?) {
                         if (utteranceId == "on_air_tts") {
                             runOnUiThread {
-                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); }", null)
+                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); } if (window.playUiSound) { try { window.playUiSound('rx_off'); } catch(e){} }", null)
                             }
                         }
                     }
                     override fun onError(utteranceId: String?) {
                         if (utteranceId == "on_air_tts") {
                             runOnUiThread {
-                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); }", null)
+                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); } if (window.playUiSound) { try { window.playUiSound('rx_off'); } catch(e){} }", null)
                             }
                         }
                     }

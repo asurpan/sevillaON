@@ -802,11 +802,11 @@ fun RadioPanel(
                 }
 
                 AnimatedVisibility(visible = showTools) {
-                    LazyRow(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        item { MiniTacticalIcon(icon = Icons.Rounded.Mic, label = "VOX", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX, null) }) }
-                        item { MiniTacticalIcon(icon = Icons.Rounded.Headset, label = "MONI", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) onStateChange(state.copy(isMonitorEnabled = false)) else onPendingDialogChange(RadioDialogType.MONI, null) }) }
-                        item { MiniTacticalIcon(icon = Icons.Rounded.GraphicEq, label = "DSP", isActive = state.isDspEnabled, onClick = { onPendingDialogChange(RadioDialogType.DSP, null) }) }
-                        item { MiniTacticalIcon(icon = Icons.Rounded.MusicNote, label = "BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) }) }
+                    LazyRow(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        item { MiniTacticalIcon(icon = Icons.Rounded.Mic, label = "MANOS LIBRES", isActive = state.isVoxEnabled, onClick = { if (state.isVoxEnabled) onStateChange(state.copy(isVoxEnabled = false)) else onPendingDialogChange(RadioDialogType.VOX, null) }) }
+                        item { MiniTacticalIcon(icon = Icons.Rounded.Headset, label = "MONITOR", isActive = state.isMonitorEnabled, onClick = { if (state.isMonitorEnabled) onStateChange(state.copy(isMonitorEnabled = false)) else onPendingDialogChange(RadioDialogType.MONI, null) }) }
+                        item { MiniTacticalIcon(icon = Icons.Rounded.GraphicEq, label = "FILTRO DSP", isActive = state.isDspEnabled, onClick = { onPendingDialogChange(RadioDialogType.DSP, null) }) }
+                        item { MiniTacticalIcon(icon = Icons.Rounded.MusicNote, label = "ROGER BEEP", isActive = state.isRogerBeepEnabled, onClick = { onStateChange(state.copy(isRogerBeepEnabled = !state.isRogerBeepEnabled)) }) }
                     }
                 }
 
@@ -1098,7 +1098,7 @@ fun MiniTechLabel(label: String, value: String, onClick: () -> Unit) {
 
 @Composable
 fun MiniTacticalIcon(icon: ImageVector, label: String, isActive: Boolean, onClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(56.dp)) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(74.dp)) {
         Surface(
             modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
             color = if (isActive) LuxeColors.Gold.copy(0.2f) else Color.White.copy(0.05f),
@@ -1108,7 +1108,14 @@ fun MiniTacticalIcon(icon: ImageVector, label: String, isActive: Boolean, onClic
             Box(contentAlignment = Alignment.Center) { Icon(icon, null, tint = if (isActive) LuxeColors.Gold else Color.White.copy(0.7f), modifier = Modifier.size(20.dp)) }
         }
         Spacer(Modifier.height(4.dp))
-        Text(text = label, color = if (isActive) LuxeColors.Gold else Color.White.copy(0.5f), fontSize = 8.sp, fontWeight = FontWeight.Black)
+        Text(
+            text = label, 
+            color = if (isActive) LuxeColors.Gold else Color.White.copy(0.7f), 
+            fontSize = 8.5.sp, 
+            fontWeight = FontWeight.Black,
+            textAlign = TextAlign.Center,
+            lineHeight = 10.sp
+        )
     }
 }
 
@@ -1365,25 +1372,39 @@ fun InlineTacticalChat(
                         Spacer(Modifier.height(8.dp))
                     }
 
-                    // 🚀 BARRA DE CHIPS DE RESPUESTA RÁPIDA (1-TAP INSTANTÁNEO)
-                    val tacticalChips = listOf(
-                        "👍 10-4",
-                        "🎙️ ROGER",
-                        "📶 S9+",
-                        "👋 73's",
-                        "📻 QTH",
-                        "🚗 RUTA",
-                        "☕ TAZA"
-                    )
+                    // 🚀 BARRA DE CHIPS INTELIGENTE CON AUTO-ORDENACIÓN SEGÚN USO
+                    val defaultChips = remember {
+                        listOf(
+                            "👍 10-4",
+                            "🎙️ ROGER",
+                            "📶 S9+",
+                            "👋 73's",
+                            "📻 QTH",
+                            "🤠 Wey",
+                            "😜 Joio",
+                            "🎨 Artista",
+                            "🚗 RUTA",
+                            "☕ TAZA"
+                        )
+                    }
+
+                    var chipUsageMap by remember { mutableStateOf(mapOf<String, Int>()) }
+
+                    val sortedChips = remember(chipUsageMap) {
+                        defaultChips.sortedByDescending { chipUsageMap[it] ?: 0 }
+                    }
+
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 8.dp)
                     ) {
-                        items(tacticalChips) { chip ->
+                        items(sortedChips) { chip ->
                             Surface(
                                 onClick = {
+                                    val currentCount = chipUsageMap[chip] ?: 0
+                                    chipUsageMap = chipUsageMap + (chip to (currentCount + 1))
                                     onSendMessage(chip, targetNick)
                                     onPlaySound("chat_msg")
                                     onChatOpenChange(false)

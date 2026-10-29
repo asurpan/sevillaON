@@ -671,6 +671,32 @@ fun RadioPanel(
                                                 )
                                             }
                                         }
+                                        Spacer(Modifier.height(3.dp))
+                                        Surface(
+                                            onClick = { onPendingDialogChange(RadioDialogType.SUBTONO, null) },
+                                            color = if (state.subtone != "0000") LuxeColors.Gold.copy(alpha = 0.20f) else Color.White.copy(alpha = 0.05f),
+                                            shape = RoundedCornerShape(8.dp),
+                                            border = BorderStroke(1.dp, if (state.subtone != "0000") LuxeColors.Gold else Color.White.copy(alpha = 0.2f))
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (state.subtone != "0000") Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                                                    contentDescription = "Subtono Privado",
+                                                    tint = if (state.subtone != "0000") LuxeColors.Gold else Color.White.copy(0.6f),
+                                                    modifier = Modifier.size(11.dp)
+                                                )
+                                                Spacer(Modifier.width(4.dp))
+                                                Text(
+                                                    text = if (state.subtone != "0000") "PRIVADO: ${state.subtone}" else "CÓDIGO PRIVADO",
+                                                    color = if (state.subtone != "0000") LuxeColors.Gold else Color.White.copy(0.6f),
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                        }
                                     }
 
                                     // 🔽 BAJAR

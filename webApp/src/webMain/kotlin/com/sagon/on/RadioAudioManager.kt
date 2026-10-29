@@ -474,12 +474,18 @@ object RadioAudioManager {
                     }
                     if (window.app.masterOut) window.app.masterOut.connect(window.app.ctx.destination);
                 });
-                call.on('close', function() {
-                    if (window.app.remoteSources[call.peer]) window.app.remoteSources[call.peer].disconnect();
-                    if (window.app.remoteGains[call.peer]) window.app.remoteGains[call.peer].disconnect();
+                function cleanupCall() {
+                    try { if (window.app.remoteSources[call.peer]) window.app.remoteSources[call.peer].disconnect(); } catch(e){}
+                    try { if (window.app.remoteGains[call.peer]) window.app.remoteGains[call.peer].disconnect(); } catch(e){}
+                    try { if (window.app.remoteSinks && window.app.remoteSinks[call.peer]) window.app.remoteSinks[call.peer].remove(); } catch(e){}
+                    delete window.app.remoteSources[call.peer];
+                    delete window.app.remoteGains[call.peer];
                     delete window.app.remoteAnalysers[call.peer];
                     delete window.app.activeCalls[call.peer];
-                });
+                    if (window.failedPeerAttempts) delete window.failedPeerAttempts[call.peer];
+                }
+                call.on('close', cleanupCall);
+                call.on('error', cleanupCall);
             };
 
             window.app.discreteBeepPlayed = {};

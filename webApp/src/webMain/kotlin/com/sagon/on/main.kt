@@ -391,7 +391,22 @@ fun main() {
                                 if (now - (u.lastSeen as? Double ?: 0.0) > 45000 && !isCallActive) continue 
                                 
                                 val isMe = (k == win.app.sessionID)
-                                val isTransmitting = if (isMe) (win.app?.isTransmittingInternal == true) else (u.tx == true)
+                                var isTransmitting = if (isMe) (win.app?.isTransmittingInternal == true) else (u.tx == true)
+                                
+                                // 🛡️ HARD-LOCK: CORTAFUEGOS MÁXIMO DE 60s PARA TRANSMISIONES REMOTAS
+                                if (win.remoteTxStartTimes == null) win.remoteTxStartTimes = js("{}")
+                                if (isTransmitting && !isMe) {
+                                    val txStart = (win.remoteTxStartTimes[k] as? Double ?: 0.0)
+                                    if (txStart == 0.0) {
+                                        win.remoteTxStartTimes[k] = now
+                                    } else if (now - txStart > 60000.0) {
+                                        isTransmitting = false
+                                        win.remoteTxStartTimes[k] = 0.0
+                                    }
+                                } else {
+                                    win.remoteTxStartTimes[k] = 0.0
+                                }
+
                                 win.app.remotePowers[k] = (u.pwr as? Double ?: 0.7).toFloat()
                                 val prevState = win.remoteTxStates[k] ?: false
                                 if (prevState && !isTransmitting && !isMe && u.roger == true) win.playUiSound("rx_off")

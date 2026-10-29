@@ -45,4 +45,9 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Derecho de Admisión**: Usar lenguaje firme en el borrado de datos para proteger la comunidad.
 - **Hard-Lock ID**: Un equipo físico = una identidad en red.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 15.0 (BLINDAJE 4G/5G & SYNC DISCRETA)
+### 📱 ENTORNO CONMUTABLE ANDROID (LOCAL vs GITHUB SERVIDOR)
+- **Variable de conmutación**: En `MainActivity.kt` (línea ~75): `private val USE_GITHUB_REMOTE_SERVER = true` (ó `false`).
+- **Cómo conmutar a MODO LOCAL (Desarrollo)**: Si el usuario pide "cambia a local" o "ponlo en local", establecer `USE_GITHUB_REMOTE_SERVER = false` en `MainActivity.kt`.
+- **Cómo conmutar a MODO SERVIDOR / GITHUB (Producción)**: Si el usuario pide "cambia a servidor", "ponlo en github" o "modo producción", establecer `USE_GITHUB_REMOTE_SERVER = true` en `MainActivity.kt`.
+
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 16.0 (ENTORNO CONMUTABLE Y BOT IA GEMINI)

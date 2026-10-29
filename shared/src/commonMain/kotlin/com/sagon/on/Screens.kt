@@ -1393,23 +1393,14 @@ fun InlineTacticalChat(
                         defaultChips.sortedByDescending { chipUsageMap[it] ?: 0 }
                     }
 
-                    LazyRow(
+                    Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
                             .padding(bottom = 8.dp)
-                            .pointerInput(Unit) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        val event = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
-                                        if (event.type == androidx.compose.ui.input.pointer.PointerEventType.Press || event.type == androidx.compose.ui.input.pointer.PointerEventType.Move) {
-                                            try { focusRequester.requestFocus() } catch (_: Exception) {}
-                                        }
-                                    }
-                                }
-                            }
                     ) {
-                        items(sortedChips) { chip ->
+                        sortedChips.forEach { chip ->
                             Surface(
                                 onClick = {
                                     val currentCount = chipUsageMap[chip] ?: 0

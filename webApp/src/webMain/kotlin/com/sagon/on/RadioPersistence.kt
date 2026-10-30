@@ -117,13 +117,14 @@ object RadioPersistence {
             js("if(window.updateMasterVolume) window.updateMasterVolume();")
             js("if(window.updateDspSettings) window.updateDspSettings(s.isDspEnabled, s.dspLevel);")
 
-            if (win.app.db != null && win.app.sessionID != null) {
+            val sessId = win.app.sessionID as? String
+            if (win.app.db != null && !sessId.isNullOrBlank() && sessId != "undefined" && !sessId.contains("undefined")) {
                 val updates: dynamic = js("{}")
                 updates.city = normCity
                 updates.channel = normCh
                 updates.roger = s.isRogerBeepEnabled 
                 updates.blocks = s.blockedUsers.joinToString(",")
-                win.app.db.ref("users/" + win.app.sessionID).update(updates)
+                win.app.db.ref("users/" + sessId).update(updates)
             }
         }
     }
@@ -132,9 +133,10 @@ object RadioPersistence {
         val win: dynamic = window
         try {
             val hwID = if (win.AndroidApp != null && win.AndroidApp.getAndroidId != null) win.AndroidApp.getAndroidId() as? String else localStorage.getItem("web_device_id")
+            val sessId = win.app?.sessionID as? String
             if (win.app != null && win.app.db != null) {
-                if (win.app.sessionID != null) {
-                    win.app.db.ref("users/" + win.app.sessionID).remove()
+                if (!sessId.isNullOrBlank() && sessId != "undefined" && !sessId.contains("undefined")) {
+                    win.app.db.ref("users/" + sessId).remove()
                 }
                 if (hwID != null && hwID != "") {
                     win.app.db.ref("registered_devices/" + hwID).remove()

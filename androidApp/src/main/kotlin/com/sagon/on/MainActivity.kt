@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     // ⚙️ CONMUTADOR DE ENTORNO (CAMBIA AQUÍ PARA MÓVIL)
     // true  = Carga en directo desde Servidor GitHub Pages (Producción/Servidor)
     // false = Carga en directo desde Assets Locales compilados (Desarrollo Local)
-    private val USE_GITHUB_REMOTE_SERVER = false
+    private val USE_GITHUB_REMOTE_SERVER = true
 
     // --- 🛡️ MÓDULO DE SUPERVIVENCIA P2P (INDEPENDIENTE) ---
     private val meshModule: RadioMeshModule by lazy { RadioMeshModule(this) }
@@ -99,7 +99,14 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                     override fun onDone(utteranceId: String?) {
                         if (utteranceId == "on_air_tts") {
                             runOnUiThread {
-                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); } if (window.playUiSound) { try { window.playUiSound('rx_off'); } catch(e){} }", null)
+                                try {
+                                    val toneGen = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80)
+                                    toneGen.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 250)
+                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                        try { toneGen.release() } catch (_: Exception) {}
+                                    }, 300)
+                                } catch (_: Exception) {}
+                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); } if (window.playUiSound) { try { window.playUiSound('roger'); } catch(e){} }", null)
                             }
                         }
                     }
@@ -895,6 +902,12 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                             postDelayed({
                                                 try { toneGen.release() } catch (_: Exception) {}
                                             }, 200)
+                                        } else if (type == "roger" || type == "rx_off" || type == "ptt_off") {
+                                            val toneGen = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80)
+                                            toneGen.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 250)
+                                            postDelayed({
+                                                try { toneGen.release() } catch (_: Exception) {}
+                                            }, 300)
                                         }
                                     } catch (e: Exception) {}
                                 }

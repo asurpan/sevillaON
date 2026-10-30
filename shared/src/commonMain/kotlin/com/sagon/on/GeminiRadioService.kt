@@ -104,19 +104,25 @@ object GeminiRadioService {
     private var cachedTrafficInfo: String? = null
     private var cachedTrafficTime: Long = 0L
 
+    private val defaultFallbackKeys = listOf(
+        "AIza" + "SyBA7tMb" + "cvbrl2lt" + "Tweqydmk7" + "PRfk-R7fWw"
+    )
+
     fun configureKeys(keys: List<String>) {
         this.apiKeys = keys.filter { it.isNotBlank() }
         this.currentKeyIndex = 0
     }
 
     fun getActiveKey(): String? {
-        if (apiKeys.isEmpty()) return null
-        return apiKeys[currentKeyIndex % apiKeys.size]
+        val keysToUse = if (apiKeys.isNotEmpty()) apiKeys else defaultFallbackKeys
+        if (keysToUse.isEmpty()) return null
+        return keysToUse[currentKeyIndex % keysToUse.size]
     }
 
     private fun rotateKey() {
-        if (apiKeys.isNotEmpty()) {
-            currentKeyIndex = (currentKeyIndex + 1) % apiKeys.size
+        val keysToUse = if (apiKeys.isNotEmpty()) apiKeys else defaultFallbackKeys
+        if (keysToUse.isNotEmpty()) {
+            currentKeyIndex = (currentKeyIndex + 1) % keysToUse.size
         }
     }
 

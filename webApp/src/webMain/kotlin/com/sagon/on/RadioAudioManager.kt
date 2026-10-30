@@ -843,6 +843,7 @@ object ReplayEngine {
 
                     setTimeout(function() {
                         if (window.AndroidApp && window.AndroidApp.speak) {
+                            if (window.app) window.app.isControlSpeaking = true;
                             if (window.dispatch_control_active) {
                                 try { window.dispatch_control_active("BASE " + rawCity, true); } catch(e){}
                             }
@@ -869,11 +870,17 @@ object ReplayEngine {
 
                             u.onend = function() {
                                 window.app.isControlSpeaking = false;
-                                if (window.dispatch_control_active) {
-                                    try { window.dispatch_control_active(null, false); } catch(e){}
-                                }
                                 if (!window.app.isSpeechCancelled) {
                                     if (window.playUiSound) try { window.playUiSound("roger"); } catch(e){}
+                                    setTimeout(function() {
+                                        if (window.dispatch_control_active) {
+                                            try { window.dispatch_control_active(null, false); } catch(e){}
+                                        }
+                                    }, 400);
+                                } else {
+                                    if (window.dispatch_control_active) {
+                                        try { window.dispatch_control_active(null, false); } catch(e){}
+                                    }
                                 }
                                 window.app.isSpeechCancelled = false;
                             };

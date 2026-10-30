@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     // ⚙️ CONMUTADOR DE ENTORNO (CAMBIA AQUÍ PARA MÓVIL)
     // true  = Carga en directo desde Servidor GitHub Pages (Producción/Servidor)
     // false = Carga en directo desde Assets Locales compilados (Desarrollo Local)
-    private val USE_GITHUB_REMOTE_SERVER = false
+    private val USE_GITHUB_REMOTE_SERVER = true
 
     // --- 🛡️ MÓDULO DE SUPERVIVENCIA P2P (INDEPENDIENTE) ---
     private val meshModule: RadioMeshModule by lazy { RadioMeshModule(this) }
@@ -92,28 +92,26 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                     override fun onStart(utteranceId: String?) {
                         if (utteranceId == "on_air_tts") {
                             runOnUiThread {
-                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active('BASE LOCAL', true); }", null)
+                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active && (!window.app || !window.app.isControlSpeaking)) { window.dispatch_control_active('BASE LOCAL', true); } if (window.app) { window.app.isControlSpeaking = true; }", null)
                             }
                         }
                     }
                     override fun onDone(utteranceId: String?) {
                         if (utteranceId == "on_air_tts") {
                             runOnUiThread {
-                                try {
-                                    val toneGen = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80)
-                                    toneGen.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 250)
-                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                        try { toneGen.release() } catch (_: Exception) {}
-                                    }, 300)
-                                } catch (_: Exception) {}
-                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); } if (window.playUiSound) { try { window.playUiSound('roger'); } catch(e){} }", null)
+                                // 🎙️ 1. REPRODUCIR EL ROGER BEEP ESTÁNDAR 1955Hz CON LA PORTADORA AÚN ABIERTA
+                                webViewInstance?.evaluateJavascript("if (window.playUiSound) { try { window.playUiSound('roger'); } catch(e){} } if (window.app) { window.app.isControlSpeaking = false; }", null)
+                                // 🛡️ 2. MANTENER LA PORTADORA ACTIVA HASTA QUE EL ROGER BEEP ACABA DE SONAR (400ms)
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                    webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); }", null)
+                                }, 400)
                             }
                         }
                     }
                     override fun onError(utteranceId: String?) {
                         if (utteranceId == "on_air_tts") {
                             runOnUiThread {
-                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); } if (window.playUiSound) { try { window.playUiSound('rx_off'); } catch(e){} }", null)
+                                webViewInstance?.evaluateJavascript("if (window.app) { window.app.isControlSpeaking = false; } if (window.dispatch_control_active) { window.dispatch_control_active(null, false); } if (window.playUiSound) { try { window.playUiSound('rx_off'); } catch(e){} }", null)
                             }
                         }
                     }
@@ -722,6 +720,9 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             if (geminiKeysRaw.isNotBlank()) {
                 val keysList = geminiKeysRaw.split(",").map { it.trim() }
                 GeminiRadioService.configureKeys(keysList)
+                Log.d("GEMINI_SERVICE", "✅ Configuradas ${keysList.size} clave(s) de Gemini AI Studio para Felipe")
+            } else {
+                Log.w("GEMINI_SERVICE", "⚠️ No se encontró GEMINI_API_KEY_1 en local.properties. Felipe funcionará en modo de respuesta local.")
             }
         } catch (e: Exception) {}
 

@@ -701,7 +701,8 @@ object RadioSignaling {
                     return;
                 }
 
-                if (type === "incoming") {
+                if (type === "incoming" || type === "user_in") {
+                    // 🎶 TONO PIRIPI (MODO OREJA / ENTRADA EN RADIO)
                     var pairs = [[697, 1209], [770, 1336], [852, 1477], [941, 1633]];
                     pairs.forEach((f, i) => { f.forEach(freq => { var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); o.type = "sine"; o.frequency.setValueAtTime(freq, now + (i * 0.12)); g.gain.setValueAtTime(0, now + (i * 0.12)); g.gain.linearRampToValueAtTime(0.15, now + (i * 0.12) + 0.01); g.gain.linearRampToValueAtTime(0, now + (i * 0.12) + 0.1); o.connect(g); g.connect(window.app.masterOut); o.start(now + (i * 0.12)); o.stop(now + (i * 0.12) + 0.12); }); });
                     return;
@@ -714,6 +715,15 @@ object RadioSignaling {
                     o.connect(g); g.connect(window.app.masterOut); o.start(now); o.stop(now + 0.30);
                     return;
                 }
+                if (type === "rx_off") {
+                    // 🎛️ COLA DE RECEPCIÓN SILENCIOSA/CLIC SUTIL (SIN BEEP MOLESTO AL CAMBIAR CANAL)
+                    var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain();
+                    o.type = "sine"; o.frequency.setValueAtTime(750, now);
+                    g.gain.setValueAtTime(0.015, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                    o.connect(g); g.connect(window.app.masterOut); o.start(now); o.stop(now + 0.03);
+                    return;
+                }
+
             };
         """)
     }

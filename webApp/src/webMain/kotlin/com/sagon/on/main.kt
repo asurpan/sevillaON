@@ -340,6 +340,15 @@ fun main() {
         val isReplayReadyState = remember { mutableStateOf(false) }
         val replayProgressState = remember { mutableStateOf(0f) }
         val chatMessagesState = remember { mutableStateListOf<ChatMessage>() }
+        val isChangingChannelState = remember { mutableStateOf(false) }
+
+        LaunchedEffect(isChangingChannelState.value) {
+            if (isChangingChannelState.value) {
+                delay(1500)
+                isChangingChannelState.value = false
+            }
+        }
+
 
         RadioBridge.setupDispatchers(
             win = win,
@@ -420,7 +429,7 @@ fun main() {
                                 if (userNick.isEmpty()) userNick = k.split("_")[0].uppercase()
                                 if (k != win.app.sessionID && !usersNotified.contains(k)) {
                                     usersNotified.add(k)
-                                    if (!isInitialLoad) {
+                                    if (!isInitialLoad && !isChangingChannelState.value) {
                                         val isFriend = radioState.value.friends.contains(userNick)
                                         win.playUiSound(if (isFriend) "incoming" else "user_in")
                                         if (isFriend) {
@@ -429,6 +438,7 @@ fun main() {
                                         }
                                     }
                                 }
+
                                 list.add(RemoteUser(id = k, nick = userNick, isTransmitting = isTransmitting, city = u.city as? String ?: "SEVILLA", channel = u.channel as? String ?: "SEVILLA", txPower = (u.pwr as? Double ?: 0.7).toFloat(), isFriend = radioState.value.friends.contains(userNick), roger = (u.roger == true)))
                             }
                         }
@@ -525,6 +535,8 @@ fun main() {
             onMoniVolumeChange = { vol -> if(win.app != null) { win.app.moniVolume = vol; win.app.moniActive = (vol > 0) }; js("if(window.updateMoniGain) window.updateMoniGain();") },
             onEchoChange = { _, _ -> },
             onCityChange = { newCity ->
+                isChangingChannelState.value = true
+                usersNotified.clear()
                 RadioAudioManager.clearReplay()
                 js("if(window.app) { window.app.suppressRxOff = true; window.app.suppressRoger = true; window.app.isChangingChannel = true; if(window.app.pttStateInternal && window.broadcastPTT) window.broadcastPTT(false, false); }")
                 js("setTimeout(function() { if(window.app) { window.app.suppressRxOff = false; window.app.suppressRoger = false; window.app.isChangingChannel = false; } }, 1500);")
@@ -542,6 +554,8 @@ fun main() {
                 }
             },
             onChannelChange = { newCh ->
+                isChangingChannelState.value = true
+                usersNotified.clear()
                 RadioAudioManager.clearReplay()
                 js("if(window.app) { window.app.suppressRxOff = true; window.app.suppressRoger = true; window.app.isChangingChannel = true; if(window.app.pttStateInternal && window.broadcastPTT) window.broadcastPTT(false, false); }")
                 js("setTimeout(function() { if(window.app) { window.app.suppressRxOff = false; window.app.suppressRoger = false; window.app.isChangingChannel = false; } }, 1500);")
@@ -556,6 +570,7 @@ fun main() {
                     win.app.db.ref("users/" + sessId).update(js("{channel: newCh}"))
                 }
             },
+
 
             onSendMessage = { t, tg -> RadioNetworkManager.sendMessage(t, tg) },
             onDeleteMessage = { id, tg -> RadioNetworkManager.deleteMessage(id, tg) },

@@ -336,6 +336,15 @@ fun main() {
         val isReplayReadyState = remember { mutableStateOf(false) }
         val replayProgressState = remember { mutableStateOf(0f) }
         val chatMessagesState = remember { mutableStateListOf<ChatMessage>() }
+        val isChangingChannelState = remember { mutableStateOf(false) }
+
+        LaunchedEffect(isChangingChannelState.value) {
+            if (isChangingChannelState.value) {
+                delay(1500)
+                isChangingChannelState.value = false
+            }
+        }
+
 
         RadioBridge.setupDispatchers(
             win = win,

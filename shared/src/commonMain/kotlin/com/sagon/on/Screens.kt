@@ -1316,14 +1316,10 @@ fun InlineTacticalChat(
                         .navigationBarsPadding()
                         .clickable(enabled = false) {}
                 ) {
-
-
-
-
-
                     Column(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
+
                     // Cabecera del chat flotante
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

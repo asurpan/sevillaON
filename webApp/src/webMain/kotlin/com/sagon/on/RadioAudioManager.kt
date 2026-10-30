@@ -767,6 +767,9 @@ object ReplayEngine {
                 startChunk();
             };
             window.controlResponseIndex = 0;
+            window.lastHourlyBulletinHour = -1;
+            window.lastHourlyBulletinTime = 0;
+
             window.checkControlStationResponse = function() {
                 if (!window.app) return;
                 if (!window.app.hasUserModulated) return; // 🛡️ EL BOT SOLO HABLA SI EL USUARIO HA INTERACTUADO PULSANDO EL PTT
@@ -777,6 +780,17 @@ object ReplayEngine {
                 var userNick = (window.app.nick || "RADIO").toString().trim().toUpperCase();
                 var rawCity = (window.app.currentCity || "SEVILLA").toString().split("-")[0].trim().toUpperCase();
                 var userMsg = window.app.lastUserTranscript || null;
+
+                var currentHour = new Date().getHours();
+                var isHourlyBulletinDue = (window.lastHourlyBulletinHour !== -1 && window.lastHourlyBulletinHour !== currentHour) || (window.lastHourlyBulletinTime > 0 && Date.now() - window.lastHourlyBulletinTime >= 3600000);
+
+                if (isHourlyBulletinDue) {
+                    window.lastHourlyBulletinHour = currentHour;
+                    window.lastHourlyBulletinTime = Date.now();
+                } else if (window.lastHourlyBulletinHour === -1) {
+                    window.lastHourlyBulletinHour = currentHour;
+                    window.lastHourlyBulletinTime = Date.now();
+                }
 
                 function deliverSpeech(textToSpeak) {
                     if (!textToSpeak) return;
@@ -842,13 +856,14 @@ object ReplayEngine {
 
                 if (window.getGeminiRadioResponse) {
                     try {
-                        window.getGeminiRadioResponse(rawCity, userNick, userMsg, false, function(aiText) {
+                        window.getGeminiRadioResponse(rawCity, userNick, userMsg, isHourlyBulletinDue, function(aiText) {
                             deliverSpeech(aiText);
                         });
                     } catch(e) {
                         deliverSpeech("Recibido " + userNick + " en " + rawCity + ". Soy FELIPE, señal correcta y modulación S9. Cambio.");
                     }
                 } else {
+
                     var micGranted = window.app.diag && window.app.diag.micPermission === "granted";
                     var hasAudioTracks = window.app.ctx && window.app.micAnalyser;
                     var micEnergy = window.app.currentMicLevel || 0;
@@ -872,7 +887,19 @@ object ReplayEngine {
                 }
             };
 
+            setInterval(function() {
+                if (!window.app || !window.app.hasUserModulated || window.app.isBotEnabled === false) return;
+                if (window.app.isTransmittingInternal || window.app.isControlSpeaking) return;
+                var currentHour = new Date().getHours();
+                if (window.lastHourlyBulletinHour !== -1 && window.lastHourlyBulletinHour !== currentHour) {
+                    if (window.checkControlStationResponse) {
+                        try { window.checkControlStationResponse(); } catch(e){}
+                    }
+                }
+            }, 60000);
+
             window.clearReplayBuffer = function() {
+
                 replayBlobs = [];
                 window.controlResponseIndex = 0;
                 if (window.dispatch_replay_available) window.dispatch_replay_available(false);

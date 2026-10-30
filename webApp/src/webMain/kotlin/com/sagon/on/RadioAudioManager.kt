@@ -745,22 +745,44 @@ object ReplayEngine {
                 replayAnalyser.fftSize = 256;
                 window.app.replayCompressor.connect(replayAnalyser);
                 var reuseDomainData = new Uint8Array(256);
-                function monitor() { if (replayAnalyser) { replayAnalyser.getByteTimeDomainData(reuseDomainData); for(var i=0; i<reuseDomainData.length; i++) { if (Math.abs(reuseDomainData[i] - 128) > 3) { activityDetected = true; break; } } } }
-                setInterval(monitor, 250);
-                function startChunk() {
-                    var chunks = []; var hasVoiceInThisChunk = false; activityDetected = false; 
-                    try {
-                        var mimeType = "audio/webm;codecs=opus";
-                        if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/webm";
-                        var recorder = new MediaRecorder(streamDest.stream, mimeType ? { mimeType: mimeType } : {});
-                        recorder.ondataavailable = function(e) { if (e.data && e.data.size > 0) chunks.push(e.data); };
-                        recorder.onstop = function() { if (chunks.length > 0 && hasVoiceInThisChunk) { var blob = new Blob(chunks, { type: 'audio/webm' }); replayBlobs.push(blob); if (replayBlobs.length > 6) replayBlobs.shift(); if (window.dispatch_replay_available) window.dispatch_replay_available(replayBlobs.length > 0); } startChunk(); };
-                        var checkInterval = setInterval(function() { if (activityDetected) hasVoiceInThisChunk = true; }, 100);
-                        setTimeout(function() { clearInterval(checkInterval); if (recorder.state === "recording") recorder.stop(); }, 5000);
-                        recorder.start();
-                    } catch(e) { setTimeout(startChunk, 2000); }
-                }
-                startChunk();
+            function monitor() { 
+                if (!window.app) return;
+                var isTransmitting = (window.app.pttStateInternal === true);
+                var isReceiving = (window.app.rxActiveInternal === true || window.app.isControlSpeaking === true);
+                if ((isTransmitting || isReceiving) && replayAnalyser) {
+                    replayAnalyser.getByteTimeDomainData(reuseDomainData); 
+                    for(var i=0; i<reuseDomainData.length; i++) { 
+                        if (Math.abs(reuseDomainData[i] - 128) > 8) { 
+                            activityDetected = true; 
+                            break; 
+                        } 
+                    } 
+                } 
+            }
+            setInterval(monitor, 200);
+            function startChunk() {
+                var chunks = []; var hasVoiceInThisChunk = false; activityDetected = false; 
+                try {
+                    var mimeType = "audio/webm;codecs=opus";
+                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/webm";
+                    var recorder = new MediaRecorder(streamDest.stream, mimeType ? { mimeType: mimeType } : {});
+                    recorder.ondataavailable = function(e) { if (e.data && e.data.size > 0) chunks.push(e.data); };
+                    recorder.onstop = function() { 
+                        if (chunks.length > 0 && hasVoiceInThisChunk) { 
+                            var blob = new Blob(chunks, { type: 'audio/webm' }); 
+                            replayBlobs.push(blob); 
+                            if (replayBlobs.length > 6) replayBlobs.shift(); 
+                            if (window.dispatch_replay_available) window.dispatch_replay_available(replayBlobs.length > 0); 
+                        } 
+                        startChunk(); 
+                    };
+                    var checkInterval = setInterval(function() { if (activityDetected) hasVoiceInThisChunk = true; }, 100);
+                    setTimeout(function() { clearInterval(checkInterval); if (recorder.state === "recording") recorder.stop(); }, 5000);
+                    recorder.start();
+                } catch(e) { setTimeout(startChunk, 2000); }
+            }
+            startChunk();
+
             };
             window.controlResponseIndex = 0;
             window.lastHourlyBulletinHour = -1;

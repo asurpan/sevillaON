@@ -1140,18 +1140,19 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                     val cleanCity = city.split("-")[0].uppercase()
 
                                     val shareText = if (subtone != null && subtone != "0000") {
-                                        "🎙️ *ENTRAR A MI CANAL PRIVADO EN ON AIR SPAIN*\n\n" +
+                                        "🎙️ *ENTRAR A MI CANAL PRIVADO EN ON AIR GLOBAL*\n\n" +
                                         "🔑 *Código / Subtono Privado:* $subtone\n" +
-                                        "📻 *Ciudad:* $cleanCity | *Canal:* $channel\n\n" +
+                                        "📻 *Ciudad / País:* $cleanCity | *Canal:* $channel\n\n" +
                                         "👉 Toca el enlace para entrar directo a la frecuencia privada:\n" +
-                                        "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&v=58"
+                                        "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&v=100"
                                     } else if (city == "RADAR") {
-                                        "📡 ¡Vigilancia Hertz Activa! *ON AIR SPAIN*\nAnalizando presencia biológica... 🧬\n\nhttps://asurpan.github.io/sevillaON/?v=58"
+                                        "📡 ¡Vigilancia Hertz Activa! *ON AIR GLOBAL*\nAnalizando presencia biológica... 🧬\n\nhttps://asurpan.github.io/sevillaON/?v=100"
                                     } else {
                                         "🎙️ *DEBATE EN VIVO — $cleanCity*\n\n" +
                                         "💬 \"$topic\"\n\n" +
-                                        "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=58"
+                                        "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=100"
                                     }
+
 
                                     val sendIntent = android.content.Intent().apply {
                                         action = android.content.Intent.ACTION_SEND

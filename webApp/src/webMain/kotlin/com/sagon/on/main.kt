@@ -681,15 +681,16 @@ fun main() {
                 } else {
                     val topic = getDailyDebateTopic(city)
                     val cleanCity = city.split("-")[0].uppercase()
-                    val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + "&v=58"
+                    val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + "&v=100"
                     val shareText = "🎙️ *DEBATE EN VIVO — $cleanCity*\n\n" +
                         "💬 \"$topic\"\n\n" + url
                     val nav = win.navigator
                     if (nav != null && nav.share != null) {
                         val shareData = js("{}")
-                        shareData.title = "ON AIR SPAIN"
+                        shareData.title = "ON AIR GLOBAL"
                         shareData.text = shareText
                         shareData.url = url
+
                         try {
                             val promise = nav.share(shareData)
                             if (promise != null && promise.catch != null) {

@@ -39,8 +39,8 @@ android {
         applicationId = "com.sagon.on"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 78
-        versionName = "78.Full"
+        versionCode = 79
+        versionName = "79.Full"
 
         val localProps = Properties()
         val localPropsFile = rootProject.file("local.properties")

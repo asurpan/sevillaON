@@ -190,7 +190,7 @@ object GeminiRadioService {
         if (isSilentBeacon) {
             val beacons = listOf(
                 "¡Hola a todos en $cleanCity! Aquí FELIPE. Son las $currentTime y la frecuencia está activa. ¡Anímate a compartir el canal y hablemos!",
-                "¡Buenas por $cleanCity! FELIPE a la escucha a las $currentTime. Trae a tus colegas compartiendo el canal para montar rueda. Cambio.",
+                "¡Buenas por $cleanCity! Soy FELIPE, a la escucha a las $currentTime. Trae a tus colegas compartiendo el canal para montar rueda. Cambio.",
                 "¡Hola $cleanCity! Aquí FELIPE con buena cobertura a las $currentTime. Frecuencia abierta, invita a tu gente. Cambio."
             )
             return beacons.random()
@@ -198,9 +198,9 @@ object GeminiRadioService {
 
         val responses = listOf(
             "¡Hola $nick! Aquí FELIPE. Te escucho genial a las $currentTime en $cleanCity. ¡Comparte el canal y montamos rueda! Cambio.",
-            "¡Buenas $nick! FELIPE te recibe alto y claro a las $currentTime desde $cleanCity. Invita a tus colegas a la frecuencia. ¡Adelante! Cambio.",
+            "¡Buenas $nick! Soy FELIPE, te recibo alto y claro a las $currentTime desde $cleanCity. Invita a tus colegas a la frecuencia. ¡Adelante! Cambio.",
             "¡Qué tal $nick! Aquí FELIPE. Llegas con señal fuerte por $cleanCity. Pasa la voz a tus amigos para que se unan. ¡Cambio!",
-            "¡Recibido $nick! FELIPE te escucha estupendamente por $cleanCity a las $currentTime. Comparte el enlace y hablamos. Cambio."
+            "¡Recibido $nick! Soy FELIPE, te escucho estupendamente por $cleanCity a las $currentTime. Comparte el enlace y hablamos. Cambio."
         )
         return responses.random()
     }

@@ -101,13 +101,13 @@ fun main() {
             var deviceID = hwID || localStorage.getItem("web_device_id") || ("web_" + Math.random().toString(36).substring(2, 12));
             localStorage.setItem("web_device_id", deviceID);
 
-            function doConnect(finalNick) {
-                if (window.app.peer && !window.app.peer.destroyed) {
-                    if (window.app.peer.disconnected) window.app.peer.reconnect();
-                    window.app.nick = finalNick.toUpperCase();
-                    return;
-                }
+            var initialNick = (nick || localStorage.getItem("indicativo") || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
+            var initialSessionID = (initialNick + "_" + deviceID).trim();
+            window.app.nick = initialNick;
+            window.app.deviceID = deviceID;
+            window.app.sessionID = initialSessionID;
 
+            function doConnect(finalNick) {
                 var cleanNick = (finalNick || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
                 localStorage.setItem("indicativo", cleanNick); 
                 if (window.dispatch_hardware_restored) {
@@ -118,6 +118,11 @@ fun main() {
                 window.app.nick = cleanNick;
                 window.app.deviceID = deviceID;
                 window.app.sessionID = sessionID;
+
+                if (window.app.peer && !window.app.peer.destroyed) {
+                    if (window.app.peer.disconnected) window.app.peer.reconnect();
+                    return;
+                }
                 
                 console.log("🚀 Iniciando Radio (Pure-Link):", sessionID);
                 if (window.initAudio) window.initAudio();
@@ -141,7 +146,7 @@ fun main() {
                     window.app.db.ref("users/" + sessionID).onDisconnect().remove();
 
                     setInterval(function() {
-                        if(window.app.db && window.app.sessionID) {
+                        if(window.app.db && window.app.sessionID && window.app.sessionID !== "undefined") {
                             var updates = { lastSeen: Date.now() };
                             if (window.app.pttStateInternal) {
                                 var currentNick = window.app.nick || "RADIO";
@@ -207,21 +212,20 @@ fun main() {
                 }
             }
 
-            // 🛡️ HARD-LOCK: SI EL DISPOSITIVO YA TIENE NICK REGISTRADO EN FIREBASE, FORZAR ESE NICK
+            // 🛡️ CONEXIÓN SÍNCRONA INMEDIATA + VERIFICACIÓN DE NICK REGISTRADO EN SEGUNDO PLANO
+            doConnect(initialNick);
+
             if (window.app && window.app.db) {
                 window.app.db.ref("registered_devices/" + deviceID).once("value").then(function(snapshot) {
                     var val = snapshot.val();
-                    var chosenNick = nick;
                     if (val && val.nick && val.nick.trim() !== "") {
-                        chosenNick = val.nick.trim().toUpperCase();
-                        console.log("🔒 HARDWARE BLOQUEADO - Forzando Nick registrado:", chosenNick);
+                        var restoredNick = val.nick.trim().toUpperCase();
+                        if (restoredNick !== initialNick) {
+                            console.log("🔒 HARDWARE BLOQUEADO - Forzando Nick registrado:", restoredNick);
+                            doConnect(restoredNick);
+                        }
                     }
-                    doConnect(chosenNick);
-                }).catch(function() {
-                    doConnect(nick);
-                });
-            } else {
-                doConnect(nick);
+                }).catch(function() {});
             }
         };
 
@@ -382,6 +386,7 @@ fun main() {
                         if (!hasConflict) {
                             for (i in 0 until (keys.length as Int)) {
                                 val k = keys[i] as String
+                                if (k == "undefined" || k.contains("undefined")) continue
                                 val u = users[k] ?: continue
                                 val userCityBase = (u.city as? String ?: "").split("-")[0]
                                 val userSubtone = (u.subtone as? String ?: "0000")
@@ -529,9 +534,10 @@ fun main() {
                 js("if(window.app) window.app.isControlSpeaking = false;")
                 js("if(window.dispatch_control_active) try{ window.dispatch_control_active(null, false); }catch(e){}")
 
-                if (win.app != null && win.app.db != null && win.app.sessionID != null) {
+                val sessId = win.app?.sessionID as? String
+                if (win.app != null && win.app.db != null && !sessId.isNullOrBlank() && sessId != "undefined" && !sessId.contains("undefined")) {
                     win.app.currentCity = newCity
-                    win.app.db.ref("users/" + win.app.sessionID).update(js("{city: newCity, channel: newCity}"))
+                    win.app.db.ref("users/" + sessId).update(js("{city: newCity, channel: newCity}"))
                     js("if(window.initFirebaseListener) window.initFirebaseListener();")
                 }
             },
@@ -545,8 +551,9 @@ fun main() {
                 js("if(window.app) window.app.isControlSpeaking = false;")
                 js("if(window.dispatch_control_active) try{ window.dispatch_control_active(null, false); }catch(e){}")
 
-                if (win.app != null && win.app.db != null && win.app.sessionID != null) {
-                    win.app.db.ref("users/" + win.app.sessionID).update(js("{channel: newCh}"))
+                val sessId = win.app?.sessionID as? String
+                if (win.app != null && win.app.db != null && !sessId.isNullOrBlank() && sessId != "undefined" && !sessId.contains("undefined")) {
+                    win.app.db.ref("users/" + sessId).update(js("{channel: newCh}"))
                 }
             },
 

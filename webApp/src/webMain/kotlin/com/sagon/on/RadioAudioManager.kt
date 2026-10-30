@@ -846,7 +846,7 @@ object ReplayEngine {
                             deliverSpeech(aiText);
                         });
                     } catch(e) {
-                        deliverSpeech("Recibido " + userNick + " en " + rawCity + ". Señal correcta y modulación S9. Cambio.");
+                        deliverSpeech("Recibido " + userNick + " en " + rawCity + ". Soy FELIPE, señal correcta y modulación S9. Cambio.");
                     }
                 } else {
                     var micGranted = window.app.diag && window.app.diag.micPermission === "granted";
@@ -855,16 +855,16 @@ object ReplayEngine {
                     var textToSpeak = "";
 
                     if (!micGranted || !hasAudioTracks) {
-                        textToSpeak = "¡Hola " + userNick + "! Para que podamos escucharnos bien, activa el permiso de micrófono en tu pantalla.";
+                        textToSpeak = "¡Hola " + userNick + "! Soy FELIPE. Para que podamos escucharnos bien, activa el permiso de micrófono en tu pantalla.";
                         if (window.ensureMicAccess) window.ensureMicAccess();
                     } else if (micEnergy < 0.005) {
-                        textToSpeak = "¡Buenas " + userNick + "! Recibo tu señal pero no sale tu voz. Habla un poco más alto al pulsar el botón.";
+                        textToSpeak = "¡Buenas " + userNick + "! Soy FELIPE. Recibo tu señal pero no sale tu voz. Habla un poco más alto al pulsar el botón.";
                     } else {
                         var idx = window.controlResponseIndex || 0;
                         if (idx === 0) {
-                            textToSpeak = "¡Hola " + userNick + "! Te recibo fuerte y claro por " + rawCity + ". ¡Comparte el canal con tus amigos y hablemos! Cambio.";
+                            textToSpeak = "¡Hola " + userNick + "! Soy FELIPE, te recibo fuerte y claro por " + rawCity + ". ¡Comparte el canal con tus amigos y hablemos! Cambio.";
                         } else {
-                            textToSpeak = "¡Buenas " + userNick + "! Señal excelente por la frecuencia de " + rawCity + ". Invita a tus colegas a la frecuencia. ¡Un saludo! Cambio.";
+                            textToSpeak = "¡Buenas " + userNick + "! Soy FELIPE, señal excelente por la frecuencia de " + rawCity + ". Invita a tus colegas a la frecuencia. ¡Un saludo! Cambio.";
                         }
                         window.controlResponseIndex = idx + 1;
                     }

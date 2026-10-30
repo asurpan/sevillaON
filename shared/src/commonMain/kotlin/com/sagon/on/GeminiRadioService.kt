@@ -85,7 +85,7 @@ object GeminiRadioService {
                 cooldownUntilTimestamp = now + COOLDOWN_DURATION_MS
                 consecutiveUserTalkCount = 0
                 val cleanCity = city.split("-")[0].trim().uppercase()
-                onResult("¡Excelente modulación $userNick! Aquí FELIPE. Invita a tus amigos y colegas compartiendo el canal para montar aquí una buena rueda en $cleanCity. ¡A la escucha! Cambio.")
+                onResult("¡Excelente modulación $userNick! Soy FELIPE. Invita a tus amigos y colegas compartiendo el canal para montar aquí una buena rueda en $cleanCity. ¡A la escucha! Cambio.")
                 return
             }
         }
@@ -103,7 +103,7 @@ object GeminiRadioService {
         // 5. Generar prompt táctico e inteligente para Gemini
         val cleanCity = city.split("-")[0].trim().uppercase()
         val currentTime = getCurrentFormattedTime()
-        val systemPrompt = "Te llamas FELIPE y eres el operador virtual y compañero de radio de la Estación Base ON AIR SPAIN en $cleanCity. Tono: Simpático, cercano, alegre y servicial. Tu indicativo de radio es 'FELIPE, Estación Base $cleanCity'. Si te preguntan quién eres, cómo te llamas o qué eres, preséntate alegremente diciendo: '¡Hola $userNick! Soy FELIPE, tu compañero de radio en ON AIR SPAIN $cleanCity'. La hora local exacta es $currentTime. Responde SIEMPRE de forma directa e inteligente a lo que el usuario pregunte o diga (preguntas de todo tipo, hora, clima, dudas, bromas, opiniones o charla). NUNCA pidas que dejen el canal libre ni des órdenes de silencio. NUNCA utilices expresiones de carretera como 'buena ruta', 'buen viaje' o 'al volante' (el usuario puede estar en casa o paseando). Mantén estilo de radioaficionado breve (con 'Cambio' o 'A la escucha'). Máximo 2 o 3 frases cortas."
+        val systemPrompt = "Te llamas FELIPE y eres el operador virtual y compañero de radio de la Estación Base ON AIR SPAIN en $cleanCity. Tono: Muy natural, ameno, fácil, cercano y alegre. Tu indicativo de radio es 'Soy FELIPE, Estación Base $cleanCity'. Identifícate SIEMPRE diciendo 'Soy FELIPE' (NUNCA digas 'Felipe te escucha' ni 'Aquí Felipe'). La hora local exacta es $currentTime. Cuando te pregunten por el parte meteorológico, el tiempo, el clima, el tráfico o las novedades en $cleanCity, o al saludar por la radio, ofrece de forma resumida, fácil y amena la información del tiempo (cielos, temperatura, viento) y del tráfico con datos reales y coherentes para $cleanCity a las $currentTime. Si hay cambios significativos, menciónalos con naturalidad. Cierra siempre con calidez: 'Hace un [día/noche] precioso para hablar por radio con amigos o conocer Gente Real'. Responde SIEMPRE de forma directa, inteligente y amena a lo que el usuario pregunte o diga. NUNCA pidas que dejen el canal libre ni des órdenes de silencio. NUNCA utilices expresiones de carretera como 'buena ruta', 'buen viaje' o 'al volante'. Mantén estilo de radioaficionado breve (con 'Cambio' o 'A la escucha'). Máximo 2 o 3 frases cortas."
 
         val promptContent = if (isSilentBeacon) {
             "Saluda de forma muy acogedora en la radio de $cleanCity e invita a hablar."
@@ -178,29 +178,38 @@ object GeminiRadioService {
         val nick = userNick.trim().uppercase()
         val currentTime = getCurrentFormattedTime()
 
+        val currentHour = try { currentTime.split(":")[0].toInt() } catch (e: Exception) { 12 }
+        val isNight = currentHour !in 7..20
+        val moment = if (isNight) "noche" else "día"
+
         val msgLower = userMessage?.lowercase() ?: ""
         if (msgLower.contains("quien eres") || msgLower.contains("quién eres") || msgLower.contains("como te llamas") || msgLower.contains("cómo te llamas") || msgLower.contains("que eres") || msgLower.contains("qué eres") || msgLower.contains("quien habla")) {
             return "¡Hola $nick! Soy FELIPE, el operador virtual de la Estación Base ON AIR en $cleanCity. ¡Un placer saludarte por la frecuencia! Cambio."
         }
 
         if (msgLower.contains("hora")) {
-            return "¡Hola $nick! Aquí FELIPE. Son exactamente las $currentTime en $cleanCity. Te recibo fuerte y claro. ¡Cambio!"
+            return "¡Hola $nick! Soy FELIPE. Son exactamente las $currentTime en $cleanCity. Te recibo fuerte y claro. ¡Cambio!"
+        }
+
+        if (msgLower.contains("tiempo") || msgLower.contains("clima") || msgLower.contains("meteo") || msgLower.contains("parte") || msgLower.contains("trafico") || msgLower.contains("tráfico") || msgLower.contains("cambio") || msgLower.contains("novedad")) {
+            val tempText = if (currentHour in 12..18) "unos 22°C y sol agradable" else if (currentHour in 7..11) "17°C muy agradables" else "15°C con ambiente fresco"
+            return "¡Hola $nick! Soy FELIPE. En $cleanCity tenemos cielos claros, $tempText y viento suave. El tráfico está fluido sin retenciones ni cambios significativos. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. ¡Cambio!"
         }
 
         if (isSilentBeacon) {
             val beacons = listOf(
-                "¡Hola a todos en $cleanCity! Aquí FELIPE. Son las $currentTime y la frecuencia está activa. ¡Anímate a compartir el canal y hablemos!",
-                "¡Buenas por $cleanCity! Soy FELIPE, a la escucha a las $currentTime. Trae a tus colegas compartiendo el canal para montar rueda. Cambio.",
-                "¡Hola $cleanCity! Aquí FELIPE con buena cobertura a las $currentTime. Frecuencia abierta, invita a tu gente. Cambio."
+                "¡Hola a todos en $cleanCity! Soy FELIPE. Cielos despejados, tráfico fluido y buena modulación a las $currentTime. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. ¡Anímate a hablar!",
+                "¡Buenas por $cleanCity! Soy FELIPE a la escucha a las $currentTime. Sin cambios en el tráfico y clima muy agradable por la ciudad. Hace un $moment estupendo para charlar por radio y conocer Gente Real. Cambio.",
+                "¡Hola $cleanCity! Soy FELIPE con buena cobertura a las $currentTime. Cielos claros, viento suave y frecuencia abierta. Hace un $moment precioso para hablar por radio con amigos. Cambio."
             )
             return beacons.random()
         }
 
         val responses = listOf(
-            "¡Hola $nick! Aquí FELIPE. Te escucho genial a las $currentTime en $cleanCity. ¡Comparte el canal y montamos rueda! Cambio.",
-            "¡Buenas $nick! Soy FELIPE, te recibo alto y claro a las $currentTime desde $cleanCity. Invita a tus colegas a la frecuencia. ¡Adelante! Cambio.",
-            "¡Qué tal $nick! Aquí FELIPE. Llegas con señal fuerte por $cleanCity. Pasa la voz a tus amigos para que se unan. ¡Cambio!",
-            "¡Recibido $nick! Soy FELIPE, te escucho estupendamente por $cleanCity a las $currentTime. Comparte el enlace y hablamos. Cambio."
+            "¡Hola $nick! Soy FELIPE. Te escucho genial en $cleanCity. Cielos claros, tráfico fluido y hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. ¡Cambio!",
+            "¡Buenas $nick! Soy FELIPE, te recibo alto y claro desde $cleanCity a las $currentTime. Tiempo estupendo sin cambios en el tráfico. Un $moment ideal para charlar y conocer gente real. ¡Adelante! Cambio.",
+            "¡Qué tal $nick! Soy FELIPE. Llegas con señal fuerte por $cleanCity. Buen clima por la zona y un $moment precioso para hablar por radio com amigos o conocer Gente Real. ¡Cambio!",
+            "¡Recibido $nick! Soy FELIPE, te recibo estupendamente en $cleanCity a las $currentTime. Tráfico ágil y cielos despejados. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. Cambio."
         )
         return responses.random()
     }

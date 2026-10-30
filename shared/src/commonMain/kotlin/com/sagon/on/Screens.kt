@@ -286,6 +286,14 @@ fun RadioPanel(
         }
     }
 
+    LaunchedEffect(state.city) {
+        fetchLiveNewsTopic(state.city) { headline ->
+            if (!headline.isNullOrBlank()) {
+                updateCachedNewsTopic(state.city, headline)
+            }
+        }
+    }
+
     LaunchedEffect(externalPttBlocked) {
         if (externalPttBlocked) {
             isPttBlockedByRx = true
@@ -295,6 +303,7 @@ fun RadioPanel(
             }
         }
     }
+
     LaunchedEffect(externalPtt) {
         if (!externalPtt && pttLocked && !isPttPressed) {
             pttLocked = false

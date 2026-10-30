@@ -239,8 +239,20 @@ data class RadioDiagData(
     val rxPackets: Map<String, Int> = emptyMap()
 )
 
+val cachedLiveNewsMap = mutableMapOf<String, Pair<String, Long>>()
+
+fun updateCachedNewsTopic(city: String, headline: String) {
+    val cleanCity = city.split("-")[0].trim().uppercase()
+    cachedLiveNewsMap[cleanCity] = Pair(headline, getTimeMillis())
+}
+
 fun getDailyDebateTopic(city: String): String {
     val cleanCity = city.split("-")[0].trim().uppercase()
+    val cached = cachedLiveNewsMap[cleanCity]
+    if (cached != null && (getTimeMillis() - cached.second < 15 * 60 * 1000L)) {
+        return cached.first
+    }
+    
     val dayOfYear = (getTimeMillis() / (1000 * 60 * 60 * 24)).toInt()
     val cityHash = cleanCity.hashCode().let { if (it < 0) -it else it }
     
@@ -280,6 +292,7 @@ fun getDailyDebateTopic(city: String): String {
     val topicIndex = (dayOfYear + cityHash) % topics.size
     return topics[topicIndex]
 }
+
 
 fun getActivityIcon(profile: ActivityProfile): ImageVector {
     return when (profile) {

@@ -70,30 +70,51 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
 actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     tourismScope.launch {
         try {
-            // 📰 CARGAR DIRECTAMENTE EL RSS OFICIAL DE GOOGLE NEWS ESPAÑA (TITULARES DE MÁXIMO IMPACTO NACIONAL)
+            val cleanCity = city.split("-")[0].trim().uppercase()
+            // 📰 CARGAR DIRECTAMENTE EL RSS OFICIAL DE GOOGLE NEWS (TITULARES DE MÁXIMO IMPACTO NACIONAL E INTERNACIONAL)
             val url = java.net.URL("https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "GET"
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-            connection.connectTimeout = 4000
-            connection.readTimeout = 4000
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0")
+            connection.connectTimeout = 3500
+            connection.readTimeout = 3500
             val xmlText = connection.inputStream.bufferedReader().readText()
             
-            var headline: String? = null
+            var chosenHeadline: String? = null
             if (xmlText.contains("<item>")) {
-                val itemBlock = xmlText.substringAfter("<item>").substringBefore("</item>")
-                val rawTitle = itemBlock.substringAfter("<title>").substringBefore("</title>")
-                val cleanTitle = rawTitle.substringBefore(" - ")
-                    .replace("<![CDATA[", "")
-                    .replace("]]>", "")
-                    .trim()
-                if (cleanTitle.length > 10) {
-                    headline = cleanTitle
+                val items = xmlText.split("<item>").drop(1).take(10)
+                for (itemBlock in items) {
+                    val rawTitle = itemBlock.substringAfter("<title>").substringBefore("</title>")
+                    val cleanTitle = rawTitle.substringBefore(" - ")
+                        .replace("<![CDATA[", "")
+                        .replace("]]>", "")
+                        .trim()
+                    if (cleanTitle.length > 10) {
+                        val lower = cleanTitle.lowercase()
+                        if (lower.contains("última hora") || lower.contains("urgente") || lower.contains("accidente") || lower.contains("ave") || lower.contains("tragedia") || lower.contains("alerta") || lower.contains("fallece") || lower.contains("impacto") || lower.contains("suceso")) {
+                            chosenHeadline = cleanTitle
+                            break
+                        }
+                    }
+                }
+                if (chosenHeadline == null && items.isNotEmpty()) {
+                    val rawTitle = items[0].substringAfter("<title>").substringBefore("</title>")
+                    val cleanTitle = rawTitle.substringBefore(" - ")
+                        .replace("<![CDATA[", "")
+                        .replace("]]>", "")
+                        .trim()
+                    if (cleanTitle.length > 10) chosenHeadline = cleanTitle
                 }
             }
 
             withContext(Dispatchers.Main) {
-                callback(headline)
+                if (chosenHeadline != null) {
+                    val formatted = "📰 ÚLTIMA HORA: $chosenHeadline"
+                    updateCachedNewsTopic(cleanCity, formatted)
+                    callback(formatted)
+                } else {
+                    callback(null)
+                }
             }
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
@@ -102,6 +123,7 @@ actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
         }
     }
 }
+
 
 actual fun fetchGeminiApi(endpoint: String, jsonBody: String, callback: (String?) -> Unit) {
     tourismScope.launch {

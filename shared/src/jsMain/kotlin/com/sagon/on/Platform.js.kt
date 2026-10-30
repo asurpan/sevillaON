@@ -168,28 +168,45 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
 }
 
 actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
-    val url = "https://api.allorigins.win/get?url=" + 
-        window.asDynamic().encodeURIComponent("https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es")
+    val cleanCity = city.split("-")[0].trim().uppercase()
+    val url = "https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es"
 
     js("""
         fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.contents) {
-                    var xmlText = data.contents;
-                    if (xmlText.indexOf("<item>") !== -1) {
-                        var itemBlock = xmlText.split("<item>")[1].split("</item>")[0];
+            .then(function(response) { return response.text(); })
+            .then(function(xmlText) {
+                if (xmlText && xmlText.indexOf("<item>") !== -1) {
+                    var items = xmlText.split("<item>").slice(1, 10);
+                    var chosenHeadline = null;
+                    for (var i = 0; i < items.length; i++) {
+                        var itemBlock = items[i];
                         var rawTitle = itemBlock.split("<title>")[1].split("</title>")[0];
                         var cleanTitle = rawTitle.split(" - ")[0].replace("<![CDATA[", "").replace("]]>", "").trim();
-                        callback(cleanTitle);
+                        if (cleanTitle.length > 10) {
+                            var lower = cleanTitle.toLowerCase();
+                            if (lower.indexOf("última hora") !== -1 || lower.indexOf("urgente") !== -1 || lower.indexOf("accidente") !== -1 || lower.indexOf("ave") !== -1 || lower.indexOf("tragedia") !== -1 || lower.indexOf("alerta") !== -1 || lower.indexOf("fallece") !== -1 || lower.indexOf("impacto") !== -1 || lower.indexOf("suceso") !== -1) {
+                                chosenHeadline = cleanTitle;
+                                break;
+                            }
+                        }
+                    }
+                    if (!chosenHeadline && items.length > 0) {
+                        var rawTitle = items[0].split("<title>")[1].split("</title>")[0];
+                        chosenHeadline = rawTitle.split(" - ")[0].replace("<![CDATA[", "").replace("]]>", "").trim();
+                    }
+                    if (chosenHeadline) {
+                        var formatted = "📰 ÚLTIMA HORA: " + chosenHeadline;
+                        callback(formatted);
                         return;
                     }
+
                 }
                 callback(null);
             })
-            .catch(error => callback(null));
+            .catch(function(error) { callback(null); });
     """)
 }
+
 
 actual fun fetchGeminiApi(endpoint: String, jsonBody: String, callback: (String?) -> Unit) {
     js("""

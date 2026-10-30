@@ -99,14 +99,14 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                     override fun onDone(utteranceId: String?) {
                         if (utteranceId == "on_air_tts") {
                             runOnUiThread {
-                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); } if (window.playUiSound) { try { window.playUiSound('rx_off'); } catch(e){} }", null)
+                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); } if (!window.isSpeechCancelled && window.playUiSound) { try { window.playUiSound('rx_off'); } catch(e){} } window.isSpeechCancelled = false;", null)
                             }
                         }
                     }
                     override fun onError(utteranceId: String?) {
                         if (utteranceId == "on_air_tts") {
                             runOnUiThread {
-                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); } if (window.playUiSound) { try { window.playUiSound('rx_off'); } catch(e){} }", null)
+                                webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); } window.isSpeechCancelled = false;", null)
                             }
                         }
                     }
@@ -122,6 +122,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     fun performNativeSpeak(text: String, rate: Float, pitch: Float, volume: Float) {
         runOnUiThread {
             try {
+                webViewInstance?.evaluateJavascript("window.isSpeechCancelled = false;", null)
                 if (tts == null) {
                     pendingTextToSpeak = text
                     tts = TextToSpeech(this@MainActivity, this@MainActivity)
@@ -856,6 +857,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                 runOnUiThread {
                                     try {
                                         pendingTextToSpeak = null
+                                        webViewInstance?.evaluateJavascript("window.isSpeechCancelled = true;", null)
                                         if (tts != null) {
                                             tts?.stop()
                                         }

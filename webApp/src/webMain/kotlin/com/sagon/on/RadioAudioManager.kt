@@ -315,6 +315,7 @@ object RadioAudioManager {
                     if (active) {
                         // 🛡️ CORTE RADICAL E INMEDIATO DE VOZ Y PORTADORA DEL BOT AL PULSAR PTT
                         window.app.isControlSpeaking = false;
+                        window.app.isSpeechCancelled = true;
                         try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
                         try { if (window.AndroidApp && window.AndroidApp.stopSpeak) window.AndroidApp.stopSpeak(); } catch(e) {}
                         if (window.dispatch_control_active) try { window.dispatch_control_active(null, false); } catch(e) {}
@@ -831,7 +832,6 @@ object ReplayEngine {
 
                     setTimeout(function() {
                         if (window.AndroidApp && window.AndroidApp.speak) {
-                            if (window.playUiSound) try { window.playUiSound("switch"); } catch(e){}
                             if (window.dispatch_control_active) {
                                 try { window.dispatch_control_active("BASE " + rawCity, true); } catch(e){}
                             }
@@ -841,6 +841,7 @@ object ReplayEngine {
 
                         if (!('speechSynthesis' in window)) return;
                         try {
+                            window.app.isSpeechCancelled = true;
                             window.speechSynthesis.cancel();
                             var u = new SpeechSynthesisUtterance(textToSpeak);
                             u.lang = 'es-ES';
@@ -853,7 +854,6 @@ object ReplayEngine {
                                 if (window.dispatch_control_active) {
                                     try { window.dispatch_control_active("BASE " + rawCity, true); } catch(e){}
                                 }
-                                if (window.playUiSound) try { window.playUiSound("switch"); } catch(e){}
                             };
 
                             u.onend = function() {
@@ -861,11 +861,15 @@ object ReplayEngine {
                                 if (window.dispatch_control_active) {
                                     try { window.dispatch_control_active(null, false); } catch(e){}
                                 }
-                                if (window.playUiSound) try { window.playUiSound("rx_off"); } catch(e){}
+                                if (!window.app.isSpeechCancelled) {
+                                    if (window.playUiSound) try { window.playUiSound("rx_off"); } catch(e){}
+                                }
+                                window.app.isSpeechCancelled = false;
                             };
 
                             u.onerror = function() {
                                 window.app.isControlSpeaking = false;
+                                window.app.isSpeechCancelled = false;
                                 if (window.dispatch_control_active) {
                                     try { window.dispatch_control_active(null, false); } catch(e){}
                                 }
@@ -940,6 +944,7 @@ object ReplayEngine {
                 isPlaying = true; 
                 
                 // 🛑 CORTE INMEDIATO Y MUTE DE LA VOZ DEL BOT FELIPE AL REPRODUCIR REPLAY
+                window.app.isSpeechCancelled = true;
                 try { if (window.AndroidApp && window.AndroidApp.stopSpeak) window.AndroidApp.stopSpeak(); } catch(e) {}
                 try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
                 if (window.app) window.app.isControlSpeaking = false;

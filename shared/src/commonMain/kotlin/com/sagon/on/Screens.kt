@@ -1312,8 +1312,11 @@ fun InlineTacticalChat(
                     border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .imePadding()
+                        .navigationBarsPadding()
                         .clickable(enabled = false) {}
                 ) {
+
 
 
 

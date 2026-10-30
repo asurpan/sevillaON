@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Política de Privacidad - ON AIR SPAIN</title>
-    <meta name="description" content="Política de privacidad oficial de ON AIR SPAIN. Información sobre permisos de micrófono, ubicación por IP y seguridad de datos para Google Play.">
+    <title>Privacy Policy / Política de Privacidad - ON AIR GLOBAL</title>
+    <meta name="description" content="Official Privacy Policy of ON AIR GLOBAL CB Radio & Walkie Talkie App for Google Play Store compliance.">
     <style>
         :root {
             --midnight: #0F172A;
@@ -25,12 +25,27 @@
         }
 
         .container {
-            max-width: 850px;
+            max-width: 900px;
             margin: 40px auto;
             padding: 40px;
             background: var(--glass);
             border-radius: 24px;
             border: 1px solid var(--glass-border);
+        }
+
+        .lang-switcher {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .lang-switcher a {
+            color: var(--gold);
+            text-decoration: none;
+            font-weight: bold;
+            margin: 0 10px;
+            padding: 6px 16px;
+            border: 1px solid var(--gold);
+            border-radius: 20px;
         }
 
         h1 { color: #fff; text-align: center; font-weight: 900; margin-bottom: 10px; }
@@ -39,45 +54,84 @@
         strong { color: #fff; }
         .alert { background: rgba(212, 175, 55, 0.1); border: 1px solid var(--gold); padding: 15px; border-radius: 12px; margin: 20px 0; }
         .footer { text-align: center; margin-top: 50px; font-size: 0.85em; color: rgba(255,255,255,0.4); border-top: 1px solid var(--glass-border); padding-top: 20px; }
+        hr { border: 0; border-top: 1px solid var(--glass-border); margin: 40px 0; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>ON AIR SPAIN</h1>
-        <p style="text-align: center; color: var(--gold); font-weight: 800; letter-spacing: 1px;">PROTOCOLO DE PRIVACIDAD V11.0 (PURE RADIO)</p>
+        <h1>ON AIR GLOBAL</h1>
+        <p style="text-align: center; color: var(--gold); font-weight: 800; letter-spacing: 1px;">GLOBAL PRIVACY PROTOCOL V12.0 (PURE RADIO)</p>
 
-        <div class="alert">
-            <strong>Resumen para el usuario:</strong> Nuestra aplicación es una emisora de radio digital. No rastreamos tu identidad real, no pedimos tu número de teléfono y no guardamos grabaciones de voz. Tu privacidad es nuestro núcleo técnico.
+        <div class="lang-switcher">
+            <a href="#english">ENGLISH VERSION</a>
+            <a href="#spanish">VERSIÓN EN ESPAÑOL</a>
         </div>
 
-        <h2>1. RECOPILACIÓN Y USO DE DATOS</h2>
-        <p>En cumplimiento estricto con las políticas de Google Play, informamos que <strong>ON AIR SPAIN</strong> minimiza la recopilación de datos al máximo necesario para el funcionamiento de la emisora:</p>
-        <ul>
-            <li><strong>Ubicación Geográfica y GPS (Opcional):</strong> El acceso a la ubicación por GPS (`ACCESS_FINE_LOCATION`) es **100% voluntario y opcional**. Si el usuario otorga el permiso, las coordenadas se utilizan **única y exclusivamente en memoria RAM en tiempo real** para calcular la distancia entre emisoras y calibrar la potencia de la portadora en el S-Meter de la radio (para reflejar señal fuerte `S9+30dB` entre estaciones de la misma zona/barrio). Si el usuario deniega el GPS, la radio utiliza la ciudad sintonizada en el dial sin ninguna pérdida de función. **Las coordenadas GPS NUNCA se guardan en bases de datos, NUNCA se rastrean y NUNCA se comparten con terceros.**</li>
-            <li><strong>Indicativo de Radio:</strong> Solicitamos un nombre de usuario (Indicativo) para identificarte en la red. Este nombre es efímero y modificable en cualquier momento.</li>
-            <li><strong>Estado de Conexión:</strong> Transmitimos tu estado (en línea/hablando) para que otros usuarios en el mismo canal puedan interactuar contigo.</li>
-        </ul>
+        <!-- ENGLISH VERSION -->
+        <div id="english">
+            <div class="alert">
+                <strong>User Summary:</strong> ON AIR is a global digital CB radio & walkie-talkie application. We do not track your real identity, we do not require phone numbers or email addresses, and we do not store voice recordings. User privacy is our core engineering commitment.
+            </div>
 
-        <h2>2. PERMISOS DE HARDWARE CRÍTICOS</h2>
-        <p>Para el correcto funcionamiento de la emisora, la aplicación requiere:</p>
-        <ul>
-            <li><strong>Micrófono (RECORD_AUDIO):</strong> Esencial para la transmisión de voz. La aplicación solo accede al micrófono cuando el usuario pulsa voluntariamente el botón PTT o activa la función manos libres (VOX). El audio se procesa en tiempo real y <strong>nunca se almacena en el dispositivo ni en servidores externos</strong>.</li>
-            <li><strong>Ubicación Opcional (ACCESS_FINE_LOCATION):</strong> Procesamiento en tiempo real de distancia para simular la fuerza de señal RF en el S-Meter.</li>
-            <li><strong>Internet:</strong> Necesario para la transmisión de datos punto a punto y la sincronización con Firebase.</li>
-        </ul>
+            <h2>1. DATA COLLECTION & USE</h2>
+            <p>In full compliance with Google Play Store policies and international data protection laws (GDPR, CCPA, LGPD), <strong>ON AIR GLOBAL</strong> minimizes data collection to the essential technical operational needs:</p>
+            <ul>
+                <li><strong>Optional Location & GPS (`ACCESS_FINE_LOCATION`):</strong> Location access is 100% voluntary and optional. If granted, coordinates are processed <strong>exclusively in RAM in real-time</strong> to calculate distance between radio stations and calibrate the S-Meter RF signal gauge (e.g. S9+30dB signal). GPS coordinates are <strong>NEVER saved in databases, NEVER tracked, and NEVER shared with third parties</strong>.</li>
+                <li><strong>Radio Call Sign (Nick):</strong> We request a user handle/callsign for channel identification. This callsign is ephemeral and can be changed at any time.</li>
+                <li><strong>Connection State:</strong> We transmit your live channel status (online/speaking) so other stations on the same channel can interact with you.</li>
+            </ul>
 
-        <h2>3. SEGURIDAD Y ALMACENAMIENTO</h2>
-        <p>Utilizamos <strong>Google Firebase</strong> para la gestión de la red en tiempo real. Los datos de sesión se eliminan automáticamente cuando el usuario cierra la aplicación o tras un breve periodo de inactividad. No compartimos bases de datos con terceros.</p>
+            <h2>2. CRITICAL HARDWARE PERMISSIONS</h2>
+            <ul>
+                <li><strong>Microphone (`RECORD_AUDIO`):</strong> Essential for live voice transmission. The app only accesses the microphone when the user presses the PTT (Push-To-Talk) button or enables hands-free VOX mode. Audio is transmitted live P2P and is <strong>never stored on the device or external servers</strong>.</li>
+                <li><strong>Internet (`INTERNET`):</strong> Required for peer-to-peer audio streaming and realtime channel synchronization.</li>
+            </ul>
 
-        <h2>4. PUBLICIDAD (Google AdMob)</h2>
-        <p>Para mantener el servicio gratuito y nacional, mostramos anuncios mediante Google AdMob. Google puede utilizar identificadores publicitarios anónimos para la personalización de anuncios, sujetos a la propia política de privacidad de Google.</p>
+            <h2>3. SECURITY & STORAGE</h2>
+            <p>We utilize <strong>Google Firebase</strong> for real-time network orchestration. Session data is automatically deleted when the user closes the app or after a short period of inactivity. We do not sell or share data with third parties.</p>
 
-        <h2>5. DERECHOS DEL USUARIO Y CONTACTO</h2>
-        <p>Al no existir cuentas de usuario permanentes (correos o contraseñas), el usuario ejerce su derecho al olvido simplemente cerrando la sesión o desinstalando la aplicación. Todos los datos temporales vinculados a su sesión desaparecerán del nodo nacional.</p>
+            <h2>4. ADVERTISING (Google AdMob)</h2>
+            <p>To keep the service 100% free globally, we show non-intrusive ads via Google AdMob. Google may use anonymous advertising identifiers subject to Google's Privacy Policy.</p>
+
+            <h2>5. USER RIGHTS & CONTACT</h2>
+            <p>Since no permanent accounts (emails or passwords) exist, users exercise their right to be forgotten simply by closing the session or uninstalling the app. For support, contact: <strong>asurpan@gmail.com</strong></p>
+        </div>
+
+        <hr>
+
+        <!-- ESPAÑOL VERSION -->
+        <div id="spanish">
+            <div class="alert">
+                <strong>Resumen para el usuario:</strong> ON AIR es una emisora de radio CB digital global. No rastreamos tu identidad real, no pedimos número de teléfono ni correo electrónico, y no guardamos grabaciones de voz. Tu privacidad es nuestro núcleo técnico.
+            </div>
+
+            <h2>1. RECOPILACIÓN Y USO DE DATOS</h2>
+            <p>En cumplimiento estricto con las políticas de Google Play y normativas internacionales (RGPD, CCPA), <strong>ON AIR GLOBAL</strong> minimiza la recopilación de datos al máximo necesario para el funcionamiento de la emisora:</p>
+            <ul>
+                <li><strong>Ubicación Geográfica y GPS (Opcional):</strong> El acceso a la ubicación por GPS (`ACCESS_FINE_LOCATION`) es **100% voluntario y opcional**. Si el usuario otorga el permiso, las coordenadas se utilizan **única y exclusivamente en memoria RAM en tiempo real** para calcular la distancia entre emisoras y calibrar la potencia de la portadora en el S-Meter de la radio (para reflejar señal fuerte `S9+30dB` entre estaciones de la misma zona/barrio). Si el usuario deniega el GPS, la radio utiliza el canal/país seleccionado en el dial sin ninguna pérdida de función. **Las coordenadas GPS NUNCA se guardan en bases de datos, NUNCA se rastrean y NUNCA se comparten con terceros.**</li>
+                <li><strong>Indicativo de Radio:</strong> Solicitamos un nombre de usuario (Indicativo) para identificarte en la red. Este nombre es efímero y modificable en cualquier momento.</li>
+                <li><strong>Estado de Conexión:</strong> Transmitimos tu estado (en línea/hablando) para que otros usuarios en el mismo canal puedan interactuar contigo.</li>
+            </ul>
+
+            <h2>2. PERMISOS DE HARDWARE CRÍTICOS</h2>
+            <ul>
+                <li><strong>Micrófono (RECORD_AUDIO):</strong> Esencial para la transmisión de voz. La aplicación solo accede al micrófono cuando el usuario pulsa voluntariamente el botón PTT o activa la función manos libres (VOX). El audio se procesa en tiempo real y <strong>nunca se almacena en el dispositivo ni en servidores externos</strong>.</li>
+                <li><strong>Internet:</strong> Necesario para la transmisión de datos punto a punto y la sincronización con Firebase.</li>
+            </ul>
+
+            <h2>3. SEGURIDAD Y ALMACENAMIENTO</h2>
+            <p>Utilizamos <strong>Google Firebase</strong> para la gestión de la red en tiempo real. Los datos de sesión se eliminan automáticamente cuando el usuario cierra la aplicación o tras un breve periodo de inactividad. No compartimos bases de datos con terceros.</p>
+
+            <h2>4. PUBLICIDAD (Google AdMob)</h2>
+            <p>Para mantener el servicio gratuito e internacional, mostramos anuncios mediante Google AdMob. Google puede utilizar identificadores publicitarios anónimos para la personalización de anuncios, sujetos a la propia política de privacidad de Google.</p>
+
+            <h2>5. DERECHOS DEL USUARIO Y CONTACTO</h2>
+            <p>Al no existir cuentas de usuario permanentes (correos o contraseñas), el usuario ejerce su derecho al olvido simplemente cerrando la sesión o desinstalando la aplicación. Contacto de soporte técnico: <strong>asurpan@gmail.com</strong></p>
+        </div>
 
         <div class="footer">
-            &copy; 2026 ON AIR SPAIN - Ingeniería de Radio Profesional.<br>
-            Contacto de privacidad y soporte técnico: asurpan@gmail.com
+            &copy; 2026 ON AIR GLOBAL - Professional Radio Engineering.<br>
+            Privacy & Technical Support: asurpan@gmail.com
         </div>
     </div>
 </body>

@@ -433,7 +433,8 @@ object RadioAudioManager {
                     
                     if (remoteStream.getAudioTracks().length === 0) console.error("⚠️ ALERTA: Stream recibido pero tiene 0 pistas de audio.");
                     remoteAudio.srcObject = remoteStream;
-                    remoteAudio.play().catch(function(e) { });
+                    remoteAudio.volume = 1.0;
+                    remoteAudio.play().catch(function(e) { console.error("Autoplay play error", e); });
 
                     if (!window.app.ctx && window.initAudio) window.initAudio();
                     if (!window.app.ctx) return;
@@ -446,34 +447,29 @@ object RadioAudioManager {
                     source.connect(analyser); 
                     source.connect(gainNode);
                     if (window.app.masterRxGain) gainNode.connect(window.app.masterRxGain);
+                    if (window.app.ctx && window.app.ctx.destination) {
+                        try { gainNode.connect(window.app.ctx.destination); } catch(e) {}
+                    }
                     // 🛡️ REPLAY RECORDING: Conectar audio remoto al bus de grabación para Replay
                     if (window.app.masterRecordBus) gainNode.connect(window.app.masterRecordBus);
-                    
-                    var dummy = window.app.ctx.createGain();
-                    dummy.gain.value = 0.0001; 
-                    source.connect(dummy); 
-                    dummy.connect(window.app.ctx.destination); 
 
                     window.app.remoteSources[call.peer] = source;
                     window.app.remoteAnalysers[call.peer] = analyser;
                     window.app.remoteGains[call.peer] = gainNode;
-                    window.app.remoteDummies = window.app.remoteDummies || {};
-                    window.app.remoteDummies[call.peer] = dummy;
                     window.app.remoteSinks = window.app.remoteSinks || {};
                     window.app.remoteSinks[call.peer] = remoteAudio;
                     
                     if (window.app.ctx.state !== 'running') {
                         window.app.ctx.resume().then(() => { 
-                            remoteAudio.volume = 0.2;
-                            setTimeout(() => { remoteAudio.volume = 0.01; }, 1000);
+                            remoteAudio.volume = 1.0;
+                            remoteAudio.play().catch(function(e) {});
                         });
                     } else {
-                        // 🛡️ REANUDACIÓN FORZOSA DE AUDIO REMOTE STREAM
-                        remoteAudio.volume = 0.2;
-                        setTimeout(() => { remoteAudio.volume = 0.01; }, 1000);
+                        remoteAudio.volume = 1.0;
                     }
                     if (window.app.masterOut) window.app.masterOut.connect(window.app.ctx.destination);
                 });
+
                 function cleanupCall() {
                     try { if (window.app.remoteSources[call.peer]) window.app.remoteSources[call.peer].disconnect(); } catch(e){}
                     try { if (window.app.remoteGains[call.peer]) window.app.remoteGains[call.peer].disconnect(); } catch(e){}
@@ -548,15 +544,13 @@ object RadioAudioManager {
                     var isTx = firebaseTx || hasVoiceAudio;
                     window.remoteTxStates[id] = isTx;
 
-                    // 🎛️ UMBRAL DE SQUELCH REAL: Si el Squelch local está alto, bloquea señales débiles/lejanas
-                    var localSquelch = (window.app.squelch !== undefined) ? window.app.squelch : 0.15;
-                    var remotePower = (window.app.remotePowers && window.app.remotePowers[id]) ? window.app.remotePowers[id] : 0.7;
-                    var isBlockedBySquelch = (localSquelch > 0.50 && remotePower < (localSquelch * 0.85));
+                    // 🎛️ FIX BANDA CIUDADANA: El Squelch NUNCA silencia transmisiones de voz activas (isTx)
+                    var isBlockedByDiscrete = window.app.discreteMode === true;
 
-                    if (window.app.discreteMode || (isTx && isBlockedBySquelch)) {
-                        // 👂 MODO DISCRETO O SQUELCH A TOPE BLOQUEANDO SEÑAL DÉBIL
+                    if (isBlockedByDiscrete) {
+                        // 👂 MODO DISCRETO ACTIVADO
                         gain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
-                        if (isTx && window.app.discreteMode && !window.app.discreteBeepPlayed[id]) {
+                        if (isTx && !window.app.discreteBeepPlayed[id]) {
                             window.app.discreteBeepPlayed[id] = true;
                             if (window.playUiSound) window.playUiSound("incoming");
                         } else if (!isTx) {
@@ -564,9 +558,11 @@ object RadioAudioManager {
                         }
                     } else {
                         window.app.discreteBeepPlayed[id] = false;
-                        gain.gain.setTargetAtTime(isTx ? 1.2 : 1.0, window.app.ctx.currentTime, 0.05);
+                        // Forzar reproducción limpia y potente de la voz
+                        gain.gain.setTargetAtTime(isTx ? 2.5 : 1.0, window.app.ctx.currentTime, 0.05);
                     }
                 });
+
 
                 // 📻 BATIDO HETERODINO DE RF EN PISOTONES (ZUMBIDO OSCILANTE DE 27MHz)
                 var activeTxPeers = peers.filter(p => window.remoteTxStates && window.remoteTxStates[p] === true);

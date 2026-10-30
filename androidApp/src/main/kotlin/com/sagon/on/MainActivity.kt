@@ -70,13 +70,14 @@ import java.util.Locale
 
 class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
-    private var isTtsReady = false
+    private var isTtsReady = true
     private var pendingTextToSpeak: String? = null
 
     // ⚙️ CONMUTADOR DE ENTORNO (CAMBIA AQUÍ PARA MÓVIL)
     // true  = Carga en directo desde Servidor GitHub Pages (Producción/Servidor)
     // false = Carga en directo desde Assets Locales compilados (Desarrollo Local)
-    private val USE_GITHUB_REMOTE_SERVER = true
+    private val USE_GITHUB_REMOTE_SERVER = false
+
 
     // --- 🛡️ MÓDULO DE SUPERVIVENCIA P2P (INDEPENDIENTE) ---
     private val meshModule: RadioMeshModule by lazy { RadioMeshModule(this) }
@@ -809,6 +810,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         // --- 🛡️ MEJORA DE FOCO (TECLADO Y NAVEGACIÓN ATRÁS SISTEMA) ---
                         isFocusable = true
                         isFocusableInTouchMode = true
+                        requestFocus()
+                        setOnTouchListener { v, event ->
+                            if ((event.action == android.view.MotionEvent.ACTION_DOWN || event.action == android.view.MotionEvent.ACTION_UP) && !v.hasFocus()) {
+                                v.requestFocus()
+                            }
+                            false
+                        }
 
                         setOnKeyListener { _, keyCode, keyEvent ->
                             if (keyCode == KeyEvent.KEYCODE_BACK && keyEvent.action == KeyEvent.ACTION_UP) {
@@ -839,9 +847,9 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         val defaultUA = settings.userAgentString
                         settings.userAgentString = "$defaultUA OnAirSpainNative/1.0"
                         
-                        // --- 🛡️ OPTIMIZACIÓN DE CARGA ---
-                        settings.loadWithOverviewMode = true
-                        settings.useWideViewPort = true
+                        // --- 🛡️ OPTIMIZACIÓN DE CARGA MÓVIL Y FOCO MÓVIL ---
+                        settings.loadWithOverviewMode = false
+                        settings.useWideViewPort = false
                         settings.setSupportZoom(false)
                         
                         // Permitir mixed content para que el audio no se corte

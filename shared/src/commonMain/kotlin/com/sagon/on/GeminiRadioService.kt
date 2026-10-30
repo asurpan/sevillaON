@@ -279,7 +279,7 @@ object GeminiRadioService {
 
                 // 5. Prompt con datos REALES de tiempo y tráfico
                 val currentTime = getCurrentFormattedTime()
-                val systemPrompt = "Te llamas FELIPE y eres el operador virtual estrella y compañero de radio de la Estación Base ON AIR SPAIN en $cleanCity. Tono: Súper ameno, enganchador, fresco, natural y directo. Tu indicativo de radio es 'Soy FELIPE, Estación Base $cleanCity'. Identifícate SIEMPRE diciendo 'Soy FELIPE' (NUNCA digas 'Felipe te escucha' ni 'Aquí Felipe'). La hora local exacta es $currentTime. DATOS REALES Y ACTUALIZADOS AHORA MISMO EN $cleanCity: Tiempo ($realWeather), Tráfico ($realTraffic). Tu misión es ser la voz imprescindible de $cleanCity: cuando te pregunten o des el parte, proporciona este informe meteo exacto y del tráfico de forma resumida pero ULTRA PRÁCTICA Y ÚTIL. DE VEZ EN CUANDO (en un 30%-40% de las veces), añade de forma alegre y espontánea al final la coletilla: ', ¡ah! ¡me encanta!' justo antes del Cambio. Termina con el enganche cálido: 'Hace un [día/noche] precioso para hablar por radio con amigos o conocer Gente Real'. Mantén estilo de radioaficionado ágil y cercano, con frases cortas y vibrantes. NUNCA pidas que dejen el canal libre ni utilices expresiones de carretera como 'al volante' o 'buen viaje'. Responde de forma directa, útil y coherente. Máximo 2 o 3 frases dinámicas (termina con 'Cambio' o 'A la escucha')."
+                val systemPrompt = "Te llamas FELIPE y eres el operador virtual estrella y compañero de radio de la Estación Base ON AIR SPAIN en $cleanCity. Tono: Súper ameno, enganchador, fresco, natural y directo. Tu indicativo de radio es 'Soy FELIPE, Estación Base $cleanCity'. Identifícate SIEMPRE diciendo 'Soy FELIPE' (NUNCA digas 'Felipe te escucha' ni 'Aquí Felipe'). La hora local exacta es $currentTime. DATOS REALES Y ACTUALIZADOS AHORA MISMO EN $cleanCity: Tiempo ($realWeather), Tráfico ($realTraffic). Tu misión es ser la voz imprescindible de $cleanCity: cuando te pregunten o des el parte, proporciona este informe meteo exacto y del tráfico de forma resumida pero ULTRA PRÁCTICA Y ÚTIL. DE VEZ EN CUANDO (en un 30%-40% de las veces), añade de forma alegre y espontánea al final la coletilla: ', ¡ah! ¡me encanta!' justo antes del Cambio. Termina con el enganche cálido respetando el género (ej. 'Hace un día precioso' o 'Hace una noche preciosa'). Mantén estilo de radioaficionado ágil y cercano, con frases cortas y vibrantes. NUNCA pidas que dejen el canal libre ni utilices expresiones de carretera como 'al volante' o 'buen viaje'. Responde de forma directa, útil y coherente. Máximo 2 o 3 frases dinámicas (termina con 'Cambio' o 'A la escucha')."
 
 
                 val promptContent = if (isSilentBeacon) {
@@ -359,12 +359,14 @@ object GeminiRadioService {
 
         val currentHour = try { currentTime.split(":")[0].toInt() } catch (e: Exception) { 12 }
         val isNight = currentHour !in 7..20
-        val moment = if (isNight) "noche" else "día"
         val weatherStr = realWeatherInfo ?: "cielos claros y buena temperatura"
         val trafficStr = realTrafficInfo ?: "tráfico fluido sin retenciones"
 
         val catchphrase = if (kotlin.random.Random.nextFloat() < 0.40f) ", ¡ah! ¡me encanta!" else ""
 
+        val phrasePrecioso = if (isNight) "Hace una noche preciosa" else "Hace un día precioso"
+        val phraseEstupendo = if (isNight) "Hace una noche estupenda" else "Hace un día estupendo"
+        val phraseIdeal = if (isNight) "una noche ideal" else "un día ideal"
 
         val msgLower = userMessage?.lowercase() ?: ""
         if (msgLower.contains("quien eres") || msgLower.contains("quién eres") || msgLower.contains("como te llamas") || msgLower.contains("cómo te llamas") || msgLower.contains("que eres") || msgLower.contains("qué eres") || msgLower.contains("quien habla")) {
@@ -376,23 +378,23 @@ object GeminiRadioService {
         }
 
         if (msgLower.contains("tiempo") || msgLower.contains("clima") || msgLower.contains("meteo") || msgLower.contains("parte") || msgLower.contains("trafico") || msgLower.contains("tráfico") || msgLower.contains("cambio") || msgLower.contains("novedad")) {
-            return "¡Hola $nick! Soy FELIPE. En $cleanCity tenemos $weatherStr. Sobre el tráfico: $trafficStr. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Cambio!"
+            return "¡Hola $nick! Soy FELIPE. En $cleanCity tenemos $weatherStr. Sobre el tráfico: $trafficStr. $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Cambio!"
         }
 
         if (isSilentBeacon) {
             val beacons = listOf(
-                "¡Atención $cleanCity! Soy FELIPE. Reportando $weatherStr y $trafficStr a las $currentTime. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Entra en frecuencia!",
-                "¡Buenas por $cleanCity! Soy FELIPE a la escucha a las $currentTime. $weatherStr y $trafficStr. Hace un $moment estupendo para charlar por radio y conocer Gente Real$catchphrase. Cambio.",
-                "¡Hola $cleanCity! Soy FELIPE reportando a las $currentTime. $weatherStr, $trafficStr y señal fuerte. Hace un $moment precioso para hablar por radio con amigos$catchphrase. Cambio."
+                "¡Atención $cleanCity! Soy FELIPE. Reportando $weatherStr y $trafficStr a las $currentTime. $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Entra en frecuencia!",
+                "¡Buenas por $cleanCity! Soy FELIPE a la escucha a las $currentTime. $weatherStr y $trafficStr. $phraseEstupendo para charlar por radio y conocer Gente Real$catchphrase. Cambio.",
+                "¡Hola $cleanCity! Soy FELIPE reportando a las $currentTime. $weatherStr, $trafficStr y señal fuerte. $phrasePrecioso para hablar por radio con amigos$catchphrase. Cambio."
             )
             return beacons.random()
         }
 
         val responses = listOf(
-            "¡Hola $nick! Soy FELIPE. Te escucho perfecto en $cleanCity. $weatherStr, $trafficStr a las $currentTime y hace un $moment precioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Cambio!",
-            "¡Buenas $nick! Soy FELIPE, te recibo alto y claro desde $cleanCity. $weatherStr, $trafficStr y un $moment ideal para charlar y conocer Gente Real$catchphrase. ¡Adelante! Cambio.",
-            "¡Qué tal $nick! Soy FELIPE. Llegas con señal impecable por $cleanCity. $weatherStr y un $moment precioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Cambio!",
-            "¡Recibido $nick! Soy FELIPE, te escucho estupendamente a las $currentTime en $cleanCity. $weatherStr y $trafficStr. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real$catchphrase. Cambio."
+            "¡Hola $nick! Soy FELIPE. Te escucho perfecto en $cleanCity. $weatherStr, $trafficStr a las $currentTime y $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Cambio!",
+            "¡Buenas $nick! Soy FELIPE, te recibo alto y claro desde $cleanCity. $weatherStr, $trafficStr y $phraseIdeal para charlar y conocer Gente Real$catchphrase. ¡Adelante! Cambio.",
+            "¡Qué tal $nick! Soy FELIPE. Llegas con señal impecable por $cleanCity. $weatherStr y $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Cambio!",
+            "¡Recibido $nick! Soy FELIPE, te escucho estupendamente a las $currentTime en $cleanCity. $weatherStr y $trafficStr. $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. Cambio."
         )
         return responses.random()
     }

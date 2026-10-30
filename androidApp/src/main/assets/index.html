@@ -107,14 +107,6 @@
       ]
     }
     </script>
-        "priceCurrency": "EUR"
-      },
-      "author": {
-        "@type": "Organization",
-        "name": "ON AIR SPAIN"
-      }
-    }
-    </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
 
@@ -472,12 +464,13 @@
     </audio>
 
     <script>
-        // 📱 REDIRECCIÓN OBLIGATORIA PARA NAVEGADORES ANDROID -> APP NATIVA / PLAY STORE (EXCEPTO EN ENTORNO LOCALHOST)
+        // 📱 REDIRECCIÓN OBLIGATORIA PARA NAVEGADORES ANDROID -> APP NATIVA / PLAY STORE (EXCEPTO EN ENTORNO LOCALHOST O FILE://)
         (function() {
+            if (location.protocol === "file:") return; // 🛑 NUNCA REDIRIGIR EN ARCHIVOS LOCALES NATIVOS DE LA APP
             var ua = navigator.userAgent || "";
             var isAndroid = /Android/i.test(ua);
             var isIos = /iPhone|iPad|iPod/i.test(ua);
-            var isNativeApp = window.AndroidApp || ua.indexOf("OnAirSpainNative") !== -1 || window.location.search.indexOf("native=true") !== -1;
+            var isNativeApp = window.AndroidApp || location.protocol === "file:" || ua.indexOf("OnAirSpainNative") !== -1 || window.location.search.indexOf("native=true") !== -1;
             var isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname.indexOf("192.168.") !== -1;
 
             if (isAndroid && !isIos && !isNativeApp && !isLocalhost) {
@@ -492,7 +485,7 @@
 
         // 📱 AUTO-ARRANQUE DIRECTO EN LA APP NATIVA DE ANDROID (SINTONIZACIÓN INMEDIATA)
         function checkAutoLaunchNative() {
-            const isNative = window.AndroidApp || navigator.userAgent.indexOf("OnAirSpainNative") !== -1 || window.location.search.indexOf("native=true") !== -1;
+            const isNative = window.AndroidApp || location.protocol === "file:" || navigator.userAgent.indexOf("OnAirSpainNative") !== -1 || window.location.search.indexOf("native=true") !== -1;
             if (isNative) {
                 const landing = document.getElementById('landing-ui');
                 const radio = document.getElementById('radio-root');

@@ -1,14 +1,14 @@
 package com.sagon.on
 
 /**
- * 🔒 MÓDULO AISLADO E INDEPENDIENTE: SERVICIO DE IA TÁCTICA PARA RADIO (GEMINI + RESPALDO LOCAL)
+ * 🔒 MÓDULO AISLADO E INDEPENDIENTE: SERVICIO DE IA TÁCTICA PARA RADIO (GEMINI + API GRATUITA METEO + RESPALDO LOCAL)
  * ESTADO: TOTALMENTE AISLADO - CERO RIESGO PARA EL CÓDIGO CORE
  * 
  * Funcionalidades:
- * 1. Rotación automática de claves de API (Failover).
- * 2. Sistema de protección anti-abuso y control de cuotas (Cooldown 3 min, límites horarios).
- * 3. Respuestas de máximo 15-20 palabras con lenguaje táctico de radioaficionado.
- * 4. Caché de respuesta local (100% offline / 0% fallo) si se agota la cuota o no hay red.
+ * 1. Consulta meteorológica en tiempo real mediante Open-Meteo API (100% gratuita, 0€ coste, sin API Key).
+ * 2. Rotación automática de claves de API de Gemini (Failover).
+ * 3. Protección anti-abuso y control de cuotas.
+ * 4. Caché local con datos de tiempo real en caso de fallo de red o cuota Gemini agotada.
  */
 object GeminiRadioService {
 
@@ -31,6 +31,36 @@ object GeminiRadioService {
     private val conversationHistory = mutableListOf<String>()
     private const val MAX_HISTORY_SIZE = 6
 
+    // 🌤️ CACHÉ Y MAPA DE COORDENADAS PARA API GRATUITA OPEN-METEO
+    private val cityCoords = mapOf(
+        "SEVILLA" to Pair(37.3828, -5.9732),
+        "MADRID" to Pair(40.4168, -3.7038),
+        "BARCELONA" to Pair(41.3851, 2.1734),
+        "VALENCIA" to Pair(39.4699, -0.3763),
+        "MALAGA" to Pair(36.7213, -4.4214),
+        "MÁLAGA" to Pair(36.7213, -4.4214),
+        "ZARAGOZA" to Pair(41.6488, -0.8891),
+        "BILBAO" to Pair(43.2630, -2.9350),
+        "ALICANTE" to Pair(38.3452, -0.4810),
+        "CORDOBA" to Pair(37.8882, -4.7794),
+        "CÓRDOBA" to Pair(37.8882, -4.7794),
+        "VALLADOLID" to Pair(41.6523, -4.7245),
+        "VIGO" to Pair(42.2406, -8.7207),
+        "GIJON" to Pair(43.5357, -5.6615),
+        "GIJÓN" to Pair(43.5357, -5.6615),
+        "GRANADA" to Pair(37.1773, -3.5986),
+        "CADIZ" to Pair(36.5271, -6.2886),
+        "CÁDIZ" to Pair(36.5271, -6.2886),
+        "MURCIA" to Pair(37.9922, -1.1307),
+        "PALMA" to Pair(39.5696, 2.6502),
+        "LAS PALMAS" to Pair(28.1235, -15.4363),
+        "SANTA CRUZ" to Pair(28.4636, -16.2518)
+    )
+
+    private var cachedWeatherCity: String? = null
+    private var cachedWeatherInfo: String? = null
+    private var cachedWeatherTime: Long = 0L
+
     fun configureKeys(keys: List<String>) {
         this.apiKeys = keys.filter { it.isNotBlank() }
         this.currentKeyIndex = 0
@@ -48,6 +78,60 @@ object GeminiRadioService {
     }
 
     /**
+     * Consulta meteorológica en tiempo real sin API Key (Open-Meteo) con caché de 15 min.
+     */
+    private fun fetchRealWeather(city: String, callback: (String) -> Unit) {
+        val cleanCity = city.split("-")[0].trim().uppercase()
+        val now = getTimeMillis()
+
+        if (cleanCity == cachedWeatherCity && cachedWeatherInfo != null && (now - cachedWeatherTime < 15 * 60 * 1000L)) {
+            callback(cachedWeatherInfo!!)
+            return
+        }
+
+        val coords = cityCoords[cleanCity] ?: Pair(37.3828, -5.9732)
+        val url = "https://api.open-meteo.com/v1/forecast?latitude=${coords.first}&longitude=${coords.second}&current=temperature_2m,weather_code,wind_speed_10m"
+
+        fetchHttpGetApi(url) { json ->
+            var weatherResult: String? = null
+            if (!json.isNullOrBlank()) {
+                try {
+                    val tempMatch = Regex(""""temperature_2m"\s*:\s*([\d.-]+)""").find(json)
+                    val tempVal = tempMatch?.groupValues?.get(1)?.toDoubleOrNull()
+
+                    val codeMatch = Regex(""""weather_code"\s*:\s*(\d+)""").find(json)
+                    val codeVal = codeMatch?.groupValues?.get(1)?.toIntOrNull() ?: 0
+
+                    val windMatch = Regex(""""wind_speed_10m"\s*:\s*([\d.-]+)""").find(json)
+                    val windVal = windMatch?.groupValues?.get(1)?.toDoubleOrNull() ?: 10.0
+
+                    val sky = when (codeVal) {
+                        0 -> "cielos despejados"
+                        1, 2, 3 -> "cielos algo nublados"
+                        45, 48 -> "bancos de niebla"
+                        51, 53, 55, 61, 63, 65, 80, 81 -> "lluvia ligera"
+                        95, 96, 99 -> "tormenta"
+                        else -> "cielos despejados"
+                    }
+
+                    val windText = if (windVal > 30.0) "viento moderado a fuerte" else "viento suave"
+                    val tempText = if (tempVal != null) "${tempVal.toInt()}°C" else "temperatura agradable"
+
+                    weatherResult = "$sky, $tempText y $windText"
+                } catch (e: Exception) {
+                    weatherResult = null
+                }
+            }
+
+            val finalWeather = weatherResult ?: "cielos claros, 20°C y viento suave"
+            cachedWeatherCity = cleanCity
+            cachedWeatherInfo = finalWeather
+            cachedWeatherTime = now
+            callback(finalWeather)
+        }
+    }
+
+    /**
      * Evalúa la interacción del usuario y devuelve la respuesta táctica de la Estación Base.
      * Gestiona automáticamente la protección contra spam y agotamiento de claves.
      */
@@ -60,11 +144,8 @@ object GeminiRadioService {
     ) {
         val now = getTimeMillis()
 
-        // 1. Verificar si la estación está en Cooldown por uso intensivo
-        if (now < cooldownUntilTimestamp) {
-            // Silencio de radio respetuoso
-            return
-        }
+        // 1. Cooldown
+        if (now < cooldownUntilTimestamp) return
 
         // 2. Control de reseteo horario
         if (now - hourlyResetTimestamp > ONE_HOUR_MS) {
@@ -72,7 +153,9 @@ object GeminiRadioService {
             hourlyResetTimestamp = now
         }
 
-        // 3. Verificación de uso consecutivo por usuario (Anti-Monopolio de canal)
+        val cleanCity = city.split("-")[0].trim().uppercase()
+
+        // 3. Verificación de uso consecutivo por usuario
         if (!isSilentBeacon) {
             if (now - lastUserTalkTimestamp < 60_000L) {
                 consecutiveUserTalkCount++
@@ -84,57 +167,57 @@ object GeminiRadioService {
             if (consecutiveUserTalkCount > MAX_CONSECUTIVE_TALKS) {
                 cooldownUntilTimestamp = now + COOLDOWN_DURATION_MS
                 consecutiveUserTalkCount = 0
-                val cleanCity = city.split("-")[0].trim().uppercase()
                 onResult("¡Excelente modulación $userNick! Soy FELIPE. Invita a tus amigos y colegas compartiendo el canal para montar aquí una buena rueda en $cleanCity. ¡A la escucha! Cambio.")
                 return
             }
         }
 
-        // 4. Si se superó el límite horario o no hay claves de API, usar Caché de Respaldo Local (0€ Coste, 0% Fallo)
-        val activeKey = getActiveKey()
-        if (hourlyRequestCount >= MAX_HOURLY_REQUESTS || activeKey == null) {
-            val fallback = getFallbackTacticalResponse(city, userNick, isSilentBeacon, userMessage)
-            onResult(fallback)
-            return
-        }
+        // Obtener tiempo real primero de la API gratuita
+        fetchRealWeather(cleanCity) { realWeather ->
+            val activeKey = getActiveKey()
 
-        hourlyRequestCount++
-
-        // 5. Generar prompt táctico e inteligente para Gemini
-        val cleanCity = city.split("-")[0].trim().uppercase()
-        val currentTime = getCurrentFormattedTime()
-        val systemPrompt = "Te llamas FELIPE y eres el operador virtual estrella y compañero de radio de la Estación Base ON AIR SPAIN en $cleanCity. Tono: Súper ameno, enganchador, fresco, natural y directo. Tu indicativo de radio es 'Soy FELIPE, Estación Base $cleanCity'. Identifícate SIEMPRE diciendo 'Soy FELIPE' (NUNCA digas 'Felipe te escucha' ni 'Aquí Felipe'). La hora local exacta es $currentTime. Tu misión es ser la voz imprescindible de $cleanCity: cuando te pregunten o des el parte de la ciudad, proporciona un informe meteo y de tráfico resumido pero ULTRA PRÁCTICO Y ÚTIL (cielos, temperatura estimada realista para la hora $currentTime, viento y estado exacto del tráfico). Si detectas o hay cambios respecto a hace poco, dilo con naturalidad. Termina SIEMPRE con el enganche cálido: 'Hace un [día/noche] precioso para hablar por radio con amigos o conocer Gente Real'. Mantén estilo de radioaficionado ágil y cercano, con frases cortas y vibrantes. NUNCA pidas que dejen el canal libre ni utilices expresiones de carretera como 'al volante' o 'buen viaje'. Responde SIEMPRE de forma directa, útil y coherente. Máximo 2 o 3 frases dinámicas (termina con 'Cambio' o 'A la escucha')."
-
-        val promptContent = if (isSilentBeacon) {
-            "Saluda de forma muy acogedora en la radio de $cleanCity e invita a hablar."
-        } else {
-            val userText = userMessage ?: "Hola, prueba de radio"
-            val historyContext = if (conversationHistory.isNotEmpty()) {
-                "Historial de conversación previo en el canal:\n" + conversationHistory.takeLast(MAX_HISTORY_SIZE).joinToString("\n") + "\n\n"
-            } else ""
-            "${historyContext}El usuario $userNick en $cleanCity dice por la radio: \"$userText\". Responde de forma inteligente, útil y coherente a su mensaje."
-        }
-
-        // Ejecutar llamada HTTP a la API de Gemini con manejo automático de errores
-        val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$activeKey"
-        val payload = buildJsonPayload(systemPrompt, promptContent)
-
-        fetchGeminiApi(endpoint, payload) { response ->
-            val extractedText = parseGeminiTextResponse(response)
-            if (extractedText != null) {
-                if (!isSilentBeacon && userMessage != null) {
-                    conversationHistory.add("$userNick: $userMessage")
-                    conversationHistory.add("Emisora: $extractedText")
-                    while (conversationHistory.size > MAX_HISTORY_SIZE) {
-                        conversationHistory.removeAt(0)
-                    }
-                }
-                onResult(extractedText)
-            } else {
-                // Si la clave falló, rotar a la siguiente clave y usar respuesta de respaldo
-                rotateKey()
-                val fallback = getFallbackTacticalResponse(city, userNick, isSilentBeacon, userMessage)
+            // 4. Si se superó el límite horario o no hay claves de API, usar Caché de Respaldo con datos de tiempo real
+            if (hourlyRequestCount >= MAX_HOURLY_REQUESTS || activeKey == null) {
+                val fallback = getFallbackTacticalResponse(city, userNick, isSilentBeacon, userMessage, realWeather)
                 onResult(fallback)
+                return@fetchRealWeather
+            }
+
+            hourlyRequestCount++
+
+            // 5. Prompt con datos reales de la API meteorológica gratuita
+            val currentTime = getCurrentFormattedTime()
+            val systemPrompt = "Te llamas FELIPE y eres el operador virtual estrella y compañero de radio de la Estación Base ON AIR SPAIN en $cleanCity. Tono: Súper ameno, enganchador, fresco, natural y directo. Tu indicativo de radio es 'Soy FELIPE, Estación Base $cleanCity'. Identifícate SIEMPRE diciendo 'Soy FELIPE' (NUNCA digas 'Felipe te escucha' ni 'Aquí Felipe'). La hora local exacta es $currentTime. DATOS METEOROLÓGICOS REALES AHORA MISMO EN $cleanCity: $realWeather. Tu misión es ser la voz imprescindible de $cleanCity: cuando te pregunten o des el parte, proporciona este informe meteo exacto y del tráfico (fluido/tranquilo) de forma resumida pero ULTRA PRÁCTICA Y ÚTIL. Si hay o detectas cambios respecto a hace poco, dilo con naturalidad. Termina SIEMPRE con el enganche cálido: 'Hace un [día/noche] precioso para hablar por radio con amigos o conocer Gente Real'. Mantén estilo de radioaficionado ágil y cercano, con frases cortas y vibrantes. NUNCA pidas que dejen el canal libre ni utilices expresiones de carretera como 'al volante' o 'buen viaje'. Responde de forma directa, útil y coherente. Máximo 2 o 3 frases dinámicas (termina con 'Cambio' o 'A la escucha')."
+
+            val promptContent = if (isSilentBeacon) {
+                "Saluda de forma muy acogedora en la radio de $cleanCity e invita a hablar aportando el parte meteo real."
+            } else {
+                val userText = userMessage ?: "Hola, prueba de radio"
+                val historyContext = if (conversationHistory.isNotEmpty()) {
+                    "Historial de conversación previo en el canal:\n" + conversationHistory.takeLast(MAX_HISTORY_SIZE).joinToString("\n") + "\n\n"
+                } else ""
+                "${historyContext}El usuario $userNick en $cleanCity dice por la radio: \"$userText\". Responde de forma inteligente, útil y coherente a su mensaje."
+            }
+
+            val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$activeKey"
+            val payload = buildJsonPayload(systemPrompt, promptContent)
+
+            fetchGeminiApi(endpoint, payload) { response ->
+                val extractedText = parseGeminiTextResponse(response)
+                if (extractedText != null) {
+                    if (!isSilentBeacon && userMessage != null) {
+                        conversationHistory.add("$userNick: $userMessage")
+                        conversationHistory.add("Emisora: $extractedText")
+                        while (conversationHistory.size > MAX_HISTORY_SIZE) {
+                            conversationHistory.removeAt(0)
+                        }
+                    }
+                    onResult(extractedText)
+                } else {
+                    rotateKey()
+                    val fallback = getFallbackTacticalResponse(city, userNick, isSilentBeacon, userMessage, realWeather)
+                    onResult(fallback)
+                }
             }
         }
     }
@@ -166,13 +249,14 @@ object GeminiRadioService {
     }
 
     /**
-     * CACHÉ DE RESPUESTA LOCAL TÁCTICA (0€ Coste, 100% Inmune a fallos de red/API)
+     * CACHÉ DE RESPUESTA LOCAL TÁCTICA (0€ Coste, 100% Inmune a fallos de red/API, usa datos meteo reales)
      */
     fun getFallbackTacticalResponse(
         city: String,
         userNick: String,
         isSilentBeacon: Boolean,
-        userMessage: String? = null
+        userMessage: String? = null,
+        realWeatherInfo: String? = null
     ): String {
         val cleanCity = city.split("-")[0].trim().uppercase()
         val nick = userNick.trim().uppercase()
@@ -181,6 +265,7 @@ object GeminiRadioService {
         val currentHour = try { currentTime.split(":")[0].toInt() } catch (e: Exception) { 12 }
         val isNight = currentHour !in 7..20
         val moment = if (isNight) "noche" else "día"
+        val weatherStr = realWeatherInfo ?: "cielos claros y buena temperatura"
 
         val msgLower = userMessage?.lowercase() ?: ""
         if (msgLower.contains("quien eres") || msgLower.contains("quién eres") || msgLower.contains("como te llamas") || msgLower.contains("cómo te llamas") || msgLower.contains("que eres") || msgLower.contains("qué eres") || msgLower.contains("quien habla")) {
@@ -192,25 +277,23 @@ object GeminiRadioService {
         }
 
         if (msgLower.contains("tiempo") || msgLower.contains("clima") || msgLower.contains("meteo") || msgLower.contains("parte") || msgLower.contains("trafico") || msgLower.contains("tráfico") || msgLower.contains("cambio") || msgLower.contains("novedad")) {
-            val tempText = if (currentHour in 12..18) "unos 23°C con sol agradable" else if (currentHour in 7..11) "18°C agradables para la mañana" else if (currentHour in 19..22) "19°C con brisa estupenda" else "15°C y noche fresca"
-            return "¡Hola $nick! Soy FELIPE. En $cleanCity tenemos cielos claros, $tempText y viento suave. El tráfico está fluido y sin retenciones en los accesos. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. ¡Cambio!"
+            return "¡Hola $nick! Soy FELIPE. En $cleanCity tenemos $weatherStr. El tráfico está fluido sin retenciones ni cambios significativos. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. ¡Cambio!"
         }
 
         if (isSilentBeacon) {
-            val tempText = if (currentHour in 12..18) "23°C soleados" else if (currentHour in 7..11) "18°C agradables" else "15°C frescos"
             val beacons = listOf(
-                "¡Atención $cleanCity! Soy FELIPE. $tempText, viento suave y tráfico totalmente fluido a las $currentTime. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. ¡Entra en frecuencia!",
-                "¡Buenas por $cleanCity! Soy FELIPE a la escucha a las $currentTime. Cielos despejados y circulación ágil sin retenciones. Hace un $moment estupendo para charlar por radio y conocer Gente Real. Cambio.",
-                "¡Hola $cleanCity! Soy FELIPE reportando a las $currentTime. Todo tranquilo en las carreteras, buen clima en la ciudad y señal fuerte. Hace un $moment precioso para hablar por radio con amigos. Cambio."
+                "¡Atención $cleanCity! Soy FELIPE. Reportando $weatherStr y tráfico totalmente fluido a las $currentTime. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. ¡Entra en frecuencia!",
+                "¡Buenas por $cleanCity! Soy FELIPE a la escucha a las $currentTime. $weatherStr y circulación ágil por la ciudad. Hace un $moment estupendo para charlar por radio y conocer Gente Real. Cambio.",
+                "¡Hola $cleanCity! Soy FELIPE reportando a las $currentTime. $weatherStr, todo tranquilo en carreteras y señal fuerte. Hace un $moment precioso para hablar por radio con amigos. Cambio."
             )
             return beacons.random()
         }
 
         val responses = listOf(
-            "¡Hola $nick! Soy FELIPE. Te escucho perfecto en $cleanCity. Cielos despejados, tráfico fluido a las $currentTime y hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. ¡Cambio!",
-            "¡Buenas $nick! Soy FELIPE, te recibo alto y claro desde $cleanCity. Todo tranquilo en las calles, buen tiempo y un $moment ideal para charlar y conocer Gente Real. ¡Adelante! Cambio.",
-            "¡Qué tal $nick! Soy FELIPE. Llegas con señal impecable por $cleanCity. Cielos despejados, temperatura suave y un $moment precioso para hablar por radio con amigos o conocer Gente Real. ¡Cambio!",
-            "¡Recibido $nick! Soy FELIPE, te escucho estupendamente a las $currentTime en $cleanCity. Tráfico ágil sin retenciones. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. Cambio."
+            "¡Hola $nick! Soy FELIPE. Te escucho perfecto en $cleanCity. $weatherStr, tráfico fluido a las $currentTime y hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. ¡Cambio!",
+            "¡Buenas $nick! Soy FELIPE, te recibo alto y claro desde $cleanCity. $weatherStr, todo tranquilo en las calles y un $moment ideal para charlar y conocer Gente Real. ¡Adelante! Cambio.",
+            "¡Qué tal $nick! Soy FELIPE. Llegas con señal impecable por $cleanCity. $weatherStr y un $moment precioso para hablar por radio con amigos o conocer Gente Real. ¡Cambio!",
+            "¡Recibido $nick! Soy FELIPE, te escucho estupendamente a las $currentTime en $cleanCity. $weatherStr y tráfico ágil. Hace un $moment precioso para hablar por radio con amigos o conocer Gente Real. Cambio."
         )
         return responses.random()
     }

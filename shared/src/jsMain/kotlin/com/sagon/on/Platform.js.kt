@@ -205,3 +205,13 @@ actual fun fetchGeminiApi(endpoint: String, jsonBody: String, callback: (String?
         .catch(function(error) { callback(null); });
     """)
 }
+
+actual fun fetchHttpGetApi(url: String, callback: (String?) -> Unit) {
+    js("""
+        fetch(url, { method: 'GET' })
+        .then(function(response) { return response.text(); })
+        .then(function(text) { callback(text); })
+        .catch(function(error) { callback(null); });
+    """)
+}
+

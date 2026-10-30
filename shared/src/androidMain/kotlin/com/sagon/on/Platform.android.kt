@@ -130,3 +130,25 @@ actual fun fetchGeminiApi(endpoint: String, jsonBody: String, callback: (String?
         }
     }
 }
+
+actual fun fetchHttpGetApi(url: String, callback: (String?) -> Unit) {
+    tourismScope.launch {
+        try {
+            val u = java.net.URL(url)
+            val connection = u.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0")
+            connection.connectTimeout = 3000
+            connection.readTimeout = 3000
+            val responseText = connection.inputStream.bufferedReader().readText()
+            withContext(Dispatchers.Main) {
+                callback(responseText)
+            }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                callback(null)
+            }
+        }
+    }
+}
+

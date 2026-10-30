@@ -424,7 +424,7 @@ fun main() {
                                 if (userNick.isEmpty()) userNick = k.split("_")[0].uppercase()
                                 if (k != win.app.sessionID && !usersNotified.contains(k)) {
                                     usersNotified.add(k)
-                                    if (!isInitialLoad) {
+                                    if (!isInitialLoad && !isChangingChannelState.value) {
                                         val isFriend = radioState.value.friends.contains(userNick)
                                         win.playUiSound(if (isFriend) "incoming" else "user_in")
                                         if (isFriend) {
@@ -433,6 +433,7 @@ fun main() {
                                         }
                                     }
                                 }
+
                                 list.add(RemoteUser(id = k, nick = userNick, isTransmitting = isTransmitting, city = u.city as? String ?: "SEVILLA", channel = u.channel as? String ?: "SEVILLA", txPower = (u.pwr as? Double ?: 0.7).toFloat(), isFriend = radioState.value.friends.contains(userNick), roger = (u.roger == true)))
                             }
                         }
@@ -529,6 +530,8 @@ fun main() {
             onMoniVolumeChange = { vol -> if(win.app != null) { win.app.moniVolume = vol; win.app.moniActive = (vol > 0) }; js("if(window.updateMoniGain) window.updateMoniGain();") },
             onEchoChange = { _, _ -> },
             onCityChange = { newCity ->
+                isChangingChannelState.value = true
+                usersNotified.clear()
                 RadioAudioManager.clearReplay()
                 js("if(window.AndroidApp && window.AndroidApp.stopSpeak) try{ window.AndroidApp.stopSpeak(); }catch(e){}")
                 js("if('speechSynthesis' in window) try{ window.speechSynthesis.cancel(); }catch(e){}")
@@ -542,6 +545,8 @@ fun main() {
                 }
             },
             onChannelChange = { newCh ->
+                isChangingChannelState.value = true
+                usersNotified.clear()
                 RadioAudioManager.clearReplay()
                 js("if(window.AndroidApp && window.AndroidApp.stopSpeak) try{ window.AndroidApp.stopSpeak(); }catch(e){}")
                 js("if('speechSynthesis' in window) try{ window.speechSynthesis.cancel(); }catch(e){}")
@@ -552,6 +557,7 @@ fun main() {
                     win.app.db.ref("users/" + win.app.sessionID).update(js("{channel: newCh}"))
                 }
             },
+
 
             onSendMessage = { t, tg -> RadioNetworkManager.sendMessage(t, tg) },
             onDeleteMessage = { id, tg -> RadioNetworkManager.deleteMessage(id, tg) },

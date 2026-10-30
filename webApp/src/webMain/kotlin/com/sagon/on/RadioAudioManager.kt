@@ -302,7 +302,7 @@ object RadioAudioManager {
                     
                     var now = (window.app.ctx && typeof window.app.ctx.currentTime === 'number') ? window.app.ctx.currentTime : 0;
                     var nowTime = Date.now();
-                    var sessionRef = window.app.db ? window.app.db.ref("users/" + window.app.sessionID) : null;
+                    var sessionRef = (window.app.db && window.app.sessionID && window.app.sessionID !== "undefined" && window.app.sessionID.indexOf("undefined") === -1) ? window.app.db.ref("users/" + window.app.sessionID) : null;
 
                     // 🛡️ COMPROBACIÓN DE COOLDOWN ANTI-PORTADORA (5s)
                     if (active && window.app.pttCooldownUntil && nowTime < window.app.pttCooldownUntil) {

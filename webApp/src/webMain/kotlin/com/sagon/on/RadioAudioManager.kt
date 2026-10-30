@@ -355,7 +355,7 @@ object RadioAudioManager {
 
                         try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
 
-                        var shouldPlayRoger = (roger === true || window.app.rogerEnabled === true);
+                        var shouldPlayRoger = (roger === true && !(window.app && window.app.suppressRoger) && window.app.rogerEnabled === true);
 
                         if (shouldPlayRoger && window.app.ctx && window.app.ctx.state === 'running') {
                             try {

@@ -521,8 +521,8 @@ fun main() {
             onEchoChange = { _, _ -> },
             onCityChange = { newCity ->
                 RadioAudioManager.clearReplay()
-                js("if(window.app) window.app.suppressRxOff = true;")
-                js("setTimeout(function() { if(window.app) window.app.suppressRxOff = false; }, 800);")
+                js("if(window.app) { window.app.suppressRxOff = true; window.app.suppressRoger = true; if(window.app.pttStateInternal && window.broadcastPTT) window.broadcastPTT(false, false); }")
+                js("setTimeout(function() { if(window.app) { window.app.suppressRxOff = false; window.app.suppressRoger = false; } }, 800);")
                 js("window.remoteTxStates = {}")
                 js("if(window.AndroidApp && window.AndroidApp.stopSpeak) try{ window.AndroidApp.stopSpeak(); }catch(e){}")
                 js("if('speechSynthesis' in window) try{ window.speechSynthesis.cancel(); }catch(e){}")
@@ -537,8 +537,8 @@ fun main() {
             },
             onChannelChange = { newCh ->
                 RadioAudioManager.clearReplay()
-                js("if(window.app) window.app.suppressRxOff = true;")
-                js("setTimeout(function() { if(window.app) window.app.suppressRxOff = false; }, 800);")
+                js("if(window.app) { window.app.suppressRxOff = true; window.app.suppressRoger = true; if(window.app.pttStateInternal && window.broadcastPTT) window.broadcastPTT(false, false); }")
+                js("setTimeout(function() { if(window.app) { window.app.suppressRxOff = false; window.app.suppressRoger = false; } }, 800);")
                 js("window.remoteTxStates = {}")
                 js("if(window.AndroidApp && window.AndroidApp.stopSpeak) try{ window.AndroidApp.stopSpeak(); }catch(e){}")
                 js("if('speechSynthesis' in window) try{ window.speechSynthesis.cancel(); }catch(e){}")

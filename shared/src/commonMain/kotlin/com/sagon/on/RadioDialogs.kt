@@ -815,19 +815,22 @@ fun RadioDialogs(
             }
         )
         RadioDialogType.SELECT_CITY -> {
-            var searchText by remember { mutableStateOf(state.city) }
+            var searchText by remember { mutableStateOf("") }
+            var selectedTab by remember { mutableStateOf(0) }
             
-            val filteredCities = remember(searchText) {
+            val activeList = if (searchText.isNotBlank()) ALL_CITIES else (if (selectedTab == 0) SPAIN_CITIES else INTERNATIONAL_CITIES)
+            
+            val filteredCities = remember(searchText, selectedTab) {
                 val normalizedSearch = searchText.uppercase()
                     .replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
                 
                 if (normalizedSearch.length >= 1) {
-                    SPAIN_CITIES.filter { 
+                    ALL_CITIES.filter { 
                         val normalizedCity = it.uppercase()
                             .replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
                         normalizedCity.contains(normalizedSearch) 
-                    }.take(10)
-                } else SPAIN_CITIES.take(10)
+                    }.take(20)
+                } else activeList.take(20)
             }
 
             AlertDialog(
@@ -835,25 +838,43 @@ fun RadioDialogs(
                 containerColor = LuxeColors.DeepSea,
                 titleContentColor = LuxeColors.Gold,
                 modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
-                title = { Text("CAMBIAR DE CIUDAD", fontWeight = FontWeight.Black) },
+                title = { Text("CAMBIAR DE SALA / CANAL", fontWeight = FontWeight.Black) },
                 text = {
                     Column {
-                        Text("Busca y elige tu canal oficial de ciudad.", color = Color.White.copy(0.6f), fontSize = 12.sp)
-                        Spacer(Modifier.height(20.dp))
+                        Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Surface(
+                                onClick = { selectedTab = 0; searchText = "" },
+                                color = if (selectedTab == 0) LuxeColors.Gold else Color.White.copy(0.06f),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("🇪🇸 ESPAÑA", color = if (selectedTab == 0) Color.Black else Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(vertical = 10.dp), textAlign = TextAlign.Center)
+                            }
+                            Surface(
+                                onClick = { selectedTab = 1; searchText = "" },
+                                color = if (selectedTab == 1) LuxeColors.Gold else Color.White.copy(0.06f),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("🌎 INTERNACIONAL", color = if (selectedTab == 1) Color.Black else Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(vertical = 10.dp), textAlign = TextAlign.Center)
+                            }
+                        }
+
                         OutlinedTextField(
                             value = searchText,
                             onValueChange = { searchText = it.uppercase() },
-                            placeholder = { Text("BUSCAR CIUDAD...", color = Color.White.copy(0.2f)) },
+                            placeholder = { Text("BUSCAR CIUDAD O PAÍS...", color = Color.White.copy(0.2f)) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LuxeColors.Gold, focusedTextColor = Color.White)
                         )
                         
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(12.dp))
                         LazyColumn(modifier = Modifier.heightIn(max = 280.dp)) {
                             items(filteredCities) { cityName ->
                                 val isCurrent = cityName == state.city
+                                val channelNum = CITY_CHANNELS[cityName] ?: 27
                                 Surface(
                                     onClick = { 
                                         onStateChange(state.copy(city = cityName, channel = cityName, subtone = "0000"))
@@ -864,10 +885,11 @@ fun RadioDialogs(
                                     modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
                                     border = BorderStroke(1.dp, if(isCurrent) LuxeColors.Gold else LuxeColors.Gold.copy(0.2f))
                                 ) {
-                                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Rounded.LocationCity, null, tint = LuxeColors.Gold, modifier = Modifier.size(18.dp))
-                                        Spacer(Modifier.width(12.dp))
-                                        Text(cityName, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Rounded.Public, null, tint = LuxeColors.Gold, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(10.dp))
+                                        Text(cityName, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                        Text("CH $channelNum", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black)
                                     }
                                 }
                             }
@@ -875,7 +897,7 @@ fun RadioDialogs(
                     }
                 },
                 confirmButton = {
-                    if (SPAIN_CITIES.contains(searchText)) {
+                    if (ALL_CITIES.contains(searchText)) {
                         LuxeButton("SINTONIZAR", {
                             onStateChange(state.copy(city = searchText, channel = searchText, subtone = "0000"))
                             onDismiss()
@@ -884,6 +906,7 @@ fun RadioDialogs(
                 }
             )
         }
+
         RadioDialogType.SELECT_NICK -> NickSelectorDialog(
             initialNick = nick,
             onDismiss = onDismiss

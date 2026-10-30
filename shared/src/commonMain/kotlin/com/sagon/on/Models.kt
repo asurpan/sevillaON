@@ -22,6 +22,51 @@ val SPAIN_CITIES = listOf(
     "VALLADOLID", "VIZCAYA", "ZAMORA", "ZARAGOZA"
 )
 
+val INTERNATIONAL_CITIES = listOf(
+    "🌍 CANAL 12 DX GLOBAL",
+    "🌎 HISPANOAMÉRICA",
+    "🇪🇺 EUROPA DX",
+    "🇲🇽 MÉXICO",
+    "🇦🇷 ARGENTINA",
+    "🇨🇴 COLOMBIA",
+    "🇨🇱 CHILE",
+    "🇵🇪 PERÚ",
+    "🇻🇪 VENEZUELA",
+    "🇪🇨 ECUADOR",
+    "🇺🇾 URUGUAY",
+    "🇵🇾 PARAGUAY",
+    "🇧🇴 BOLIVIA",
+    "🇵🇷 PUERTO RICO",
+    "🇩🇴 REPÚBLICA DOMINICANA",
+    "🇨🇺 CUBA",
+    "🇬🇹 GUATEMALA",
+    "🇨🇷 COSTA RICA",
+    "🇵🇦 PANAMÁ",
+    "🇸🇻 EL SALVADOR",
+    "🇭🇳 HONDURAS",
+    "🇳🇮 NICARAGUA",
+    "🇺🇸 USA / MIAMI",
+    "🇺🇸 USA / NEW YORK",
+    "🇨🇦 CANADÁ",
+    "🇵🇹 PORTUGAL",
+    "🇫🇷 FRANCIA",
+    "🇬🇧 REINO UNIDO (UK)",
+    "🇮🇹 ITALIA",
+    "🇩🇪 ALEMANIA",
+    "🇳🇱 PAÍSES BAJOS",
+    "🇧🇪 BÉLGICA",
+    "🇨🇭 SUIZA",
+    "🇦🇹 AUSTRIA",
+    "🇮🇪 IRLANDA",
+    "🇵🇱 POLONIA",
+    "🇷🇴 RUMANÍA",
+    "🇲🇦 MARRUECOS",
+    "🇧🇷 BRASIL",
+    "🇯🇵 JAPÓN"
+)
+
+val ALL_CITIES = SPAIN_CITIES + INTERNATIONAL_CITIES
+
 val CITY_CHANNELS = mapOf(
     "SEVILLA" to 27, "MADRID" to 19, "BARCELONA" to 9, "VALENCIA" to 14,
     "ALICANTE" to 12, "MÁLAGA" to 20, "MURCIA" to 15, "CÁDIZ" to 21,
@@ -36,8 +81,20 @@ val CITY_CHANNELS = mapOf(
     "CÁCERES" to 1, "SEGOVIA" to 2, "LUGO" to 6, "OURENSE" to 7,
     "PALENCIA" to 8, "ZAMORA" to 1, "CUENCA" to 2, "TERUEL" to 6,
     "GUADALAJARA" to 7, "CEUTA" to 8, "MELILLA" to 1, "HUESCA" to 2,
-    "GUIPÚZCOA" to 32, "VIZCAYA" to 30, "LA RIOJA" to 7, "PALMA DE MALLORCA" to 5
+    "GUIPÚZCOA" to 32, "VIZCAYA" to 30, "LA RIOJA" to 7, "PALMA DE MALLORCA" to 5,
+    "🌍 CANAL 12 DX GLOBAL" to 12, "🌎 HISPANOAMÉRICA" to 14, "🇪🇺 EUROPA DX" to 12,
+    "🇲🇽 MÉXICO" to 12, "🇦🇷 ARGENTINA" to 14, "🇨🇴 COLOMBIA" to 15, "🇨🇱 CHILE" to 16,
+    "🇵🇪 PERÚ" to 17, "🇻🇪 VENEZUELA" to 18, "🇪🇨 ECUADOR" to 19, "🇺🇾 URUGUAY" to 20,
+    "🇵🇾 PARAGUAY" to 21, "🇧🇴 BOLIVIA" to 22, "🇵🇷 PUERTO RICO" to 23, "🇩🇴 REPÚBLICA DOMINICANA" to 24,
+    "🇨🇺 CUBA" to 25, "🇬🇹 GUATEMALA" to 26, "🇨🇷 COSTA RICA" to 27, "🇵🇦 PANAMÁ" to 28,
+    "🇸🇻 EL SALVADOR" to 29, "🇭🇳 HONDURAS" to 30, "🇳🇮 NICARAGUA" to 31, "🇺🇸 USA / MIAMI" to 19,
+    "🇺🇸 USA / NEW YORK" to 19, "🇨🇦 CANADÁ" to 19, "🇵🇹 PORTUGAL" to 21, "🇫🇷 FRANCIA" to 27,
+    "🇬🇧 REINO UNIDO (UK)" to 27, "🇮🇹 ITALIA" to 27, "🇩🇪 ALEMANIA" to 27, "🇳🇱 PAÍSES BAJOS" to 27,
+    "🇧🇪 BÉLGICA" to 27, "🇨🇭 SUIZA" to 27, "🇦🇹 AUSTRIA" to 27, "🇮🇪 IRLANDA" to 27,
+    "🇵🇱 POLONIA" to 27, "🇷🇴 RUMANÍA" to 27, "🇲🇦 MARRUECOS" to 28, "🇧🇷 BRASIL" to 12,
+    "🇯🇵 JAPÓN" to 12
 )
+
 
 enum class Screen { Welcome, RadioCB }
 

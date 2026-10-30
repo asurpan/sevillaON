@@ -355,7 +355,7 @@ object RadioAudioManager {
 
                         try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
 
-                        var shouldPlayRoger = (roger === true && !(window.app && window.app.suppressRoger) && window.app.rogerEnabled === true);
+                        var shouldPlayRoger = (roger === true && !(window.app && window.app.suppressRoger) && !(window.app && window.app.isChangingChannel) && window.app.rogerEnabled === true);
 
                         if (shouldPlayRoger && window.app.ctx && window.app.ctx.state === 'running') {
                             try {
@@ -707,7 +707,7 @@ object RadioSignaling {
                     return;
                 }
                 if (type === "ptt_off" || type === "rx_off") {
-                    if (window.app && window.app.suppressRxOff) return;
+                    if (window.app && (window.app.suppressRxOff || window.app.isChangingChannel)) return;
                     var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); 
                     o.type = "triangle"; o.frequency.setValueAtTime(1955, now); 
                     g.gain.setValueAtTime(0.12, now); g.gain.setValueAtTime(0, now + 0.30); 

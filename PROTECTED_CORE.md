@@ -48,7 +48,13 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Desbloqueo de Audio Remoto (Reanudación Forzosa)**: Para evitar que el sistema operativo en Android 11+ bloquee el flujo de voz entrante mientras la señal se ve cogida, es OBLIGATORIO mantener la reanudación forzosa del volumen del nodo `remoteAudio` (`remoteAudio.volume = 0.2` seguido de `0.01` dummy) en el evento `call.on('stream')`.
     - **Invocación TTS Nativo en Android**: Las locuciones del Bot/Estación Base en Android se deben dirigir OBLIGATORIAMENTE a través del puente nativo `window.AndroidApp.speak(text, rate, pitch)` enlazado con `TextToSpeech` de Android, asegurando la respuesta auditiva y el evento visual `BASE LOCAL`.
 
+10. **Blindaje Anti-`undefined` y Roger Beep de Agente (V16.5 HARD-LOCK SUPREME)**:
+    - **Conexión Síncrona Inmediata**: `connectRadio(nick)` DEBE asignar `window.app.sessionID` de forma síncrona en la primera línea de ejecución antes de cualquier promesa asíncrona de Firebase. Queda TERMINANTEMENTE PROHIBIDO dejar `window.app.sessionID` en `undefined` o nulo durante el arranque.
+    - **Prohibición Total de Escritura en `users/undefined`**: Todo intento de escritura en Firebase RTDB (`RadioPersistence.saveState`, `RadioAudioManager.broadcastPTT`, `onCityChange`, `onChannelChange`, etc.) DEBE verificar explícitamente que `sessionID` sea no nulo, no vacío y no sea `"undefined"`.
+    - **Filtro Remoto Anti-`undefined`**: El listener `onUsersUpdate` DEBE descartar cualquier clave que sea o contenga `"undefined"` para evitar modulaciones o portadoras fantasma en la red.
+    - **Roger Beep de Agente / Bot**: La transmisión del Agente / Bot (TTS) DEBE emitir OBLIGATORIAMENTE el sonido Roger Beep al finalizar su alocución, tanto en la app nativa Android (`onDone` en `UtteranceProgressListener` + `ToneGenerator.TONE_PROP_BEEP`) como en la versión Web (`u.onend` + `playUiSound('roger')`).
+
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al autor. NO apliques parches que eliminen los nodos inaudibles o el bridge silencioso, ya que son los pilares que mantienen la voz viva en móviles modernos.
 
-**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y OPTIMIZADO (V16.0 ELITE).**
+**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y OPTIMIZADO (V16.5 ELITE SUPREME).**

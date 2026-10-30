@@ -50,4 +50,4 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Cómo conmutar a MODO LOCAL (Desarrollo)**: Si el usuario pide "cambia a local" o "ponlo en local", establecer `USE_GITHUB_REMOTE_SERVER = false` en `MainActivity.kt`.
 - **Cómo conmutar a MODO SERVIDOR / GITHUB (Producción)**: Si el usuario pide "cambia a servidor", "ponlo en github" o "modo producción", establecer `USE_GITHUB_REMOTE_SERVER = true` en `MainActivity.kt`.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 16.0 (ENTORNO CONMUTABLE Y BOT IA GEMINI)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 16.5 (HARD-LOCK ANTI-UNDEFINED & ROGER BEEP AGENTE)

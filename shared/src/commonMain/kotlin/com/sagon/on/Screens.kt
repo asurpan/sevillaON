@@ -1286,31 +1286,35 @@ fun InlineTacticalChat(
         }
     }
 
-    // 🚀 CHAT PANEL FLOTANTE NATIVO 100% INSTANTÁNEO (0ms DELAY, SIN SUB-VENTANAS DE ANDROID)
+    // 🚀 CHAT PANEL FLOTANTE NATIVO
     if (isChatOpen) {
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) {
-            delay(10)
             try { focusRequester.requestFocus() } catch (_: Exception) {}
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.85f))
-                .clickable { onChatOpenChange(false) },
-            contentAlignment = Alignment.BottomCenter
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { onChatOpenChange(false) },
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false
+            )
         ) {
-            Surface(
-                color = Color(0xFF0F172A),
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-                border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .imePadding()
-                    .navigationBarsPadding()
-                    .clickable(enabled = false) {}
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.80f))
+                    .clickable { onChatOpenChange(false) },
+                contentAlignment = Alignment.BottomCenter
             ) {
+                Surface(
+                    color = Color(0xFF0F172A),
+                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                    border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = false) {}
+                ) {
+
 
 
 
@@ -1507,6 +1511,8 @@ fun InlineTacticalChat(
         }
     }
 }
+}
+
 
 
 @Composable

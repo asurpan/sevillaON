@@ -521,6 +521,9 @@ fun main() {
             onEchoChange = { _, _ -> },
             onCityChange = { newCity ->
                 RadioAudioManager.clearReplay()
+                js("if(window.app) window.app.suppressRxOff = true;")
+                js("setTimeout(function() { if(window.app) window.app.suppressRxOff = false; }, 800);")
+                js("window.remoteTxStates = {}")
                 js("if(window.AndroidApp && window.AndroidApp.stopSpeak) try{ window.AndroidApp.stopSpeak(); }catch(e){}")
                 js("if('speechSynthesis' in window) try{ window.speechSynthesis.cancel(); }catch(e){}")
                 js("if(window.app) window.app.isControlSpeaking = false;")
@@ -534,6 +537,9 @@ fun main() {
             },
             onChannelChange = { newCh ->
                 RadioAudioManager.clearReplay()
+                js("if(window.app) window.app.suppressRxOff = true;")
+                js("setTimeout(function() { if(window.app) window.app.suppressRxOff = false; }, 800);")
+                js("window.remoteTxStates = {}")
                 js("if(window.AndroidApp && window.AndroidApp.stopSpeak) try{ window.AndroidApp.stopSpeak(); }catch(e){}")
                 js("if('speechSynthesis' in window) try{ window.speechSynthesis.cancel(); }catch(e){}")
                 js("if(window.app) window.app.isControlSpeaking = false;")

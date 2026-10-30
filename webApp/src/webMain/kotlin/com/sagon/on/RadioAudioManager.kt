@@ -759,6 +759,8 @@ object ReplayEngine {
                     } 
                 } 
             }
+
+
             setInterval(monitor, 200);
             function startChunk() {
                 var chunks = []; var hasVoiceInThisChunk = false; activityDetected = false; 
@@ -917,12 +919,14 @@ object ReplayEngine {
             }, 60000);
 
             window.clearReplayBuffer = function() {
-
                 replayBlobs = [];
                 window.controlResponseIndex = 0;
                 if (window.dispatch_replay_available) window.dispatch_replay_available(false);
                 if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
+                if (window.dispatch_notification) window.dispatch_notification("🗑️ MEMORIA REPLAY VACIADA", "Se han borrado todas las grabaciones del buffer.", "info");
+                if (window.playUiSound) try { window.playUiSound("rx_off"); } catch(e){}
             };
+
             window.playReplay = function() {
                 if (replayBlobs.length === 0) {
                     if (window.dispatch_notification) {

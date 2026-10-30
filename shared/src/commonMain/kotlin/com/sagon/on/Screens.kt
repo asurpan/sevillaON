@@ -1286,34 +1286,34 @@ fun InlineTacticalChat(
         }
     }
 
-    // 🚀 BANDEROLA / MODAL FLOTANTE NATIVO
+    // 🚀 CHAT PANEL FLOTANTE NATIVO 100% INSTANTÁNEO (0ms DELAY, SIN SUB-VENTANAS DE ANDROID)
     if (isChatOpen) {
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) {
-            focusRequester.requestFocus()
+            delay(10)
+            try { focusRequester.requestFocus() } catch (_: Exception) {}
         }
 
-        androidx.compose.ui.window.Dialog(
-            onDismissRequest = { onChatOpenChange(false) },
-            properties = androidx.compose.ui.window.DialogProperties(
-                usePlatformDefaultWidth = false
-            )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.85f))
+                .clickable { onChatOpenChange(false) },
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Box(
+            Surface(
+                color = Color(0xFF0F172A),
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.65f))
-                    .clickable { onChatOpenChange(false) },
-                contentAlignment = Alignment.BottomCenter
+                    .fillMaxWidth()
+                    .imePadding()
+                    .navigationBarsPadding()
+                    .clickable(enabled = false) {}
             ) {
-                Surface(
-                    color = Color(0xFF0F172A),
-                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-                    border = BorderStroke(1.5.dp, if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(enabled = false) {}
-                ) {
+
+
+
                     Column(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
@@ -1431,6 +1431,8 @@ fun InlineTacticalChat(
                             onValueChange = { textInput = it },
                             singleLine = true,
                             textStyle = TextStyle(
+
+
                                 color = Color.White,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -1497,7 +1499,7 @@ fun InlineTacticalChat(
                                 cursorColor = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)
                             ),
                             shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
+                            modifier = Modifier.weight(1f).focusRequester(focusRequester)
                         )
                     }
                 }
@@ -1505,7 +1507,7 @@ fun InlineTacticalChat(
         }
     }
 }
-}
+
 
 @Composable
 fun TechLabel(label: String, value: String, valueColor: Color = Color.White, onClick: () -> Unit = {}) {

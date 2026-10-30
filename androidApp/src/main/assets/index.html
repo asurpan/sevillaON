@@ -477,13 +477,19 @@
             if (isNative) {
                 const landing = document.getElementById('landing-ui');
                 const radio = document.getElementById('radio-root');
-                if (landing) landing.style.display = 'none';
+                if (landing) {
+                    landing.style.display = 'none';
+                    landing.style.visibility = 'hidden';
+                    landing.style.opacity = '0';
+                    landing.innerHTML = '';
+                }
                 if (radio) {
                     radio.style.visibility = 'visible';
                     radio.style.opacity = '1';
                 }
             }
         }
+
 
         window.addEventListener("DOMContentLoaded", function() {
             checkAutoLaunchNative();

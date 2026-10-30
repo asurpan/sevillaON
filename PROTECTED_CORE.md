@@ -54,7 +54,11 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Filtro Remoto Anti-`undefined`**: El listener `onUsersUpdate` DEBE descartar cualquier clave que sea o contenga `"undefined"` para evitar modulaciones o portadoras fantasma en la red.
     - **Roger Beep de Agente / Bot**: La transmisión del Agente / Bot (TTS) DEBE emitir OBLIGATORIAMENTE el sonido Roger Beep al finalizar su alocución, tanto en la app nativa Android (`onDone` en `UtteranceProgressListener` + `ToneGenerator.TONE_PROP_BEEP`) como en la versión Web (`u.onend` + `playUiSound('roger')`).
 
+11. **Prohibición de Modificación del Flujo de Entrada, Canales, Micrófono y Emisión/Recepción (BLINDAJE ABSOLUTO V17.0)**:
+    - **Leyes de Flujo Intocable**: El sistema completo de entrada de usuarios (`connectRadio`, `checkHardwareRestore`), cambio de canales/ciudades (`onCityChange`, `onChannelChange`), captura/permisos de micrófono (`ensureMicAccess`, `requestMicPermission`), y flujo de emisión (TX / PTT) y recepción (RX / PeerJS / Audio Sinks / S-Meter) queda **BLINDADO Y SELLADO DE FORMA ABSOLUTA**.
+    - **Permiso Explícito Obligatorio**: Queda **ESTRICTAMENTE PROHIBIDO** para cualquier IA, agente o desarrollador alterar, modificar, refactorizar o reestructurar cualquiera de estos flujos por cuenta propia o por error. ÚNICAMENTE se permite modificar estas secciones tras solicitar y recibir el **permiso explícito y por escrito del usuario**.
+
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al autor. NO apliques parches que eliminen los nodos inaudibles o el bridge silencioso, ya que son los pilares que mantienen la voz viva en móviles modernos.
 
-**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y OPTIMIZADO (V16.5 ELITE SUPREME).**
+**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y PROTEGIDO BAJO LICENCIA DE PERMISO EXPLÍCITO (V17.0 ELITE SUPREME).**

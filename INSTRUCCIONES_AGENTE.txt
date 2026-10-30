@@ -50,4 +50,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Cómo conmutar a MODO LOCAL (Desarrollo)**: Si el usuario pide "cambia a local" o "ponlo en local", establecer `USE_GITHUB_REMOTE_SERVER = false` en `MainActivity.kt`.
 - **Cómo conmutar a MODO SERVIDOR / GITHUB (Producción)**: Si el usuario pide "cambia a servidor", "ponlo en github" o "modo producción", establecer `USE_GITHUB_REMOTE_SERVER = true` en `MainActivity.kt`.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 16.5 (HARD-LOCK ANTI-UNDEFINED & ROGER BEEP AGENTE)
+### 🛑 REGLA SUPREMA DE SEGURIDAD (PERMISO EXPLÍCITO OBLIGATORIO)
+- **Flujos Blindados**: El sistema de entrada de usuarios, canales, micrófono, emisión (TX) y recepción (RX) está prohibido de modificar sin permiso explícito por escrito del usuario.
+
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 17.0 (BLINDAJE DE FLUJOS BAJO PERMISO EXPLÍCITO)

@@ -792,7 +792,9 @@ object ReplayEngine {
 
             window.checkControlStationResponse = function() {
                 if (!window.app) return;
+                if (isPlaying) return; // 🛑 CORTAFUEGOS: NO HABLAR MIENTRAS EL REPLAY ESTÁ EN REPRODUCCIÓN
                 if (!window.app.hasUserModulated) return; // 🛡️ EL BOT SOLO HABLA SI EL USUARIO HA INTERACTUADO PULSANDO EL PTT
+
                 if (window.app.isBotEnabled === false) return; // 🛡️ DESACTIVADO POR EL USUARIO EN AJUSTES
                 if (window.dispatch_is_room_empty && !window.dispatch_is_room_empty()) return;
                 if (window.app.isControlSpeaking) return;
@@ -937,10 +939,17 @@ object ReplayEngine {
                 if (isPlaying) return;
                 isPlaying = true; 
                 
-                // 🎧 DUCKING TÁCTICO: Atenuar voces de radio en directo al 5% para oír el Replay impecable
+                // 🛑 CORTE INMEDIATO Y MUTE DE LA VOZ DEL BOT FELIPE AL REPRODUCIR REPLAY
+                try { if (window.AndroidApp && window.AndroidApp.stopSpeak) window.AndroidApp.stopSpeak(); } catch(e) {}
+                try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch(e) {}
+                if (window.app) window.app.isControlSpeaking = false;
+                if (window.dispatch_control_active) try { window.dispatch_control_active(null, false); } catch(e) {}
+
+                // 🎧 DUCKING TÁCTICO: Atenuar voces de radio en directo al 2% para oír el Replay impecable
                 if (window.app.masterRxGain) {
-                    window.app.masterRxGain.gain.setTargetAtTime(0.05, window.app.ctx.currentTime, 0.1);
+                    window.app.masterRxGain.gain.setTargetAtTime(0.02, window.app.ctx.currentTime, 0.05);
                 }
+
                 
                 var playlist = [...replayBlobs]; 
                 replayBlobs = []; 

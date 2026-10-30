@@ -824,14 +824,15 @@ fun RadioDialogs(
                 val normalizedSearch = searchText.uppercase()
                     .replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
                 
-                if (normalizedSearch.length >= 1) {
+                if (normalizedSearch.isNotEmpty()) {
                     ALL_CITIES.filter { 
                         val normalizedCity = it.uppercase()
                             .replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
                         normalizedCity.contains(normalizedSearch) 
-                    }.take(20)
-                } else activeList.take(20)
+                    }
+                } else activeList
             }
+
 
             AlertDialog(
                 onDismissRequest = onDismiss,

@@ -63,10 +63,14 @@ val INTERNATIONAL_CITIES = listOf(
     "🇸🇻 EL SALVADOR",
     "🇭🇳 HONDURAS",
     "🇳🇮 NICARAGUA",
+    "🇺🇸 ESTADOS UNIDOS (USA)",
+    "🇺🇸 USA / CALIFORNIA",
     "🇺🇸 USA / MIAMI",
+    "🇺🇸 USA / FLORIDA",
     "🇺🇸 USA / NEW YORK",
     "🇺🇸 USA / LOS ANGELES",
     "🇺🇸 USA / TEXAS",
+    "🇺🇸 USA / CHICAGO",
     "🇨🇦 CANADÁ",
     "🇵🇹 PORTUGAL",
     "🇵🇹 LISBOA",
@@ -120,9 +124,11 @@ val CITY_CHANNELS = mapOf(
     "🇪🇨 ECUADOR" to 19, "🇪🇨 QUITO" to 19, "🇺🇾 URUGUAY" to 20, "🇺🇾 MONTEVIDEO" to 20,
     "🇵🇾 PARAGUAY" to 21, "🇵🇾 ASUNCIÓN" to 21, "🇧🇴 BOLIVIA" to 22, "🇧🇴 LA PAZ" to 22,
     "🇵🇷 PUERTO RICO" to 23, "🇩🇴 REPÚBLICA DOMINICANA" to 24, "🇨🇺 CUBA" to 25,
-    "🇬🇹 GUATEMALA" to 26, "🇨🇷 COSTA RICA" to 27, "🇵🇦 PANAMÁ" to 28, "🇸🇻 EL SALVADOR" to 29,
-    "🇭🇳 HONDURAS" to 30, "🇳🇮 NICARAGUA" to 31, "🇺🇸 USA / MIAMI" to 19, "🇺🇸 USA / NEW YORK" to 19,
-    "🇺🇸 USA / LOS ANGELES" to 19, "🇺🇸 USA / TEXAS" to 19, "🇨🇦 CANADÁ" to 19, "🇵🇹 PORTUGAL" to 21,
+    "🇬🇹 GUATEMALA" to 26, "🇨🇷 COSTA RICA" to 27, "🇵ⓐ PANAMÁ" to 28, "🇸🇻 EL SALVADOR" to 29,
+    "🇭🇳 HONDURAS" to 30, "🇳🇮 NICARAGUA" to 31, "🇺🇸 ESTADOS UNIDOS (USA)" to 19,
+    "🇺🇸 USA / CALIFORNIA" to 19, "🇺🇸 USA / MIAMI" to 19, "🇺🇸 USA / FLORIDA" to 19,
+    "🇺🇸 USA / NEW YORK" to 19, "🇺🇸 USA / LOS ANGELES" to 19, "🇺🇸 USA / TEXAS" to 19,
+    "🇺🇸 USA / CHICAGO" to 19, "🇨🇦 CANADÁ" to 19, "🇵🇹 PORTUGAL" to 21,
     "🇵🇹 LISBOA" to 21, "🇫🇷 FRANCIA" to 27, "🇫🇷 PARÍS" to 27, "🇬🇧 REINO UNIDO (UK)" to 27,
     "🇬🇧 LONDRES" to 27, "🇮🇹 ITALIA" to 27, "🇮🇹 ROMA" to 27, "🇩🇪 ALEMANIA" to 27,
     "🇩🇪 BERLÍN" to 27, "🇳🇱 PAÍSES BAJOS" to 27, "🇧🇪 BÉLGICA" to 27, "🇨🇭 SUIZA" to 27,
@@ -130,6 +136,7 @@ val CITY_CHANNELS = mapOf(
     "🇲🇦 MARRUECOS" to 28, "🇲🇦 TÁNGER" to 28, "🇧🇷 BRASIL" to 12, "🇧🇷 RÍO DE JANEIRO" to 12,
     "🇯🇵 JAPÓN" to 12, "🇯🇵 TOKIO" to 12, "🇦🇺 AUSTRALIA" to 12
 )
+
 
 
 

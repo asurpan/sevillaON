@@ -707,6 +707,7 @@ object RadioSignaling {
                     return;
                 }
                 if (type === "ptt_off" || type === "rx_off") {
+                    if (window.app && window.app.suppressRxOff) return;
                     var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); 
                     o.type = "triangle"; o.frequency.setValueAtTime(1955, now); 
                     g.gain.setValueAtTime(0.12, now); g.gain.setValueAtTime(0, now + 0.30); 

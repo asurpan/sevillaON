@@ -931,7 +931,6 @@ object ReplayEngine {
                 if (window.dispatch_replay_available) window.dispatch_replay_available(false);
                 if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
                 if (window.dispatch_notification) window.dispatch_notification("🗑️ MEMORIA REPLAY VACIADA", "Se han borrado todas las grabaciones del buffer.", "info");
-                if (window.playUiSound) try { window.playUiSound("rx_off"); } catch(e){}
             };
 
             window.playReplay = function() {

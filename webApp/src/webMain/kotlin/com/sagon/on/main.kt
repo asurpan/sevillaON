@@ -521,6 +521,11 @@ fun main() {
             onEchoChange = { _, _ -> },
             onCityChange = { newCity ->
                 RadioAudioManager.clearReplay()
+                js("if(window.AndroidApp && window.AndroidApp.stopSpeak) try{ window.AndroidApp.stopSpeak(); }catch(e){}")
+                js("if('speechSynthesis' in window) try{ window.speechSynthesis.cancel(); }catch(e){}")
+                js("if(window.app) window.app.isControlSpeaking = false;")
+                js("if(window.dispatch_control_active) try{ window.dispatch_control_active(null, false); }catch(e){}")
+
                 if (win.app != null && win.app.db != null && win.app.sessionID != null) {
                     win.app.currentCity = newCity
                     win.app.db.ref("users/" + win.app.sessionID).update(js("{city: newCity, channel: newCity}"))
@@ -529,10 +534,16 @@ fun main() {
             },
             onChannelChange = { newCh ->
                 RadioAudioManager.clearReplay()
+                js("if(window.AndroidApp && window.AndroidApp.stopSpeak) try{ window.AndroidApp.stopSpeak(); }catch(e){}")
+                js("if('speechSynthesis' in window) try{ window.speechSynthesis.cancel(); }catch(e){}")
+                js("if(window.app) window.app.isControlSpeaking = false;")
+                js("if(window.dispatch_control_active) try{ window.dispatch_control_active(null, false); }catch(e){}")
+
                 if (win.app != null && win.app.db != null && win.app.sessionID != null) {
                     win.app.db.ref("users/" + win.app.sessionID).update(js("{channel: newCh}"))
                 }
             },
+
             onSendMessage = { t, tg -> RadioNetworkManager.sendMessage(t, tg) },
             onDeleteMessage = { id, tg -> RadioNetworkManager.deleteMessage(id, tg) },
             onPrivateChatRequest = { },

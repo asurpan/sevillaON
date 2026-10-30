@@ -608,13 +608,12 @@ fun RadioPanel(
                                                 enabled = !state.isInterfaceLocked,
                                                 onClick = {
                                                     onPlaySound("switch")
-                                                    if (state.isScanning) onStateChange(state.copy(isScanning = false))
-                                                    else {
-                                                        val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
-                                                        val nextCh = if (curCh >= 40) 1 else curCh + 1
-                                                        val nextCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }[nextCh] ?: "SORIA"
-                                                        onStateChange(state.copy(city = nextCity, channel = nextCity))
-                                                    }
+                                                    onMic(false, state.veteranPower)
+                                                    onStateChange(state.copy(isPttLatched = false, isScanning = false))
+                                                    val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
+                                                    val nextCh = if (curCh >= 40) 1 else curCh + 1
+                                                    val nextCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }[nextCh] ?: "SORIA"
+                                                    onStateChange(state.copy(city = nextCity, channel = nextCity))
                                                 },
                                                 onLongClick = { 
                                                     if (state.rfGain > state.squelch) {
@@ -720,13 +719,12 @@ fun RadioPanel(
                                                 enabled = !state.isInterfaceLocked,
                                                 onClick = {
                                                     onPlaySound("switch")
-                                                    if (state.isScanning) onStateChange(state.copy(isScanning = false))
-                                                    else {
-                                                        val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
-                                                        val nextCh = if (curCh <= 1) 40 else curCh - 1
-                                                        val nextCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }[nextCh] ?: "SORIA"
-                                                        onStateChange(state.copy(city = nextCity, channel = nextCity))
-                                                    }
+                                                    onMic(false, state.veteranPower)
+                                                    onStateChange(state.copy(isPttLatched = false, isScanning = false))
+                                                    val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
+                                                    val nextCh = if (curCh <= 1) 40 else curCh - 1
+                                                    val nextCity = CITY_CHANNELS.entries.groupBy { it.value }.mapValues { it.value.first().key }[nextCh] ?: "SORIA"
+                                                    onStateChange(state.copy(city = nextCity, channel = nextCity))
                                                 },
                                                 onLongClick = { 
                                                     if (state.rfGain > state.squelch) {

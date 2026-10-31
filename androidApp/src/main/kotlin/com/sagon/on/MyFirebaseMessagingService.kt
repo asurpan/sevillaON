@@ -26,6 +26,23 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         // Refuerzo de suscripción al recibir
         com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("comunidad_on_air")
 
+        // 🚀 WAKELOCK TEMPORAL (10s) PARA DESPERTAR CPU EN RECIPCIÓN DE AUDIO/VOZ PUSH
+        try {
+            val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            val wakeLock = pm.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "ON_AIR_SPAIN:FCMWakeLock")
+            wakeLock.acquire(10000L)
+        } catch (_: Exception) {}
+
+        // 🚀 DESPERTAR Y MANTENER EL FOREGROUND SERVICE DE RADIO ACTIVO
+        try {
+            val serviceIntent = Intent(this, RadioService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                androidx.core.content.ContextCompat.startForegroundService(this, serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+        } catch (_: Exception) {}
+
         // Prioridad a notificaciones de consola directas
         remoteMessage.notification?.let {
             sendNotification(it.title ?: "📻 ON AIR", it.body ?: "Alguien está modulando...")

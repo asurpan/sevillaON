@@ -22,6 +22,7 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.TRANSMIT_IR" />
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
 
     <uses-feature android:name="android.hardware.consumerir" android:required="false" />
 
@@ -64,6 +65,15 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback|microphone" />
+
+        <service
+            android:name=".RadioConnectionService"
+            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.telecom.ConnectionService" />
+            </intent-filter>
+        </service>
 
         <activity
             android:name=".MainActivity"

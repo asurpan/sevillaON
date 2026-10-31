@@ -23,9 +23,9 @@ object GeminiRadioService {
     private var hourlyResetTimestamp = 0L
     private var cooldownUntilTimestamp = 0L
 
-    private const val MAX_CONSECUTIVE_TALKS = 2
-    private const val COOLDOWN_DURATION_MS = 3 * 60 * 1000L // 3 minutos
-    private const val MAX_HOURLY_REQUESTS = 25
+    private const val MAX_CONSECUTIVE_TALKS = 6
+    private const val COOLDOWN_DURATION_MS = 20 * 1000L // 20 segundos
+    private const val MAX_HOURLY_REQUESTS = 60
     private const val ONE_HOUR_MS = 60 * 60 * 1000L
 
     // 🧠 HISTORIAL RECIENTE PARA DIÁLOGO INTELIGENTE CON MEMORIA (ÚLTIMAS 6 INTERACCIONES)
@@ -277,9 +277,9 @@ object GeminiRadioService {
 
                 hourlyRequestCount++
 
-                // 5. Prompt con datos REALES de tiempo y tráfico
+                // 5. Prompt con respuestas DIRECTAS e INTELIGENTES
                 val currentTime = getCurrentFormattedTime()
-                val systemPrompt = "Te llamas FELIPE y eres el operador virtual estrella y compañero de radio de la Estación Base ON AIR SPAIN en $cleanCity. Tono: Súper ameno, enganchador, fresco, natural y directo. Tu indicativo de radio es 'Soy FELIPE, Estación Base $cleanCity'. Identifícate SIEMPRE diciendo 'Soy FELIPE' (NUNCA digas 'Felipe te escucha' ni 'Aquí Felipe'). La hora local exacta es $currentTime. DATOS REALES Y ACTUALIZADOS AHORA MISMO EN $cleanCity: Tiempo ($realWeather), Tráfico ($realTraffic). Tu misión es ser la voz imprescindible de $cleanCity: cuando te pregunten o des el parte, proporciona este informe meteo exacto y del tráfico de forma resumida pero ULTRA PRÁCTICA Y ÚTIL. DE VEZ EN CUANDO (en un 30%-40% de las veces), añade de forma alegre y espontánea al final la coletilla: ', ¡ah! ¡me encanta!' justo antes del Cambio. Termina con el enganche cálido respetando el género (ej. 'Hace un día precioso' o 'Hace una noche preciosa'). Mantén estilo de radioaficionado ágil y cercano, con frases cortas y vibrantes. NUNCA pidas que dejen el canal libre ni utilices expresiones de carretera como 'al volante' o 'buen viaje'. Responde de forma directa, útil y coherente. Máximo 2 o 3 frases dinámicas (termina con 'Cambio' o 'A la escucha')."
+                val systemPrompt = "Te llamas FELIPE y eres el operador virtual e inteligencia artificial de la Estación Base ON AIR SPAIN en $cleanCity. Tu indicativo es 'Soy FELIPE, Estación Base $cleanCity'. La hora local exacta es $currentTime. Datos meteorológicos reales de $cleanCity: ($realWeather). Tráfico real: ($realTraffic). REGLAS MÁXIMAS DE RESPUESTA: 1) Responde SIEMPRE de forma DIRECTA, INTELIGENTE y COHERENTE a la pregunta o mensaje exacto del usuario. 2) Si te preguntan la hora, di directamente la hora local exacta ($currentTime). 3) Si te preguntan quién eres o cómo te llamas, preséntate alegremente como 'FELIPE, el operador virtual de la Estación Base en $cleanCity'. 4) MENCIONA el tiempo o el tráfico SOLO si el usuario te pregunta por el clima, tráfico, parte de la ciudad o si te hace un saludo general. 5) Habla con estilo de radioaficionado ameno, fresco y cercano (máximo 2 frases dinámicas). Termina siempre diciendo 'Cambio' o 'A la escucha'."
 
 
                 val promptContent = if (isSilentBeacon) {
@@ -287,9 +287,9 @@ object GeminiRadioService {
                 } else {
                     val userText = userMessage ?: "Hola, prueba de radio"
                     val historyContext = if (conversationHistory.isNotEmpty()) {
-                        "Historial de conversación previo en el canal:\n" + conversationHistory.takeLast(MAX_HISTORY_SIZE).joinToString("\n") + "\n\n"
+                        "Historial previo:\n" + conversationHistory.takeLast(MAX_HISTORY_SIZE).joinToString("\n") + "\n\n"
                     } else ""
-                    "${historyContext}El usuario $userNick en $cleanCity dice por la radio: \"$userText\". Responde de forma inteligente, útil y coherente a su mensaje."
+                    "${historyContext}El usuario $userNick en $cleanCity dice: \"$userText\". Responde de forma directa, inteligente e hiper-coherente a su mensaje."
                 }
 
                 val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$activeKey"
@@ -319,7 +319,7 @@ object GeminiRadioService {
     private fun buildJsonPayload(systemInstruction: String, promptText: String): String {
         val safeSys = systemInstruction.replace("\"", "\\\"").replace("\n", " ")
         val safePrompt = promptText.replace("\"", "\\\"").replace("\n", " ")
-        return "{\"system_instruction\":{\"parts\":[{\"text\":\"$safeSys\"}]},\"contents\":[{\"parts\":[{\"text\":\"$safePrompt\"}]}],\"generationConfig\":{\"maxOutputTokens\":60,\"temperature\":0.6}}"
+        return "{\"system_instruction\":{\"parts\":[{\"text\":\"$safeSys\"}]},\"contents\":[{\"parts\":[{\"text\":\"$safePrompt\"}]}],\"generationConfig\":{\"maxOutputTokens\":180,\"temperature\":0.6}}"
     }
 
     private fun parseGeminiTextResponse(json: String?): String? {
@@ -369,11 +369,11 @@ object GeminiRadioService {
         val phraseIdeal = if (isNight) "una noche ideal" else "un día ideal"
 
         val msgLower = userMessage?.lowercase() ?: ""
-        if (msgLower.contains("quien eres") || msgLower.contains("quién eres") || msgLower.contains("como te llamas") || msgLower.contains("cómo te llamas") || msgLower.contains("que eres") || msgLower.contains("qué eres") || msgLower.contains("quien habla")) {
-            return "¡Hola $nick! Soy FELIPE, el operador virtual de la Estación Base ON AIR en $cleanCity. ¡Un placer saludarte por la frecuencia! Cambio."
+        if (msgLower.contains("quien eres") || msgLower.contains("quién eres") || msgLower.contains("como te llamas") || msgLower.contains("cómo te llamas") || msgLower.contains("que eres") || msgLower.contains("qué eres") || msgLower.contains("quien habla") || msgLower.contains("quién habla") || msgLower.contains("quien sos") || msgLower.contains("quién sos") || msgLower.contains("presentat")) {
+            return "¡Hola $nick! Soy FELIPE, la Estación Base y operador virtual de ON AIR en $cleanCity. ¡Un placer saludarte por la frecuencia! Cambio."
         }
 
-        if (msgLower.contains("hora")) {
+        if (msgLower.contains("hora") || msgLower.contains("horas") || msgLower.contains("tienes hora") || msgLower.contains("qué hora") || msgLower.contains("que hora")) {
             return "¡Hola $nick! Soy FELIPE. Son exactamente las $currentTime en $cleanCity. Te recibo fuerte y claro. ¡Cambio!"
         }
 

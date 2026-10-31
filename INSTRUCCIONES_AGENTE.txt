@@ -1,4 +1,4 @@
-# 📘 MANUAL DE OPERACIONES V15.0 - RADIO ON AIR SPAIN (ELITE SUPREME)
+# 📘 MANUAL DE OPERACIONES V18.0 - RADIO ON AIR SPAIN (ELITE SUPREME)
 
 Este manual contiene las instrucciones técnicas, comerciales y de seguridad absoluta. Lectura OBLIGATORIA para cualquier IA.
 
@@ -12,38 +12,34 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 3. **RadioDialogs.kt**: Gestión de seguridad crítica y disuasión de cambios de Nick.
 4. **Screens.kt**: Interfaz Nexus blindada geométricamente.
 
-## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK)
+## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK V18.0)
 
 ### 🔊 AUDIO Y VOZ (BLINDAJE TOTAL)
 - **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen **0.01** (Ajustado para Chrome Mobile) vía un nodo Gain `dummy`. Este puente mantiene la tubería WebRTC "caliente" y evita que Chrome suspenda el proceso de audio.
 - **User-Gesture Hack**: El motor de audio DEBE reactivarse (`ctx.resume()`) mediante escuchadores de eventos `click` y `touchstart` globales. Es obligatorio para saltar las restricciones de Autoplay de los navegadores.
-- **Infrasonic Keep-Alive**: Mantener siempre el oscilador de **5Hz** activo durante los silencios de recepción. Es el marcapasos inaudible que evita que el navegador o el SO suspendan el hilo de voz. Debe silenciarse (0 absoluto) instantáneamente al detectar voz real.
-- **Background Survival (Anti-Sleep)**: Mantener un oscilador ultrasónico de **20.5kHz** con ganancia mínima (**0.001**) conectado permanentemente a la salida física. Esto garantiza que el SO detecte actividad de audio constante y no cierre la pestaña al minimizar el navegador.
-- **WakeLock Re-Activo**: El sistema DEBE re-adquirir el `WakeLock` en cada evento `visibilitychange` para asegurar que la pantalla no se duerma tras volver del segundo plano.
-- **Replay One-Shot**: El botón debe vaciar la memoria al usarse. Una escucha, una limpieza.
-- **Pisado Real (V15.0)**: Usar el motor `WaveShaper` para distorsionar voces débiles. ES CRÍTICO asegurar la inicialización del mapa `remoteDistortion` antes de procesar el motor de prioridades.
-- **BLOQUEO DE RUTAS Y VOLUMEN**: Queda TERMINANTEMENTE PROHIBIDO modificar los enrutados de audio (rutas de nodos). Estas rutas están BLINDADAS.
-- **Sincronización Discreta**: El PTT DEBE desactivar atómicamente el modo discreto tanto en la UI como en el motor de audio (`window.app.discreteMode = false`) para evitar bloqueos de flujo.
-- **Tono de Modo Oreja (Piripi / Incoming)**: Al activar el Modo Oreja (Modo Discreto) DEBE reproducirse SIEMPRE el tono melódico piripi ("incoming"), emitirse vibración háptica de 35ms y activarse el estado `isDiscreteModeEnabled = true` inmediatamente.
-- **Solicitud Nativa de Micrófono Android 11+ (UI Thread)**: En la app nativa Android, la solicitud de permiso de micrófono (`RECORD_AUDIO`) DEBE invocarse SIEMPRE directamente a través de `window.AndroidApp.requestMicPermission()` ejecutado en el hilo de interfaz (`runOnUiThread`). Queda PROHIBIDO confiar únicamente en `WebChromeClient.onPermissionRequest` para evitar bloqueos silenciosos en capas MIUI (Xiaomi) y One UI (Samsung).
+- **Infrasonic Keep-Alive**: Mantener siempre el oscilador de **5Hz** activo durante los silencios de recepción. Es el marcapasos inaudible que evita que el navegador o el SO suspendan el hilo de voz.
+- **Background Survival (Anti-Sleep)**: Mantener un oscilador ultrasónico de **20.5kHz** con ganancia mínima (**0.001**) conectado permanentemente a la salida física.
+- **Re-activación de AudioContext en PTT / Roger Beep**: `broadcastPTT` DEBE ejecutar `window.app.ctx.resume()` si el motor no está en `'running'`, asegurando que el Roger Beep y el micrófono nunca se queden atascados.
+- **Filtro de Emisión Real para Roger Beep**: El Roger Beep de 1955Hz SOLO suena si el usuario estuvo transmitiendo (`wasTransmitting === true`). Al cambiar de canal se suprime para evitar falsos beeps.
+- **Solicitud Nativa de Micrófono Android 11+ (UI Thread)**: En la app nativa Android, la solicitud de permiso de micrófono (`RECORD_AUDIO`) DEBE invocarse SIEMPRE directamente a través de `window.AndroidApp.requestMicPermission()` ejecutado en `runOnUiThread`.
 
-### 📡 VETERANÍA Y RED
-- **ICE Servers Reforzados (4G/5G)**: Es obligatorio el uso de servidores STUN/TURN con transporte TCP (puerto 443) para garantizar la comunicación en redes móviles restrictivas (CG-NAT).
-- **Progreso de Potencia (Gamificación 1W -> 50W)**: Estaciones nuevas empiezan en **1W** (0.02 pwr). Progresión: +0.00000833 pwr / 5s de habla PTT (~50 horas para los 50W Élite). Cada vez que el usuario sube +1 Watt entero, el sistema emite una notificación de logro y tono de recompensa. No regalar potencia; se gana modulando.
-- **Llamada Inteligente**: Solo el ID más bajo llama al más alto. Sagrado para estabilidad en 4G.
-- **Persistencia de Nick**: El indicativo del usuario DEBE guardarse en `localStorage` bajo la clave `indicativo` inmediatamente después de la validación. Esto evita que el usuario tenga que re-identificarse en cada sesión web.
-- **Indicativo Único (Hard-Lock)**: Queda TERMINANTEMENTE PROHIBIDO permitir duplicados de Nicks activos o crear usuarios distintos desde el mismo dispositivo. Un teléfono identificado por su `ANDROID_ID` en Firebase (`registered_devices/$deviceID`) SOLO TIENE UN INDICATIVO. El sistema DEBE forzar automáticamente el indicativo ya vinculado sin mostrar pantallas de registro.
-- **Navegador Android Obligado a App Nativa**: Un navegador móvil en Android (Chrome/Firefox/Samsung) NUNCA debe ejecutar la radio Web. Debe redirigir FORZOSAMENTE a abrir la App Nativa (`intent://open`) o a la Google Play Store. La versión Web solo se permite en iPhone/iOS y PC.
-- **Advertencia de Olvido**: Si el usuario intenta "olvidar" su indicativo o borrar datos, el sistema DEBE mostrar una advertencia crítica informando de que perderá toda su potencia (Watts) y veteranía acumulada de forma IRRECUPERABLE.
-- **Módulo Mesh**: No integrar en la clase principal. Debe permanecer como un recurso de emergencia independiente.
+### 📡 VETERANÍA, RED Y PEERJS
+- **Sanitización Estricta de PeerJS**: La `sessionID` enviada a `new Peer()` DEBE sanitizarse mediante `cleanNick.replace(/[^A-Z0-9_-]/gi, "_")`. Queda prohibido enviar espacios o tildes a PeerJS para evitar el error `invalid-id`.
+- **Reconexión por Hardware (`deviceId`)**: En `onUsersUpdate`, se DEBE verificar `otherDeviceId == myDeviceID`. Si la conexión proviene del mismo dispositivo, es reconexión legítima y NO debe expulsar al usuario.
+- **ICE Servers Reforzados (4G/5G)**: Es obligatorio el uso de servidores STUN/TURN con transporte TCP (puerto 443).
+- **Progreso de Potencia (Gamificación 1W -> 50W)**: Estaciones nuevas empiezan en **1W** (0.02 pwr). Progresión: +0.00000833 pwr / 5s de habla PTT (~50 horas para los 50W Élite).
+- **Indicativo Único (Hard-Lock)**: Un teléfono identificado por su `ANDROID_ID` en Firebase (`registered_devices/$deviceID`) SOLO TIENE UN INDICATIVO. El sistema DEBE forzar automáticamente el indicativo ya vinculado sin mostrar pantallas de registro.
 
-### 🖼️ INTERFAZ Y MARKETING
-- **Landing Social/Repair**: Textos optimizados para capturar tráfico de "reparar emisoras" y "conocer gente".
-- **Nexus UI**: Mantener los 20 LEDs verdes esmeralda con resplandor. Altura de estado fija 32dp.
+### 📱 SEGUNDO PLANO Y COMPATIBILIDAD
+- **Foreground Service Android 14/15/16**: La app nativa debe ejecutar `RadioService` en primer plano con tipos `mediaPlayback|microphone`.
+- **FCM Push High Priority + WakeLock**: `MyFirebaseMessagingService` debe adquirir un `WakeLock` de CPU de 10s y despertar a `RadioService`.
+- **Llamadas Nativas (`RadioConnectionService`)**: Integrado con `ConnectionService` y `MANAGE_OWN_CALLS` de Android.
+- **Guiado iPhone (iOS Safari)**: La versión Web detecta iPhone y muestra el cartel `ios-install-banner` indicando pulsar *"Añadir a la pantalla de inicio"*.
 
-### 🔐 SEGURIDAD
-- **Derecho de Admisión**: Usar lenguaje firme en el borrado de datos para proteger la comunidad.
-- **Hard-Lock ID**: Un equipo físico = una identidad en red.
+### 💬 CHAT TÁCTICO
+- **Hora de Publicación**: Todos los mensajes muestran la hora `[HH:mm]`.
+- **Notificaciones de Privados**: Los mensajes privados y avisos de amigos conectados SIEMPRE emiten sonido. El chat público se puede silenciar con `isChatMuted`.
+- **Flujo Multilínea y Auto-Scroll**: Mensajes con `buildAnnotatedString` para salto de línea automático y `animateScrollTo(maxValue)` en el modal.
 
 ### 📱 ENTORNO CONMUTABLE ANDROID (LOCAL vs GITHUB SERVIDOR)
 - **Variable de conmutación**: En `MainActivity.kt` (línea ~75): `private val USE_GITHUB_REMOTE_SERVER = true` (ó `false`).
@@ -53,4 +49,4 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 ### 🛑 REGLA SUPREMA DE SEGURIDAD (PERMISO EXPLÍCITO OBLIGATORIO)
 - **Flujos Blindados**: El sistema de entrada de usuarios, canales, micrófono, emisión (TX) y recepción (RX) está prohibido de modificar sin permiso explícito por escrito del usuario.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 17.0 (BLINDAJE DE FLUJOS BAJO PERMISO EXPLÍCITO)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 18.0 (BLINDAJE DE FLUJOS BAJO PERMISO EXPLÍCITO)

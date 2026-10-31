@@ -1,6 +1,6 @@
-# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO (V15.0 ELITE SUPREME)
+# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO (V18.0 ELITE SUPREME)
 
-Este documento establece las LEYES SUPREMAS de NO MODIFICACIÓN para agentes de IA y desarrolladores. El sistema ha sido optimizado tras una auditoría profunda de WebRTC y AudioContext. Cualquier cambio no autorizado romperá la estabilidad de la voz, los LEDs o la jerarquía de potencia.
+Este documento establece las LEYES SUPREMAS de NO MODIFICACIÓN para agentes de IA y desarrolladores. El sistema ha sido optimizado tras una auditoría profunda de WebRTC, AudioContext, PeerJS y servicios en segundo plano Android. Cualquier cambio no autorizado romperá la estabilidad de la voz, los LEDs o la jerarquía de potencia.
 
 ## 🚫 PROHIBICIÓN TOTAL (HARD-LOCK)
 Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el código en las siguientes áreas:
@@ -13,52 +13,50 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Tono de Modo Oreja (Piripi)**: Al activar el Modo Oreja se ejecuta obligatoriamente la señal audible "incoming" (piripi) y la vibración háptica de 35ms.
     - **Permiso de Micrófono Android 11+ (MIUI/OneUI)**: Invocación obligatoria mediante `@JavascriptInterface fun requestMicPermission()` en `runOnUiThread`. Evita la cancelación silenciosa de permisos de WebView en Xiaomi y Samsung.
 
-2. **Motor de Veteranía y Pisado Real (V12.5)**:
+2. **Sanitización de SessionID y Reconexión Inteligente (V18.0)**:
+    - **Sanitización Estricta de PeerJS**: Toda `sessionID` pasada a `new Peer()` DEBE estar sanitizada mediante `cleanNick.replace(/[^A-Z0-9_-]/gi, "_")`. Queda PROHIBIDO enviar espacios, tildes o símbolos a PeerJS para evitar el error catastrófico `invalid-id`.
+    - **Reconexión por Hardware (`deviceId`)**: En `onUsersUpdate`, se DEBE verificar `otherDeviceId == myDeviceID`. Si la conexión previa proviene del mismo terminal físico, es una reconexión legítima y NO debe marcar conflicto ni expulsar al usuario.
+    - **Prohibición de Logout en Bucle**: Queda prohibido llamar a `RadioPersistence.logout()` o borrar `localStorage` automáticamente en caso de coincidencia de nick.
+
+3. **Garantía de Roger Beep y Re-activación de AudioContext**:
+    - **Re-activación de AudioContext**: En `broadcastPTT`, si `window.app.ctx.state !== 'running'`, se DEBE ejecutar `window.app.ctx.resume()` inmediatamente antes de procesar emisión o recepción.
+    - **Filtro de Emisión Real para Roger Beep**: El tono Roger Beep de 1955Hz SOLO debe sonar si el usuario estuvo activamente transmitiendo (`wasTransmitting === true`). Al cambiar de canal o pulsar flechas de sintonía con el micro suelto, queda PROHIBIDO emitir el Roger Beep (solo emitirá el clic de 800Hz `switch`).
+
+4. **Reglas del Chat Táctico y Auto-Scroll**:
+    - **Hora de Publicación**: Todos los mensajes de chat DEBEN mostrar la hora de publicación en formato `[HH:mm]`.
+    - **Sonido y Notificación de Privados**: Los mensajes privados y avisos de amigos conectándose DEBEN emitir siempre notificación sonora nativa.
+    - **Opción de Silenciar Chat Público**: El chat público se puede silenciar mediante `isChatMuted`, pero los mensajes privados NUNCA se silencian.
+    - **Flujo Multilínea y Auto-Scroll**: Los mensajes se renderizan mediante `buildAnnotatedString` permitiendo el salto de línea automático sin recortes `...`. La lista desplegada cuenta con `verticalScroll` y Auto-Scroll automático (`animateScrollTo(maxValue)`).
+
+5. **Arquitectura de Segundo Plano Estilo Walkie-Talkie (Android 14/15/16)**:
+    - **Foreground Service**: La app nativa debe ejecutar `RadioService` en primer plano con tipos `mediaPlayback|microphone`.
+    - **FCM High Priority + WakeLock**: `MyFirebaseMessagingService` debe adquirir un `WakeLock` de CPU de 10s y despertar a `RadioService` al recibir notificaciones push.
+    - **Llamadas Nativas (`RadioConnectionService`)**: Registrado con `ConnectionService` y permiso `MANAGE_OWN_CALLS` para integrarse con la pila nativa de telefonía de Android.
+
+6. **Guiado PWA para Usuarios de iPhone (iOS / Safari)**:
+    - La versión Web debe detectar a los usuarios de iPhone en Safari (`isIos && !isStandalone`) y mostrar el cartel flotante `ios-install-banner` indicando pulsar *"Añadir a la pantalla de inicio"* para habilitar segundo plano y notificaciones push.
+
+7. **Motor de Veteranía y Pisado Real (V12.5)**:
     - **Progresión de Potencia (Gamificación)**: Inicio en 1W (0.02 pwr) -> Máximo 50W (1.0 pwr). Progresión: +0.00000833 pwr por cada 5 segundos de TX (~50h de voz activa). Cada +1 Watt ganado genera notificación y sonido de logro (Dopamina UX).
     - **Efecto Pisado (Dynamic Distortion)**: Diferencia > 0.05 activa el `WaveShaper` de distorsión armónica. La voz débil debe sonar "crushed" (rota) y de fondo. Diferencia > 0.25 activa aplastamiento total.
 
-3. **Gestión de Memoria Replay (One-Shot V4.2)**:
+8. **Gestión de Memoria Replay (One-Shot V4.2)**:
     - **Vaciado Inmediato**: Al pulsar Replay, la memoria se borra tras pasar a la playlist. No se permite repetir el mismo audio.
     - **Ducking Táctico**: Durante la reproducción de Replay, la radio en vivo y el ruido bajan al **2%** de forma automática.
 
-4. **Lógica de Red y Conectividad**:
-    - **Llamada Inteligente**: Solo el dispositivo con la ID lexicográficamente menor inicia la llamada (`sessionID < k`). Esto evita el "Glare" (choque de llamadas).
-    - **Identidad Fija**: La `sessionID` debe ser `Nick + DeviceID` para garantizar estabilidad en PeerJS y evitar duplicados.
-
-5. **Diseño Visual Nexus (UI FREEZE)**:
-    - **Contenedor de Estado**: Altura fija de **32dp** (prohibido saltos de línea).
-    - **LEDs S-Meter**: 20 diodos con efecto resplandor (Glow) en verde esmeralda táctico.
-    - **RX Tag**: Color esmeralda (`0xFF10B981`) con fundido lateral y resplandor.
-
-6. **Estrategia SEO y Seguridad**:
-    - **SEO Marca**: Mantener términos *DSELECTRONICA, reparar emisora Sevilla, ligar radio, conocer gente*.
-    - **Derecho de Admisión**: Mantener el diálogo de borrado de datos con lenguaje disuasorio y advertencia de **BAN-HARDWARE**.
-
-7. **Identidad Unificada por Hardware y Redirecciones**:
-    - **Hardware Unificado (Un móvil = Un usuario)**: La consulta `registered_devices/$deviceID` en Firebase AUTO-RESTAURA el indicativo si el dispositivo ya fue registrado, IMPIDIENDO crear múltiples usuarios desde el mismo teléfono. La función `connectRadio` y `checkHardwareRestore` fuerzan el nick registrado automáticamente.
+9. **Identidad Unificada por Hardware y Redirecciones**:
+    - **Hardware Unificado (Un móvil = Un usuario)**: La consulta `registered_devices/$deviceID` en Firebase AUTO-RESTAURA el indicativo si el dispositivo ya fue registrado, IMPIDIENDO crear múltiples usuarios desde el mismo teléfono.
     - **Pestaña Única**: Detección de pestaña duplicada con bloqueo total de interfaz para evitar ecos.
-    - **Redirección Android Web -> App Nativa**: Navegadores en Android NUNCA ejecutan la radio Web (`webApp.js` no se carga). Deben abrir la App Nativa o la Play Store mediante Intent URL, mientras que iOS/Safari y PC Desktop ejecutan la versión Web.
 
-8. **Sistema de Portadora Fija, Potencia de Agente/Bot y Pisotones CB 27MHz (REGLA DE ORO)**:
-    - **Portadora Fija en RX**: En recepción (RX), los LEDs del S-Meter deben permanecer **TOTALMENTE FIJOS Y SÓLIDOS** marcando la potencia RF de señal. Está prohibido introducir oscilaciones, parpadeos o modulaciones falsas a la barra de LEDs en RX.
-    - **Potencia Máxima de Agente / Bot / Estación Base (50W)**: Toda respuesta automática o transmisión de Bot / Estación de Control (`BASE ...` o `CONTROL ...`) se emite automáticamente con **potencia a tope (50 Watts / cbSignalFactor = 1.0f)**. Enciende los **20 LEDs fijos** (S9+30dB en verde/amarillo/rojo) y marca 50W.
-    - **Sistema de Pisotones (Override)**: Las estaciones con mayor millaje/vatios se imponen fijando un nivel de LEDs más alto, imitando el comportamiento exacto de una radio CB de 27 MHz.
+10. **Sistema de Portadora Fija, Potencia de Agente/Bot y Pisotones CB 27MHz**:
+    - **Portadora Fija en RX**: En recepción (RX), los LEDs del S-Meter deben permanecer **TOTALMENTE FIJOS Y SÓLIDOS** marcando la potencia RF de señal.
+    - **Potencia Máxima de Agente / Bot / Estación Base (50W)**: Toda respuesta automática o transmisión de Bot / Estación de Control (`BASE ...` o `CONTROL ...`) se emite automáticamente con **50 Watts (cbSignalFactor = 1.0f)**.
 
-9. **Blindaje Audio WebRTC Android 11+ y Motor TTS Nativo (REGLA CRÍTICA)**:
-    - **Desbloqueo de Audio Remoto (Reanudación Forzosa)**: Para evitar que el sistema operativo en Android 11+ bloquee el flujo de voz entrante mientras la señal se ve cogida, es OBLIGATORIO mantener la reanudación forzosa del volumen del nodo `remoteAudio` (`remoteAudio.volume = 0.2` seguido de `0.01` dummy) en el evento `call.on('stream')`.
-    - **Invocación TTS Nativo en Android**: Las locuciones del Bot/Estación Base en Android se deben dirigir OBLIGATORIAMENTE a través del puente nativo `window.AndroidApp.speak(text, rate, pitch)` enlazado con `TextToSpeech` de Android, asegurando la respuesta auditiva y el evento visual `BASE LOCAL`.
-
-10. **Blindaje Anti-`undefined` y Roger Beep de Agente (V16.5 HARD-LOCK SUPREME)**:
-    - **Conexión Síncrona Inmediata**: `connectRadio(nick)` DEBE asignar `window.app.sessionID` de forma síncrona en la primera línea de ejecución antes de cualquier promesa asíncrona de Firebase. Queda TERMINANTEMENTE PROHIBIDO dejar `window.app.sessionID` en `undefined` o nulo durante el arranque.
-    - **Prohibición Total de Escritura en `users/undefined`**: Todo intento de escritura en Firebase RTDB (`RadioPersistence.saveState`, `RadioAudioManager.broadcastPTT`, `onCityChange`, `onChannelChange`, etc.) DEBE verificar explícitamente que `sessionID` sea no nulo, no vacío y no sea `"undefined"`.
-    - **Filtro Remoto Anti-`undefined`**: El listener `onUsersUpdate` DEBE descartar cualquier clave que sea o contenga `"undefined"` para evitar modulaciones o portadoras fantasma en la red.
-    - **Roger Beep de Agente / Bot**: La transmisión del Agente / Bot (TTS) DEBE emitir OBLIGATORIAMENTE el sonido Roger Beep al finalizar su alocución, tanto en la app nativa Android (`onDone` en `UtteranceProgressListener` + `ToneGenerator.TONE_PROP_BEEP`) como en la versión Web (`u.onend` + `playUiSound('roger')`).
-
-11. **Prohibición de Modificación del Flujo de Entrada, Canales, Micrófono y Emisión/Recepción (BLINDAJE ABSOLUTO V17.0)**:
+11. **Prohibición de Modificación del Flujo de Entrada, Canales, Micrófono y Emisión/Recepción (BLINDAJE ABSOLUTO V18.0)**:
     - **Leyes de Flujo Intocable**: El sistema completo de entrada de usuarios (`connectRadio`, `checkHardwareRestore`), cambio de canales/ciudades (`onCityChange`, `onChannelChange`), captura/permisos de micrófono (`ensureMicAccess`, `requestMicPermission`), y flujo de emisión (TX / PTT) y recepción (RX / PeerJS / Audio Sinks / S-Meter) queda **BLINDADO Y SELLADO DE FORMA ABSOLUTA**.
     - **Permiso Explícito Obligatorio**: Queda **ESTRICTAMENTE PROHIBIDO** para cualquier IA, agente o desarrollador alterar, modificar, refactorizar o reestructurar cualquiera de estos flujos por cuenta propia o por error. ÚNICAMENTE se permite modificar estas secciones tras solicitar y recibir el **permiso explícito y por escrito del usuario**.
 
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al autor. NO apliques parches que eliminen los nodos inaudibles o el bridge silencioso, ya que son los pilares que mantienen la voz viva en móviles modernos.
 
-**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y PROTEGIDO BAJO LICENCIA DE PERMISO EXPLÍCITO (V17.0 ELITE SUPREME).**
+**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y PROTEGIDO BAJO LICENCIA DE PERMISO EXPLÍCITO (V18.0 ELITE SUPREME).**

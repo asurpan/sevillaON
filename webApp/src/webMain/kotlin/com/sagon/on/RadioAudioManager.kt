@@ -303,6 +303,7 @@ object RadioAudioManager {
                     var now = (window.app.ctx && typeof window.app.ctx.currentTime === 'number') ? window.app.ctx.currentTime : 0;
                     var nowTime = Date.now();
                     var sessionRef = (window.app.db && window.app.sessionID && window.app.sessionID !== "undefined" && window.app.sessionID.indexOf("undefined") === -1) ? window.app.db.ref("users/" + window.app.sessionID) : null;
+                    var wasTransmitting = (window.app.pttStateInternal === true || window.app.isTransmittingInternal === true);
 
                     // 🛡️ COMPROBACIÓN DE COOLDOWN ANTI-PORTADORA (5s)
                     if (active && window.app.pttCooldownUntil && nowTime < window.app.pttCooldownUntil) {
@@ -355,7 +356,7 @@ object RadioAudioManager {
 
                         try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
 
-                        var shouldPlayRoger = (roger === true && !(window.app && window.app.suppressRoger) && !(window.app && window.app.isChangingChannel) && window.app.rogerEnabled === true);
+                        var shouldPlayRoger = (wasTransmitting === true && roger === true && !(window.app && window.app.suppressRoger) && !(window.app && window.app.isChangingChannel) && window.app.rogerEnabled === true);
 
                         if (shouldPlayRoger && window.app.ctx && window.app.ctx.state === 'running') {
                             try {

@@ -612,7 +612,7 @@ fun RadioPanel(
                                                 enabled = !state.isInterfaceLocked,
                                                 onClick = {
                                                     onPlaySound("switch")
-                                                    onMic(false, state.veteranPower)
+                                                    if (externalPtt) onMic(false, state.veteranPower)
                                                     onStateChange(state.copy(isPttLatched = false, isScanning = false))
                                                     val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
                                                     val nextCh = if (curCh >= 40) 1 else curCh + 1
@@ -723,7 +723,7 @@ fun RadioPanel(
                                                 enabled = !state.isInterfaceLocked,
                                                 onClick = {
                                                     onPlaySound("switch")
-                                                    onMic(false, state.veteranPower)
+                                                    if (externalPtt) onMic(false, state.veteranPower)
                                                     onStateChange(state.copy(isPttLatched = false, isScanning = false))
                                                     val curCh = CITY_CHANNELS[state.city.split("-")[0].uppercase()] ?: 1
                                                     val nextCh = if (curCh <= 1) 40 else curCh - 1

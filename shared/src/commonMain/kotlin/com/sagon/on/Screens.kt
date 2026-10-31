@@ -1241,74 +1241,55 @@ fun InlineTacticalChat(
                     }
                 }
 
-                val nonSysMsgs = chatMessages.takeLast(3)
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.Black.copy(0.35f))
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    if (nonSysMsgs.isEmpty()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Chat,
-                                contentDescription = null,
-                                tint = Color(0xFF00E5FF),
-                                modifier = Modifier.size(13.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = "💬 Chat de canal activo. Toca para escribir...",
-                                color = Color.White.copy(0.5f),
-                                fontSize = 10.5.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    } else {
-                        nonSysMsgs.forEachIndexed { idx, msg ->
-                            val isLast = (idx == nonSysMsgs.lastIndex)
-                            val annotatedMsg = buildAnnotatedString {
-                                withStyle(SpanStyle(color = Color.White.copy(0.60f), fontSize = 11.sp, fontWeight = FontWeight.Medium)) {
-                                    append("[${formatMessageTime(msg.timestamp)}] ")
-                                }
-                                withStyle(SpanStyle(color = Color(0xFF00E5FF), fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)) {
-                                    append("${msg.senderNick}: ")
-                                }
-                                withStyle(SpanStyle(color = Color.White, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)) {
-                                    append(msg.text)
-                                }
+            val nonSysMsgs = chatMessages.takeLast(3)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.Black.copy(0.45f))
+                    .border(1.dp, if (targetNick != null) LuxeColors.Gold.copy(0.4f) else Color(0xFF00E5FF).copy(0.4f), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (nonSysMsgs.isEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.Chat,
+                            contentDescription = null,
+                            tint = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = if (targetNick != null) "💬 Chat privado con $targetNick. Toca para escribir..." else "💬 Chat de canal activo. Toca para escribir...",
+                            color = Color.White.copy(0.6f),
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                } else {
+                    nonSysMsgs.forEach { msg ->
+                        val annotatedMsg = buildAnnotatedString {
+                            withStyle(SpanStyle(color = Color(0xFF00E5FF).copy(0.70f), fontSize = 11.5.sp, fontWeight = FontWeight.Medium)) {
+                                append("[${formatMessageTime(msg.timestamp)}] ")
                             }
-                            if (isLast) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(Color(0xFF00E5FF).copy(0.12f * pulseAlpha))
-                                        .border(1.dp, Color(0xFF00E5FF).copy(0.45f * pulseAlpha), RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 6.dp, vertical = 3.dp)
-                                ) {
-                                    Text(
-                                        text = annotatedMsg,
-                                        modifier = Modifier.fillMaxWidth().graphicsLayer { alpha = pulseAlpha },
-                                        maxLines = 2,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                        lineHeight = 16.sp
-                                    )
-                                }
-                            } else {
-                                Text(
-                                    text = annotatedMsg,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    maxLines = 2,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    lineHeight = 16.sp
-                                )
+                            withStyle(SpanStyle(color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF), fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)) {
+                                append("${msg.senderNick}: ")
+                            }
+                            withStyle(SpanStyle(color = Color.White, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)) {
+                                append(msg.text)
                             }
                         }
+                        Text(
+                            text = annotatedMsg,
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            lineHeight = 16.sp
+                        )
                     }
                 }
+            }
             }
 
             Spacer(Modifier.height(6.dp))

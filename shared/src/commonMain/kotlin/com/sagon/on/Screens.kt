@@ -1240,6 +1240,7 @@ fun InlineTacticalChat(
                         )
                     }
                 }
+            }
 
             val nonSysMsgs = chatMessages.takeLast(3)
             Column(
@@ -1289,7 +1290,6 @@ fun InlineTacticalChat(
                         )
                     }
                 }
-            }
             }
 
             Spacer(Modifier.height(6.dp))

@@ -74,7 +74,7 @@ object RadioNetworkManager {
             "messages/${win.sanitizePath(city)}/${win.sanitizePath(channelKey)}"
         }
 
-        if (win.app?.db != null) {
+        if (win.app != null && win.app.db != null) {
             if (win.updateChatListener != null) {
                 win.updateChatListener(target)
             }
@@ -83,6 +83,11 @@ object RadioNetworkManager {
             m.text = text
             m.timestamp = Date.now()
             win.app.db.ref(chatPath).push(m)
+
+            if (target == null) {
+                win.app.lastUserTranscript = text
+                js("if (window.checkControlStationResponse) setTimeout(function() { window.checkControlStationResponse(); }, 800);")
+            }
         }
     }
 

@@ -716,7 +716,7 @@ fun main() {
             remoteTransmitterName = remoteTransmitterName.value,
             chatMessages = chatMessagesState,
             audioIntegrity = true,
-            onAntennaTest = { },
+            onAntennaTest = { js("if (window.runAntennaAudioTest) window.runAntennaAudioTest();") },
             onRequestLocationPermission = { },
             onOpenSettings = { },
             onChatOpenConsumed = { },

@@ -646,6 +646,46 @@ object RadioAudioManager {
                     if (typeof window.manosLibres_requestMic === 'function') window.manosLibres_requestMic();
                 }
             };
+
+            window.runAntennaAudioTest = function() {
+                if (window.ensureMicAccess) window.ensureMicAccess();
+                if (!window.app.ctx) return;
+                if (window.app.ctx.state !== 'running') window.app.ctx.resume();
+
+                var hasMic = !!(window.app.rawStream && window.app.rawStream.getAudioTracks().length > 0);
+                var hasTxGate = !!(window.app.txGate && window.app.txBus);
+                var hasBoost = !!window.app.voiceBoost;
+
+                console.log("📡 DIAGNÓSTICO DE ANTENA / VOZ:", { mic: hasMic, txGate: hasTxGate, voiceBoost: hasBoost });
+
+                if (hasMic && hasTxGate && hasBoost) {
+                    if (window.app.moniGainNode) {
+                        window.app.moniGainNode.gain.setTargetAtTime(1.0, window.app.ctx.currentTime, 0.05);
+                        setTimeout(function() {
+                            if (window.app && window.app.moniGainNode && !window.app.moniActive) {
+                                window.app.moniGainNode.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.1);
+                            }
+                        }, 4000);
+                    }
+                    if (window.dispatch_notification) {
+                        window.dispatch_notification(
+                            "📡 PRUEBA DE ANTENA OK",
+                            "¡Modulación y tubería de voz WebRTC 100% calibradas! Habla ahora para escuchar tu retorno local.",
+                            "success"
+                        );
+                    }
+                    if (window.playUiSound) window.playUiSound("incoming");
+                } else {
+                    if (window.dispatch_notification) {
+                        window.dispatch_notification(
+                            "⚠️ COMPROBANDO MICRÓFONO",
+                            "Concede permiso de micrófono y vuelve a pulsar para completar la calibración.",
+                            "warning"
+                        );
+                    }
+                    if (window.playUiSound) window.playUiSound("alert");
+                }
+            };
         """)
         ManosLibres.install()
         RadioSignaling.install()

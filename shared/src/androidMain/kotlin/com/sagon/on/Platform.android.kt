@@ -71,45 +71,60 @@ actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     tourismScope.launch {
         try {
             val cleanCity = city.split("-")[0].trim().uppercase()
-            // 📰 CARGAR DIRECTAMENTE EL RSS OFICIAL DE GOOGLE NEWS (TITULARES DE MÁXIMO IMPACTO NACIONAL E INTERNACIONAL)
-            val url = java.net.URL("https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es")
+            // 📰 RSS DE ALTO IMPACTO (SUCESOS, POLÉMICAS, CRIMEN, ÚLTIMA HORA Y DEBATE)
+            val url = java.net.URL("https://news.google.com/rss/search?q=sucesos+crimen+polemica+actualidad+ultima+hora&hl=es&gl=ES&ceid=ES:es")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "GET"
             connection.setRequestProperty("User-Agent", "Mozilla/5.0")
-            connection.connectTimeout = 3500
-            connection.readTimeout = 3500
+            connection.connectTimeout = 4000
+            connection.readTimeout = 4000
             val xmlText = connection.inputStream.bufferedReader().readText()
             
-            var chosenHeadline: String? = null
+            var bestHeadline: String? = null
+            var highestScore = -1
+            
             if (xmlText.contains("<item>")) {
-                val items = xmlText.split("<item>").drop(1).take(10)
+                val items = xmlText.split("<item>").drop(1).take(25)
+                val impactKeywords = listOf(
+                    "última hora", "urgente", "crimen", "asesinato", "detenido", "policía", 
+                    "tribunal", "juez", "prisión", "robo", "agresión", "droga", "tiroteo", 
+                    "incendio", "polémica", "dimisión", "escándalo", "multa", "condena", 
+                    "crisis", "alquiler", "vivienda", "huelga", "protesta", "fraude", 
+                    "investigado", "accidente", "tragedia", "alerta", "fallece", "suceso"
+                )
+                
                 for (itemBlock in items) {
                     val rawTitle = itemBlock.substringAfter("<title>").substringBefore("</title>")
                     val cleanTitle = rawTitle.substringBefore(" - ")
                         .replace("<![CDATA[", "")
                         .replace("]]>", "")
+                        .replace("&amp;", "&")
                         .trim()
-                    if (cleanTitle.length > 10) {
+                        
+                    if (cleanTitle.length > 12) {
                         val lower = cleanTitle.lowercase()
-                        if (lower.contains("última hora") || lower.contains("urgente") || lower.contains("accidente") || lower.contains("ave") || lower.contains("tragedia") || lower.contains("alerta") || lower.contains("fallece") || lower.contains("impacto") || lower.contains("suceso")) {
-                            chosenHeadline = cleanTitle
-                            break
+                        var score = 0
+                        for (kw in impactKeywords) {
+                            if (lower.contains(kw)) score += 2
+                        }
+                        if (cleanTitle.length in 15..90) score += 1
+                        
+                        if (score > highestScore) {
+                            highestScore = score
+                            bestHeadline = cleanTitle
                         }
                     }
                 }
-                if (chosenHeadline == null && items.isNotEmpty()) {
+                
+                if (bestHeadline == null && items.isNotEmpty()) {
                     val rawTitle = items[0].substringAfter("<title>").substringBefore("</title>")
-                    val cleanTitle = rawTitle.substringBefore(" - ")
-                        .replace("<![CDATA[", "")
-                        .replace("]]>", "")
-                        .trim()
-                    if (cleanTitle.length > 10) chosenHeadline = cleanTitle
+                    bestHeadline = rawTitle.substringBefore(" - ").replace("<![CDATA[", "").replace("]]>", "").trim()
                 }
             }
 
             withContext(Dispatchers.Main) {
-                if (chosenHeadline != null) {
-                    val formatted = "📰 ÚLTIMA HORA: $chosenHeadline"
+                if (bestHeadline != null) {
+                    val formatted = "📰 TEMA CANDENTE EN EL DEBATE: $bestHeadline"
                     updateCachedNewsTopic(cleanCity, formatted)
                     callback(formatted)
                 } else {

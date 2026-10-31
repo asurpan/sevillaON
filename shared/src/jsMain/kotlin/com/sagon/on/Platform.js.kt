@@ -169,37 +169,53 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
 
 actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     val cleanCity = city.split("-")[0].trim().uppercase()
-    val url = "https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es"
+    val url = "https://news.google.com/rss/search?q=sucesos+crimen+polemica+actualidad+ultima+hora&hl=es&gl=ES&ceid=ES:es"
 
     js("""
         fetch(url)
             .then(function(response) { return response.text(); })
             .then(function(xmlText) {
                 if (xmlText && xmlText.indexOf("<item>") !== -1) {
-                    var items = xmlText.split("<item>").slice(1, 10);
-                    var chosenHeadline = null;
+                    var items = xmlText.split("<item>").slice(1, 25);
+                    var bestHeadline = null;
+                    var highestScore = -1;
+                    var impactKeywords = [
+                        "última hora", "urgente", "crimen", "asesinato", "detenido", "policía", 
+                        "tribunal", "juez", "prisión", "robo", "agresión", "droga", "tiroteo", 
+                        "incendio", "polémica", "dimisión", "escándalo", "multa", "condena", 
+                        "crisis", "alquiler", "vivienda", "huelga", "protesta", "fraude", 
+                        "investigado", "accidente", "tragedia", "alerta", "fallece", "suceso"
+                    ];
+                    
                     for (var i = 0; i < items.length; i++) {
                         var itemBlock = items[i];
+                        if (itemBlock.indexOf("<title>") === -1 || itemBlock.indexOf("</title>") === -1) continue;
                         var rawTitle = itemBlock.split("<title>")[1].split("</title>")[0];
-                        var cleanTitle = rawTitle.split(" - ")[0].replace("<![CDATA[", "").replace("]]>", "").trim();
-                        if (cleanTitle.length > 10) {
+                        var cleanTitle = rawTitle.split(" - ")[0].replace("<![CDATA[", "").replace("]]>", "").replace("&amp;", "&").trim();
+                        
+                        if (cleanTitle.length > 12) {
                             var lower = cleanTitle.toLowerCase();
-                            if (lower.indexOf("última hora") !== -1 || lower.indexOf("urgente") !== -1 || lower.indexOf("accidente") !== -1 || lower.indexOf("ave") !== -1 || lower.indexOf("tragedia") !== -1 || lower.indexOf("alerta") !== -1 || lower.indexOf("fallece") !== -1 || lower.indexOf("impacto") !== -1 || lower.indexOf("suceso") !== -1) {
-                                chosenHeadline = cleanTitle;
-                                break;
+                            var score = 0;
+                            for (var k = 0; k < impactKeywords.length; k++) {
+                                if (lower.indexOf(impactKeywords[k]) !== -1) score += 2;
+                            }
+                            if (cleanTitle.length >= 15 && cleanTitle.length <= 90) score += 1;
+                            
+                            if (score > highestScore) {
+                                highestScore = score;
+                                bestHeadline = cleanTitle;
                             }
                         }
                     }
-                    if (!chosenHeadline && items.length > 0) {
+                    if (!bestHeadline && items.length > 0) {
                         var rawTitle = items[0].split("<title>")[1].split("</title>")[0];
-                        chosenHeadline = rawTitle.split(" - ")[0].replace("<![CDATA[", "").replace("]]>", "").trim();
+                        bestHeadline = rawTitle.split(" - ")[0].replace("<![CDATA[", "").replace("]]>", "").trim();
                     }
-                    if (chosenHeadline) {
-                        var formatted = "📰 ÚLTIMA HORA: " + chosenHeadline;
+                    if (bestHeadline) {
+                        var formatted = "📰 TEMA CANDENTE EN EL DEBATE: " + bestHeadline;
                         callback(formatted);
                         return;
                     }
-
                 }
                 callback(null);
             })

@@ -228,6 +228,59 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private var nativeSpeechRecognizer: android.speech.SpeechRecognizer? = null
+
+    private fun startSilentSpeechToText() {
+        runOnUiThread {
+            try {
+                if (nativeSpeechRecognizer == null) {
+                    nativeSpeechRecognizer = android.speech.SpeechRecognizer.createSpeechRecognizer(this@MainActivity)
+                    nativeSpeechRecognizer?.setRecognitionListener(object : android.speech.RecognitionListener {
+                        override fun onReadyForSpeech(params: android.os.Bundle?) {}
+                        override fun onBeginningOfSpeech() {}
+                        override fun onRmsChanged(rmsdB: Float) {}
+                        override fun onBufferReceived(buffer: ByteArray?) {}
+                        override fun onEndOfSpeech() {}
+                        override fun onError(error: Int) {}
+                        override fun onResults(results: android.os.Bundle?) {
+                            val matches = results?.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION)
+                            if (!matches.isNullOrEmpty()) {
+                                val text = matches[0].replace("'", "\\'").replace("\n", " ")
+                                webViewInstance?.post {
+                                    webViewInstance?.evaluateJavascript("if (window.app) window.app.lastUserTranscript = '$text';", null)
+                                }
+                            }
+                        }
+                        override fun onPartialResults(partialResults: android.os.Bundle?) {
+                            val matches = partialResults?.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION)
+                            if (!matches.isNullOrEmpty()) {
+                                val text = matches[0].replace("'", "\\'").replace("\n", " ")
+                                webViewInstance?.post {
+                                    webViewInstance?.evaluateJavascript("if (window.app) window.app.lastUserTranscript = '$text';", null)
+                                }
+                            }
+                        }
+                        override fun onEvent(eventType: Int, params: android.os.Bundle?) {}
+                    })
+                }
+                val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, "es-ES")
+                    putExtra(android.speech.RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                }
+                nativeSpeechRecognizer?.startListening(intent)
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun stopSilentSpeechToText() {
+        runOnUiThread {
+            try {
+                nativeSpeechRecognizer?.stopListening()
+            } catch (_: Exception) {}
+        }
+    }
+
     private fun runEngineeringTask(block: () -> Unit) {
         stopEngineeringTask()
         currentEngineeringThread = Thread {
@@ -968,6 +1021,16 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             @JavascriptInterface
                             fun hasMicrophonePermission(): Boolean {
                                 return ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+                            }
+
+                            @JavascriptInterface
+                            fun startSpeechToText() {
+                                startSilentSpeechToText()
+                            }
+
+                            @JavascriptInterface
+                            fun stopSpeechToText() {
+                                stopSilentSpeechToText()
                             }
 
                             @JavascriptInterface

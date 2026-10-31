@@ -326,35 +326,6 @@ object RadioAudioManager {
                             try { window.app.ctx.resume(); } catch(e){}
                         }
 
-                        // 🎙️ CAPTURA DE TRANSCRIPCIÓN DE VOZ EN TIEMPO REAL PARA EL BOT/AGENTE IA
-                        window.app.lastUserTranscript = "";
-                        if (!window.AndroidApp && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-                            if (!window.app.speechRecognizer) {
-                                try {
-                                    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-                                    var reco = new SR();
-                                    reco.continuous = true;
-                                    reco.interimResults = true;
-                                    reco.lang = 'es-ES';
-                                    reco.onresult = function(event) {
-                                        var txt = "";
-                                        for (var i = 0; i < event.results.length; ++i) {
-                                            if (event.results[i] && event.results[i][0]) {
-                                                txt += event.results[i][0].transcript + " ";
-                                            }
-                                        }
-                                        if (txt.trim().length > 0) {
-                                            window.app.lastUserTranscript = txt.trim();
-                                        }
-                                    };
-                                    window.app.speechRecognizer = reco;
-                                } catch(e){}
-                            }
-                            if (window.app.speechRecognizer) {
-                                try { window.app.speechRecognizer.start(); } catch(e){}
-                            }
-                        }
-
                         // 🛡️ CORTE RADICAL E INMEDIATO DE VOZ Y PORTADORA DEL BOT AL PULSAR PTT
                         window.app.isControlSpeaking = false;
                         window.app.isSpeechCancelled = true;
@@ -390,10 +361,6 @@ object RadioAudioManager {
                         try { if (window.updateMoniGain) window.updateMoniGain(); } catch(e) {}
                     } else {
                         window.app.pttStateInternal = false;
-
-                        if (window.app.speechRecognizer) {
-                            try { window.app.speechRecognizer.stop(); } catch(e){}
-                        }
 
                         if (window.app.txMaxTimeout) { clearTimeout(window.app.txMaxTimeout); window.app.txMaxTimeout = null; }
                         if (window.app.silenceCheckInterval) { clearInterval(window.app.silenceCheckInterval); window.app.silenceCheckInterval = null; }

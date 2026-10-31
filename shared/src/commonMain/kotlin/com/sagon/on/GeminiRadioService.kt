@@ -323,10 +323,11 @@ object GeminiRadioService {
     }
 
     private fun parseGeminiTextResponse(json: String?): String? {
-        if (json.isNullOrBlank()) return null
+        if (json.isNullOrBlank() || json.contains("\"error\":")) return null
         return try {
+            val candidateBlock = if (json.contains("\"candidates\"")) json.substringAfter("\"candidates\"") else json
             val regex = Regex(""""text"\s*:\s*"((?:[^"\\]|\\.)*)"""")
-            val match = regex.find(json)
+            val match = regex.find(candidateBlock)
             if (match != null) {
                 var text = match.groupValues[1]
                 text = text.replace("\\\"", "\"")

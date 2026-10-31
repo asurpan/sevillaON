@@ -314,6 +314,9 @@ object RadioAudioManager {
                     }
 
                     if (active) {
+                        if (window.app.ctx && window.app.ctx.state !== 'running') {
+                            try { window.app.ctx.resume(); } catch(e){}
+                        }
                         // 🛡️ CORTE RADICAL E INMEDIATO DE VOZ Y PORTADORA DEL BOT AL PULSAR PTT
                         window.app.isControlSpeaking = false;
                         window.app.isSpeechCancelled = true;
@@ -356,9 +359,16 @@ object RadioAudioManager {
 
                         try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
 
-                        var shouldPlayRoger = (wasTransmitting === true && roger === true && !(window.app && window.app.suppressRoger) && !(window.app && window.app.isChangingChannel) && window.app.rogerEnabled === true);
+                        if (window.app.ctx && window.app.ctx.state !== 'running') {
+                            try { window.app.ctx.resume(); } catch(e){}
+                        }
 
-                        if (shouldPlayRoger && window.app.ctx && window.app.ctx.state === 'running') {
+                        var isChanging = (window.app && window.app.isChangingChannel === true);
+                        var isSuppressed = (window.app && window.app.suppressRoger === true);
+                        var isRogerConfigured = (roger !== false && (window.app && window.app.rogerEnabled !== false));
+                        var shouldPlayRoger = (wasTransmitting === true && isRogerConfigured && !isChanging && !isSuppressed);
+
+                        if (shouldPlayRoger && window.app.ctx) {
                             try {
                                 window.app.isBeeping = true;
                                 window.app.isTransmittingInternal = true;

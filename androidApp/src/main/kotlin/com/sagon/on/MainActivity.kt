@@ -963,6 +963,17 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
 
                             @JavascriptInterface
+                            fun setSystemVolume(volume: Float) {
+                                post {
+                                    try {
+                                        val max = audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
+                                        val targetVol = (volume * max).toInt().coerceIn(0, max)
+                                        audioManager?.setStreamVolume(AudioManager.STREAM_MUSIC, targetVol, 0)
+                                    } catch (_: Exception) {}
+                                }
+                            }
+
+                            @JavascriptInterface
                             fun playUiSound(type: String) {
                                 post {
                                     try {

@@ -121,9 +121,12 @@ object RadioPersistence {
             win.app.botSpeed = s.botSpeed
             win.app.botPitch = s.botPitch
             
-            // 🛡️ ACTUALIZACIÓN DE VOLUMEN MAESTRO
+            // 🛡️ ACTUALIZACIÓN DE VOLUMEN MAESTRO Y ANDROID STREAM
             if (win.setMasterVolume != null) {
                 win.setMasterVolume(s.systemVolume)
+            }
+            if (win.AndroidApp != null && win.AndroidApp.setSystemVolume != null) {
+                try { win.AndroidApp.setSystemVolume(s.systemVolume) } catch(e: Exception) {}
             }
             
             js("if(window.updateMoniGain) window.updateMoniGain();")

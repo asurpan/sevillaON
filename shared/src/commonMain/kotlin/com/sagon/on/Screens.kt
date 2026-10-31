@@ -996,7 +996,7 @@ fun RadioPanel(
                     .padding(bottom = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(modifier = Modifier.fillMaxWidth().height(56.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.fillMaxWidth().height(68.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     val pttColor = if (isTransmitting) Color(0xFFEF4444) else LuxeColors.Gold
                     val pttGradient = if (isTransmitting) {
                         Brush.radialGradient(
@@ -1091,7 +1091,7 @@ fun RadioPanel(
                             pttLocked = !pttLocked
                             onStateChange(state.copy(isPttLatched = pttLocked)) 
                         }, 
-                        modifier = Modifier.size(84.dp), 
+                        modifier = Modifier.width(76.dp).fillMaxHeight(), 
                         shape = RoundedCornerShape(20.dp), 
                         color = if (pttLocked) Color.Red.copy(0.2f) else Color.White.copy(0.05f), 
                         border = BorderStroke(3.dp, if (pttLocked) Color.Red else Color.White.copy(0.15f))
@@ -1184,6 +1184,16 @@ fun InlineTacticalChat(
 ) {
     var textInput by remember { mutableStateOf("") }
 
+    val infiniteTransition = rememberInfiniteTransition()
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.65f,
+        targetValue = 1.00f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
     Surface(
         color = Color(0xFF0F172A).copy(alpha = 0.85f),
         shape = RoundedCornerShape(14.dp),
@@ -1230,8 +1240,8 @@ fun InlineTacticalChat(
                         )
                     }
                 }
-            } else {
-                val nonSysMsgs = chatMessages.filter { !it.isSystem }.takeLast(3)
+
+                val nonSysMsgs = chatMessages.filter { !it.isSystem }.takeLast(2)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1257,7 +1267,8 @@ fun InlineTacticalChat(
                             )
                         }
                     } else {
-                        nonSysMsgs.forEach { msg ->
+                        nonSysMsgs.forEachIndexed { idx, msg ->
+                            val isLast = (idx == nonSysMsgs.lastIndex)
                             val annotatedMsg = buildAnnotatedString {
                                 withStyle(SpanStyle(color = Color.White.copy(0.60f), fontSize = 11.sp, fontWeight = FontWeight.Medium)) {
                                     append("[${formatMessageTime(msg.timestamp)}] ")
@@ -1269,13 +1280,32 @@ fun InlineTacticalChat(
                                     append(msg.text)
                                 }
                             }
-                            Text(
-                                text = annotatedMsg,
-                                modifier = Modifier.fillMaxWidth(),
-                                maxLines = 2,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                lineHeight = 16.sp
-                            )
+                            if (isLast) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color(0xFF00E5FF).copy(0.12f * pulseAlpha))
+                                        .border(1.dp, Color(0xFF00E5FF).copy(0.45f * pulseAlpha), RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                                ) {
+                                    Text(
+                                        text = annotatedMsg,
+                                        modifier = Modifier.fillMaxWidth().graphicsLayer { alpha = pulseAlpha },
+                                        maxLines = 2,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        lineHeight = 16.sp
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = annotatedMsg,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    maxLines = 2,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    lineHeight = 16.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -1410,7 +1440,8 @@ fun InlineTacticalChat(
                                 .padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            modalMsgs.forEach { msg ->
+                            modalMsgs.forEachIndexed { idx, msg ->
+                                val isLastModal = (idx == modalMsgs.lastIndex)
                                 val annotatedModalMsg = buildAnnotatedString {
                                     withStyle(SpanStyle(color = Color.White.copy(0.60f), fontSize = 11.5.sp, fontWeight = FontWeight.Medium)) {
                                         append("[${formatMessageTime(msg.timestamp)}] ")
@@ -1422,11 +1453,28 @@ fun InlineTacticalChat(
                                         append(msg.text)
                                     }
                                 }
-                                Text(
-                                    text = annotatedModalMsg,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    lineHeight = 18.sp
-                                )
+                                if (isLastModal) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background((if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)).copy(0.12f * pulseAlpha))
+                                            .border(1.dp, (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)).copy(0.45f * pulseAlpha), RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text(
+                                            text = annotatedModalMsg,
+                                            modifier = Modifier.fillMaxWidth().graphicsLayer { alpha = pulseAlpha },
+                                            lineHeight = 18.sp
+                                        )
+                                    }
+                                } else {
+                                    Text(
+                                        text = annotatedModalMsg,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        lineHeight = 18.sp
+                                    )
+                                }
                             }
                         }
                         Spacer(Modifier.height(8.dp))

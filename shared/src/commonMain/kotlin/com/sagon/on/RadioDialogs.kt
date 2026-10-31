@@ -1024,6 +1024,13 @@ fun RadioDialogs(
                         Switch(checked = state.isBotEnabled, onCheckedChange = { onStateChange(state.copy(isBotEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
                     }
 
+                    if (state.isBotEnabled) {
+                        Spacer(Modifier.height(8.dp))
+                        EliteSlider("VELOCIDAD VOZ BOT", state.botSpeed, valueRange = 0.70f..1.30f, valueLabel = "${(state.botSpeed * 100).toInt()}%") { onStateChange(state.copy(botSpeed = it)) }
+                        Spacer(Modifier.height(4.dp))
+                        EliteSlider("TONO VOZ BOT (GRAVE / AGUDO)", state.botPitch, valueRange = 0.60f..1.40f, valueLabel = "${(state.botPitch * 100).toInt()}%") { onStateChange(state.copy(botPitch = it)) }
+                    }
+
                     Spacer(Modifier.height(20.dp))
 
                     Text("SISTEMA", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)

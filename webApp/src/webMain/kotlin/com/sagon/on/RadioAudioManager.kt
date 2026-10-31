@@ -901,12 +901,15 @@ object ReplayEngine {
                     }
 
                     setTimeout(function() {
+                        var rate = (window.app && typeof window.app.botSpeed === 'number') ? window.app.botSpeed : 0.95;
+                        var pitch = (window.app && typeof window.app.botPitch === 'number') ? window.app.botPitch : 0.90;
+
                         if (window.AndroidApp && window.AndroidApp.speak) {
                             if (window.app) window.app.isControlSpeaking = true;
                             if (window.dispatch_control_active) {
                                 try { window.dispatch_control_active("BASE " + rawCity, true); } catch(e){}
                             }
-                            try { window.AndroidApp.speak(textToSpeak, 0.92, 0.88, 0.60); } catch(e){}
+                            try { window.AndroidApp.speak(textToSpeak, rate, pitch, 0.60); } catch(e){}
                             return;
                         }
 
@@ -916,8 +919,8 @@ object ReplayEngine {
                             window.speechSynthesis.cancel();
                             var u = new SpeechSynthesisUtterance(textToSpeak);
                             u.lang = 'es-ES';
-                            u.rate = 0.92;
-                            u.pitch = 0.88;
+                            u.rate = rate;
+                            u.pitch = pitch;
                             u.volume = 0.60;
 
                             u.onstart = function() {

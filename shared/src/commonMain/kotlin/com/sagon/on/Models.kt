@@ -184,6 +184,8 @@ data class RadioState(
     val isDspEnabled: Boolean = true,
     val dspLevel: Float = 0.5f,
     val isBotEnabled: Boolean = true,
+    val botSpeed: Float = 0.95f,
+    val botPitch: Float = 0.90f,
     val isReverbEnabled: Boolean = false,
     val reverbLevel: Float = 0.5f,
     val isNightMode: Boolean = false,

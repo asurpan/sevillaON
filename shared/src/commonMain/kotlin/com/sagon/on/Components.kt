@@ -64,13 +64,24 @@ fun StarryBackground(activity: Float = 0.1f, isEcoMode: Boolean = false, viewpor
 }
 
 @Composable
-fun EliteSlider(label: String, value: Float, valueLabel: String? = null, onValueChange: (Float) -> Unit) {
+fun EliteSlider(
+    label: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    valueLabel: String? = null,
+    onValueChange: (Float) -> Unit
+) {
     Column {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, color = Color.White.copy(0.5f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Text(valueLabel ?: "${(value * 100).toInt()}%", color = LuxeColors.Gold, fontSize = 12.sp, fontWeight = FontWeight.Black)
         }
-        Slider(value, onValueChange, colors = SliderDefaults.colors(thumbColor = LuxeColors.Gold, activeTrackColor = LuxeColors.Gold))
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            colors = SliderDefaults.colors(thumbColor = LuxeColors.Gold, activeTrackColor = LuxeColors.Gold)
+        )
     }
 }
 

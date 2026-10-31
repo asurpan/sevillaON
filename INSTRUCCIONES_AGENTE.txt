@@ -1,4 +1,4 @@
-# 📘 MANUAL DE OPERACIONES V18.0 - RADIO ON AIR SPAIN (ELITE SUPREME)
+# 📘 MANUAL DE OPERACIONES V19.0 - RADIO ON AIR SPAIN (ELITE SUPREME)
 
 Este manual contiene las instrucciones técnicas, comerciales y de seguridad absoluta. Lectura OBLIGATORIA para cualquier IA.
 
@@ -12,23 +12,22 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 3. **RadioDialogs.kt**: Gestión de seguridad crítica y disuasión de cambios de Nick.
 4. **Screens.kt**: Interfaz Nexus blindada geométricamente.
 
-## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK V18.0)
+## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK V19.0)
 
-### 🔊 AUDIO Y VOZ (BLINDAJE TOTAL)
-- **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen **0.01** (Ajustado para Chrome Mobile) vía un nodo Gain `dummy`. Este puente mantiene la tubería WebRTC "caliente" y evita que Chrome suspenda el proceso de audio.
-- **User-Gesture Hack**: El motor de audio DEBE reactivarse (`ctx.resume()`) mediante escuchadores de eventos `click` y `touchstart` globales. Es obligatorio para saltar las restricciones de Autoplay de los navegadores.
-- **Infrasonic Keep-Alive**: Mantener siempre el oscilador de **5Hz** activo durante los silencios de recepción. Es el marcapasos inaudible que evita que el navegador o el SO suspendan el hilo de voz.
-- **Background Survival (Anti-Sleep)**: Mantener un oscilador ultrasónico de **20.5kHz** con ganancia mínima (**0.001**) conectado permanentemente a la salida física.
-- **Re-activación de AudioContext en PTT / Roger Beep**: `broadcastPTT` DEBE ejecutar `window.app.ctx.resume()` si el motor no está en `'running'`, asegurando que el Roger Beep y el micrófono nunca se queden atascados.
+### 🔊 AUDIO, VOZ Y CADENA PTT (BLINDAJE TOTAL)
+- **Cadena de Voz Intocable (`voiceBoost` ➔ `txGate` ➔ `txBus`)**: La voz del micro DEBE inyectarse en `txGate` y este a `txBus`. `window.app.voiceBoost` DEBE mantenerse guardado y reconectarse dinámicamente en `initAudio()`.
+- **Apertura de Puerta PTT (`txGate`)**: En `broadcastPTT`, la ganancia de `txGate` se abre a **2.5x** al pulsar PTT.
+- **AGC Hardware Obligatorio**: `autoGainControl: true` DEBE mantenerse habilitado en `getUserMedia` para que los chips de micrófono de teléfonos Android entreguen ganancia de voz completa (`sensorGain = 4.0`, `voiceBoost = 2.5`).
+- **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen **0.01** vía un nodo Gain `dummy`.
+- **Infrasonic Keep-Alive**: Oscilador **5Hz** activo durante silencios de recepción.
+- **Re-activación de AudioContext en PTT / Roger Beep**: `broadcastPTT` DEBE ejecutar `window.app.ctx.resume()` si el motor no está en `'running'`.
 - **Filtro de Emisión Real para Roger Beep**: El Roger Beep de 1955Hz SOLO suena si el usuario estuvo transmitiendo (`wasTransmitting === true`). Al cambiar de canal se suprime para evitar falsos beeps.
-- **Solicitud Nativa de Micrófono Android 11+ (UI Thread)**: En la app nativa Android, la solicitud de permiso de micrófono (`RECORD_AUDIO`) DEBE invocarse SIEMPRE directamente a través de `window.AndroidApp.requestMicPermission()` ejecutado en `runOnUiThread`.
 
-### 📡 VETERANÍA, RED Y PEERJS
+### 📡 RED, PEERJS Y LLAMADA INTELIGENTE
+- **Llamada Inteligente Anti-Glare (`mySess < user.id`)**: En el bucle de mantenimiento de `main.kt`, SOLO el cliente con la ID de sesión lexicográficamente menor inicia la llamada saliente.
 - **Sanitización Estricta de PeerJS**: La `sessionID` enviada a `new Peer()` DEBE sanitizarse mediante `cleanNick.replace(/[^A-Z0-9_-]/gi, "_")`. Queda prohibido enviar espacios o tildes a PeerJS para evitar el error `invalid-id`.
 - **Reconexión por Hardware (`deviceId`)**: En `onUsersUpdate`, se DEBE verificar `otherDeviceId == myDeviceID`. Si la conexión proviene del mismo dispositivo, es reconexión legítima y NO debe expulsar al usuario.
 - **ICE Servers Reforzados (4G/5G)**: Es obligatorio el uso de servidores STUN/TURN con transporte TCP (puerto 443).
-- **Progreso de Potencia (Gamificación 1W -> 50W)**: Estaciones nuevas empiezan en **1W** (0.02 pwr). Progresión: +0.00000833 pwr / 5s de habla PTT (~50 horas para los 50W Élite).
-- **Indicativo Único (Hard-Lock)**: Un teléfono identificado por su `ANDROID_ID` en Firebase (`registered_devices/$deviceID`) SOLO TIENE UN INDICATIVO. El sistema DEBE forzar automáticamente el indicativo ya vinculado sin mostrar pantallas de registro.
 
 ### 📱 SEGUNDO PLANO Y COMPATIBILIDAD
 - **Foreground Service Android 14/15/16**: La app nativa debe ejecutar `RadioService` en primer plano con tipos `mediaPlayback|microphone`.
@@ -49,4 +48,4 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 ### 🛑 REGLA SUPREMA DE SEGURIDAD (PERMISO EXPLÍCITO OBLIGATORIO)
 - **Flujos Blindados**: El sistema de entrada de usuarios, canales, micrófono, emisión (TX) y recepción (RX) está prohibido de modificar sin permiso explícito por escrito del usuario.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 18.0 (BLINDAJE DE FLUJOS BAJO PERMISO EXPLÍCITO)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 19.0 (BLINDAJE DE FLUJOS BAJO PERMISO EXPLÍCITO)

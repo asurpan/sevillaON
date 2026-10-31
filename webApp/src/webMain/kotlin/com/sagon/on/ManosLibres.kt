@@ -24,7 +24,7 @@ object ManosLibres {
                     audio: { 
                         echoCancellation: true, 
                         noiseSuppression: false, 
-                        autoGainControl: false, 
+                        autoGainControl: true, 
                         channelCount: 1 
                     } 
                 };
@@ -44,7 +44,7 @@ object ManosLibres {
                     var voiceFilter = window.app.ctx.createBiquadFilter();
                     voiceFilter.type = "highpass"; voiceFilter.frequency.value = 150; 
                     var sensorGain = window.app.ctx.createGain();
-                    sensorGain.gain.value = 2.5; 
+                    sensorGain.gain.value = 4.0; 
                     var compressor = window.app.ctx.createDynamicsCompressor();
                     compressor.threshold.value = -12; compressor.ratio.value = 8;
                     window.app.micAnalyser = window.app.ctx.createAnalyser();
@@ -56,14 +56,14 @@ object ManosLibres {
                     
                     // 🚀 VOICE BOOST FINAL: Multiplicador de potencia antes de enviar a la red
                     var voiceBoost = window.app.ctx.createGain();
-                    voiceBoost.gain.value = 1.8; 
+                    voiceBoost.gain.value = 2.5; 
                     compressor.connect(voiceBoost);
 
-                    if (window.app.moniGainNode) voiceBoost.connect(window.app.moniGainNode);
-                    if (window.app.txGate) voiceBoost.connect(window.app.txGate);
-                    
-                    // 🛡️ REPLAY RECORDING (SILENT BUS): Conectar al bus maestro de grabación (no al de audición)
-                    if (window.app.masterRecordBus) voiceBoost.connect(window.app.masterRecordBus);
+                    window.app.voiceBoost = voiceBoost;
+
+                    if (window.app.moniGainNode) try { voiceBoost.connect(window.app.moniGainNode); } catch(e){}
+                    if (window.app.txGate) try { voiceBoost.connect(window.app.txGate); } catch(e){}
+                    if (window.app.masterRecordBus) try { voiceBoost.connect(window.app.masterRecordBus); } catch(e){}
                     
                     return true;
                 }).catch(function(err) { return false; });

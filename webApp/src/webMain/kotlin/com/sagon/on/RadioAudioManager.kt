@@ -269,6 +269,10 @@ object RadioAudioManager {
                     window.app.txGate.gain.value = 0;
                     window.app.txGate.connect(window.app.txBus);
 
+                    if (window.app.voiceBoost) {
+                        try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
+                    }
+
                     window.app.keepAlive = window.app.ctx.createOscillator();
                     window.app.keepAlive.frequency.value = 20000;
                     window.app.keepAliveGain = window.app.ctx.createGain();
@@ -287,6 +291,10 @@ object RadioAudioManager {
 
                     if (window.app.txGate) window.app.txGate.connect(window.app.masterRecordBus);
                     if (window.app.masterRxGain) window.app.masterRxGain.connect(window.app.masterRecordBus);
+                    if (window.app.voiceBoost) {
+                        try { window.app.voiceBoost.connect(window.app.moniGainNode); } catch(e){}
+                        try { window.app.voiceBoost.connect(window.app.masterRecordBus); } catch(e){}
+                    }
 
                     window.app.replayCompressor = window.app.ctx.createDynamicsCompressor();
                     window.app.replayCompressor.threshold.value = -24;
@@ -346,7 +354,7 @@ object RadioAudioManager {
                         if (window.dispatch_ptt_live) try { window.dispatch_ptt_live(true); } catch(e) {}
 
                         try { if (sessionRef) sessionRef.update({ tx: true, pwr: power || 0.7 }); } catch(e) {}
-                        try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(1.0, now, 0.01); } catch(e) {}
+                        try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(2.5, now, 0.005); } catch(e) {}
                         try { if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
                         try { if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
                         try { if (window.updateMoniGain) window.updateMoniGain(); } catch(e) {}

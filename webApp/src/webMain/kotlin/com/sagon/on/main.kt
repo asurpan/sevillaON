@@ -334,17 +334,19 @@ fun main() {
                     });
                 }
             """)
-            while(true) {
-                delay(5000)
-                val app = window.asDynamic().app
-                if (app != null && app.peer != null && !app.peer.destroyed && !app.peer.disconnected) {
-                    remoteUsersState.forEach { user ->
-                        if (user.id != app.sessionID && app.activeCalls[user.id] == null) {
-                            window.asDynamic().establishOutgoingCall(user.id)
+                while(true) {
+                    delay(5000)
+                    val app = window.asDynamic().app
+                    if (app != null && app.peer != null && !app.peer.destroyed && !app.peer.disconnected) {
+                        val mySess = (app.sessionID as? String ?: "")
+                        remoteUsersState.forEach { user ->
+                            // 🛡️ LLAMADA INTELIGENTE: Solo la ID lexicográficamente menor llama a la mayor para evitar choques/glare
+                            if (user.id != mySess && mySess.isNotEmpty() && (mySess < user.id) && app.activeCalls[user.id] == null) {
+                                window.asDynamic().establishOutgoingCall(user.id)
+                            }
                         }
                     }
                 }
-            }
         }
 
         val voxPttState = remember { mutableStateOf(false) }

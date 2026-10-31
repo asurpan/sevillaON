@@ -1241,7 +1241,7 @@ fun InlineTacticalChat(
                     }
                 }
 
-                val nonSysMsgs = chatMessages.filter { !it.isSystem }.takeLast(3)
+                val nonSysMsgs = chatMessages.takeLast(3)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

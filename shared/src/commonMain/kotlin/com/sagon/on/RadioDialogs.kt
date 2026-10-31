@@ -1014,8 +1014,12 @@ fun RadioDialogs(
 
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("DSP", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Text("DSP (Filtro de Ruido HiFi)", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
                         Switch(checked = state.isDspEnabled, onCheckedChange = { onStateChange(state.copy(isDspEnabled = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold))
+                    }
+                    if (state.isDspEnabled) {
+                        Spacer(Modifier.height(4.dp))
+                        EliteSlider("INTENSIDAD DEL FILTRO DSP", state.dspLevel) { onStateChange(state.copy(dspLevel = it)) }
                     }
 
                     Spacer(Modifier.height(8.dp))
@@ -1029,20 +1033,33 @@ fun RadioDialogs(
                         EliteSlider("VELOCIDAD VOZ BOT", state.botSpeed, valueRange = 0.70f..1.30f, valueLabel = "${(state.botSpeed * 100).toInt()}%") { onStateChange(state.copy(botSpeed = it)) }
                         Spacer(Modifier.height(4.dp))
                         EliteSlider("TONO VOZ BOT (GRAVE / AGUDO)", state.botPitch, valueRange = 0.60f..1.40f, valueLabel = "${(state.botPitch * 100).toInt()}%") { onStateChange(state.copy(botPitch = it)) }
+                        Spacer(Modifier.height(8.dp))
+                        LuxeButton(
+                            text = "🔊 PROBAR VOZ Y VELOCIDAD",
+                            onClick = {
+                                triggerUiSound("switch")
+                                testBotVoice("Prueba de tono y velocidad de la Estación Base FELIPE. ¡Se escuchará así por la frecuencia! Cambio.")
+                            },
+                            enabled = true,
+                            modifier = Modifier.fillMaxWidth().height(36.dp),
+                            containerColor = LuxeColors.Gold.copy(0.2f),
+                            contentColor = LuxeColors.Gold,
+                            fontSize = 11.sp
+                        )
                     }
 
                     Spacer(Modifier.height(20.dp))
 
                     Text("SISTEMA", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
                     Spacer(Modifier.height(12.dp))
-                    
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Modo Discreto", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
+                        Text("Notificaciones Generales", modifier = Modifier.weight(1f), color = Color.White, fontSize = 13.sp)
                         Switch(
-                            checked = state.isDiscreteModeEnabled,
+                            checked = state.isNotificationsEnabled,
                             onCheckedChange = { nextVal ->
-                                onStateChange(state.copy(isDiscreteModeEnabled = nextVal))
-                                triggerUiSound(if (nextVal) "incoming" else "switch")
+                                onStateChange(state.copy(isNotificationsEnabled = nextVal))
+                                triggerUiSound("switch")
                             },
                             colors = SwitchDefaults.colors(checkedThumbColor = LuxeColors.Gold)
                         )

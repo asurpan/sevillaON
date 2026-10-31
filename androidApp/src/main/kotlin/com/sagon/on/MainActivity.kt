@@ -630,7 +630,17 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             return true
         }
 
-        if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
+        val isPttKey = keyCode == KeyEvent.KEYCODE_HEADSETHOOK || 
+                       keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || 
+                       keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || 
+                       keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS ||
+                       keyCode == 228 || // KEYCODE_PTT en teléfonos walkie-talkie rugerizados
+                       keyCode == KeyEvent.KEYCODE_BUTTON_L1 ||
+                       keyCode == KeyEvent.KEYCODE_BUTTON_R1 ||
+                       keyCode == KeyEvent.KEYCODE_F1 ||
+                       keyCode == KeyEvent.KEYCODE_F2
+
+        if (isPttKey) {
             webViewInstance?.post {
                 webViewInstance?.evaluateJavascript("if(window.external_ptt_down) window.external_ptt_down();", null)
             }
@@ -646,7 +656,17 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             return true
         }
 
-        if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
+        val isPttKey = keyCode == KeyEvent.KEYCODE_HEADSETHOOK || 
+                       keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || 
+                       keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || 
+                       keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS ||
+                       keyCode == 228 || // KEYCODE_PTT
+                       keyCode == KeyEvent.KEYCODE_BUTTON_L1 ||
+                       keyCode == KeyEvent.KEYCODE_BUTTON_R1 ||
+                       keyCode == KeyEvent.KEYCODE_F1 ||
+                       keyCode == KeyEvent.KEYCODE_F2
+
+        if (isPttKey) {
             webViewInstance?.post {
                 webViewInstance?.evaluateJavascript("if(window.external_ptt_up) window.external_ptt_up();", null)
             }

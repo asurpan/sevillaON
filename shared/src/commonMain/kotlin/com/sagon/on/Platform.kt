@@ -41,3 +41,5 @@ expect fun fetchGeminiApi(endpoint: String, jsonBody: String, callback: (String?
 
 expect fun fetchHttpGetApi(url: String, callback: (String?) -> Unit)
 
+expect fun testBotVoice(text: String)
+

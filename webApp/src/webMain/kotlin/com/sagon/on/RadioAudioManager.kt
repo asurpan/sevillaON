@@ -892,7 +892,7 @@ object ReplayEngine {
                     if (window.app && window.app.discreteMode) {
                         if (window.playUiSound) try { window.playUiSound("incoming"); } catch(e){}
                         if (window.dispatch_control_active) {
-                            try { window.dispatch_control_active("BASE " + rawCity, true); } catch(e){}
+                            try { window.dispatch_control_active("BASE " + (window.app.currentCity || "LOCAL"), true); } catch(e){}
                             setTimeout(function() {
                                 try { window.dispatch_control_active(null, false); } catch(e){}
                             }, 3000);
@@ -907,7 +907,7 @@ object ReplayEngine {
                         if (window.AndroidApp && window.AndroidApp.speak) {
                             if (window.app) window.app.isControlSpeaking = true;
                             if (window.dispatch_control_active) {
-                                try { window.dispatch_control_active("BASE " + rawCity, true); } catch(e){}
+                                try { window.dispatch_control_active("BASE " + (rawCity || "LOCAL"), true); } catch(e){}
                             }
                             try { window.AndroidApp.speak(textToSpeak, rate, pitch, 0.60); } catch(e){}
                             return;
@@ -959,6 +959,7 @@ object ReplayEngine {
                         } catch(e){}
                     }, 1000);
                 }
+                window.deliverSpeech = deliverSpeech;
 
                 if (window.getGeminiRadioResponse) {
                     try {

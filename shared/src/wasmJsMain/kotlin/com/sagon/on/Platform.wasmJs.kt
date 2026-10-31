@@ -58,3 +58,5 @@ actual fun fetchHttpGetApi(url: String, callback: (String?) -> Unit) {
     callback(null)
 }
 
+actual fun testBotVoice(text: String) {}
+

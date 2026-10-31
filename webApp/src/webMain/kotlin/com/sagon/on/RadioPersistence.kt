@@ -58,11 +58,13 @@ object RadioPersistence {
                 veteranPower = localStorage.getItem("vetPwr")?.toFloatOrNull() ?: 0.02f,
                 isDspEnabled = localStorage.getItem("dspEnabled")?.toBoolean() ?: true,
                 isBotEnabled = localStorage.getItem("botEnabled")?.toBoolean() ?: true,
+                botGender = localStorage.getItem("botGender") ?: "MALE",
                 botSpeed = localStorage.getItem("botSpeed")?.toFloatOrNull() ?: 0.95f,
                 botPitch = localStorage.getItem("botPitch")?.toFloatOrNull() ?: 0.90f,
                 activeProfile = profile,
                 isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
                 isChatMuted = localStorage.getItem("chatMuted") == "true",
+                isNotificationsEnabled = localStorage.getItem("notifsActive")?.toBoolean() ?: true,
                 squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.90f,
                 systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 0.90f,
                 hasAcceptedMicExplain = hasMicExplain,
@@ -91,10 +93,12 @@ object RadioPersistence {
             localStorage.setItem("moniActive", s.isMonitorEnabled.toString())
             localStorage.setItem("dspEnabled", s.isDspEnabled.toString())
             localStorage.setItem("botEnabled", s.isBotEnabled.toString())
+            localStorage.setItem("botGender", s.botGender)
             localStorage.setItem("botSpeed", s.botSpeed.toString())
             localStorage.setItem("botPitch", s.botPitch.toString())
             localStorage.setItem("disMode", s.isDiscreteModeEnabled.toString())
             localStorage.setItem("chatMuted", s.isChatMuted.toString())
+            localStorage.setItem("notifsActive", s.isNotificationsEnabled.toString())
             localStorage.setItem("activeProfile", s.activeProfile.name)
             localStorage.setItem("squelch", s.squelch.toString())
             localStorage.setItem("sysVol", s.systemVolume.toString())
@@ -113,6 +117,7 @@ object RadioPersistence {
             win.app.squelch = s.squelch
             win.app.rogerEnabled = s.isRogerBeepEnabled
             win.app.isBotEnabled = s.isBotEnabled
+            win.app.botGender = s.botGender
             win.app.botSpeed = s.botSpeed
             win.app.botPitch = s.botPitch
             

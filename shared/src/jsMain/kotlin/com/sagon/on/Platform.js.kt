@@ -252,3 +252,10 @@ actual fun fetchHttpGetApi(url: String, callback: (String?) -> Unit) {
     """)
 }
 
+actual fun testBotVoice(text: String) {
+    val win: dynamic = window
+    if (win.deliverSpeech != null) {
+        win.deliverSpeech(text, null, true)
+    }
+}
+

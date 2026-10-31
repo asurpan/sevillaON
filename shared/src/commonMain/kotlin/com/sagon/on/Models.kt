@@ -184,6 +184,7 @@ data class RadioState(
     val isDspEnabled: Boolean = true,
     val dspLevel: Float = 0.5f,
     val isBotEnabled: Boolean = true,
+    val botGender: String = "MALE",
     val botSpeed: Float = 0.95f,
     val botPitch: Float = 0.90f,
     val isReverbEnabled: Boolean = false,
@@ -191,6 +192,7 @@ data class RadioState(
     val isNightMode: Boolean = false,
     val isChatVisible: Boolean = false,
     val isChatMuted: Boolean = false,
+    val isNotificationsEnabled: Boolean = true,
     val unreadCount: Int = 0,
     val activeProfile: ActivityProfile = ActivityProfile.NORMAL,
     val backgroundStyle: BackgroundStyle = BackgroundStyle.DEEP_SEA

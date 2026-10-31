@@ -38,3 +38,5 @@ actual fun fetchGeminiApi(endpoint: String, jsonBody: String, callback: (String?
 
 actual fun fetchHttpGetApi(url: String, callback: (String?) -> Unit) { callback(null) }
 
+actual fun testBotVoice(text: String) {}
+

@@ -569,5 +569,31 @@
             document.body.appendChild(script);
         })();
     </script>
+
+    <!-- 🍏 GUÍA TÁCTICA PWA PARA USUARIOS DE IPHONE (SAFARI) -->
+    <div id="ios-install-banner" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); width:90%; max-width:420px; background:rgba(15,23,42,0.95); border:1.5px solid #22D3EE; border-radius:16px; padding:14px 16px; box-shadow:0 10px 30px rgba(0,0,0,0.8); z-index:9999; color:white; font-family:sans-serif; backdrop-filter:blur(10px);">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+            <span style="font-weight:900; font-size:13px; color:#22D3EE; letter-spacing:1px;">🍏 MODO EN SEGUNDO PLANO IPHONE</span>
+            <button onclick="document.getElementById('ios-install-banner').style.display='none'; localStorage.setItem('ios_banner_dismissed','true');" style="background:none; border:none; color:rgba(255,255,255,0.6); font-size:18px; cursor:pointer; padding:0 4px;">✕</button>
+        </div>
+        <p style="font-size:11.5px; line-height:1.4; color:rgba(255,255,255,0.85); margin:0;">
+            Para escuchar la radio con la pantalla bloqueada y recibir avisos: pulsa en Safari el botón <strong>Compartir (⎋)</strong> y elige <strong>"Añadir a la pantalla de inicio"</strong>.
+        </p>
+    </div>
+
+    <script>
+        (function checkIosBanner() {
+            var ua = navigator.userAgent || "";
+            var isIos = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            var isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+            var isDismissed = localStorage.getItem("ios_banner_dismissed") === "true";
+            if (isIos && !isStandalone && !isDismissed) {
+                setTimeout(function() {
+                    var banner = document.getElementById("ios-install-banner");
+                    if (banner) banner.style.display = "block";
+                }, 2000);
+            }
+        })();
+    </script>
 </body>
 </html>

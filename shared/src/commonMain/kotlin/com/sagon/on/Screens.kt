@@ -1,5 +1,9 @@
 package com.sagon.on
 
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - PANTALLAS DE NAVEGACIÓN
  * ESTADO: SELLADO TOTAL - VERSIÓN ESTABLE 7.1 (PURE RADIO)
@@ -966,7 +970,9 @@ fun RadioPanel(
                     isChatOpen = state.isChatVisible,
                     onChatOpenChange = { open -> onStateChange(state.copy(isChatVisible = open)) },
                     onSendMessage = onSendMessage,
-                    onPlaySound = onPlaySound
+                    onPlaySound = onPlaySound,
+                    isChatMuted = state.isChatMuted,
+                    onChatMutedChange = { muted -> onStateChange(state.copy(isChatMuted = muted)) }
                 )
             }
 
@@ -1148,6 +1154,19 @@ fun TacticalDockIcon(
     }
 }
 
+fun formatMessageTime(timestamp: Long): String {
+    return try {
+        if (timestamp <= 0L) return getCurrentFormattedTime()
+        val instant = kotlinx.datetime.Instant.fromEpochMilliseconds(timestamp)
+        val ldt = instant.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+        val h = ldt.hour.toString().padStart(2, '0')
+        val m = ldt.minute.toString().padStart(2, '0')
+        "$h:$m"
+    } catch (_: Exception) {
+        getCurrentFormattedTime()
+    }
+}
+
 @Composable
 fun InlineTacticalChat(
     chatMessages: List<ChatMessage>,
@@ -1156,7 +1175,9 @@ fun InlineTacticalChat(
     isChatOpen: Boolean = false,
     onChatOpenChange: (Boolean) -> Unit = {},
     onSendMessage: (String, String?) -> Unit,
-    onPlaySound: (String) -> Unit
+    onPlaySound: (String) -> Unit,
+    isChatMuted: Boolean = false,
+    onChatMutedChange: (Boolean) -> Unit = {}
 ) {
     var textInput by remember { mutableStateOf("") }
 
@@ -1235,6 +1256,12 @@ fun InlineTacticalChat(
                     } else {
                         nonSysMsgs.forEach { msg ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "[${formatMessageTime(msg.timestamp)}] ",
+                                    color = Color.White.copy(0.45f),
+                                    fontSize = 9.5.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
                                 Text(
                                     text = "${msg.senderNick}: ",
                                     color = Color(0xFF00E5FF),
@@ -1337,6 +1364,19 @@ fun InlineTacticalChat(
                             fontWeight = FontWeight.Black,
                             modifier = Modifier.weight(1f)
                         )
+                        if (targetNick == null) {
+                            IconButton(
+                                onClick = { onChatMutedChange(!isChatMuted) },
+                                modifier = Modifier.size(24.dp).padding(end = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isChatMuted) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp,
+                                    contentDescription = if (isChatMuted) "Activar sonido de chat" else "Silenciar chat público",
+                                    tint = if (isChatMuted) LuxeColors.Red else Color(0xFF00E5FF),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
                         IconButton(
                             onClick = { onChatOpenChange(false) },
                             modifier = Modifier.size(24.dp)
@@ -1363,6 +1403,12 @@ fun InlineTacticalChat(
                         ) {
                             modalMsgs.forEach { msg ->
                                 Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "[${formatMessageTime(msg.timestamp)}] ",
+                                        color = Color.White.copy(0.45f),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
                                     Text(
                                         text = "${msg.senderNick}: ",
                                         color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),

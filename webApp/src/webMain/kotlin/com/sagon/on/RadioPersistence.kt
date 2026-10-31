@@ -60,6 +60,7 @@ object RadioPersistence {
                 isBotEnabled = localStorage.getItem("botEnabled")?.toBoolean() ?: true,
                 activeProfile = profile,
                 isDiscreteModeEnabled = localStorage.getItem("disMode") == "true",
+                isChatMuted = localStorage.getItem("chatMuted") == "true",
                 squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.90f,
                 systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 0.90f,
                 hasAcceptedMicExplain = hasMicExplain,
@@ -89,6 +90,7 @@ object RadioPersistence {
             localStorage.setItem("dspEnabled", s.isDspEnabled.toString())
             localStorage.setItem("botEnabled", s.isBotEnabled.toString())
             localStorage.setItem("disMode", s.isDiscreteModeEnabled.toString())
+            localStorage.setItem("chatMuted", s.isChatMuted.toString())
             localStorage.setItem("activeProfile", s.activeProfile.name)
             localStorage.setItem("squelch", s.squelch.toString())
             localStorage.setItem("sysVol", s.systemVolume.toString())

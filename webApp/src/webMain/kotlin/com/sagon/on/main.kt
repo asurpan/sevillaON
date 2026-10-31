@@ -102,7 +102,9 @@ fun main() {
             localStorage.setItem("web_device_id", deviceID);
 
             var initialNick = (nick || localStorage.getItem("indicativo") || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
-            var initialSessionID = (initialNick + "_" + deviceID).trim();
+            var peerInitialSafeNick = initialNick.replace(/[^A-Z0-9_-]/gi, "_");
+            if (peerInitialSafeNick.length === 0) peerInitialSafeNick = "RADIO";
+            var initialSessionID = (peerInitialSafeNick + "_" + deviceID).trim();
             window.app.nick = initialNick;
             window.app.deviceID = deviceID;
             window.app.sessionID = initialSessionID;
@@ -114,7 +116,9 @@ fun main() {
                     window.dispatch_hardware_restored(cleanNick);
                 }
                 
-                var sessionID = (cleanNick + "_" + deviceID).trim();
+                var peerSafeNick = cleanNick.replace(/[^A-Z0-9_-]/gi, "_");
+                if (peerSafeNick.length === 0) peerSafeNick = "RADIO";
+                var sessionID = (peerSafeNick + "_" + deviceID).trim();
                 window.app.nick = cleanNick;
                 window.app.deviceID = deviceID;
                 window.app.sessionID = sessionID;
@@ -197,9 +201,17 @@ fun main() {
 
                     window.app.peer.on('error', function(err) {
                         console.error("🛑 PeerJS Error:", err.type);
-                        if (err.type === 'disconnected' || err.type === 'network') {
-                            window.app.peer.destroy();
+                        if (err.type === 'disconnected' || err.type === 'network' || err.type === 'socket-error' || err.type === 'socket-closed') {
+                            try { window.app.peer.destroy(); } catch(e){}
                             setTimeout(function() { window.connectRadio(window.app.nick); }, 3000);
+                        } else if (err.type === 'unavailable-id') {
+                            console.warn("⚠️ PeerJS ID Ocupado. Reintentando reconexión...");
+                            try { window.app.peer.destroy(); } catch(e){}
+                            setTimeout(function() { window.connectRadio(window.app.nick); }, 2000);
+                        } else if (err.type === 'invalid-id') {
+                            console.error("🛑 PeerJS ID No Válido. Re-sanitizando...");
+                            try { window.app.peer.destroy(); } catch(e){}
+                            setTimeout(function() { window.connectRadio(window.app.nick); }, 2000);
                         }
                     });
 
@@ -361,8 +373,6 @@ fun main() {
             onBack = { backPressCountState.value = backPressCountState.value + 1 },
             onNickConflict = { conflictingNick ->
                 showSystemNotification("⚠️ INDICATIVO DUPLICADO", "El indicativo $conflictingNick ya está activo en otro terminal. Por favor elige uno diferente.")
-                localStorage.removeItem("indicativo")
-                RadioPersistence.logout()
             },
             onUsersUpdate = { users ->
                 try {
@@ -372,18 +382,21 @@ fun main() {
                     val isInitialLoad = usersNotified.isEmpty()
                     val myNick = (win.app.nick as? String ?: "").trim().uppercase()
                     val mySessionID = (win.app.sessionID as? String ?: "")
+                    val myDeviceID = (win.app.deviceID as? String ?: "")
 
                     if (users != null) {
                         val keys = js("Object").keys(users)
 
-                        // 🛡️ VERIFICACIÓN DE INDICATIVO ÚNICO EN RED (NO DUPLICADOS ACTIVOS)
+                        // 🛡️ VERIFICACIÓN DE INDICATIVO ÚNICO EN RED (NO DUPLICADOS ACTIVOS EN DISTINTOS HARDWARES)
                         var hasConflict = false
-                        if (myNick.isNotEmpty() && mySessionID.isNotEmpty()) {
+                        if (myNick.isNotEmpty() && mySessionID.isNotEmpty() && myNick != "RADIO" && myNick != "ANÓNIMO") {
                             for (i in 0 until (keys.length as Int)) {
                                 val k = keys[i] as String
                                 val u = users[k] ?: continue
                                 val otherNick = (u.nick as? String ?: "").trim().uppercase()
+                                val otherDeviceId = (u.deviceId as? String ?: "")
                                 val lastSeen = (u.lastSeen as? Double ?: 0.0)
+                                if (otherDeviceId.isNotEmpty() && otherDeviceId == myDeviceID) continue
                                 if (k != mySessionID && otherNick == myNick && (now - lastSeen < 45000)) {
                                     hasConflict = true
                                     win.dispatch_nick_conflict(myNick)
@@ -456,6 +469,8 @@ fun main() {
             onChatUpdate = { rawData ->
                 try {
                     val list = mutableListOf<ChatMessage>()
+                    val currentPath = (win.currentChatPath as? String ?: "")
+                    val isPrivatePath = currentPath.contains("private_messages")
                     if (rawData != null) {
                         val keys = js("Object").keys(rawData)
                         for (i in 0 until (keys.length as Int)) {
@@ -465,8 +480,9 @@ fun main() {
                             val text = (m.text as? String ?: "").trim()
                             val ts = (m.timestamp as? Double ?: 0.0).toLong()
                             val isSys = (m.isSystem as? Boolean ?: false)
+                            val msgIsPrivate = isPrivatePath || (m.isPrivate as? Boolean ?: false)
                             if (text.isNotEmpty()) {
-                                list.add(ChatMessage(id = k, senderNick = sender, text = text, timestamp = ts, isSystem = isSys))
+                                list.add(ChatMessage(id = k, senderNick = sender, text = text, timestamp = ts, isSystem = isSys, isPrivate = msgIsPrivate))
                             }
                         }
                         list.sortBy { it.timestamp }
@@ -478,8 +494,12 @@ fun main() {
                         val lastMsg = list.last()
                         val myNick = (win.app?.nick as? String ?: "").trim().uppercase()
                         if (lastMsg.senderNick != myNick && !lastMsg.isSystem) {
-                            if (win.playUiSound != null) win.playUiSound("chat_msg")
-                            showSystemNotification("💬 MENSAJE DE " + lastMsg.senderNick, lastMsg.text)
+                            val isMuted = (localStorage.getItem("chatMuted") == "true")
+                            if (lastMsg.isPrivate || !isMuted) {
+                                if (win.playUiSound != null) win.playUiSound("chat_msg")
+                                val prefix = if (lastMsg.isPrivate) "🔒 PRIVADO DE " else "💬 MENSAJE DE "
+                                showSystemNotification(prefix + lastMsg.senderNick, lastMsg.text)
+                            }
                         }
                     }
                 } catch (e: Exception) {}

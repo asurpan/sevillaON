@@ -188,6 +188,7 @@ data class RadioState(
     val reverbLevel: Float = 0.5f,
     val isNightMode: Boolean = false,
     val isChatVisible: Boolean = false,
+    val isChatMuted: Boolean = false,
     val unreadCount: Int = 0,
     val activeProfile: ActivityProfile = ActivityProfile.NORMAL,
     val backgroundStyle: BackgroundStyle = BackgroundStyle.DEEP_SEA
@@ -223,7 +224,8 @@ data class ChatMessage(
     val senderNick: String,
     val text: String,
     val timestamp: Long,
-    val isSystem: Boolean = false
+    val isSystem: Boolean = false,
+    val isPrivate: Boolean = false
 )
 
 enum class NotificationType { Info, Warning, Success, Danger }

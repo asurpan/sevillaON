@@ -214,19 +214,22 @@ fun App(
             val latest = chatMessages.last()
             val myNick = nick.trim().uppercase()
             if (latest.senderNick.trim().uppercase() != myNick && latest.timestamp > (getTimeMillis() - 3000)) {
-                if (!radioState.isChatVisible) {
-                    radioState = radioState.copy(unreadCount = radioState.unreadCount + 1)
-                    triggerUiSound("click")
-                    localNotification = AppNotification(
-                        title = "MENSAJE DE ${latest.senderNick}",
-                        message = latest.text,
-                        type = NotificationType.Info,
-                        actionLabel = "ABRIR",
-                        onAction = {
-                            radioState = radioState.copy(isChatVisible = true, unreadCount = 0)
-                            localNotification = null
-                        }
-                    )
+                if (latest.isPrivate || !radioState.isChatMuted) {
+                    if (!radioState.isChatVisible) {
+                        radioState = radioState.copy(unreadCount = radioState.unreadCount + 1)
+                        triggerUiSound("click")
+                        val notifTitle = if (latest.isPrivate) "🔒 PRIVADO DE ${latest.senderNick}" else "💬 MENSAJE DE ${latest.senderNick}"
+                        localNotification = AppNotification(
+                            title = notifTitle,
+                            message = latest.text,
+                            type = if (latest.isPrivate) NotificationType.Warning else NotificationType.Info,
+                            actionLabel = "ABRIR",
+                            onAction = {
+                                radioState = radioState.copy(isChatVisible = true, unreadCount = 0)
+                                localNotification = null
+                            }
+                        )
+                    }
                 }
             }
         }

@@ -169,14 +169,14 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
 
 actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     val cleanCity = city.split("-")[0].trim().uppercase()
-    val url = "https://news.google.com/rss/search?q=sucesos+crimen+polemica+actualidad+ultima+hora&hl=es&gl=ES&ceid=ES:es"
+    val url = "https://news.google.com/rss/search?q=empleo+leyes+senado+recortes+sucesos+crimen+polemica+actualidad+ultima+hora&hl=es&gl=ES&ceid=ES:es"
 
     js("""
         fetch(url)
             .then(function(response) { return response.text(); })
             .then(function(xmlText) {
                 if (xmlText && xmlText.indexOf("<item>") !== -1) {
-                    var items = xmlText.split("<item>").slice(1, 25);
+                    var items = xmlText.split("<item>").slice(1, 30);
                     var bestHeadline = null;
                     var highestScore = -1;
                     var impactKeywords = [
@@ -184,7 +184,11 @@ actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
                         "tribunal", "juez", "prisión", "robo", "agresión", "droga", "tiroteo", 
                         "incendio", "polémica", "dimisión", "escándalo", "multa", "condena", 
                         "crisis", "alquiler", "vivienda", "huelga", "protesta", "fraude", 
-                        "investigado", "accidente", "tragedia", "alerta", "fallece", "suceso"
+                        "investigado", "accidente", "tragedia", "alerta", "fallece", "suceso",
+                        "empleo", "paro", "desempleo", "salario", "sueldo", "pensiones", 
+                        "recortes", "impuestos", "hacienda", "hipoteca", "inflación", 
+                        "ley", "senado", "congreso", "gobierno", "ministro", "norma", 
+                        "decreto", "reforma", "prohibido"
                     ];
                     
                     for (var i = 0; i < items.length; i++) {

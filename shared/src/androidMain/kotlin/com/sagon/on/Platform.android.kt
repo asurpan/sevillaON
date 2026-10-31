@@ -71,8 +71,8 @@ actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     tourismScope.launch {
         try {
             val cleanCity = city.split("-")[0].trim().uppercase()
-            // 📰 RSS DE ALTO IMPACTO (SUCESOS, POLÉMICAS, CRIMEN, ÚLTIMA HORA Y DEBATE)
-            val url = java.net.URL("https://news.google.com/rss/search?q=sucesos+crimen+polemica+actualidad+ultima+hora&hl=es&gl=ES&ceid=ES:es")
+            // 📰 RSS DE ALTO IMPACTO (EMPLEO, LEYES, SENADO, RECORTES, SUCESOS, POLÉMICAS)
+            val url = java.net.URL("https://news.google.com/rss/search?q=empleo+leyes+senado+recortes+sucesos+crimen+polemica+actualidad+ultima+hora&hl=es&gl=ES&ceid=ES:es")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "GET"
             connection.setRequestProperty("User-Agent", "Mozilla/5.0")
@@ -84,13 +84,17 @@ actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
             var highestScore = -1
             
             if (xmlText.contains("<item>")) {
-                val items = xmlText.split("<item>").drop(1).take(25)
+                val items = xmlText.split("<item>").drop(1).take(30)
                 val impactKeywords = listOf(
                     "última hora", "urgente", "crimen", "asesinato", "detenido", "policía", 
                     "tribunal", "juez", "prisión", "robo", "agresión", "droga", "tiroteo", 
                     "incendio", "polémica", "dimisión", "escándalo", "multa", "condena", 
                     "crisis", "alquiler", "vivienda", "huelga", "protesta", "fraude", 
-                    "investigado", "accidente", "tragedia", "alerta", "fallece", "suceso"
+                    "investigado", "accidente", "tragedia", "alerta", "fallece", "suceso",
+                    "empleo", "paro", "desempleo", "salario", "sueldo", "pensiones", 
+                    "recortes", "impuestos", "hacienda", "hipoteca", "inflación", 
+                    "ley", "senado", "congreso", "gobierno", "ministro", "norma", 
+                    "decreto", "reforma", "prohibido"
                 )
                 
                 for (itemBlock in items) {

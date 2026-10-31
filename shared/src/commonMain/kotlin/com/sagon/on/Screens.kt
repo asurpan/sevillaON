@@ -3,6 +3,9 @@ package com.sagon.on
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
 
 /**
  * 🔒 HARD-LOCK: PROTECTED CORE - PANTALLAS DE NAVEGACIÓN
@@ -1255,28 +1258,24 @@ fun InlineTacticalChat(
                         }
                     } else {
                         nonSysMsgs.forEach { msg ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "[${formatMessageTime(msg.timestamp)}] ",
-                                    color = Color.White.copy(0.45f),
-                                    fontSize = 9.5.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = "${msg.senderNick}: ",
-                                    color = Color(0xFF00E5FF),
-                                    fontSize = 10.5.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = msg.text,
-                                    color = Color.White,
-                                    fontSize = 10.5.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                )
+                            val annotatedMsg = buildAnnotatedString {
+                                withStyle(SpanStyle(color = Color.White.copy(0.45f), fontSize = 9.5.sp, fontWeight = FontWeight.Medium)) {
+                                    append("[${formatMessageTime(msg.timestamp)}] ")
+                                }
+                                withStyle(SpanStyle(color = Color(0xFF00E5FF), fontSize = 10.5.sp, fontWeight = FontWeight.Bold)) {
+                                    append("${msg.senderNick}: ")
+                                }
+                                withStyle(SpanStyle(color = Color.White, fontSize = 10.5.sp, fontWeight = FontWeight.Normal)) {
+                                    append(msg.text)
+                                }
                             }
+                            Text(
+                                text = annotatedMsg,
+                                modifier = Modifier.fillMaxWidth(),
+                                maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                lineHeight = 13.5.sp
+                            )
                         }
                     }
                 }
@@ -1391,7 +1390,7 @@ fun InlineTacticalChat(
                     }
 
                     // Lista de mensajes recientes en el modal
-                    val modalMsgs = chatMessages.filter { !it.isSystem }.takeLast(4)
+                    val modalMsgs = chatMessages.filter { !it.isSystem }.takeLast(6)
                     if (modalMsgs.isNotEmpty()) {
                         Column(
                             modifier = Modifier
@@ -1399,29 +1398,25 @@ fun InlineTacticalChat(
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(Color.Black.copy(0.4f))
                                 .padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             modalMsgs.forEach { msg ->
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "[${formatMessageTime(msg.timestamp)}] ",
-                                        color = Color.White.copy(0.45f),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = "${msg.senderNick}: ",
-                                        color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = msg.text,
-                                        color = Color.White,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
+                                val annotatedModalMsg = buildAnnotatedString {
+                                    withStyle(SpanStyle(color = Color.White.copy(0.45f), fontSize = 10.sp, fontWeight = FontWeight.Medium)) {
+                                        append("[${formatMessageTime(msg.timestamp)}] ")
+                                    }
+                                    withStyle(SpanStyle(color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF), fontSize = 11.sp, fontWeight = FontWeight.Bold)) {
+                                        append("${msg.senderNick}: ")
+                                    }
+                                    withStyle(SpanStyle(color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)) {
+                                        append(msg.text)
+                                    }
                                 }
+                                Text(
+                                    text = annotatedModalMsg,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    lineHeight = 15.sp
+                                )
                             }
                         }
                         Spacer(Modifier.height(8.dp))

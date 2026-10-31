@@ -368,17 +368,42 @@ object GeminiRadioService {
         val phraseEstupendo = if (isNight) "Hace una noche estupenda" else "Hace un día estupendo"
         val phraseIdeal = if (isNight) "una noche ideal" else "un día ideal"
 
-        val msgLower = userMessage?.lowercase() ?: ""
+        val msgLower = userMessage?.lowercase()?.trim() ?: ""
+
         if (msgLower.contains("quien eres") || msgLower.contains("quién eres") || msgLower.contains("como te llamas") || msgLower.contains("cómo te llamas") || msgLower.contains("que eres") || msgLower.contains("qué eres") || msgLower.contains("quien habla") || msgLower.contains("quién habla") || msgLower.contains("quien sos") || msgLower.contains("quién sos") || msgLower.contains("presentat")) {
-            return "¡Hola $nick! Soy FELIPE, la Estación Base y operador virtual de ON AIR en $cleanCity. ¡Un placer saludarte por la frecuencia! Cambio."
+            return "¡Hola $nick! Soy FELIPE, la Estación Base e IA táctica de ON AIR en $cleanCity. ¡Un placer saludarte por la frecuencia! Cambio."
         }
 
         if (msgLower.contains("hora") || msgLower.contains("horas") || msgLower.contains("tienes hora") || msgLower.contains("qué hora") || msgLower.contains("que hora")) {
-            return "¡Hola $nick! Soy FELIPE. Son exactamente las $currentTime en $cleanCity. Te recibo fuerte y claro. ¡Cambio!"
+            return "¡Hola $nick! Son exactamente las $currentTime en la estación base de $cleanCity. Señal S9 y modulación limpia. ¡Cambio!"
         }
 
-        if (msgLower.contains("tiempo") || msgLower.contains("clima") || msgLower.contains("meteo") || msgLower.contains("parte") || msgLower.contains("trafico") || msgLower.contains("tráfico") || msgLower.contains("cambio") || msgLower.contains("novedad")) {
-            return "¡Hola $nick! Soy FELIPE. En $cleanCity tenemos $weatherStr. Sobre el tráfico: $trafficStr. $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Cambio!"
+        if (msgLower.contains("como estas") || msgLower.contains("cómo estás") || msgLower.contains("que tal") || msgLower.contains("qué tal") || msgLower.contains("como va") || msgLower.contains("cómo va") || msgLower.contains("que cuentas") || msgLower.contains("qué cuentas")) {
+            return "¡A tope $nick! Operando con 50W de potencia desde $cleanCity, modulación perfecta y a la escucha de los colegas. ¿Tú cómo lo llevas? Cambio."
+        }
+
+        if (msgLower.contains("gracias") || msgLower.contains("de nada") || msgLower.contains("ok") || msgLower.contains("vale") || msgLower.contains("entendido") || msgLower.contains("qsl") || msgLower.contains("10-4") || msgLower.contains("roger")) {
+            return "¡QSL $nick! Recibido 10-4 fuerte y claro. Quedo a la escucha en la frecuencia de $cleanCity. ¡Adelante! Cambio."
+        }
+
+        if (msgLower.contains("chiste") || msgLower.contains("broma") || msgLower.contains("cuenta algo") || msgLower.contains("cuéntame algo") || msgLower.contains("curiosidad")) {
+            val jokes = listOf(
+                "¡Atención $nick! ¿Sabes qué le dice un radioaficionado a otro cuando se despiden? ¡Nos vemos en la cresta de la onda! 📻 Cambio.",
+                "¡Oído $nick! Dicen que la radio no tiene pantalla porque las mejores imágenes las dibuja la imaginación. ¡A seguir modulando por $cleanCity! Cambio."
+            )
+            return jokes.random()
+        }
+
+        if (msgLower.contains("tiempo") || msgLower.contains("clima") || msgLower.contains("meteo") || msgLower.contains("llueve") || msgLower.contains("calor") || msgLower.contains("frío")) {
+            return "¡Hola $nick! En $cleanCity tenemos $weatherStr. $phrasePrecioso para disfrutar de la radio. Cambio."
+        }
+
+        if (msgLower.contains("trafico") || msgLower.contains("tráfico") || msgLower.contains("carretera") || msgLower.contains("dgt") || msgLower.contains("retencion") || msgLower.contains("obras")) {
+            return "¡Atención $nick! Reporte de tráfico en $cleanCity: $trafficStr. ¡Precaución al volante y buena ruta! Cambio."
+        }
+
+        if (msgLower.contains("adios") || msgLower.contains("adiós") || msgLower.contains("hasta luego") || msgLower.contains("nos vemos") || msgLower.contains("73")) {
+            return "¡73's cordialísimo $nick! Ha sido un placer charlar contigo. Quedo en frecuencia por $cleanCity para lo que necesites. ¡Buenas modulaciones! Cambio."
         }
 
         if (isSilentBeacon) {

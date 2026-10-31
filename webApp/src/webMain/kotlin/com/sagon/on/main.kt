@@ -444,9 +444,10 @@ fun main() {
                                 if (userNick.isEmpty()) userNick = k.split("_")[0].uppercase()
                                 if (k != win.app.sessionID && !usersNotified.contains(k)) {
                                     usersNotified.add(k)
-                                    if (!isInitialLoad && !isChangingChannelState.value) {
+                                    val isLocalTransmitting = (win.app?.pttStateInternal == true || win.app?.isTransmittingInternal == true)
+                                    if (!isInitialLoad && !isChangingChannelState.value && !isLocalTransmitting) {
                                         val isFriend = radioState.value.friends.contains(userNick)
-                                        win.playUiSound(if (isFriend) "incoming" else "user_in")
+                                        win.playUiSound(if (isFriend) "friend_in" else "user_in")
                                         if (isFriend) {
                                             val userCityName = (u.city as? String ?: "tu ciudad").split("-")[0]
                                             showSystemNotification("📻 ¡TU AMIGO SE HA CONECTADO!", "¡$userNick ha entrado en la radio de $userCityName!")

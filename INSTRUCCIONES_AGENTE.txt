@@ -22,6 +22,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Infrasonic Keep-Alive**: Oscilador **5Hz** activo durante silencios de recepción.
 - **Re-activación de AudioContext en PTT / Roger Beep**: `broadcastPTT` DEBE ejecutar `window.app.ctx.resume()` si el motor no está en `'running'`.
 - **Filtro de Emisión Real para Roger Beep**: El Roger Beep de 1955Hz SOLO suena si el usuario estuvo transmitiendo (`wasTransmitting === true`). Al cambiar de canal se suprime para evitar falsos beeps.
+- **Protección Anti-Chime de PTT**: Queda ESTRICTAMENTE PROHIBIDO ejecutar `webkitSpeechRecognition` durante el PTT en la app nativa Android (`window.AndroidApp != null`) para evitar que el sistema emita el pitido ("piri") de Búsqueda por Voz de Google.
 
 ### 📡 RED, PEERJS Y LLAMADA INTELIGENTE
 - **Llamada Inteligente Anti-Glare (`mySess < user.id`)**: En el bucle de mantenimiento de `main.kt`, SOLO el cliente con la ID de sesión lexicográficamente menor inicia la llamada saliente.

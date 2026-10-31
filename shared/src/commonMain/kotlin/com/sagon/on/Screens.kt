@@ -1259,13 +1259,13 @@ fun InlineTacticalChat(
                     } else {
                         nonSysMsgs.forEach { msg ->
                             val annotatedMsg = buildAnnotatedString {
-                                withStyle(SpanStyle(color = Color.White.copy(0.45f), fontSize = 9.5.sp, fontWeight = FontWeight.Medium)) {
+                                withStyle(SpanStyle(color = Color.White.copy(0.60f), fontSize = 11.sp, fontWeight = FontWeight.Medium)) {
                                     append("[${formatMessageTime(msg.timestamp)}] ")
                                 }
-                                withStyle(SpanStyle(color = Color(0xFF00E5FF), fontSize = 10.5.sp, fontWeight = FontWeight.Bold)) {
+                                withStyle(SpanStyle(color = Color(0xFF00E5FF), fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)) {
                                     append("${msg.senderNick}: ")
                                 }
-                                withStyle(SpanStyle(color = Color.White, fontSize = 10.5.sp, fontWeight = FontWeight.Normal)) {
+                                withStyle(SpanStyle(color = Color.White, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)) {
                                     append(msg.text)
                                 }
                             }
@@ -1274,7 +1274,7 @@ fun InlineTacticalChat(
                                 modifier = Modifier.fillMaxWidth(),
                                 maxLines = 2,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                lineHeight = 13.5.sp
+                                lineHeight = 16.sp
                             )
                         }
                     }
@@ -1412,20 +1412,20 @@ fun InlineTacticalChat(
                         ) {
                             modalMsgs.forEach { msg ->
                                 val annotatedModalMsg = buildAnnotatedString {
-                                    withStyle(SpanStyle(color = Color.White.copy(0.45f), fontSize = 10.sp, fontWeight = FontWeight.Medium)) {
+                                    withStyle(SpanStyle(color = Color.White.copy(0.60f), fontSize = 11.5.sp, fontWeight = FontWeight.Medium)) {
                                         append("[${formatMessageTime(msg.timestamp)}] ")
                                     }
-                                    withStyle(SpanStyle(color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF), fontSize = 11.sp, fontWeight = FontWeight.Bold)) {
+                                    withStyle(SpanStyle(color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF), fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold)) {
                                         append("${msg.senderNick}: ")
                                     }
-                                    withStyle(SpanStyle(color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)) {
+                                    withStyle(SpanStyle(color = Color.White, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)) {
                                         append(msg.text)
                                     }
                                 }
                                 Text(
                                     text = annotatedModalMsg,
                                     modifier = Modifier.fillMaxWidth(),
-                                    lineHeight = 15.sp
+                                    lineHeight = 18.sp
                                 )
                             }
                         }
@@ -1481,19 +1481,20 @@ fun InlineTacticalChat(
                         OutlinedTextField(
                             value = textInput,
                             onValueChange = { textInput = it },
-                            singleLine = true,
+                            singleLine = false,
+                            maxLines = 3,
                             textStyle = TextStyle(
-
-
                                 color = Color.White,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold
+                                fontSize = 14.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                lineHeight = 19.sp
                             ),
                             placeholder = {
                                 Text(
                                     if (targetNick != null) "Escribir privado a $targetNick..." else "Escribir mensaje de canal...",
-                                    color = Color.White.copy(0.4f),
-                                    fontSize = 12.sp
+                                    color = Color.White.copy(0.5f),
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.Medium
                                 )
                             },
                             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(

@@ -25,9 +25,10 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Sanitización Estricta de PeerJS**: Toda `sessionID` enviada a `new Peer()` DEBE estar sanitizada mediante `cleanNick.replace(/[^A-Z0-9_-]/gi, "_")`. Queda PROHIBIDO enviar espacios, tildes o símbolos a PeerJS.
     - **Reconexión por Hardware (`deviceId`)**: En `onUsersUpdate`, se DEBE verificar `otherDeviceId == myDeviceID`. Si la conexión proviene del mismo terminal físico, es una reconexión legítima y NO debe marcar conflicto ni expulsar al usuario.
 
-5. **Garantía de Roger Beep y Re-activación de AudioContext**:
+5. **Garantía de Roger Beep, Re-activación de AudioContext y Protección Anti-Chime**:
     - **Re-activación de AudioContext**: En `broadcastPTT`, si `window.app.ctx.state !== 'running'`, se DEBE ejecutar `window.app.ctx.resume()` inmediatamente antes de procesar emisión o recepción.
     - **Filtro de Emisión Real para Roger Beep**: El tono Roger Beep de 1955Hz SOLO debe sonar si el usuario estuvo activamente transmitiendo (`wasTransmitting === true`). Al cambiar de canal o pulsar flechas de sintonía con el micro suelto, queda PROHIBIDO emitir el Roger Beep (solo emitirá el clic de 800Hz `switch`).
+    - **Protección Anti-Chime de PTT**: Queda ESTRICTAMENTE PROHIBIDO invocar `webkitSpeechRecognition` durante el PTT en la app nativa Android (`window.AndroidApp != null`) para evitar que el sistema emita el pitido ("piri") de Búsqueda por Voz de Google.
 
 6. **Reglas del Chat Táctico y Auto-Scroll**:
     - **Hora de Publicación**: Todos los mensajes de chat DEBEN mostrar la hora de publicación en formato `[HH:mm]`.

@@ -328,7 +328,7 @@ object RadioAudioManager {
 
                         // 🎙️ CAPTURA DE TRANSCRIPCIÓN DE VOZ EN TIEMPO REAL PARA EL BOT/AGENTE IA
                         window.app.lastUserTranscript = "";
-                        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                        if (!window.AndroidApp && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
                             if (!window.app.speechRecognizer) {
                                 try {
                                     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -384,9 +384,9 @@ object RadioAudioManager {
                         if (window.dispatch_ptt_live) try { window.dispatch_ptt_live(true); } catch(e) {}
 
                         try { if (sessionRef) sessionRef.update({ tx: true, pwr: power || 0.7 }); } catch(e) {}
-                        try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(2.5, now, 0.005); } catch(e) {}
-                        try { if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
-                        try { if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
+                        try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(2.5, now, 0.03); } catch(e) {}
+                        try { if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.04); } catch(e) {}
+                        try { if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(0, now, 0.04); } catch(e) {}
                         try { if (window.updateMoniGain) window.updateMoniGain(); } catch(e) {}
                     } else {
                         window.app.pttStateInternal = false;
@@ -399,7 +399,7 @@ object RadioAudioManager {
                         if (window.app.silenceCheckInterval) { clearInterval(window.app.silenceCheckInterval); window.app.silenceCheckInterval = null; }
                         window.app.silenceStartTime = null;
 
-                        try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(0, now, 0.01); } catch(e) {}
+                        try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(0, now, 0.03); } catch(e) {}
 
                         if (window.app.ctx && window.app.ctx.state !== 'running') {
                             try { window.app.ctx.resume(); } catch(e){}
@@ -444,8 +444,8 @@ object RadioAudioManager {
                                 try { if (sessionRef) sessionRef.update({ tx: false }); } catch(e) {}
                                 try {
                                     var endNow = window.app.ctx ? window.app.ctx.currentTime : now;
-                                    if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.15);
-                                    if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.15);
+                                    if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.06);
+                                    if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.06);
                                     if (window.updateMoniGain) window.updateMoniGain();
                                 } catch(e) {}
                                 if (window.checkControlStationResponse) try { window.checkControlStationResponse(); } catch(e) {}
@@ -456,6 +456,12 @@ object RadioAudioManager {
                             if (window.dispatch_ptt_sync) try { window.dispatch_ptt_sync(false); } catch(e) {}
                             if (window.dispatch_ptt_live) try { window.dispatch_ptt_live(false); } catch(e) {}
                             try { if (sessionRef) sessionRef.update({ tx: false }); } catch(e) {}
+                            try {
+                                var endNow = window.app.ctx ? window.app.ctx.currentTime : now;
+                                if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.06);
+                                if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.06);
+                                if (window.updateMoniGain) window.updateMoniGain();
+                            } catch(e) {}
                             if (window.checkControlStationResponse) try { window.checkControlStationResponse(); } catch(e) {}
                         }
                     }
@@ -766,6 +772,7 @@ object RadioSignaling {
                 }
 
                 if (type === "user_in" || type === "friend_in") {
+                    if (window.app && (window.app.pttStateInternal || window.app.isTransmittingInternal || window.app.isBeeping || window.app.isChangingChannel)) return;
                     // 🔔 CAMPANILLA CRISTALINA Y MELÓDICA DE BIENVENIDA DE USUARIO (784Hz -> 987Hz)
                     var isFriend = (type === "friend_in");
                     var f1 = isFriend ? 880 : 784; 
@@ -794,8 +801,8 @@ object RadioSignaling {
                     return;
                 }
 
-                if (type === "incoming" || type === "user_in") {
-                    // 🎶 TONO PIRIPI (MODO OREJA / ENTRADA EN RADIO)
+                if (type === "incoming") {
+                    // 🎶 TONO PIRIPI (MODO OREJA)
                     var pairs = [[697, 1209], [770, 1336], [852, 1477], [941, 1633]];
                     pairs.forEach((f, i) => { f.forEach(freq => { var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); o.type = "sine"; o.frequency.setValueAtTime(freq, now + (i * 0.12)); g.gain.setValueAtTime(0, now + (i * 0.12)); g.gain.linearRampToValueAtTime(0.15, now + (i * 0.12) + 0.01); g.gain.linearRampToValueAtTime(0, now + (i * 0.12) + 0.1); o.connect(g); g.connect(window.app.masterOut); o.start(now + (i * 0.12)); o.stop(now + (i * 0.12) + 0.12); }); });
                     return;

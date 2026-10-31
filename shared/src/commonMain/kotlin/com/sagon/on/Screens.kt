@@ -1389,15 +1389,25 @@ fun InlineTacticalChat(
                         }
                     }
 
-                    // Lista de mensajes recientes en el modal
-                    val modalMsgs = chatMessages.filter { !it.isSystem }.takeLast(6)
+                    // Lista de mensajes recientes en el modal con Auto-Scroll táctico
+                    val chatScrollState = rememberScrollState()
+                    val modalMsgs = chatMessages.filter { !it.isSystem }.takeLast(25)
+
+                    LaunchedEffect(modalMsgs.size) {
+                        if (modalMsgs.isNotEmpty()) {
+                            try { chatScrollState.animateScrollTo(chatScrollState.maxValue) } catch (_: Exception) {}
+                        }
+                    }
+
                     if (modalMsgs.isNotEmpty()) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .heightIn(max = 220.dp)
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(Color.Black.copy(0.4f))
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                                .verticalScroll(chatScrollState)
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             modalMsgs.forEach { msg ->

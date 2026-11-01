@@ -21,7 +21,8 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen **0.01** vía un nodo Gain `dummy`.
 - **Infrasonic Keep-Alive**: Oscilador **5Hz** activo durante silencios de recepción.
 - **Re-activación de AudioContext en PTT / Roger Beep**: `broadcastPTT` DEBE ejecutar `window.app.ctx.resume()` si el motor no está en `'running'`.
-- **Filtro de Emisión Real para Roger Beep**: El Roger Beep de 1955Hz SOLO suena si el usuario estuvo transmitiendo (`wasTransmitting === true`). Al cambiar de canal se suprime para evitar falsos beeps.
+- **Filtro de Emisión Real para Roger Beep**: El Roger Beep de 1955Hz SOLO suena si el usuario estuvo transmitiendo (`wasTransmitting === true`). Mantiene ganancia constante **0.40** durante **292ms** con un micro-remate final de **8ms** sin fundidos largos.
+- **Handshake de Confirmación de Voz Real**: Medición PCM de altavoz remoto (`audioVol > 0.05`) que emite confirmación ACK activando el LED **`🔴 TX CONFIRMADO`** en la pantalla Nexus.
 - **Protección Anti-Chime de PTT**: Queda ESTRICTAMENTE PROHIBIDO ejecutar `webkitSpeechRecognition` durante el PTT en la app nativa Android (`window.AndroidApp != null`) para evitar que el sistema emita el pitido ("piri") de Búsqueda por Voz de Google.
 
 ### 📡 RED, PEERJS Y LLAMADA INTELIGENTE

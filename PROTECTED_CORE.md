@@ -6,7 +6,8 @@ Este documento establece las LEYES SUPREMAS de NO MODIFICACIÓN para agentes de 
 Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el código en las siguientes áreas sin permiso explícito por escrito del usuario:
 
 1. **Cadena de Voz Intocable (`voiceBoost` ➔ `txGate` ➔ `txBus`)**:
-    - **Aislamiento e Inyección Directa**: La señal del micrófono capturada por `getUserMedia` DEBE pasar por `micSrc ➔ voiceFilter (150Hz) ➔ sensorGain (4.0) ➔ compressor ➔ voiceBoost (2.5)`.
+    - **Aislamiento e Inyección Directa**: La señal del micrófono capturada por `getUserMedia` DEBE pasar por `micSrc ➔ voiceFilter (150Hz) ➔ sensorGain (4.0) ➔ compressor ➔ voiceBoost (2.5)`. `sensorGain` DEBE conectarse obligatoriamente a `compressor` (`sensorGain.connect(compressor)`) para llevar la amplificación x4.0 completa al flujo de red.
+    - **Reemplazo Dinámico de Pistas (`replaceTrack`)**: `window.updatePeerSenders()` DEBE actualizar las llamadas activas de PeerJS reinsertando `txBus.stream.getAudioTracks()[0]` para asegurar que el audio no se quede estancado en `dummyStream`.
     - **Conexión Multicapa Re-Asegurada**: `window.app.voiceBoost` DEBE guardarse globalmente y conectarse OBLIGATORIAMENTE a `window.app.txGate` tanto en `manosLibres_requestMic()` como en `initAudio()`. Queda prohibido dejar `txGate` sin entrada.
     - **Apertura de Puerta PTT (`txGate`)**: En `broadcastPTT`, la ganancia de `txGate` se abre a **2.5x** (`setTargetAtTime(2.5, now, 0.005)`) garantizando volumen de voz limpio y potente en el bus WebRTC (`txBus`).
     - **AGC Hardware Obligatorio**: `autoGainControl: true` DEBE mantenerse habilitado en `getUserMedia` para que los chips de micrófono de teléfonos Android (Xiaomi, Motorola, Samsung) entreguen ganancia de voz completa.

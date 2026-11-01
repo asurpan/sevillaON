@@ -52,7 +52,7 @@ object ManosLibres {
                     micSrc.connect(voiceFilter);
                     voiceFilter.connect(sensorGain);
                     sensorGain.connect(window.app.micAnalyser);
-                    voiceFilter.connect(compressor);
+                    sensorGain.connect(compressor);
                     
                     // 🚀 VOICE BOOST FINAL: Multiplicador de potencia antes de enviar a la red
                     var voiceBoost = window.app.ctx.createGain();

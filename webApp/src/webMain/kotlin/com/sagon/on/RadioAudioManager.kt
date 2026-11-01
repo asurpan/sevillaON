@@ -277,6 +277,34 @@ object RadioAudioManager {
                         try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
                     }
 
+                    window.updatePeerSenders = function() {
+                        if (!window.app || !window.app.activeCalls) return;
+                        var txStream = (window.app.txBus && window.app.txBus.stream && window.app.txBus.stream.getAudioTracks().length > 0) ? window.app.txBus.stream : null;
+                        if (!txStream) return;
+                        var newTrack = txStream.getAudioTracks()[0];
+                        if (!newTrack) return;
+
+                        var peerIds = Object.keys(window.app.activeCalls);
+                        peerIds.forEach(function(id) {
+                            var call = window.app.activeCalls[id];
+                            if (call && call.peerConnection) {
+                                try {
+                                    var senders = call.peerConnection.getSenders();
+                                    senders.forEach(function(sender) {
+                                        if (sender && sender.track) {
+                                            if (sender.track.id !== newTrack.id) {
+                                                console.log("🚀 WebRTC: Reemplazando pista remota con txBus track para:", id);
+                                                sender.replaceTrack(newTrack).catch(function(e){ console.error("replaceTrack error:", e); });
+                                            }
+                                        } else if (sender && !sender.track) {
+                                            sender.replaceTrack(newTrack).catch(function(e){ console.error("replaceTrack error:", e); });
+                                        }
+                                    });
+                                } catch(e) {}
+                            }
+                        });
+                    };
+
                     window.app.keepAlive = window.app.ctx.createOscillator();
                     window.app.keepAlive.frequency.value = 20000;
                     window.app.keepAliveGain = window.app.ctx.createGain();
@@ -360,6 +388,7 @@ object RadioAudioManager {
 
                         try { if (sessionRef) sessionRef.update({ tx: true, pwr: power || 0.7 }); } catch(e) {}
                         try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(2.5, now, 0.03); } catch(e) {}
+                        if (window.updatePeerSenders) try { window.updatePeerSenders(); } catch(e) {}
                         try { if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.04); } catch(e) {}
                         try { if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(0, now, 0.04); } catch(e) {}
                         try { if (window.updateMoniGain) window.updateMoniGain(); } catch(e) {}
@@ -491,6 +520,9 @@ object RadioAudioManager {
                     window.app.remoteGains[call.peer] = gainNode;
                     window.app.remoteSinks = window.app.remoteSinks || {};
                     window.app.remoteSinks[call.peer] = remoteAudio;
+                    window.app.remoteNicks = window.app.remoteNicks || {};
+                    window.app.remoteNicks[call.peer] = call.peer.split("_")[0].toUpperCase();
+                    if (window.updatePeerSenders) try { window.updatePeerSenders(); } catch(e) {}
                     
                     if (window.app.ctx.state !== 'running') {
                         window.app.ctx.resume().then(() => { 
@@ -571,11 +603,15 @@ object RadioAudioManager {
                     }
 
                     var hasVoiceAudio = (audioVol > 0.06);
-                    var firebaseTx = (window.remoteTxStates && window.remoteTxStates[id] === true);
+                    var peerNick = (window.app.remoteNicks && window.app.remoteNicks[id]) ? window.app.remoteNicks[id] : id.split("_")[0].toUpperCase();
+                    var firebaseTx = (window.remoteTxStates && (window.remoteTxStates[id] === true || window.remoteTxStates[peerNick] === true));
 
                     // Si hay voz en la llamada WebRTC O Firebase marca tx, la portadora DEBE encenderse
                     var isTx = firebaseTx || hasVoiceAudio;
-                    window.remoteTxStates[id] = isTx;
+                    if (window.remoteTxStates) {
+                        window.remoteTxStates[id] = isTx;
+                        window.remoteTxStates[peerNick] = isTx;
+                    }
 
                     // 🎛️ FIX BANDA CIUDADANA: El Squelch NUNCA silencia transmisiones de voz activas (isTx)
                     var isBlockedByDiscrete = window.app.discreteMode === true;

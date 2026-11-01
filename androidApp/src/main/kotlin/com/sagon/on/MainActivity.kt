@@ -637,8 +637,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     private fun handleIntent(intent: android.content.Intent?) {
         if (intent?.action == "OPEN_CHAT") {
+            val sender = intent.getStringExtra("chat_sender")
             webViewInstance?.post {
-                webViewInstance?.evaluateJavascript("if(window.dispatch_chat_open) window.dispatch_chat_open();", null)
+                if (!sender.isNullOrBlank()) {
+                    webViewInstance?.evaluateJavascript("if(window.dispatch_chat_open) window.dispatch_chat_open('$sender');", null)
+                } else {
+                    webViewInstance?.evaluateJavascript("if(window.dispatch_chat_open) window.dispatch_chat_open();", null)
+                }
             }
         }
     }
@@ -1144,6 +1149,19 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             fun onCityChange(city: String) {
                                 val prefs = getSharedPreferences("on_air_prefs", Context.MODE_PRIVATE)
                                 prefs.edit().putString("last_city", city).apply()
+                            }
+
+                            @JavascriptInterface
+                            fun subscribeUserPushTopic(indicativo: String) {
+                                post {
+                                    val clean = indicativo.trim().uppercase()
+                                    if (clean.isNotEmpty() && clean != "ANÓNIMO" && clean != "RADIO") {
+                                        val prefs = getSharedPreferences("on_air_prefs", Context.MODE_PRIVATE)
+                                        prefs.edit().putString("last_indicativo", clean).apply()
+                                        val sanitized = clean.replace(Regex("[.#$\\[\\]]"), "_")
+                                        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("user_$sanitized")
+                                    }
+                                }
                             }
 
                             @JavascriptInterface

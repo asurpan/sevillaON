@@ -66,7 +66,7 @@ object RadioPersistence {
                 isChatMuted = localStorage.getItem("chatMuted") == "true",
                 isNotificationsEnabled = localStorage.getItem("notifsActive")?.toBoolean() ?: true,
                 squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.90f,
-                systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 0.90f,
+                systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 1.0f,
                 hasAcceptedMicExplain = hasMicExplain,
                 backgroundStyle = bgStyle
             )

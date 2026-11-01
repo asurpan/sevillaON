@@ -249,11 +249,8 @@ object RadioAudioManager {
                     };
 
                     window.setMasterVolume = function(v) {
-                        if (window.AndroidApp && window.AndroidApp.setSystemVolume) {
-                            try { window.AndroidApp.setSystemVolume(v); } catch(e){}
-                        }
                         if (!window.app || !window.app.masterOut) return;
-                        var gainVal = window.AndroidApp ? 1.0 : ((v <= 0) ? 0 : v);
+                        var gainVal = (v <= 0) ? 0 : v;
                         window.app.currentMasterGain = gainVal; 
                         if (!window.app.pttStateInternal) {
                             window.app.masterOut.gain.setTargetAtTime(gainVal, window.app.ctx.currentTime, 0.05);

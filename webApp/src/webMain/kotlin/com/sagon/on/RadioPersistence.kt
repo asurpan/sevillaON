@@ -27,20 +27,13 @@ object RadioPersistence {
             val profileStr = urlActivity ?: localStorage.getItem("activeProfile")
             val profile = ActivityProfile.entries.find { it.name == profileStr } ?: ActivityProfile.NORMAL
 
-            val win: dynamic = window
             val initialMoniVol = localStorage.getItem("moniVol")?.toFloatOrNull() ?: 0.5f
             
             val savedNick = (localStorage.getItem("indicativo") ?: "").trim()
             val hasMicExplain = localStorage.getItem("hasMicExplain")?.toBoolean() ?: savedNick.isNotBlank()
 
-            // 🛡️ SINCRONIZACIÓN PERSISTENTE CON EL VOLUMEN DEL SISTEMA
-            var initialSysVol = localStorage.getItem("sysVol")?.toFloatOrNull()
-            if (initialSysVol == null && win.AndroidApp != null && win.AndroidApp.getSystemVolume != null) {
-                try {
-                    initialSysVol = win.AndroidApp.getSystemVolume() as Float
-                } catch(e: Exception) {}
-            }
-            if (initialSysVol == null) initialSysVol = 0.90f
+            // 🛡️ VOLUMEN MAESTRO INTERNO INDEPENDIENTE
+            val initialSysVol = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 0.90f
 
             val bgStyleStr = localStorage.getItem("bgStyle")
             val bgStyle = BackgroundStyle.entries.find { it.id == bgStyleStr } ?: BackgroundStyle.DEEP_SEA
@@ -123,12 +116,9 @@ object RadioPersistence {
             win.app.botSpeed = s.botSpeed
             win.app.botPitch = s.botPitch
             
-            // 🛡️ ACTUALIZACIÓN DE VOLUMEN MAESTRO Y ANDROID STREAM
+            // 🛡️ ACTUALIZACIÓN DE VOLUMEN MAESTRO INTERNO
             if (win.setMasterVolume != null) {
                 win.setMasterVolume(s.systemVolume)
-            }
-            if (win.AndroidApp != null && win.AndroidApp.setSystemVolume != null) {
-                try { win.AndroidApp.setSystemVolume(s.systemVolume) } catch(e: Exception) {}
             }
             
             js("if(window.updateMoniGain) window.updateMoniGain();")

@@ -1269,7 +1269,8 @@ fun InlineTacticalChat(
                         )
                     }
                 } else {
-                    nonSysMsgs.forEach { msg ->
+                    nonSysMsgs.forEachIndexed { idx, msg ->
+                        val isLast = (idx == nonSysMsgs.lastIndex)
                         val annotatedMsg = buildAnnotatedString {
                             withStyle(SpanStyle(color = Color(0xFF00E5FF).copy(0.70f), fontSize = 11.5.sp, fontWeight = FontWeight.Medium)) {
                                 append("[${formatMessageTime(msg.timestamp)}] ")
@@ -1281,13 +1282,30 @@ fun InlineTacticalChat(
                                 append(msg.text)
                             }
                         }
-                        Text(
-                            text = annotatedMsg,
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            lineHeight = 16.sp
-                        )
+                        if (isLast) {
+                            Surface(
+                                color = (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)).copy(0.12f * pulseAlpha),
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)).copy(0.45f * pulseAlpha)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = annotatedMsg,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp).graphicsLayer { alpha = pulseAlpha },
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = annotatedMsg,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp),
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                lineHeight = 16.sp
+                            )
+                        }
                     }
                 }
             }

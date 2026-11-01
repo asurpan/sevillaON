@@ -250,7 +250,7 @@ object RadioAudioManager {
 
                     window.setMasterVolume = function(v) {
                         if (!window.app || !window.app.masterOut) return;
-                        window.app.currentMasterGain = v * 3.0; 
+                        window.app.currentMasterGain = (v <= 0) ? 0 : v; 
                         if (!window.app.pttStateInternal) {
                             window.app.masterOut.gain.setTargetAtTime(window.app.currentMasterGain, window.app.ctx.currentTime, 0.1);
                         }

@@ -782,15 +782,17 @@ fun RadioDialogs(
                             
                             Spacer(Modifier.height(12.dp))
                             
+                            val isBlocked = state.blockedUsers.contains(targetUser.id) || state.blockedUsers.contains(targetUser.nick)
                             LuxeButton(
-                                text = "BLOQUEAR ESTACIÓN",
+                                text = if (isBlocked) "DESBLOQUEAR ESTACIÓN" else "BLOQUEAR ESTACIÓN",
                                 onClick = { 
-                                    onStateChange(state.copy(blockedUsers = state.blockedUsers + targetUser.id))
+                                    val newBlocks = if (isBlocked) state.blockedUsers - targetUser.id - targetUser.nick else state.blockedUsers + targetUser.id + targetUser.nick
+                                    onStateChange(state.copy(blockedUsers = newBlocks))
                                     onDismiss() 
                                 },
                                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                                containerColor = Color.Red.copy(0.1f),
-                                contentColor = Color.Red,
+                                containerColor = if (isBlocked) Color.Gray.copy(0.2f) else Color.Red.copy(0.15f),
+                                contentColor = if (isBlocked) Color.White else Color.Red,
                                 icon = Icons.Rounded.Block
                             )
                         }

@@ -37,7 +37,9 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Llamadas Nativas (`RadioConnectionService`)**: Integrado con `ConnectionService` y `MANAGE_OWN_CALLS` de Android.
 - **Guiado iPhone (iOS Safari)**: La versión Web detecta iPhone y muestra el cartel `ios-install-banner` indicando pulsar *"Añadir a la pantalla de inicio"*.
 
-### 💬 CHAT TÁCTICO
+### 💬 CHAT TÁCTICO Y ACCIONES DE USUARIO
+- **Acciones de Usuario (`USER_ACTIONS`)**: Pulsar o mantener pulsado `UserCard` despliega el menú con Chat Privado, Favoritos/Amigos, Reportar Portadora y Bloquear/Desbloquear.
+- **Sanción Comunitaria Automática**: 3 reportes de portadora en 5 minutos activan `dispatch_community_mute`, bloqueando a la estación infractora en toda la frecuencia.
 - **Botón Mute**: Icono de silenciar/activar en el encabezado de `InlineTacticalChat` (`Screens.kt`).
 - **Notificaciones de Privados en Tiempo Real**: Notificación en vivo vía `private_inbox/NICK` que reproduce el sonido `chat_msg` y muestra la notificación del sistema en el móvil destino.
 - **Hora de Publicación**: Todos los mensajes muestran la hora `[HH:mm]`.

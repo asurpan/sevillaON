@@ -47,7 +47,11 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 8. **Guiado PWA para Usuarios de iPhone (iOS / Safari)**:
     - La versión Web debe detectar a los usuarios de iPhone en Safari (`isIos && !isStandalone`) y mostrar el cartel flotante `ios-install-banner` indicando pulsar *"Añadir a la pantalla de inicio"*.
 
-9. **Prohibición de Modificación del Flujo de Entrada, Canales, Micrófono y Emisión/Recepción (BLINDAJE ABSOLUTO V19.0)**:
+9. **Sistema de Acciones de Usuario, Reporte de Portadora, Sanción Comunitaria y Bloqueo (HARD-LOCK)**:
+    - **Menú de Acciones de Usuario (`USER_ACTIONS`)**: Al pulsar o mantener pulsada la tarjeta de usuario (`UserCard`), DEBE desplegarse de forma obligatoria el menú con opciones de Chat Privado, Marcar/Quitar Favorito, Reportar Portadora y Bloquear/Desbloquear Estación.
+    - **Sanción Comunitaria por Portadora**: El sistema acumula los reportes de portadora en Firebase (`reports`). Al alcanzar 3 reportes en 5 minutos (300.000 ms), se ejecuta automáticamente `dispatch_community_mute`, bloqueando a la estación infractora en toda la frecuencia y emitiendo el aviso de sanción comunitaria.
+
+10. **Prohibición de Modificación del Flujo de Entrada, Canales, Micrófono y Emisión/Recepción (BLINDAJE ABSOLUTO V19.0)**:
     - **Leyes de Flujo Intocable**: El sistema completo de entrada de usuarios (`connectRadio`, `checkHardwareRestore`), cambio de canales/ciudades (`onCityChange`, `onChannelChange`), captura/permisos de micrófono (`ensureMicAccess`, `requestMicPermission`), y flujo de emisión (TX / PTT) y recepción (RX / PeerJS / Audio Sinks / S-Meter) queda **BLINDADO Y SELLADO DE FORMA ABSOLUTA**.
     - **Permiso Explícito Obligatorio**: Queda **ESTRICTAMENTE PROHIBIDO** para cualquier IA, agente o desarrollador alterar, modificar, refactorizar o reestructurar cualquiera de estos flujos por cuenta propia o por error. ÚNICAMENTE se permite modificar estas secciones tras solicitar y recibir el **permiso explícito y por escrito del usuario**.
 

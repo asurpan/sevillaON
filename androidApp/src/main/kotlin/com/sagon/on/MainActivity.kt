@@ -79,9 +79,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
 
 
-    private val USE_GITHUB_REMOTE_SERVER = false
-
-
+    private val USE_GITHUB_REMOTE_SERVER = true
 
 
     // --- 🛡️ MÓDULO DE SUPERVIVENCIA P2P (INDEPENDIENTE) ---

@@ -757,6 +757,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     override fun onResume() {
         super.onResume()
         registerSensorsIfNecessary()
+        try {
+            webViewInstance?.onResume()
+            webViewInstance?.resumeTimers()
+            webViewInstance?.evaluateJavascript("if (window.wakeUpAudioEngine) window.wakeUpAudioEngine();", null)
+        } catch (_: Exception) {}
     }
 
     override fun onDestroy() {

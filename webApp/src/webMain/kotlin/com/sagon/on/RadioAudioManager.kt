@@ -31,6 +31,44 @@ object RadioAudioManager {
                 outputDevice: "default"
             };
 
+            // 🚀 RE-ARMADO INSTANTÁNEO DE TARJETA Y MOTOR AL VOLVER DEL SEGUNDO PLANO
+            window.wakeUpAudioEngine = function() {
+                try {
+                    if (window.app && window.app.ctx) {
+                        if (window.app.ctx.state !== 'running') {
+                            window.app.ctx.resume().then(() => {
+                                console.log("🔊 AudioContext re-armado instantáneamente desde segundo plano.");
+                            }).catch(e=>{});
+                        }
+                        if (window.app.masterOut && window.app.ctx) {
+                            try { window.app.masterOut.connect(window.app.ctx.destination); } catch(e){}
+                            var targetGain = window.app.currentMasterGain || 1.0;
+                            window.app.masterOut.gain.setValueAtTime(targetGain, window.app.ctx.currentTime);
+                        }
+                    }
+                    if (window.app && window.app.remoteSinks) {
+                        Object.keys(window.app.remoteSinks).forEach(function(k) {
+                            var el = window.app.remoteSinks[k];
+                            if (el) try { el.play().catch(e=>{}); } catch(e){}
+                        });
+                    }
+                } catch(e) {}
+            };
+
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    if (window.wakeUpAudioEngine) window.wakeUpAudioEngine();
+                }
+            });
+
+            window.addEventListener('pageshow', function() {
+                if (window.wakeUpAudioEngine) window.wakeUpAudioEngine();
+            });
+
+            window.addEventListener('focus', function() {
+                if (window.wakeUpAudioEngine) window.wakeUpAudioEngine();
+            });
+
             //  BUCLE DE MANTENIMIENTO EN SEGUNDO PLANO PARA iOS / SAFARI (MEDIA SESSION API)
             window.installIosKeepAlive = function() {
                 try {

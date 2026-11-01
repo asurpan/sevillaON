@@ -93,6 +93,7 @@ fun EliteSwitch(modifier: Modifier = Modifier, label: String, checked: Boolean, 
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UserCard(
     user: RemoteUser,
@@ -101,7 +102,8 @@ fun UserCard(
     onPrivateChat: () -> Unit,
     onReport: () -> Unit,
     onBlock: () -> Unit,
-    onAvatarClick: () -> Unit = {}
+    onAvatarClick: () -> Unit = {},
+    onLongClick: () -> Unit = {}
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "CarrierPulse")
     val pulseScale by infiniteTransition.animateFloat(
@@ -117,7 +119,14 @@ fun UserCard(
     val baseColor = if (isMe) myBlueColor else otherGreenColor
 
     Surface(
-        modifier = Modifier.width(72.dp).height(78.dp).clickable(enabled = !isMe) { onAvatarClick() },
+        modifier = Modifier
+            .width(72.dp)
+            .height(78.dp)
+            .combinedClickable(
+                enabled = !isMe,
+                onClick = { onAvatarClick() },
+                onLongClick = { onLongClick() }
+            ),
         color = baseColor.copy(alpha = 0.08f),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, baseColor.copy(alpha = 0.45f))

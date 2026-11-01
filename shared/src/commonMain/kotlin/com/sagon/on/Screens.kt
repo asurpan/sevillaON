@@ -977,8 +977,10 @@ fun RadioPanel(
                                 onReport = { onReport(user.id) }, 
                                 onBlock = { onBlock(user.id) },
                                 onAvatarClick = { 
-                                    privateChatTargetNick = user.nick
-                                    onStateChange(state.copy(isChatVisible = true))
+                                    onPendingDialogChange(RadioDialogType.USER_ACTIONS, user.id)
+                                },
+                                onLongClick = {
+                                    onPendingDialogChange(RadioDialogType.USER_ACTIONS, user.id)
                                 }
                             ) 
                         }

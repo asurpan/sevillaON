@@ -55,6 +55,10 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Leyes de Flujo Intocable**: El sistema completo de entrada de usuarios (`connectRadio`, `checkHardwareRestore`), cambio de canales/ciudades (`onCityChange`, `onChannelChange`), captura/permisos de micrófono (`ensureMicAccess`, `requestMicPermission`), y flujo de emisión (TX / PTT) y recepción (RX / PeerJS / Audio Sinks / S-Meter) queda **BLINDADO Y SELLADO DE FORMA ABSOLUTA**.
     - **Permiso Explícito Obligatorio**: Queda **ESTRICTAMENTE PROHIBIDO** para cualquier IA, agente o desarrollador alterar, modificar, refactorizar o reestructurar cualquiera de estos flujos por cuenta propia o por error. ÚNICAMENTE se permite modificar estas secciones tras solicitar y recibir el **permiso explícito y por escrito del usuario**.
 
+11. **Sistema de Notificaciones Push Gratuitas Spark (FCM Directo & Menciones @NICK)**:
+    - **Push Directo en Plan Spark (0€)**: En `RadioNetworkManager.kt`, al enviar un mensaje de chat privado o una mención pública con `@NICK`, la app realiza una petición Push directa a FCM hacia el canal `user_TARGET` con clave ofuscada.
+    - **Despertador y Apertura Directa de Chat**: `MyFirebaseMessagingService.kt` y `MainActivity.kt` procesan los mensajes `private_chat` y `public_mention`, adquiriendo un `WakeLock` de CPU, haciendo sonar la notificación y abriendo el chat privado directamente al pulsar la alerta (`OPEN_CHAT`).
+
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al autor. NO apliques parches que eliminen los nodos inaudibles o el bridge silencioso, ya que son los pilares que mantienen la voz viva en móviles modernos.
 

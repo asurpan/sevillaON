@@ -173,8 +173,8 @@ fun WelcomeScreen(
                     BasicTextField(
                         value = nick,
                         onValueChange = { 
-                            // 🛡️ REGLA: MÁXIMO 32 CARACTERES (PARA INDICATIVOS LARGOS)
-                            if (it.length <= 32) onNickChange(it.uppercase().filter { c -> c in 'A'..'Z' || c in '0'..'9' || c == ' ' || c == '-' }) 
+                            // 🛡️ REGLA: MÁXIMO 14 CARACTERES (TAMAÑO PERFECTO CB 27MHz/WALKIE)
+                            if (it.length <= 14) onNickChange(it.uppercase().filter { c -> c in 'A'..'Z' || c in '0'..'9' || c == ' ' || c == '-' }) 
                         },
                         textStyle = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp),
                         cursorBrush = SolidColor(LuxeColors.Gold),

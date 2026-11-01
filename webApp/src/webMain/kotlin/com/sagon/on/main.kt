@@ -111,6 +111,7 @@ fun main() {
 
             function doConnect(finalNick) {
                 var cleanNick = (finalNick || "RADIO").toString().replace(/[.#${'$'}\[\]]/g, "_").toUpperCase();
+                if (cleanNick.length > 14) cleanNick = cleanNick.substring(0, 14);
                 localStorage.setItem("indicativo", cleanNick); 
                 if (window.dispatch_hardware_restored) {
                     window.dispatch_hardware_restored(cleanNick);

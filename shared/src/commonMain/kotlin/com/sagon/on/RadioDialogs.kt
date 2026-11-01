@@ -1040,7 +1040,7 @@ fun RadioDialogs(
                             text = "🔊 PROBAR VOZ Y VELOCIDAD",
                             onClick = {
                                 triggerUiSound("switch")
-                                testBotVoice("Prueba de tono y velocidad de la Estación Base FELIPE. ¡Se escuchará así por la frecuencia! Cambio.")
+                                testBotVoice("Prueba de tono y velocidad de la Estación Base. ¡Se escuchará así por la frecuencia! Cambio.")
                             },
                             enabled = true,
                             modifier = Modifier.fillMaxWidth().height(36.dp),

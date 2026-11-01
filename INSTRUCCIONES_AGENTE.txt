@@ -34,6 +34,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 ### 📱 SEGUNDO PLANO Y COMPATIBILIDAD
 - **Foreground Service Android 14/15/16**: La app nativa debe ejecutar `RadioService` en primer plano con tipos `mediaPlayback|microphone`.
 - **FCM Push High Priority + WakeLock**: `MyFirebaseMessagingService` debe adquirir un `WakeLock` de CPU de 10s y despertar a `RadioService`.
+- **FCM Direct Push Spark (0€) + Menciones @NICK**: `RadioNetworkManager.kt` realiza el envío Push directo en segundo plano a `user_TARGET` en chats privados y menciones `@NICK` en canal público con claves ofuscadas.
 - **Llamadas Nativas (`RadioConnectionService`)**: Integrado con `ConnectionService` y `MANAGE_OWN_CALLS` de Android.
 - **Guiado iPhone (iOS Safari)**: La versión Web detecta iPhone y muestra el cartel `ios-install-banner` indicando pulsar *"Añadir a la pantalla de inicio"*.
 

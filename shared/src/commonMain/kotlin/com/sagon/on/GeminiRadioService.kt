@@ -258,7 +258,7 @@ object GeminiRadioService {
             if (consecutiveUserTalkCount > MAX_CONSECUTIVE_TALKS) {
                 cooldownUntilTimestamp = now + COOLDOWN_DURATION_MS
                 consecutiveUserTalkCount = 0
-                onResult("¡Excelente modulación $userNick! Soy FELIPE. Invita a tus amigos y colegas compartiendo el canal para montar aquí una buena rueda en $cleanCity. ¡A la escucha! Cambio.")
+                onResult("¡Excelente modulación $userNick! Soy la Estación Base. Invita a tus amigos y colegas compartiendo el canal para montar aquí una buena rueda en $cleanCity. ¡A la escucha! Cambio.")
                 return
             }
         }
@@ -279,7 +279,7 @@ object GeminiRadioService {
 
                 // 5. Prompt con respuestas DIRECTAS e INTELIGENTES
                 val currentTime = getCurrentFormattedTime()
-                val systemPrompt = "Te llamas FELIPE y eres el operador virtual e inteligencia artificial de la Estación Base ON AIR SPAIN en $cleanCity. Tu indicativo es 'Soy FELIPE, Estación Base $cleanCity'. La hora local exacta es $currentTime. Datos meteorológicos reales de $cleanCity: ($realWeather). Tráfico real: ($realTraffic). REGLAS MÁXIMAS DE RESPUESTA: 1) Responde SIEMPRE de forma DIRECTA, INTELIGENTE y COHERENTE a la pregunta o mensaje exacto del usuario. 2) Si te preguntan la hora, di directamente la hora local exacta ($currentTime). 3) Si te preguntan quién eres o cómo te llamas, preséntate alegremente como 'FELIPE, el operador virtual de la Estación Base en $cleanCity'. 4) MENCIONA el tiempo o el tráfico SOLO si el usuario te pregunta por el clima, tráfico, parte de la ciudad o si te hace un saludo general. 5) Habla con estilo de radioaficionado ameno, fresco y cercano (máximo 2 frases dinámicas). Termina siempre diciendo 'Cambio' o 'A la escucha'."
+                val systemPrompt = "Te llamas Estación Base y eres el operador virtual e inteligencia artificial de la Estación Base ON AIR SPAIN en $cleanCity. Tu indicativo es 'Soy la Estación Base de $cleanCity'. La hora local exacta es $currentTime. Datos meteorológicos reales de $cleanCity: ($realWeather). Tráfico real: ($realTraffic). REGLAS MÁXIMAS DE RESPUESTA: 1) Responde SIEMPRE de forma DIRECTA, INTELIGENTE y COHERENTE a la pregunta o mensaje exacto del usuario. 2) Si te preguntan la hora, di directamente la hora local exacta ($currentTime). 3) Si te preguntan quién eres o cómo te llamas, preséntate alegremente como 'la Estación Base en $cleanCity'. 4) MENCIONA el tiempo o el tráfico SOLO si el usuario te pregunta por el clima, tráfico, parte de la ciudad o si te hace un saludo general. 5) Habla con estilo de radioaficionado ameno, fresco y cercano (máximo 2 frases dinámicas). Termina siempre diciendo 'Cambio' o 'A la escucha'."
 
 
                 val promptContent = if (isSilentBeacon) {
@@ -372,7 +372,7 @@ object GeminiRadioService {
         val msgLower = userMessage?.lowercase()?.trim() ?: ""
 
         if (msgLower.contains("quien eres") || msgLower.contains("quién eres") || msgLower.contains("como te llamas") || msgLower.contains("cómo te llamas") || msgLower.contains("que eres") || msgLower.contains("qué eres") || msgLower.contains("quien habla") || msgLower.contains("quién habla") || msgLower.contains("quien sos") || msgLower.contains("quién sos") || msgLower.contains("presentat")) {
-            return "¡Hola $nick! Soy FELIPE, la Estación Base e IA táctica de ON AIR en $cleanCity. ¡Un placer saludarte por la frecuencia! Cambio."
+            return "¡Hola $nick! Soy la Estación Base e IA táctica de ON AIR en $cleanCity. ¡Un placer saludarte por la frecuencia! Cambio."
         }
 
         if (msgLower.contains("hora") || msgLower.contains("horas") || msgLower.contains("tienes hora") || msgLower.contains("qué hora") || msgLower.contains("que hora")) {
@@ -409,18 +409,18 @@ object GeminiRadioService {
 
         if (isSilentBeacon) {
             val beacons = listOf(
-                "¡Atención $cleanCity! Soy FELIPE. Reportando $weatherStr y $trafficStr a las $currentTime. $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Entra en frecuencia!",
-                "¡Buenas por $cleanCity! Soy FELIPE a la escucha a las $currentTime. $weatherStr y $trafficStr. $phraseEstupendo para charlar por radio y conocer Gente Real$catchphrase. Cambio.",
-                "¡Hola $cleanCity! Soy FELIPE reportando a las $currentTime. $weatherStr, $trafficStr y señal fuerte. $phrasePrecioso para hablar por radio con amigos$catchphrase. Cambio."
+                "¡Atención $cleanCity! Soy la Estación Base. Reportando $weatherStr y $trafficStr a las $currentTime. $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Entra en frecuencia!",
+                "¡Buenas por $cleanCity! Soy la Estación Base a la escucha a las $currentTime. $weatherStr y $trafficStr. $phraseEstupendo para charlar por radio y conocer Gente Real$catchphrase. Cambio.",
+                "¡Hola $cleanCity! Soy la Estación Base reportando a las $currentTime. $weatherStr, $trafficStr y señal fuerte. $phrasePrecioso para hablar por radio con amigos$catchphrase. Cambio."
             )
             return beacons.random()
         }
 
         val responses = listOf(
-            "¡Hola $nick! Soy FELIPE. Te escucho perfecto en $cleanCity. $weatherStr, $trafficStr a las $currentTime y $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Cambio!",
-            "¡Buenas $nick! Soy FELIPE, te recibo alto y claro desde $cleanCity. $weatherStr, $trafficStr y $phraseIdeal para charlar y conocer Gente Real$catchphrase. ¡Adelante! Cambio.",
-            "¡Qué tal $nick! Soy FELIPE. Llegas con señal impecable por $cleanCity. $weatherStr y $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Cambio!",
-            "¡Recibido $nick! Soy FELIPE, te escucho estupendamente a las $currentTime en $cleanCity. $weatherStr y $trafficStr. $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. Cambio."
+            "¡Hola $nick! Soy la Estación Base. Te escucho perfecto en $cleanCity. $weatherStr, $trafficStr a las $currentTime y $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Cambio!",
+            "¡Buenas $nick! Soy la Estación Base, te recibo alto y claro desde $cleanCity. $weatherStr, $trafficStr y $phraseIdeal para charlar y conocer Gente Real$catchphrase. ¡Adelante! Cambio.",
+            "¡Qué tal $nick! Soy la Estación Base. Llegas con señal impecable por $cleanCity. $weatherStr y $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. ¡Cambio!",
+            "¡Recibido $nick! Soy la Estación Base, te escucho estupendamente a las $currentTime en $cleanCity. $weatherStr y $trafficStr. $phrasePrecioso para hablar por radio con amigos o conocer Gente Real$catchphrase. Cambio."
         )
         return responses.random()
     }

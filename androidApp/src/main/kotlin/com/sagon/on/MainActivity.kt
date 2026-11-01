@@ -807,9 +807,9 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             if (geminiKeysRaw.isNotBlank()) {
                 val keysList = geminiKeysRaw.split(",").map { it.trim() }
                 GeminiRadioService.configureKeys(keysList)
-                Log.d("GEMINI_SERVICE", "✅ Configuradas ${keysList.size} clave(s) de Gemini AI Studio para Felipe")
+                Log.d("GEMINI_SERVICE", "✅ Configuradas ${keysList.size} clave(s) de Gemini AI Studio para la Estación Base")
             } else {
-                Log.w("GEMINI_SERVICE", "⚠️ No se encontró GEMINI_API_KEY_1 en local.properties. Felipe funcionará en modo de respuesta local.")
+                Log.w("GEMINI_SERVICE", "⚠️ No se encontró GEMINI_API_KEY_1 en local.properties. La Estación Base funcionará en modo de respuesta local.")
             }
         } catch (e: Exception) {}
 

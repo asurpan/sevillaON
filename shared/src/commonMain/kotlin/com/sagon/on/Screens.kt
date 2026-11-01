@@ -511,66 +511,52 @@ fun RadioPanel(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                // 🛡️ ESTADO DE TRANSMISIÓN Y CONFIRMACIÓN DE VOZ REAL (TX / RX HANDSHAKE)
+                                // 🛡️ ESTADO DE TRANSMISIÓN Y CONFIRMACIÓN DE VOZ REAL (SIEMPRE VISIBLE)
                                 val showRemoteRx = rx && !isTransmitting && !isBeeping
                                 Box(modifier = Modifier.fillMaxWidth().height(24.dp), contentAlignment = Alignment.Center) {
-                                    if (showRemoteRx) {
-                                        val isVoiceReal = state.isRxVoiceActive
-                                        val statusColor = if (isVoiceReal) Color(0xFF10B981) else Color(0xFF00E5FF)
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(Brush.horizontalGradient(listOf(Color.Transparent, statusColor.copy(0.2f), statusColor.copy(0.2f), Color.Transparent)))
-                                                .border(BorderStroke(1.dp, statusColor.copy(0.4f)), RoundedCornerShape(8.dp))
-                                                .padding(horizontal = 10.dp, vertical = 2.dp)
-                                        ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Box(
-                                                    modifier = Modifier.size(6.dp).clip(CircleShape).background(statusColor)
-                                                )
-                                                Spacer(Modifier.width(6.dp))
-                                                Text(
-                                                    text = if (isVoiceReal) "VOZ REAL | ${transmitterNick?.uppercase() ?: "RECEPTOR"}" else "RF | ${transmitterNick?.uppercase() ?: "RECEPTOR"}",
-                                                    color = statusColor,
-                                                    fontSize = 10.sp,
-                                                    fontWeight = FontWeight.ExtraBold,
-                                                    letterSpacing = 1.1.sp
-                                                )
+                                    val (statusColor, statusText) = when {
+                                        showRemoteRx -> {
+                                            if (state.isRxVoiceActive) {
+                                                Color(0xFF10B981) to "VOZ REAL | ${transmitterNick?.uppercase() ?: "RECEPTOR"}"
+                                            } else {
+                                                Color(0xFF00E5FF) to "RF | ${transmitterNick?.uppercase() ?: "RECEPTOR"}"
                                             }
                                         }
-                                    } else if (isTransmitting || isBeeping) {
-                                        val isLocalModulating = mic > 0.05f
-                                        val isConfirmed = state.isTxConfirmed || isLocalModulating
-                                        val statusColor = if (isConfirmed) Color(0xFFEF4444) else Color(0xFFFACC15)
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(Brush.horizontalGradient(listOf(Color.Transparent, statusColor.copy(0.2f), statusColor.copy(0.2f), Color.Transparent)))
-                                                .border(BorderStroke(1.dp, statusColor.copy(0.5f)), RoundedCornerShape(8.dp))
-                                                .padding(horizontal = 10.dp, vertical = 2.dp)
-                                        ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Box(
-                                                    modifier = Modifier.size(6.dp).clip(CircleShape).background(statusColor)
-                                                )
-                                                Spacer(Modifier.width(6.dp))
-                                                Text(
-                                                    text = if (state.isTxConfirmed) "TX CONFIRMADO" else if (isLocalModulating) "TX VOZ" else "PORTADORA",
-                                                    color = statusColor,
-                                                    fontSize = 10.sp,
-                                                    fontWeight = FontWeight.ExtraBold,
-                                                    letterSpacing = 1.1.sp
-                                                )
+                                        isTransmitting || isBeeping -> {
+                                            val isLocalModulating = mic > 0.05f
+                                            if (state.isTxConfirmed) {
+                                                Color(0xFFEF4444) to "TX CONFIRMADO"
+                                            } else if (isLocalModulating) {
+                                                Color(0xFFEF4444) to "TX VOZ"
+                                            } else {
+                                                Color(0xFFFACC15) to "PORTADORA"
                                             }
                                         }
-                                    } else {
-                                        Text(
-                                            text = "SEÑAL",
-                                            color = Color.White.copy(0.12f),
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Black,
-                                            letterSpacing = 1.5.sp
-                                        )
+                                        else -> {
+                                            Color(0xFF10B981) to "CANAL ACTIVO"
+                                        }
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Brush.horizontalGradient(listOf(Color.Transparent, statusColor.copy(0.2f), statusColor.copy(0.2f), Color.Transparent)))
+                                            .border(BorderStroke(1.dp, statusColor.copy(0.4f)), RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 10.dp, vertical = 2.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(
+                                                modifier = Modifier.size(6.dp).clip(CircleShape).background(statusColor)
+                                            )
+                                            Spacer(Modifier.width(6.dp))
+                                            Text(
+                                                text = statusText,
+                                                color = statusColor,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                letterSpacing = 1.1.sp
+                                            )
+                                        }
                                     }
                                 }
 

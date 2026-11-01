@@ -30,6 +30,30 @@ object RadioNetworkManager {
                     window.app.db.ref("users").on('value', function(s) { 
                         if(window.dispatch_users_update) window.dispatch_users_update(s.val()); 
                     });
+
+                    var nick = (localStorage.getItem("indicativo") || "").trim().toUpperCase();
+                    if (nick && nick !== "ANÓNIMO" && nick !== "RADIO") {
+                        var sanitizedNick = window.sanitizePath(nick);
+                        if (window.privateInboxRef) try { window.privateInboxRef.off(); } catch(e){}
+                        window.privateInboxRef = window.app.db.ref("private_inbox/" + sanitizedNick);
+                        window.privateInboxRef.on('child_added', function(snapshot) {
+                            var msg = snapshot.val();
+                            if (!msg) return;
+                            var now = Date.now();
+                            if (msg.timestamp && (now - msg.timestamp < 120000)) {
+                                var sender = (msg.senderNick || "ALGUIEN").toString().toUpperCase();
+                                var text = (msg.text || "").toString();
+                                if (window.playUiSound) try { window.playUiSound("chat_msg"); } catch(e){}
+                                if (window.showSystemNotification) {
+                                    try { window.showSystemNotification("💬 MENSAJE PRIVADO DE " + sender, text); } catch(e){}
+                                }
+                                if (window.dispatch_chat_open) {
+                                    try { window.dispatch_chat_open(sender); } catch(e){}
+                                }
+                            }
+                            try { snapshot.ref.remove(); } catch(e){}
+                        });
+                    }
                 }
             };
 
@@ -84,7 +108,14 @@ object RadioNetworkManager {
             m.timestamp = Date.now()
             win.app.db.ref(chatPath).push(m)
 
-            if (target == null) {
+            if (target != null) {
+                val targetSanitized = win.sanitizePath(target)
+                val notifObj: dynamic = js("{}")
+                notifObj.senderNick = nick
+                notifObj.text = text
+                notifObj.timestamp = Date.now()
+                win.app.db.ref("private_inbox/$targetSanitized").push(notifObj)
+            } else {
                 win.app.lastUserTranscript = text
                 js("if (window.checkControlStationResponse) setTimeout(function() { window.checkControlStationResponse(); }, 800);")
             }

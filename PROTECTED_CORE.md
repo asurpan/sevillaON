@@ -33,9 +33,10 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Filtro de Emisión Real para Roger Beep**: El tono Roger Beep de 1955Hz SOLO debe sonar si el usuario estuvo activamente transmitiendo (`wasTransmitting === true`). Al cambiar de canal o pulsar flechas de sintonía con el micro suelto, queda PROHIBIDO emitir el Roger Beep (solo emitirá el clic de 800Hz `switch`).
     - **Protección Anti-Chime de PTT**: Queda ESTRICTAMENTE PROHIBIDO invocar `webkitSpeechRecognition` durante el PTT en la app nativa Android (`window.AndroidApp != null`) para evitar que el sistema emita el pitido ("piri") de Búsqueda por Voz de Google.
 
-6. **Reglas del Chat Táctico y Auto-Scroll**:
+6. **Reglas del Chat Táctico, Botón Mute y Buzón Privado en Tiempo Real**:
+    - **Botón Mute de Chat Obligatorio**: En `InlineTacticalChat` (`Screens.kt`), el encabezado DEBE incluir el icono táctil de silenciar/activar sonido (`VolumeOff` en rojo cuando está silenciado, `VolumeUp` cuando está activo) llamando a `onChatMutedChange(!isChatMuted)`.
+    - **Buzón de Notificaciones Privadas (`private_inbox/NICK`)**: Al enviar un mensaje privado, `RadioNetworkManager.kt` DEBE inyectar una notificación en directo a `private_inbox/TARGET_NICK`. `initFirebaseListener` mantiene la escucha permanente en `private_inbox/MY_NICK` reproduciendo el tono `chat_msg`, lanzando `showSystemNotification("💬 MENSAJE PRIVADO DE...")` y abriendo el chat privado en el móvil destino.
     - **Hora de Publicación**: Todos los mensajes de chat DEBEN mostrar la hora de publicación en formato `[HH:mm]`.
-    - **Notificaciones de Privados**: Los mensajes privados y avisos de amigos conectándose DEBEN emitir siempre notificación sonora nativa.
     - **Flujo Multilínea y Auto-Scroll**: Mensajes con `buildAnnotatedString` permitiendo el salto de línea automático sin recortes `...`. La lista desplegada cuenta con `verticalScroll` y Auto-Scroll automático (`animateScrollTo(maxValue)`).
 
 7. **Arquitectura de Segundo Plano Estilo Walkie-Talkie (Android 14/15/16)**:

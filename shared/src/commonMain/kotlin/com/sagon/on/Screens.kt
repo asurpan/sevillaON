@@ -1226,6 +1226,40 @@ fun InlineTacticalChat(
             .clickable { onChatOpenChange(true) }
     ) {
         Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+            // 🔇/🔊 ENCABEZADO DE CHAT CON BOTÓN DE SILENCIAR / ACTIVAR SONIDO
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.Chat,
+                        contentDescription = null,
+                        tint = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = if (targetNick != null) "CHAT PRIVADO CON $targetNick" else "CHAT TÁCTICO DE CANAL",
+                        color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+
+                Icon(
+                    imageVector = if (isChatMuted) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp,
+                    contentDescription = if (isChatMuted) "Chat Silenciado" else "Chat Con Sonido",
+                    tint = if (isChatMuted) Color.Red else (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clickable {
+                            onPlaySound("switch")
+                            onChatMutedChange(!isChatMuted)
+                        }
+                )
+            }
             if (targetNick != null) {
                 Surface(
                     color = LuxeColors.Gold.copy(alpha = 0.15f),

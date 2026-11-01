@@ -419,14 +419,15 @@ object RadioAudioManager {
                                 var beepGain = window.app.ctx.createGain();
                                 beepOsc.type = "triangle";
                                 beepOsc.frequency.setValueAtTime(1955, now);
-                                beepGain.gain.setValueAtTime(0.35, now);
-                                beepGain.gain.setValueAtTime(0.35, now + 0.27);
+                                // 🎙️ ROGER BEEP SECO, POTENTE Y CONTUNDENTE (1955Hz - 300ms SIN FUNDIDO)
+                                beepGain.gain.setValueAtTime(0.40, now);
+                                beepGain.gain.setValueAtTime(0.40, now + 0.292);
                                 beepGain.gain.linearRampToValueAtTime(0.001, now + 0.30);
                                 beepOsc.connect(beepGain);
 
                                 var localBeepGain = window.app.ctx.createGain();
-                                localBeepGain.gain.setValueAtTime(0.35, now);
-                                localBeepGain.gain.setValueAtTime(0.35, now + 0.27);
+                                localBeepGain.gain.setValueAtTime(0.40, now);
+                                localBeepGain.gain.setValueAtTime(0.40, now + 0.292);
                                 localBeepGain.gain.linearRampToValueAtTime(0.001, now + 0.30);
                                 beepOsc.connect(localBeepGain);
 
@@ -831,8 +832,8 @@ object RadioSignaling {
                     if (window.app && (window.app.suppressRxOff || window.app.isChangingChannel)) return;
                     var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); 
                     o.type = "triangle"; o.frequency.setValueAtTime(1955, now); 
-                    g.gain.setValueAtTime(0.35, now); 
-                    g.gain.setValueAtTime(0.35, now + 0.27);
+                    g.gain.setValueAtTime(0.40, now); 
+                    g.gain.setValueAtTime(0.40, now + 0.292);
                     g.gain.linearRampToValueAtTime(0.001, now + 0.30);
                     o.connect(g); g.connect(window.app.masterOut); o.start(now); o.stop(now + 0.305);
                     return;

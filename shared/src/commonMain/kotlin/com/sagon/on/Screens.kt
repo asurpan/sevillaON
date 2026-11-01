@@ -254,6 +254,9 @@ fun RadioPanel(
     var isPttPressed by remember { mutableStateOf(false) }
     var isPttBlockedByRx by remember { mutableStateOf(false) }
     var privateChatTargetNick by remember { mutableStateOf<String?>(null) }
+
+    val primaryColor = state.backgroundStyle.primaryColor
+    val secondaryColor = state.backgroundStyle.secondaryColor
     
     val pttScale by animateFloatAsState(if (isPttPressed || pttLocked) 0.94f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "PttSqueeze")
 
@@ -468,7 +471,7 @@ fun RadioPanel(
 
                 Spacer(Modifier.height(20.dp))
 
-                // 📺 PANTALLA NEXUS (EFECTO EDGE CURVADO Y BORDE FUNDIDO LUMINOSO)
+                // 📺 PANTALLA NEXUS (EFECTO EDGE CURVADO Y BORDE FUNDIDO LUMINOSO A JUEGO)
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -479,10 +482,10 @@ fun RadioPanel(
                         width = 1.5.dp, 
                         brush = Brush.horizontalGradient(
                             listOf(
-                                Color(0xFF00E5FF).copy(alpha = 0.25f),
-                                Color(0xFF00E5FF).copy(alpha = 0.85f),
-                                Color(0xFF0EA5E9).copy(alpha = 0.85f),
-                                Color(0xFF00E5FF).copy(alpha = 0.25f)
+                                primaryColor.copy(alpha = 0.25f),
+                                primaryColor.copy(alpha = 0.85f),
+                                secondaryColor.copy(alpha = 0.85f),
+                                primaryColor.copy(alpha = 0.25f)
                             )
                         )
                     ),
@@ -998,7 +1001,7 @@ fun RadioPanel(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(modifier = Modifier.fillMaxWidth().height(68.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    val pttColor = if (isTransmitting) Color(0xFFEF4444) else LuxeColors.Gold
+                    val pttColor = if (isTransmitting) Color(0xFFEF4444) else primaryColor
                     val pttGradient = if (isTransmitting) {
                         Brush.radialGradient(
                             colors = listOf(Color(0xFF991B1B), Color(0xFF450A0A), Color(0xFF180202)),
@@ -1007,8 +1010,8 @@ fun RadioPanel(
                     } else {
                         Brush.radialGradient(
                             colors = listOf(
-                                pttColor.copy(0.35f),
-                                Color(0xFF0891B2).copy(0.20f),
+                                primaryColor.copy(0.35f),
+                                secondaryColor.copy(0.20f),
                                 Color(0xFF020617).copy(0.90f)
                             ),
                             radius = 240f

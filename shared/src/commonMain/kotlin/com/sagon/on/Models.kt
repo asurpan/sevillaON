@@ -202,18 +202,26 @@ enum class BackgroundStyle(
     val id: String,
     val title: String,
     val subtitle: String,
+    val primaryColorHex: Long = 0xFF00E5FF,
+    val secondaryColorHex: Long = 0xFF0EA5E9,
     val overlayType: String = "NONE"
 ) {
-    DEEP_SEA("deep_sea", "Luxe Deep Sea", "Azul marino táctico original", "NONE"),
-    LUXE_GOLD("luxe_gold", "Luxe Cyan Royal", "Degradado azul brillante con destellos", "NONE"),
-    MILITARY("military", "Verde Militar Táctico", "Camuflaje de aviación militar", "NONE"),
-    NEON_ROSA("neon_rosa", "Rosa Cyberpunk", "Neón magenta-rosa de alto contraste", "NONE"),
-    CIRCUIT("circuit", "Circuito PCB Electrónico", "Textura de placa electrónica integrada", "CIRCUIT"),
-    CARBON("carbon", "Fibra de Carbono 3D", "Trama entramada de carbono técnico", "CARBON"),
-    WALKIE_ABS("walkie_abs", "Walkie-Talkie Rugoso", "Plástico técnico ABS de equipo profesional", "ABS_WALKIE"),
-    STEEL("steel", "Acero Cepillado", "Textura metálica de chasis de emisora", "STEEL"),
-    OLED_BLACK("oled_black", "Negro OLED Puro", "Negro absoluto para ahorro de batería", "NONE")
+    DEEP_SEA("deep_sea", "Luxe Deep Sea", "Azul marino táctico original", 0xFF00E5FF, 0xFF0EA5E9, "NONE"),
+    LUXE_GOLD("luxe_gold", "Luxe Cyan Royal", "Degradado azul brillante con destellos", 0xFF38BDF8, 0xFF0284C7, "NONE"),
+    MILITARY("military", "Verde Militar Táctico", "Camuflaje de aviación militar", 0xFF22C55E, 0xFF15803D, "NONE"),
+    NEON_ROSA("neon_rosa", "Rosa Cyberpunk", "Neón magenta-rosa de alto contraste", 0xFFEC4899, 0xFFBE185D, "NONE"),
+    CIRCUIT("circuit", "Circuito PCB Electrónico", "Textura de placa electrónica integrada", 0xFF10B981, 0xFF059669, "CIRCUIT"),
+    CARBON("carbon", "Fibra de Carbono 3D", "Trama entramada de carbono técnico", 0xFFF59E0B, 0xFFD97706, "CARBON"),
+    WALKIE_ABS("walkie_abs", "Walkie-Talkie Rugoso", "Plástico técnico ABS de equipo profesional", 0xFFEAB308, 0xFFCA8A04, "ABS_WALKIE"),
+    STEEL("steel", "Acero Cepillado", "Textura metálica de chasis de emisora", 0xFF38BDF8, 0xFF0284C7, "STEEL"),
+    OLED_BLACK("oled_black", "Negro OLED Puro", "Negro absoluto para ahorro de batería", 0xFF00E5FF, 0xFF0EA5E9, "NONE")
 }
+
+val BackgroundStyle.primaryColor: androidx.compose.ui.graphics.Color
+    get() = androidx.compose.ui.graphics.Color(primaryColorHex)
+
+val BackgroundStyle.secondaryColor: androidx.compose.ui.graphics.Color
+    get() = androidx.compose.ui.graphics.Color(secondaryColorHex)
 
 data class AppNotification(
     val title: String,

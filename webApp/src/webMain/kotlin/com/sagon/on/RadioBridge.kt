@@ -34,7 +34,8 @@ object RadioBridge {
         onVolumeSync: (Float) -> Unit,
         onDiagRequest: () -> RadioDiagData,
         onIsRoomEmpty: () -> Boolean = { true },
-        onControlActive: (String?, Boolean) -> Unit = { _, _ -> }
+        onControlActive: (String?, Boolean) -> Unit = { _, _ -> },
+        onRxVoiceChange: (Boolean) -> Unit = {}
     ) {
         win.dispatch_mic = onMic
         win.dispatch_beeping = onBeep
@@ -60,5 +61,6 @@ object RadioBridge {
         win.request_diag_data = onDiagRequest
         win.dispatch_is_room_empty = onIsRoomEmpty
         win.dispatch_control_active = onControlActive
+        win.dispatch_rx_voice = onRxVoiceChange
     }
 }

@@ -461,11 +461,18 @@ fun main() {
                                     }
                                 }
 
-                                list.add(RemoteUser(id = k, nick = userNick, isTransmitting = isTransmitting, city = u.city as? String ?: "SEVILLA", channel = u.channel as? String ?: "SEVILLA", txPower = (u.pwr as? Double ?: 0.7).toFloat(), isFriend = radioState.value.friends.contains(userNick), roger = (u.roger == true)))
+                                val userRxFrom = (u.rxFrom as? String ?: "").trim().uppercase()
+                                list.add(RemoteUser(id = k, nick = userNick, isTransmitting = isTransmitting, city = u.city as? String ?: "SEVILLA", channel = u.channel as? String ?: "SEVILLA", txPower = (u.pwr as? Double ?: 0.7).toFloat(), isFriend = radioState.value.friends.contains(userNick), roger = (u.roger == true), rxFrom = if (userRxFrom.isEmpty()) null else userRxFrom))
                             }
                         }
                     }
                     remoteUsersState.clear(); remoteUsersState.addAll(list)
+                    val mySessionId = (win.app?.sessionID as? String ?: "")
+                    val isConfirmedRemote = list.any { it.id != mySessionId && (it.rxFrom == myNick || it.rxFrom == mySessionId) }
+                    if (radioState.value.isTxConfirmed != isConfirmedRemote) {
+                        radioState.value = radioState.value.copy(isTxConfirmed = isConfirmedRemote)
+                    }
+
                     val activeRemoteTx = list.find { it.isTransmitting && it.id != win.app.sessionID }
                     if (activeRemoteTx != null) {
                         remoteTransmitterName.value = activeRemoteTx.nick
@@ -544,7 +551,8 @@ fun main() {
                         remoteTransmitterName.value = null
                     }
                 }
-            }
+            },
+            onRxVoiceChange = { isActive -> radioState.value = radioState.value.copy(isRxVoiceActive = isActive) }
         )
 
         val isDuplicateTabAlert = remember { mutableStateOf(false) }

@@ -153,6 +153,7 @@ data class RemoteUser(
     val signal: Float = 0.8f,
     val txPower: Float = 0.7f,
     val roger: Boolean = true,
+    val rxFrom: String? = null,
     val lastSeen: Long = 0
 )
 
@@ -195,7 +196,9 @@ data class RadioState(
     val isNotificationsEnabled: Boolean = true,
     val unreadCount: Int = 0,
     val activeProfile: ActivityProfile = ActivityProfile.NORMAL,
-    val backgroundStyle: BackgroundStyle = BackgroundStyle.DEEP_SEA
+    val backgroundStyle: BackgroundStyle = BackgroundStyle.DEEP_SEA,
+    val isTxConfirmed: Boolean = false,
+    val isRxVoiceActive: Boolean = false
 )
 
 enum class BackgroundStyle(

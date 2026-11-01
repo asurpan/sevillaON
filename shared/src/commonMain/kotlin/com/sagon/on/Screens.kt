@@ -511,34 +511,61 @@ fun RadioPanel(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                // 🛡️ ESTADO (AIRE / RX)
+                                // 🛡️ ESTADO DE TRANSMISIÓN Y CONFIRMACIÓN DE VOZ REAL (TX / RX HANDSHAKE)
                                 val showRemoteRx = rx && !isTransmitting && !isBeeping
                                 Box(modifier = Modifier.fillMaxWidth().height(24.dp), contentAlignment = Alignment.Center) {
-                                    androidx.compose.animation.AnimatedVisibility(
-                                        visible = showRemoteRx,
-                                        enter = fadeIn(tween(600)) + scaleIn(initialScale = 0.85f),
-                                        exit = fadeOut(tween(400)) + scaleOut(targetScale = 0.85f)
-                                    ) {
+                                    if (showRemoteRx) {
+                                        val isVoiceReal = state.isRxVoiceActive
+                                        val statusColor = if (isVoiceReal) Color(0xFF10B981) else Color(0xFF00E5FF)
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(8.dp))
-                                                .background(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xFF10B981).copy(0.2f), Color(0xFF10B981).copy(0.2f), Color.Transparent)))
-                                                .border(BorderStroke(1.dp, Color(0xFF10B981).copy(0.4f)), RoundedCornerShape(8.dp))
-                                                .padding(horizontal = 12.dp, vertical = 2.dp)
+                                                .background(Brush.horizontalGradient(listOf(Color.Transparent, statusColor.copy(0.2f), statusColor.copy(0.2f), Color.Transparent)))
+                                                .border(BorderStroke(1.dp, statusColor.copy(0.4f)), RoundedCornerShape(8.dp))
+                                                .padding(horizontal = 10.dp, vertical = 2.dp)
                                         ) {
-                                            Text(
-                                                text = transmitterNick?.uppercase() ?: "RECEPTOR",
-                                                color = Color(0xFF10B981),
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                letterSpacing = 1.2.sp
-                                            )
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Box(
+                                                    modifier = Modifier.size(6.dp).clip(CircleShape).background(statusColor)
+                                                )
+                                                Spacer(Modifier.width(6.dp))
+                                                Text(
+                                                    text = if (isVoiceReal) "VOZ REAL | ${transmitterNick?.uppercase() ?: "RECEPTOR"}" else "RF | ${transmitterNick?.uppercase() ?: "RECEPTOR"}",
+                                                    color = statusColor,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    letterSpacing = 1.1.sp
+                                                )
+                                            }
                                         }
-                                    }
-                                    if (!showRemoteRx) {
+                                    } else if (isTransmitting || isBeeping) {
+                                        val isConfirmed = state.isTxConfirmed
+                                        val statusColor = if (isConfirmed) Color(0xFFEF4444) else Color(0xFFFACC15)
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(Brush.horizontalGradient(listOf(Color.Transparent, statusColor.copy(0.2f), statusColor.copy(0.2f), Color.Transparent)))
+                                                .border(BorderStroke(1.dp, statusColor.copy(0.5f)), RoundedCornerShape(8.dp))
+                                                .padding(horizontal = 10.dp, vertical = 2.dp)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Box(
+                                                    modifier = Modifier.size(6.dp).clip(CircleShape).background(statusColor)
+                                                )
+                                                Spacer(Modifier.width(6.dp))
+                                                Text(
+                                                    text = if (isConfirmed) "TX CONFIRMADO" else "EMITIENDO...",
+                                                    color = statusColor,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    letterSpacing = 1.1.sp
+                                                )
+                                            }
+                                        }
+                                    } else {
                                         Text(
-                                            text = if (isTransmitting || isBeeping) "AIRE" else "SEÑAL",
-                                            color = if (isTransmitting || isBeeping) Color.Red else Color.White.copy(0.12f),
+                                            text = "SEÑAL",
+                                            color = Color.White.copy(0.12f),
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Black,
                                             letterSpacing = 1.5.sp

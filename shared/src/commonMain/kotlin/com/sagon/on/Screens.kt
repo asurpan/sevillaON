@@ -993,7 +993,7 @@ fun RadioPanel(
                             strokeWidth = 1.dp.toPx()
                         )
                     }
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
                     .padding(bottom = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {

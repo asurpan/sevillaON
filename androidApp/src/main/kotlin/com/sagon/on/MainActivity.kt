@@ -897,12 +897,6 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         isFocusable = true
                         isFocusableInTouchMode = true
                         requestFocus()
-                        setOnTouchListener { v, event ->
-                            if ((event.action == android.view.MotionEvent.ACTION_DOWN || event.action == android.view.MotionEvent.ACTION_UP) && !v.hasFocus()) {
-                                v.requestFocus()
-                            }
-                            false
-                        }
 
                         setOnKeyListener { _, keyCode, keyEvent ->
                             if (keyCode == KeyEvent.KEYCODE_BACK && keyEvent.action == KeyEvent.ACTION_UP) {

@@ -28,17 +28,19 @@ object RadioPersistence {
             val profile = ActivityProfile.entries.find { it.name == profileStr } ?: ActivityProfile.NORMAL
 
             val win: dynamic = window
-            var initialMoniVol = localStorage.getItem("moniVol")?.toFloatOrNull() ?: 0.5f
+            val initialMoniVol = localStorage.getItem("moniVol")?.toFloatOrNull() ?: 0.5f
             
             val savedNick = (localStorage.getItem("indicativo") ?: "").trim()
             val hasMicExplain = localStorage.getItem("hasMicExplain")?.toBoolean() ?: savedNick.isNotBlank()
 
-            // 🛡️ SINCRONIZACIÓN CON EL VOLUMEN DEL SISTEMA (SÓLO SI ES LA PRIMERA CARGA)
-            if (win.AndroidApp != null && win.AndroidApp.getSystemVolume != null) {
+            // 🛡️ SINCRONIZACIÓN PERSISTENTE CON EL VOLUMEN DEL SISTEMA
+            var initialSysVol = localStorage.getItem("sysVol")?.toFloatOrNull()
+            if (initialSysVol == null && win.AndroidApp != null && win.AndroidApp.getSystemVolume != null) {
                 try {
-                    initialMoniVol = win.AndroidApp.getSystemVolume() as Float
+                    initialSysVol = win.AndroidApp.getSystemVolume() as Float
                 } catch(e: Exception) {}
             }
+            if (initialSysVol == null) initialSysVol = 0.90f
 
             val bgStyleStr = localStorage.getItem("bgStyle")
             val bgStyle = BackgroundStyle.entries.find { it.id == bgStyleStr } ?: BackgroundStyle.DEEP_SEA
@@ -66,7 +68,7 @@ object RadioPersistence {
                 isChatMuted = localStorage.getItem("chatMuted") == "true",
                 isNotificationsEnabled = localStorage.getItem("notifsActive")?.toBoolean() ?: true,
                 squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.90f,
-                systemVolume = localStorage.getItem("sysVol")?.toFloatOrNull() ?: 1.0f,
+                systemVolume = initialSysVol,
                 hasAcceptedMicExplain = hasMicExplain,
                 backgroundStyle = bgStyle
             )

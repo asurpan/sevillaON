@@ -513,7 +513,7 @@ fun RadioPanel(
                             ) {
                                 // 🛡️ ESTADO (AIRE / RX)
                                 val showRemoteRx = rx && !isTransmitting && !isBeeping
-                                Box(modifier = Modifier.fillMaxWidth().height(28.dp), contentAlignment = Alignment.Center) {
+                                Box(modifier = Modifier.fillMaxWidth().height(24.dp), contentAlignment = Alignment.Center) {
                                     androidx.compose.animation.AnimatedVisibility(
                                         visible = showRemoteRx,
                                         enter = fadeIn(tween(600)) + scaleIn(initialScale = 0.85f),
@@ -546,12 +546,14 @@ fun RadioPanel(
                                     }
                                 }
 
+                                Spacer(Modifier.height(6.dp))
+
                                 // 🚨 REGLA DE ORO CB 27MHz: PORTADORA FIJA Y PISOTÓN BASE (NO ALTERAR LÓGICA DE LEDS FIJOS)
                                 // 1. En RX la portadora mantiene los LEDs TOTALMENTE FIJOS marcando el nivel RF real del emisor.
                                 // 2. Agente / Bot / Base (BASE/CONTROL) transmite SIEMPRE con potencia a tope (50W -> 20 LEDs Fijos S9+30dB).
                                 // 3. Pisotón: Las estaciones de mayor potencia se imponen fijando un nivel de LEDs superior.
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().height(22.dp).padding(vertical = 1.dp), 
+                                    modifier = Modifier.fillMaxWidth().height(18.dp).padding(vertical = 1.dp), 
                                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     val isControlBase = transmitterNick?.startsWith("BASE ") == true || 

@@ -518,7 +518,14 @@ fun main() {
             onVoxSync = { },
             onRoomUpdate = { },
             onPttLive = { },
-            onVolumeSync = { newVol -> if (win.setMasterVolume != null) win.setMasterVolume(newVol) },
+            onVolumeSync = { newVol ->
+                if (win.setMasterVolume != null) win.setMasterVolume(newVol)
+                if (radioState.value.systemVolume != newVol) {
+                    val updated = radioState.value.copy(systemVolume = newVol)
+                    radioState.value = updated
+                    RadioPersistence.saveState(updated)
+                }
+            },
             onDiagRequest = { RadioDiagData() },
             onIsRoomEmpty = {
                 val mySessionId = (win.app?.sessionID as? String ?: "")
@@ -704,7 +711,7 @@ fun main() {
             },
             onInstallDismiss = { },
             externalNotification = null,
-            externalVolume = 0.7f,
+            externalVolume = radioState.value.systemVolume,
             externalBackPressCount = backPressCountState.value,
             micLevel = micLevelState.value,
             isBeeping = false,

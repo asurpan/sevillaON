@@ -164,7 +164,9 @@ fun App(
     var pendingDialog by remember { mutableStateOf<RadioDialogType?>(null) }
 
     LaunchedEffect(externalVolume) {
-        radioState = radioState.copy(systemVolume = externalVolume)
+        if (radioState.systemVolume != externalVolume) {
+            radioState = radioState.copy(systemVolume = externalVolume)
+        }
     }
     
     val notificationToShow = externalNotification ?: localNotification

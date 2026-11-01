@@ -468,24 +468,25 @@ fun RadioPanel(
 
                 Spacer(Modifier.height(20.dp))
 
-                // 📺 PANTALLA NEXUS (BORDE CELESTE CIAN DEGRADADO ELEGANTE)
+                // 📺 PANTALLA NEXUS (EFECTO EDGE CURVADO Y BORDE FUNDIDO LUMINOSO)
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(188.dp)
-                        .clip(RoundedCornerShape(20.dp)),
+                        .clip(RoundedCornerShape(22.dp)),
                     color = Color(0xFF020617),
                     border = BorderStroke(
                         width = 1.5.dp, 
-                        brush = Brush.verticalGradient(
+                        brush = Brush.horizontalGradient(
                             listOf(
-                                Color(0xFF00E5FF).copy(alpha = 0.70f),
-                                Color(0xFF0EA5E9).copy(alpha = 0.30f),
-                                Color(0xFF00E5FF).copy(alpha = 0.15f)
+                                Color(0xFF00E5FF).copy(alpha = 0.25f),
+                                Color(0xFF00E5FF).copy(alpha = 0.85f),
+                                Color(0xFF0EA5E9).copy(alpha = 0.85f),
+                                Color(0xFF00E5FF).copy(alpha = 0.25f)
                             )
                         )
                     ),
-                    shape = RoundedCornerShape(20.dp)
+                    shape = RoundedCornerShape(22.dp)
                 ) {
                     BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 8.dp)) {
                         val availableWidth = maxWidth

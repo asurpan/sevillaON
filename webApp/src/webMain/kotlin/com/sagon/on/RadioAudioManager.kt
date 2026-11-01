@@ -613,6 +613,17 @@ object RadioAudioManager {
                         window.remoteTxStates[peerNick] = isTx;
                     }
 
+                    // 📡 HANDSHAKE CONFIRMACIÓN DE RECEPCIÓN REAL EN DESTINO
+                    if (isTx && window.app && window.app.db && window.app.sessionID && window.app.sessionID !== "undefined") {
+                        if (!window.lastAckTime || Date.now() - window.lastAckTime > 800) {
+                            window.lastAckTime = Date.now();
+                            try { window.app.db.ref("users/" + window.app.sessionID).update({ rxFrom: peerNick }); } catch(e){}
+                        }
+                    } else if (!isTx && window.lastAckTime && Date.now() - window.lastAckTime > 1500) {
+                        window.lastAckTime = 0;
+                        try { window.app.db.ref("users/" + window.app.sessionID).update({ rxFrom: null }); } catch(e){}
+                    }
+
                     // 🎛️ FIX BANDA CIUDADANA: El Squelch NUNCA silencia transmisiones de voz activas (isTx)
                     var isBlockedByDiscrete = window.app.discreteMode === true;
 

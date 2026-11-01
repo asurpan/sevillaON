@@ -539,7 +539,8 @@ fun RadioPanel(
                                             }
                                         }
                                     } else if (isTransmitting || isBeeping) {
-                                        val isConfirmed = state.isTxConfirmed
+                                        val isLocalModulating = mic > 0.05f
+                                        val isConfirmed = state.isTxConfirmed || isLocalModulating
                                         val statusColor = if (isConfirmed) Color(0xFFEF4444) else Color(0xFFFACC15)
                                         Box(
                                             modifier = Modifier
@@ -554,7 +555,7 @@ fun RadioPanel(
                                                 )
                                                 Spacer(Modifier.width(6.dp))
                                                 Text(
-                                                    text = if (isConfirmed) "TX CONFIRMADO" else "EMITIENDO...",
+                                                    text = if (state.isTxConfirmed) "TX CONFIRMADO" else if (isLocalModulating) "TX VOZ" else "PORTADORA",
                                                     color = statusColor,
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.ExtraBold,

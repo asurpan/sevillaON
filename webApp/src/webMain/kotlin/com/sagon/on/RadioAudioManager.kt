@@ -390,20 +390,22 @@ object RadioAudioManager {
                                 var beepGain = window.app.ctx.createGain();
                                 beepOsc.type = "triangle";
                                 beepOsc.frequency.setValueAtTime(1955, now);
-                                beepGain.gain.setValueAtTime(0.20, now);
-                                beepGain.gain.setValueAtTime(0, now + 0.30);
+                                beepGain.gain.setValueAtTime(0.35, now);
+                                beepGain.gain.setValueAtTime(0.35, now + 0.27);
+                                beepGain.gain.linearRampToValueAtTime(0.001, now + 0.30);
                                 beepOsc.connect(beepGain);
 
                                 var localBeepGain = window.app.ctx.createGain();
-                                localBeepGain.gain.setValueAtTime(0.14, now);
-                                localBeepGain.gain.setValueAtTime(0, now + 0.30);
-                                beepGain.connect(localBeepGain);
+                                localBeepGain.gain.setValueAtTime(0.35, now);
+                                localBeepGain.gain.setValueAtTime(0.35, now + 0.27);
+                                localBeepGain.gain.linearRampToValueAtTime(0.001, now + 0.30);
+                                beepOsc.connect(localBeepGain);
 
                                 if (window.app.masterOut) localBeepGain.connect(window.app.masterOut);
                                 if (window.app.txBus) beepGain.connect(window.app.txBus);
 
                                 beepOsc.start(now);
-                                beepOsc.stop(now + 0.30);
+                                beepOsc.stop(now + 0.305);
                             } catch(e) { console.error("Beep error", e); }
 
                             if (window.app.rogerReleaseTimeout) clearTimeout(window.app.rogerReleaseTimeout);
@@ -415,12 +417,12 @@ object RadioAudioManager {
                                 try { if (sessionRef) sessionRef.update({ tx: false }); } catch(e) {}
                                 try {
                                     var endNow = window.app.ctx ? window.app.ctx.currentTime : now;
-                                    if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.06);
-                                    if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.06);
+                                    if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.05);
+                                    if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.05);
                                     if (window.updateMoniGain) window.updateMoniGain();
                                 } catch(e) {}
                                 if (window.checkControlStationResponse) try { window.checkControlStationResponse(); } catch(e) {}
-                            }, 550);
+                            }, 310);
                         } else {
                             window.app.isTransmittingInternal = false;
                             window.app.isBeeping = false;
@@ -782,8 +784,10 @@ object RadioSignaling {
                     if (window.app && (window.app.suppressRxOff || window.app.isChangingChannel)) return;
                     var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); 
                     o.type = "triangle"; o.frequency.setValueAtTime(1955, now); 
-                    g.gain.setValueAtTime(0.14, now); g.gain.setValueAtTime(0, now + 0.30); 
-                    o.connect(g); g.connect(window.app.masterOut); o.start(now); o.stop(now + 0.30);
+                    g.gain.setValueAtTime(0.35, now); 
+                    g.gain.setValueAtTime(0.35, now + 0.27);
+                    g.gain.linearRampToValueAtTime(0.001, now + 0.30);
+                    o.connect(g); g.connect(window.app.masterOut); o.start(now); o.stop(now + 0.305);
                     return;
                 }
                 if (type === "rx_off") {
@@ -878,7 +882,10 @@ object ReplayEngine {
                 if (isPlaying) return; // 🛑 CORTAFUEGOS: NO HABLAR MIENTRAS EL REPLAY ESTÁ EN REPRODUCCIÓN
                 if (!window.app.hasUserModulated) return; // 🛡️ EL BOT SOLO HABLA SI EL USUARIO HA INTERACTUADO PULSANDO EL PTT
 
-                if (window.app.isBotEnabled === false) return; // 🛡️ DESACTIVADO POR EL USUARIO EN AJUSTES
+                // 🛡️ DESACTIVADO POR EL USUARIO EN AJUSTES (COMPROBACIÓN RIGUROSA DE APAGADO)
+                var botActive = (window.app && window.app.isBotEnabled !== undefined) ? (window.app.isBotEnabled === true || window.app.isBotEnabled === "true") : (localStorage.getItem("botEnabled") !== "false");
+                if (!botActive || window.app.isBotEnabled === false || window.app.isBotEnabled === "false" || localStorage.getItem("botEnabled") === "false") return;
+
                 if (window.dispatch_is_room_empty && !window.dispatch_is_room_empty()) return;
                 if (window.app.isControlSpeaking) return;
 
@@ -899,6 +906,10 @@ object ReplayEngine {
 
                 function deliverSpeech(textToSpeak) {
                     if (!textToSpeak) return;
+
+                    // 🛡️ VERIFICACIÓN ESTRICTA DE BOT ACTIVADO
+                    var isBotOn = (window.app && window.app.isBotEnabled !== undefined) ? (window.app.isBotEnabled === true || window.app.isBotEnabled === "true") : (localStorage.getItem("botEnabled") !== "false");
+                    if (!isBotOn || window.app.isBotEnabled === false || window.app.isBotEnabled === "false" || localStorage.getItem("botEnabled") === "false") return;
                     
                     // 👂 MODO OREJA / DISCRETO ACTIVADO: Silenciar totalmente la voz del Bot
                     if (window.app && window.app.discreteMode) {
@@ -1007,7 +1018,8 @@ object ReplayEngine {
             };
 
             setInterval(function() {
-                if (!window.app || !window.app.hasUserModulated || window.app.isBotEnabled === false) return;
+                var isBotOn = (window.app && window.app.isBotEnabled !== undefined) ? (window.app.isBotEnabled === true || window.app.isBotEnabled === "true") : (localStorage.getItem("botEnabled") !== "false");
+                if (!window.app || !window.app.hasUserModulated || !isBotOn || window.app.isBotEnabled === false || window.app.isBotEnabled === "false" || localStorage.getItem("botEnabled") === "false") return;
                 if (window.app.isTransmittingInternal || window.app.isControlSpeaking) return;
                 var currentHour = new Date().getHours();
                 if (window.lastHourlyBulletinHour !== -1 && window.lastHourlyBulletinHour !== currentHour) {

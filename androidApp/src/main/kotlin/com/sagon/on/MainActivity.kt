@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
 
 
-    private val USE_GITHUB_REMOTE_SERVER = true
+    private val USE_GITHUB_REMOTE_SERVER = false
 
 
 
@@ -1000,12 +1000,6 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                             postDelayed({
                                                 try { toneGen.release() } catch (_: Exception) {}
                                             }, 200)
-                                        } else if (type == "roger" || type == "rx_off" || type == "ptt_off") {
-                                            val toneGen = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80)
-                                            toneGen.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 250)
-                                            postDelayed({
-                                                try { toneGen.release() } catch (_: Exception) {}
-                                            }, 300)
                                         }
                                     } catch (e: Exception) {}
                                 }

@@ -59,7 +59,7 @@ object RadioPersistence {
                 isInterfaceLocked = localStorage.getItem("isLocked")?.toBoolean() ?: false,
                 veteranPower = localStorage.getItem("vetPwr")?.toFloatOrNull() ?: 0.02f,
                 isDspEnabled = localStorage.getItem("dspEnabled")?.toBoolean() ?: true,
-                isBotEnabled = localStorage.getItem("botEnabled")?.toBoolean() ?: true,
+                isBotEnabled = (localStorage.getItem("botEnabled") ?: "true") == "true",
                 botGender = localStorage.getItem("botGender") ?: "MALE",
                 botSpeed = localStorage.getItem("botSpeed")?.toFloatOrNull() ?: 0.95f,
                 botPitch = localStorage.getItem("botPitch")?.toFloatOrNull() ?: 0.90f,

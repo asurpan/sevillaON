@@ -289,6 +289,11 @@ fun main() {
 
     ComposeViewport(root) {
         val radioState = remember { mutableStateOf(RadioPersistence.loadInitialState()) }
+        LaunchedEffect(radioState.value.isBotEnabled) {
+            if (win.app != null) {
+                win.app.isBotEnabled = radioState.value.isBotEnabled
+            }
+        }
         val remoteUsersState = remember { mutableStateListOf<RemoteUser>() }
         val micLevelState = remember { mutableStateOf(0f) }
         val remoteTransmitterName = remember { mutableStateOf<String?>(null) }

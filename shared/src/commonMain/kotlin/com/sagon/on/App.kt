@@ -255,12 +255,18 @@ fun App(
         }
     }
 
-    var lastSavedState by remember { mutableStateOf(initialState) }
-    LaunchedEffect(radioState) {
-        if (radioState != lastSavedState) {
-            lastSavedState = radioState
-            onStateSave(radioState)
-        }
+    LaunchedEffect(
+        radioState.city, radioState.channel, radioState.subtone,
+        radioState.voxSensitivity, radioState.monitorVolume, radioState.rfGain,
+        radioState.isRogerBeepEnabled, radioState.isVoxEnabled, radioState.isMonitorEnabled,
+        radioState.isEcoMode, radioState.isInterfaceLocked, radioState.veteranPower,
+        radioState.isDspEnabled, radioState.isBotEnabled, radioState.botGender,
+        radioState.botSpeed, radioState.botPitch, radioState.activeProfile,
+        radioState.isDiscreteModeEnabled, radioState.isChatMuted, radioState.isNotificationsEnabled,
+        radioState.squelch, radioState.systemVolume, radioState.hasAcceptedMicExplain,
+        radioState.backgroundStyle
+    ) {
+        onStateSave(radioState)
     }
     LaunchedEffect(radioState.city) { onCityChange(radioState.city) }
     LaunchedEffect(radioState.subtone) { onSubtoneChange(radioState.subtone) }

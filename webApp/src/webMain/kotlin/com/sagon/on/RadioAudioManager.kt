@@ -451,32 +451,41 @@ object RadioAudioManager {
                         var shouldPlayRoger = (wasTransmitting === true && isRogerConfigured && !isChanging && !isSuppressed);
 
                         if (shouldPlayRoger && window.app.ctx) {
-                            try {
-                                window.app.isBeeping = true;
-                                window.app.isTransmittingInternal = true;
+                            var fireBeep = function() {
+                                try {
+                                    window.app.isBeeping = true;
+                                    window.app.isTransmittingInternal = true;
 
-                                var beepOsc = window.app.ctx.createOscillator();
-                                var beepGain = window.app.ctx.createGain();
-                                beepOsc.type = "triangle";
-                                beepOsc.frequency.setValueAtTime(1955, now);
-                                // 🎙️ ROGER BEEP SECO, POTENTE Y CONTUNDENTE (1955Hz - 300ms SIN FUNDIDO)
-                                beepGain.gain.setValueAtTime(0.40, now);
-                                beepGain.gain.setValueAtTime(0.40, now + 0.292);
-                                beepGain.gain.linearRampToValueAtTime(0.001, now + 0.30);
-                                beepOsc.connect(beepGain);
+                                    var bTime = window.app.ctx.currentTime + 0.02;
+                                    var beepOsc = window.app.ctx.createOscillator();
+                                    var beepGain = window.app.ctx.createGain();
+                                    beepOsc.type = "triangle";
+                                    beepOsc.frequency.setValueAtTime(1955, bTime);
 
-                                var localBeepGain = window.app.ctx.createGain();
-                                localBeepGain.gain.setValueAtTime(0.50, now);
-                                localBeepGain.gain.setValueAtTime(0.50, now + 0.292);
-                                localBeepGain.gain.linearRampToValueAtTime(0.001, now + 0.30);
-                                beepOsc.connect(localBeepGain);
+                                    beepGain.gain.setValueAtTime(0.50, bTime);
+                                    beepGain.gain.setValueAtTime(0.50, bTime + 0.292);
+                                    beepGain.gain.linearRampToValueAtTime(0.001, bTime + 0.30);
+                                    beepOsc.connect(beepGain);
 
-                                if (window.app.masterOut) localBeepGain.connect(window.app.masterOut);
-                                if (window.app.txBus) beepGain.connect(window.app.txBus);
+                                    var localBeepGain = window.app.ctx.createGain();
+                                    localBeepGain.gain.setValueAtTime(0.50, bTime);
+                                    localBeepGain.gain.setValueAtTime(0.50, bTime + 0.292);
+                                    localBeepGain.gain.linearRampToValueAtTime(0.001, bTime + 0.30);
+                                    beepOsc.connect(localBeepGain);
 
-                                beepOsc.start(now);
-                                beepOsc.stop(now + 0.305);
-                            } catch(e) { console.error("Beep error", e); }
+                                    if (window.app.masterOut) localBeepGain.connect(window.app.masterOut);
+                                    if (window.app.txBus) beepGain.connect(window.app.txBus);
+
+                                    beepOsc.start(bTime);
+                                    beepOsc.stop(bTime + 0.305);
+                                } catch(e) { console.error("Beep error", e); }
+                            };
+
+                            if (window.app.ctx.state !== 'running') {
+                                window.app.ctx.resume().then(fireBeep).catch(fireBeep);
+                            } else {
+                                fireBeep();
+                            }
 
                             if (window.app.rogerReleaseTimeout) clearTimeout(window.app.rogerReleaseTimeout);
                             window.app.rogerReleaseTimeout = setTimeout(function() {
@@ -870,12 +879,21 @@ object RadioSignaling {
                 }
                 if (type === "ptt_off" || type === "rx_off" || type === "roger") {
                     if (window.app && (window.app.suppressRxOff || window.app.isChangingChannel)) return;
-                    var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); 
-                    o.type = "triangle"; o.frequency.setValueAtTime(1955, now); 
-                    g.gain.setValueAtTime(0.40, now); 
-                    g.gain.setValueAtTime(0.40, now + 0.292);
-                    g.gain.linearRampToValueAtTime(0.001, now + 0.30);
-                    o.connect(g); g.connect(window.app.masterOut); o.start(now); o.stop(now + 0.305);
+                    var fireUiBeep = function() {
+                        if (!window.app || !window.app.ctx) return;
+                        var bTime = window.app.ctx.currentTime + 0.02;
+                        var o = window.app.ctx.createOscillator(); var g = window.app.ctx.createGain(); 
+                        o.type = "triangle"; o.frequency.setValueAtTime(1955, bTime); 
+                        g.gain.setValueAtTime(0.50, bTime); 
+                        g.gain.setValueAtTime(0.50, bTime + 0.292);
+                        g.gain.linearRampToValueAtTime(0.001, bTime + 0.30);
+                        o.connect(g); g.connect(window.app.masterOut); o.start(bTime); o.stop(bTime + 0.305);
+                    };
+                    if (window.app.ctx && window.app.ctx.state !== 'running') {
+                        window.app.ctx.resume().then(fireUiBeep).catch(fireUiBeep);
+                    } else {
+                        fireUiBeep();
+                    }
                     return;
                 }
                 if (type === "rx_off") {

@@ -162,31 +162,66 @@ fun WelcomeScreen(
             
             Spacer(Modifier.height(24.dp))
 
-            Surface(
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White.copy(0.04f),
-                border = BorderStroke(1.dp, Color.White.copy(0.1f))
-            ) {
-                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), contentAlignment = Alignment.CenterStart) {
-                    if (nick.isEmpty()) Text("TU INDICATIVO...", color = Color.White.copy(0.2f), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    BasicTextField(
-                        value = nick,
-                        onValueChange = { 
-                            // 🛡️ REGLA: MÁXIMO 14 CARACTERES (TAMAÑO PERFECTO CB 27MHz/WALKIE)
-                            if (it.length <= 14) onNickChange(it.uppercase().filter { c -> c in 'A'..'Z' || c in '0'..'9' || c == ' ' || c == '-' }) 
-                        },
-                        textStyle = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp),
-                        cursorBrush = SolidColor(LuxeColors.Gold),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                }
+            val focusRequester = remember { FocusRequester() }
+            val focusManager = LocalFocusManager.current
+
+            LaunchedEffect(Unit) {
+                delay(300)
+                try { focusRequester.requestFocus() } catch (_: Throwable) {}
             }
+
+            OutlinedTextField(
+                value = nick,
+                onValueChange = { input ->
+                    if (input.length <= 14) {
+                        onNickChange(input.uppercase().filter { c -> c in 'A'..'Z' || c in '0'..'9' || c == ' ' || c == '-' })
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
+                textStyle = TextStyle(
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 1.5.sp
+                ),
+                placeholder = {
+                    Text(
+                        "TU INDICATIVO...",
+                        color = Color.White.copy(0.25f),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = LuxeColors.Gold,
+                    unfocusedBorderColor = Color.White.copy(0.15f),
+                    focusedContainerColor = Color.White.copy(0.04f),
+                    unfocusedContainerColor = Color.White.copy(0.04f),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    cursorColor = LuxeColors.Gold
+                ),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Characters,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        if (nick.trim().length >= 2) {
+                            onMicAccept()
+                            onConnect(null)
+                        }
+                    }
+                )
+            )
 
             Spacer(Modifier.height(16.dp))
 
-            val focusManager = LocalFocusManager.current
             Surface(
                 onClick = { 
                     focusManager.clearFocus()

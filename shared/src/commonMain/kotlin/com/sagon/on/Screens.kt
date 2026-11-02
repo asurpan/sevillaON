@@ -469,7 +469,7 @@ fun RadioPanel(
                     }
                 }
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // 📺 PANTALLA NEXUS (EFECTO EDGE CURVADO Y BORDE FUNDIDO LUMINOSO A JUEGO)
                 Surface(
@@ -807,7 +807,7 @@ fun RadioPanel(
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(6.dp))
 
                 // Funciones Avanzadas (Minimizadas por defecto)
                 var showTools by remember { mutableStateOf(false) }
@@ -844,7 +844,7 @@ fun RadioPanel(
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(8.dp))
                 
                 // Lista de Usuarios en Línea & Radar de Ciudades Activas
                 val localUsers = users.filter { it.city.split("-")[0] == state.city.split("-")[0] }
@@ -1226,7 +1226,7 @@ fun InlineTacticalChat(
             .clickable { onChatOpenChange(true) }
     ) {
         Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-            // 🔇/🔊 ENCABEZADO DE CHAT CON BOTÓN DE SILENCIAR / ACTIVAR SONIDO
+            // 🔇/🔊 ENCABEZADO DE CHAT CON BOTÓN DE ESCRIBIR Y SILENCIAR
             Row(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1248,17 +1248,52 @@ fun InlineTacticalChat(
                     )
                 }
 
-                Icon(
-                    imageVector = if (isChatMuted) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp,
-                    contentDescription = if (isChatMuted) "Chat Silenciado" else "Chat Con Sonido",
-                    tint = if (isChatMuted) Color.Red else (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
-                    modifier = Modifier
-                        .size(16.dp)
-                        .clickable {
-                            onPlaySound("switch")
-                            onChatMutedChange(!isChatMuted)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // ✏️ BOTÓN COMPACTO DE ESCRIBIR
+                    Surface(
+                        color = (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)).copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(6.dp),
+                        border = BorderStroke(1.dp, (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)).copy(alpha = 0.4f)),
+                        modifier = Modifier.clickable {
+                            onPlaySound("click")
+                            onChatOpenChange(true)
                         }
-                )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Edit,
+                                contentDescription = "Escribir",
+                                tint = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                                modifier = Modifier.size(11.dp)
+                            )
+                            Spacer(Modifier.width(3.dp))
+                            Text(
+                                text = "ESCRIBIR",
+                                color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                    }
+
+                    Icon(
+                        imageVector = if (isChatMuted) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp,
+                        contentDescription = if (isChatMuted) "Chat Silenciado" else "Chat Con Sonido",
+                        tint = if (isChatMuted) Color.Red else (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)),
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clickable {
+                                onPlaySound("switch")
+                                onChatMutedChange(!isChatMuted)
+                            }
+                    )
+                }
             }
             if (targetNick != null) {
                 Surface(
@@ -1318,7 +1353,7 @@ fun InlineTacticalChat(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            text = if (targetNick != null) "💬 Chat privado con $targetNick. Toca para escribir..." else "💬 Chat de canal activo. Toca para escribir...",
+                            text = if (targetNick != null) "💬 Chat privado con $targetNick. Toca para escribir..." else "💬 Canal sin mensajes recientes. Toca para escribir...",
                             color = Color.White.copy(0.6f),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Medium
@@ -1364,33 +1399,6 @@ fun InlineTacticalChat(
                         }
                     }
                 }
-            }
-
-            Spacer(Modifier.height(6.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color.Black.copy(0.55f))
-                    .border(1.5.dp, if (targetNick != null) LuxeColors.Gold.copy(0.6f) else Color(0xFF00E5FF).copy(0.5f), RoundedCornerShape(10.dp))
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                Text(
-                    text = if (targetNick != null) "Toca para escribir a $targetNick..." else "Toca para escribir mensaje...",
-                    color = Color.White.copy(0.75f),
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.Send,
-                    contentDescription = "Escribir",
-                    tint = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF),
-                    modifier = Modifier.size(18.dp)
-                )
             }
         }
     }

@@ -19,12 +19,16 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         // Suscribir automáticamente al tema global para notificaciones masivas gratuitas
-        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("comunidad_on_air")
+        try {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("comunidad_on_air")
+        } catch (_: Throwable) {}
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // Refuerzo de suscripción al recibir
-        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("comunidad_on_air")
+        try {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("comunidad_on_air")
+        } catch (_: Throwable) {}
 
         // 🚀 WAKELOCK TEMPORAL (10s) PARA DESPERTAR CPU EN RECIPCIÓN DE AUDIO/VOZ PUSH
         try {

@@ -1160,7 +1160,7 @@ fun RadioDialogs(
             title = { Text("VOLUMEN DE SALIDA", fontWeight = FontWeight.Black, color = LuxeColors.Gold) },
             text = {
                 Column {
-                    Text("Ajusta el volumen general del equipo. Sincronizado con el sistema.", fontSize = 12.sp, color = Color.White.copy(0.6f))
+                    Text("Ajusta el volumen interno de la aplicación.", fontSize = 12.sp, color = Color.White.copy(0.6f))
                     Spacer(Modifier.height(24.dp))
                     EliteSlider("VOLUMEN", state.systemVolume) { onStateChange(state.copy(systemVolume = it)) }
                 }

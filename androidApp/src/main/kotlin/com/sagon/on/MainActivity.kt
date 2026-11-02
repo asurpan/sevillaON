@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
 
 
-    private val USE_GITHUB_REMOTE_SERVER = true
+    private val USE_GITHUB_REMOTE_SERVER = false
 
 
     // --- 🛡️ MÓDULO DE SUPERVIVENCIA P2P (INDEPENDIENTE) ---
@@ -189,15 +189,6 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     }
 
     private var webViewInstance: WebView? = null
-    
-    private fun notifyVolumeChange() {
-        val current = audioManager?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
-        val max = audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: 15
-        val pct = current.toFloat() / max.toFloat()
-        runOnUiThread {
-            webViewInstance?.evaluateJavascript("if(window.dispatch_volume_sync) window.dispatch_volume_sync($pct);", null)
-        }
-    }
 
     private var currentEngineeringThread: Thread? = null
     private var currentAudioTrack: android.media.AudioTrack? = null
@@ -671,13 +662,12 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             return true
         }
 
-        // --- 🛡️ FIX: REDIRECCIÓN FORZADA DE VOLUMEN A MULTIMEDIA ---
+        // --- 🛡️ FIX: REDIRECCIÓN FORZADA DE VOLUMEN A MULTIMEDIA (INDEPENDIENTE DEL VOLUMEN INTERNO) ---
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             if (action == KeyEvent.ACTION_DOWN) {
                 val direction = if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER
-                // Forzamos el ajuste de Multimedia y mostramos la barra correspondiente
+                // Forzamos el ajuste de Multimedia del teléfono sin alterar el volumen interno de la app
                 audioManager?.adjustStreamVolume(AudioManager.STREAM_MUSIC, direction, AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND)
-                notifyVolumeChange()
             }
             return true
         }
@@ -812,6 +802,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 Log.w("GEMINI_SERVICE", "⚠️ No se encontró GEMINI_API_KEY_1 en local.properties. La Estación Base funcionará en modo de respuesta local.")
             }
         } catch (e: Exception) {}
+
+        try {
+            com.google.firebase.FirebaseApp.initializeApp(this)
+        } catch (_: Throwable) {}
 
         // 🛡️ GUARDIÁN DE SEGUNDO PLANO Y REPRODUCTOR MULTIMEDIA PERMANENTE
         try {
@@ -1148,13 +1142,15 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             @JavascriptInterface
                             fun subscribeUserPushTopic(indicativo: String) {
                                 post {
-                                    val clean = indicativo.trim().uppercase()
-                                    if (clean.isNotEmpty() && clean != "ANÓNIMO" && clean != "RADIO") {
-                                        val prefs = getSharedPreferences("on_air_prefs", Context.MODE_PRIVATE)
-                                        prefs.edit().putString("last_indicativo", clean).apply()
-                                        val sanitized = clean.replace(Regex("[.#$\\[\\]]"), "_")
-                                        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("user_$sanitized")
-                                    }
+                                    try {
+                                        val clean = indicativo.trim().uppercase()
+                                        if (clean.isNotEmpty() && clean != "ANÓNIMO" && clean != "RADIO") {
+                                            val prefs = getSharedPreferences("on_air_prefs", Context.MODE_PRIVATE)
+                                            prefs.edit().putString("last_indicativo", clean).apply()
+                                            val sanitized = clean.replace(Regex("[.#$\\[\\]]"), "_")
+                                            com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("user_$sanitized")
+                                        }
+                                    } catch (_: Throwable) {}
                                 }
                             }
 

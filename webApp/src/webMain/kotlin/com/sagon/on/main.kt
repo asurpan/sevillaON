@@ -530,14 +530,7 @@ fun main() {
             onVoxSync = { },
             onRoomUpdate = { },
             onPttLive = { },
-            onVolumeSync = { newVol ->
-                if (win.setMasterVolume != null) win.setMasterVolume(newVol)
-                if (radioState.value.systemVolume != newVol) {
-                    val updated = radioState.value.copy(systemVolume = newVol)
-                    radioState.value = updated
-                    RadioPersistence.saveState(updated)
-                }
-            },
+            onVolumeSync = { _ -> },
             onDiagRequest = { RadioDiagData() },
             onIsRoomEmpty = {
                 val mySessionId = (win.app?.sessionID as? String ?: "")

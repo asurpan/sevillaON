@@ -116,6 +116,9 @@ object RadioAudioManager {
                         window.app.ctx.resume().then(() => { console.log("🔊 AudioContext reanudado."); });
                     }
                     if (window.installIosKeepAlive) window.installIosKeepAlive();
+                    if (!window.app.rawStream && typeof window.manosLibres_requestMic === 'function') {
+                        window.manosLibres_requestMic();
+                    }
                     return;
                 }
                 console.log("🏗️ Inicializando Motor de Audio...");
@@ -427,6 +430,12 @@ object RadioAudioManager {
                         if (window.dispatch_ptt_live) try { window.dispatch_ptt_live(true); } catch(e) {}
 
                         try { if (sessionRef) sessionRef.update({ tx: true, pwr: power || 0.7 }); } catch(e) {}
+                        if (!window.app.rawStream && typeof window.manosLibres_requestMic === 'function') {
+                            try { window.manosLibres_requestMic(); } catch(e){}
+                        }
+                        if (window.app.voiceBoost && window.app.txGate) {
+                            try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
+                        }
                         try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(2.5, now, 0.03); } catch(e) {}
                         if (window.updatePeerSenders) try { window.updatePeerSenders(); } catch(e) {}
                         try { if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.04); } catch(e) {}

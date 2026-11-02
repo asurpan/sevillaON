@@ -905,8 +905,12 @@ object ReplayEngine {
     fun install() {
         js("""
             var replayBlobs = [];
-            var activityDetected = false;
             var isPlaying = false;
+            var activeRecorder = null;
+            var currentChunks = [];
+            var silenceTimer = null;
+            var isRecordingActive = false;
+
             window.initReplayRecorder = function() {
                 if (!window.app.ctx || !window.app.masterRecordBus || !window.app.replayCompressor) { setTimeout(window.initReplayRecorder, 1000); return; }
                 var streamDest = window.app.ctx.createMediaStreamDestination();
@@ -915,46 +919,76 @@ object ReplayEngine {
                 replayAnalyser.fftSize = 256;
                 window.app.replayCompressor.connect(replayAnalyser);
                 var reuseDomainData = new Uint8Array(256);
-            function monitor() { 
-                if (!window.app) return;
-                var isTransmitting = (window.app.pttStateInternal === true);
-                var isReceiving = (window.app.rxActiveInternal === true || window.app.isControlSpeaking === true);
-                if ((isTransmitting || isReceiving) && replayAnalyser) {
-                    replayAnalyser.getByteTimeDomainData(reuseDomainData); 
-                    for(var i=0; i<reuseDomainData.length; i++) { 
-                        if (Math.abs(reuseDomainData[i] - 128) > 8) { 
-                            activityDetected = true; 
-                            break; 
+
+                function startRecordingSession() {
+                    if (isRecordingActive || isPlaying) return;
+                    try {
+                        var mimeType = "audio/webm;codecs=opus";
+                        if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/webm";
+                        currentChunks = [];
+                        activeRecorder = new MediaRecorder(streamDest.stream, mimeType ? { mimeType: mimeType } : {});
+                        activeRecorder.ondataavailable = function(e) {
+                            if (e.data && e.data.size > 0) currentChunks.push(e.data);
+                        };
+                        activeRecorder.onstop = function() {
+                            isRecordingActive = false;
+                            if (currentChunks.length > 0) {
+                                var blob = new Blob(currentChunks, { type: 'audio/webm' });
+                                if (blob.size > 2000) { // Ignorar micro-ruidos < 2KB
+                                    replayBlobs.push(blob);
+                                    if (replayBlobs.length > 8) replayBlobs.shift();
+                                    if (window.dispatch_replay_available) window.dispatch_replay_available(true);
+                                }
+                            }
+                            currentChunks = [];
+                            activeRecorder = null;
+                        };
+                        isRecordingActive = true;
+                        activeRecorder.start(250);
+                    } catch(e) {
+                        isRecordingActive = false;
+                        activeRecorder = null;
+                    }
+                }
+
+                function stopRecordingSession() {
+                    if (activeRecorder && activeRecorder.state === "recording") {
+                        try { activeRecorder.stop(); } catch(e){}
+                    }
+                }
+
+                function monitor() { 
+                    if (!window.app || isPlaying) return;
+                    var isTransmitting = (window.app.pttStateInternal === true);
+                    var isReceiving = (window.app.rxActiveInternal === true || window.app.isControlSpeaking === true);
+                    var voiceDetected = false;
+
+                    if ((isTransmitting || isReceiving) && replayAnalyser) {
+                        replayAnalyser.getByteTimeDomainData(reuseDomainData); 
+                        for(var i=0; i<reuseDomainData.length; i++) { 
+                            if (Math.abs(reuseDomainData[i] - 128) > 6) { 
+                                voiceDetected = true; 
+                                break; 
+                            } 
                         } 
-                    } 
-                } 
-            }
+                    }
 
+                    if (isTransmitting || isReceiving || voiceDetected) {
+                        if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+                        if (!isRecordingActive) {
+                            startRecordingSession();
+                        }
+                    } else if (isRecordingActive) {
+                        if (!silenceTimer) {
+                            silenceTimer = setTimeout(function() {
+                                stopRecordingSession();
+                                silenceTimer = null;
+                            }, 1200);
+                        }
+                    }
+                }
 
-            setInterval(monitor, 200);
-            function startChunk() {
-                var chunks = []; var hasVoiceInThisChunk = false; activityDetected = false; 
-                try {
-                    var mimeType = "audio/webm;codecs=opus";
-                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = "audio/webm";
-                    var recorder = new MediaRecorder(streamDest.stream, mimeType ? { mimeType: mimeType } : {});
-                    recorder.ondataavailable = function(e) { if (e.data && e.data.size > 0) chunks.push(e.data); };
-                    recorder.onstop = function() { 
-                        if (chunks.length > 0 && hasVoiceInThisChunk) { 
-                            var blob = new Blob(chunks, { type: 'audio/webm' }); 
-                            replayBlobs.push(blob); 
-                            if (replayBlobs.length > 6) replayBlobs.shift(); 
-                            if (window.dispatch_replay_available) window.dispatch_replay_available(replayBlobs.length > 0); 
-                        } 
-                        startChunk(); 
-                    };
-                    var checkInterval = setInterval(function() { if (activityDetected) hasVoiceInThisChunk = true; }, 100);
-                    setTimeout(function() { clearInterval(checkInterval); if (recorder.state === "recording") recorder.stop(); }, 5000);
-                    recorder.start();
-                } catch(e) { setTimeout(startChunk, 2000); }
-            }
-            startChunk();
-
+                setInterval(monitor, 150);
             };
             window.controlResponseIndex = 0;
             window.lastHourlyBulletinHour = -1;
@@ -1158,9 +1192,34 @@ object ReplayEngine {
                 function playNext() {
                     if (index >= playlist.length) { finishReplay(); return; }
                     if (window.dispatch_replay_progress) window.dispatch_replay_progress((index + 1) / playlist.length);
-                    var url = URL.createObjectURL(playlist[index]); var audio = new Audio(url); var source = window.app.ctx.createMediaElementSource(audio); source.connect(window.app.masterOut); audio.playbackRate = 1.15;
-                    audio.onended = function() { URL.revokeObjectURL(url); source.disconnect(); index++; playNext(); };
-                    audio.play().catch(finishReplay);
+                    var currentBlob = playlist[index];
+                    if (!currentBlob || currentBlob.size < 1000) {
+                        index++;
+                        playNext();
+                        return;
+                    }
+                    var url = URL.createObjectURL(currentBlob);
+                    var audio = new Audio(url);
+                    var source = window.app.ctx.createMediaElementSource(audio);
+                    source.connect(window.app.masterOut);
+                    audio.playbackRate = 1.12;
+
+                    var isAdvanced = false;
+                    function advance() {
+                        if (isAdvanced) return;
+                        isAdvanced = true;
+                        URL.revokeObjectURL(url);
+                        try { source.disconnect(); } catch(e){}
+                        index++;
+                        playNext();
+                    }
+
+                    audio.onended = advance;
+                    audio.onerror = advance;
+                    audio.play().catch(function(e) {
+                        console.warn("⚠️ Replay play error, skipping block:", e);
+                        advance();
+                    });
                 }
                 playNext();
             };

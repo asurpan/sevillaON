@@ -38,6 +38,11 @@ object RadioAudioManager {
                         if (window.app.ctx.state !== 'running') {
                             window.app.ctx.resume().then(() => {
                                 console.log("🔊 AudioContext re-armado instantáneamente desde segundo plano.");
+                                if (window.app.masterOut && window.app.ctx) {
+                                    try { window.app.masterOut.connect(window.app.ctx.destination); } catch(e){}
+                                    var targetGain = window.app.currentMasterGain || 1.0;
+                                    window.app.masterOut.gain.setValueAtTime(targetGain, window.app.ctx.currentTime);
+                                }
                             }).catch(e=>{});
                         }
                         if (window.app.masterOut && window.app.ctx) {
@@ -461,8 +466,8 @@ object RadioAudioManager {
                                 beepOsc.connect(beepGain);
 
                                 var localBeepGain = window.app.ctx.createGain();
-                                localBeepGain.gain.setValueAtTime(0.40, now);
-                                localBeepGain.gain.setValueAtTime(0.40, now + 0.292);
+                                localBeepGain.gain.setValueAtTime(0.50, now);
+                                localBeepGain.gain.setValueAtTime(0.50, now + 0.292);
                                 localBeepGain.gain.linearRampToValueAtTime(0.001, now + 0.30);
                                 beepOsc.connect(localBeepGain);
 

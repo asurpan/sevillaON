@@ -753,6 +753,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         super.onResume()
         registerSensorsIfNecessary()
         try {
+            setupAudioManager() // 🛡️ RE-SOLICITAR AUDIOFOCUS A MÁXIMA POTENCIA AL VOLVER DE SEGUNDO PLANO
             webViewInstance?.onResume()
             webViewInstance?.resumeTimers()
             webViewInstance?.evaluateJavascript("if (window.wakeUpAudioEngine) window.wakeUpAudioEngine();", null)

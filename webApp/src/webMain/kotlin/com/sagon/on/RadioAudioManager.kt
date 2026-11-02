@@ -372,6 +372,10 @@ object RadioAudioManager {
                     window.app.replayCompressor.threshold.value = -24;
                     window.app.replayCompressor.ratio.value = 8;
                     window.app.masterRecordBus.connect(window.app.replayCompressor);
+
+                    if (typeof window.manosLibres_requestMic === 'function') {
+                        window.manosLibres_requestMic();
+                    }
                 } catch(e) { }
             };
 
@@ -396,6 +400,21 @@ object RadioAudioManager {
                     if (active) {
                         if (window.app.ctx && window.app.ctx.state !== 'running') {
                             try { window.app.ctx.resume(); } catch(e){}
+                        }
+
+                        // 🛡️ VERIFICACIÓN E INYECCIÓN DE VOZ EN PTT
+                        if (window.app.rawStream && window.app.rawStream.getAudioTracks().length > 0) {
+                            if (window.app.voiceBoost && window.app.txGate) {
+                                try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
+                            }
+                        } else {
+                            if (typeof window.manosLibres_requestMic === 'function') {
+                                window.manosLibres_requestMic().then(function() {
+                                    if (window.app.voiceBoost && window.app.txGate) {
+                                        try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
+                                    }
+                                });
+                            }
                         }
 
                         // 🛡️ CORTE RADICAL E INMEDIATO DE VOZ Y PORTADORA DEL BOT AL PULSAR PTT

@@ -417,6 +417,82 @@ fun BlacklistDialog(blockedUsers: Set<String>, users: List<RemoteUser>, onUnbloc
 }
 
 @Composable
+fun FriendsDialog(
+    friends: Set<String>,
+    onRemoveFriend: (String) -> Unit,
+    onPrivateChat: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = LuxeColors.DeepSea,
+        modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Star, null, tint = LuxeColors.Gold, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Text("MIS AMIGOS & CONTACTOS", fontWeight = FontWeight.Black, color = LuxeColors.Gold, fontSize = 16.sp)
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (friends.isEmpty()) {
+                    Text(
+                        "Aún no tienes amigos agregados. Toca sobre cualquier usuario en pantalla para añadirlo a tus amigos en Oro.",
+                        color = Color.White.copy(0.6f),
+                        fontSize = 12.sp
+                    )
+                } else {
+                    friends.forEach { friendNick ->
+                        Surface(
+                            color = LuxeColors.Gold.copy(0.08f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.3f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                    Icon(Icons.Rounded.Star, null, tint = LuxeColors.Gold, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(friendNick, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Surface(
+                                        color = Color(0xFF00E5FF).copy(0.2f),
+                                        shape = RoundedCornerShape(6.dp),
+                                        border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(0.5f)),
+                                        modifier = Modifier.clickable {
+                                            onPrivateChat(friendNick)
+                                            onDismiss()
+                                        }
+                                    ) {
+                                        Text(
+                                            "CHAT",
+                                            color = Color(0xFF00E5FF),
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Black,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                    TextButton(onClick = { onRemoveFriend(friendNick) }) {
+                                        Text("QUITAR", color = Color.Red.copy(0.8f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { LuxeButton("CERRAR", onDismiss, true, Modifier.fillMaxWidth().height(44.dp)) }
+    )
+}
+
+@Composable
 fun BatteryChecklistDialog(
     statusJsonProvider: () -> String,
     onIgnoreBattery: () -> Unit,

@@ -1676,7 +1676,6 @@ fun InlineTacticalChat(
                                         onSendMessage(textInput.trim(), targetNick)
                                         onPlaySound("chat_msg")
                                         textInput = ""
-                                        onChatOpenChange(false)
                                     }
                                 }
                             ),
@@ -1692,7 +1691,6 @@ fun InlineTacticalChat(
                                                 onSendMessage(textInput.trim(), targetNick)
                                                 onPlaySound("chat_msg")
                                                 textInput = ""
-                                                onChatOpenChange(false)
                                             }
                                         },
                                         modifier = Modifier

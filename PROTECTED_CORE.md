@@ -39,6 +39,10 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
     - **Hora de Publicación**: Todos los mensajes de chat DEBEN mostrar la hora de publicación en formato `[HH:mm]`.
     - **Flujo Multilínea y Auto-Scroll**: Mensajes con `buildAnnotatedString` permitiendo el salto de línea automático sin recortes `...`. La lista desplegada cuenta con `verticalScroll` y Auto-Scroll automático (`animateScrollTo(maxValue)`).
 
+7. **Procesamiento de Filtro DSP HiFi e Inyección de Audio Remoto**:
+    - **Ruteo DSP de Voz Remota**: Toda voz WebRTC entrante (`gainNode`) DEBE conectarse obligatoriamente a `window.app.filter` (`gainNode.connect(window.app.filter)`). La cadena completa DEBE ser: `gainNode ➔ filter ➔ dspPresence ➔ masterRxGain ➔ mainCompressor ➔ masterOut ➔ destination`.
+    - **Prohibición de Salida Doble**: Queda prohibido conectar `gainNode` directamente a `ctx.destination` o poner `<audio>` a `volume = 1.0`, ya que el audio directo sin filtrar anula el efecto del deslizador DSP. El elemento `<audio>` debe permanecer a `volume = 0.01` únicamente como soporte del decodificador de hardware.
+
 7. **Arquitectura de Segundo Plano Estilo Walkie-Talkie (Android 14/15/16)**:
     - **Foreground Service**: La app nativa debe ejecutar `RadioService` en primer plano con tipos `mediaPlayback|microphone`.
     - **FCM High Priority + WakeLock**: `MyFirebaseMessagingService` debe adquirir un `WakeLock` de CPU de 10s y despertar a `RadioService` al recibir notificaciones push.

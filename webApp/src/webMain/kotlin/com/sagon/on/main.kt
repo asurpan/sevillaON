@@ -489,7 +489,6 @@ fun main() {
                     val list = mutableListOf<ChatMessage>()
                     val currentPath = (win.currentChatPath as? String ?: "")
                     val isPrivatePath = currentPath.contains("private_messages")
-                    val joinTime = (win.channelJoinTime as? Double ?: 0.0).toLong()
                     if (rawData != null) {
                         val keys = js("Object").keys(rawData)
                         for (i in 0 until (keys.length as Int)) {
@@ -501,8 +500,8 @@ fun main() {
                             val isSys = (m.isSystem as? Boolean ?: false)
                             val msgIsPrivate = isPrivatePath || (m.isPrivate as? Boolean ?: false)
                             
-                            // 🛡️ CHAT PÚBLICO EFÍMERO EN TIEMPO REAL: Los mensajes de canal público solo se muestran a partir del momento en que el usuario entra al canal
-                            val isVisible = msgIsPrivate || isSys || (joinTime == 0L) || (ts >= (joinTime - 10000))
+                            // 💬 CHAT PERMANENTE EN CANAL: Todos los mensajes del historial son visibles y se conservan
+                            val isVisible = true
                             if (text.isNotEmpty() && isVisible) {
                                 list.add(ChatMessage(id = k, senderNick = sender, text = text, timestamp = ts, isSystem = isSys, isPrivate = msgIsPrivate))
                             }
@@ -594,6 +593,7 @@ fun main() {
                     win.app.currentCity = newCity
                     win.app.db.ref("users/" + sessId).update(js("{city: newCity, channel: newCity}"))
                     js("if(window.initFirebaseListener) window.initFirebaseListener();")
+                    js("if(window.updateChatListener) window.updateChatListener(null);")
                 }
             },
             onChannelChange = { newCh ->
@@ -611,14 +611,21 @@ fun main() {
                 val sessId = win.app?.sessionID as? String
                 if (win.app != null && win.app.db != null && !sessId.isNullOrBlank() && sessId != "undefined" && !sessId.contains("undefined")) {
                     win.app.db.ref("users/" + sessId).update(js("{channel: newCh}"))
+                    js("if(window.updateChatListener) window.updateChatListener(null);")
                 }
             },
 
 
             onSendMessage = { t, tg -> RadioNetworkManager.sendMessage(t, tg) },
             onDeleteMessage = { id, tg -> RadioNetworkManager.deleteMessage(id, tg) },
-            onPrivateChatRequest = { },
-            onPublicChatRequest = { },
+            onPrivateChatRequest = { targetNick ->
+                if (targetNick.isNotEmpty()) {
+                    js("if(window.updateChatListener) window.updateChatListener(targetNick);")
+                }
+            },
+            onPublicChatRequest = {
+                js("if(window.updateChatListener) window.updateChatListener(null);")
+            },
             onStateSave = { newState -> 
                 if (radioState.value != newState) {
                     val wasDiscrete = radioState.value.isDiscreteModeEnabled

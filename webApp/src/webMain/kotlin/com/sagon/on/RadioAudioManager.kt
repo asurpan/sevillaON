@@ -1309,7 +1309,12 @@ object ReplayEngine {
                 if (window.dispatch_replay_available) window.dispatch_replay_available(false);
                 var index = 0;
                 
+                var replaySafetyTimer = setTimeout(function() {
+                    if (isPlaying) finishReplay();
+                }, 35000);
+
                 function finishReplay() { 
+                    if (replaySafetyTimer) { clearTimeout(replaySafetyTimer); replaySafetyTimer = null; }
                     isPlaying = false; 
                     if (window.app.masterRxGain) {
                         window.app.masterRxGain.gain.setTargetAtTime(3.5, window.app.ctx.currentTime, 0.3);

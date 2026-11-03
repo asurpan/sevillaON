@@ -62,10 +62,10 @@ object RadioNetworkManager {
 
             window.updateChatListener = function(target) {
                 if (!window.app || !window.app.db) return;
-                var nick = localStorage.getItem("indicativo") || "ANÓNIMO";
-                var city = localStorage.getItem("lastCity") || "SEVILLA";
-                var channel = localStorage.getItem("lastChannel") || city;
-                var subtone = localStorage.getItem("lastSubtone") || "0000";
+                var nick = (window.app && window.app.nick) ? window.app.nick : (localStorage.getItem("indicativo") || "ANÓNIMO");
+                var city = (window.app && window.app.currentCity) ? window.app.currentCity : (localStorage.getItem("lastCity") || "SEVILLA");
+                var channel = (window.app && window.app.currentChannel) ? window.app.currentChannel : (localStorage.getItem("lastChannel") || city);
+                var subtone = (window.app && window.app.currentSubtone) ? window.app.currentSubtone : (localStorage.getItem("lastSubtone") || "0000");
                 var channelKey = (subtone && subtone !== "0000") ? (channel + "_" + subtone) : channel;
                 var chatPath = target ? ("private_messages/" + window.sanitizePath([nick, target].sort()[0]) + "_" + window.sanitizePath([nick, target].sort()[1])) 
                                       : ("messages/" + window.sanitizePath(city) + "/" + window.sanitizePath(channelKey));
@@ -93,10 +93,10 @@ object RadioNetworkManager {
 
     fun sendMessage(text: String, target: String?) {
         val win: dynamic = window
-        val nick = (localStorage.getItem("indicativo") ?: "ANÓNIMO").trim().uppercase()
-        val city = localStorage.getItem("lastCity") ?: "SEVILLA"
-        val channel = localStorage.getItem("lastChannel") ?: city
-        val subtone = localStorage.getItem("lastSubtone") ?: "0000"
+        val nick = (win.app?.nick as? String ?: localStorage.getItem("indicativo") ?: "ANÓNIMO").trim().uppercase()
+        val city = (win.app?.currentCity as? String ?: localStorage.getItem("lastCity") ?: "SEVILLA").trim().uppercase()
+        val channel = (win.app?.currentChannel as? String ?: localStorage.getItem("lastChannel") ?: city).trim().uppercase()
+        val subtone = (win.app?.currentSubtone as? String ?: localStorage.getItem("lastSubtone") ?: "0000").trim()
         val channelKey = if (subtone != "0000") "${channel}_$subtone" else channel
         
         val chatPath = if (target != null) {

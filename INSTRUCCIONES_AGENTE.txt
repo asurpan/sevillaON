@@ -19,6 +19,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Apertura de Puerta PTT (`txGate`)**: En `broadcastPTT`, la ganancia de `txGate` se abre a **2.5x** al pulsar PTT.
 - **AGC Hardware Obligatorio**: `autoGainControl: true` DEBE mantenerse habilitado en `getUserMedia` para que los chips de micrófono de teléfonos Android entreguen ganancia de voz completa (`sensorGain = 4.0`, `voiceBoost = 2.5`).
 - **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen **0.01** vía un nodo Gain `dummy`.
+- **Ruteo DSP de Voz Remota Intocable**: Toda voz WebRTC entrante DEBE conectarse obligatoriamente a `window.app.filter`. Queda prohibido conectar el audio entrante directo al altavoz o subir el volumen de `<audio>` a 1.0, para garantizar que el deslizador DSP tenga efecto real.
 - **Infrasonic Keep-Alive**: Oscilador **5Hz** activo durante silencios de recepción.
 - **Re-activación de AudioContext en PTT / Roger Beep**: `broadcastPTT` DEBE ejecutar `window.app.ctx.resume()` si el motor no está en `'running'`.
 - **Filtro de Emisión Real para Roger Beep**: El Roger Beep de 1955Hz SOLO suena si el usuario estuvo transmitiendo (`wasTransmitting === true`). Mantiene ganancia constante **0.40** durante **292ms** con un micro-remate final de **8ms** sin fundidos largos.

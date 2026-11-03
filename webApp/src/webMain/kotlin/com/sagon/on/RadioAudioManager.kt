@@ -34,24 +34,46 @@ object RadioAudioManager {
             // 🚀 RE-ARMADO INSTANTÁNEO DE TARJETA Y MOTOR AL VOLVER DEL SEGUNDO PLANO
             window.wakeUpAudioEngine = function() {
                 try {
-                    if (window.app && window.app.ctx) {
-                        if (window.app.ctx.state !== 'running') {
-                            window.app.ctx.resume().then(() => {
-                                console.log("🔊 AudioContext re-armado instantáneamente desde segundo plano.");
-                                if (window.app.masterOut && window.app.ctx) {
-                                    try { window.app.masterOut.connect(window.app.ctx.destination); } catch(e){}
-                                    var targetGain = window.app.currentMasterGain || 1.0;
-                                    window.app.masterOut.gain.setValueAtTime(targetGain, window.app.ctx.currentTime);
-                                }
-                            }).catch(e=>{});
-                        }
-                        if (window.app.masterOut && window.app.ctx) {
-                            try { window.app.masterOut.connect(window.app.ctx.destination); } catch(e){}
-                            var targetGain = window.app.currentMasterGain || 1.0;
-                            window.app.masterOut.gain.setValueAtTime(targetGain, window.app.ctx.currentTime);
-                        }
+                    if (!window.app || !window.app.ctx) return;
+                    var now = window.app.ctx.currentTime;
+                    
+                    if (window.app.ctx.state !== 'running') {
+                        window.app.ctx.resume().then(() => {
+                            console.log("🔊 AudioContext re-armado instantáneamente desde segundo plano.");
+                        }).catch(e=>{});
                     }
-                    if (window.app && window.app.remoteSinks) {
+
+                    // 🛡️ LIMPIEZA DE RAMPAS CONGELADAS EN SEGUNDO PLANO (CANCEL SCHEDULED VALUES)
+                    [window.app.masterOut, window.app.masterRxGain, window.app.txGate, window.app.moniGainNode].forEach(function(node) {
+                        if (node && node.gain) {
+                            try { node.gain.cancelScheduledValues(now); } catch(e){}
+                        }
+                    });
+
+                    if (window.app.masterOut && window.app.masterOut.gain) {
+                        try {
+                            window.app.masterOut.connect(window.app.ctx.destination);
+                            window.app.masterOut.gain.setValueAtTime(window.app.currentMasterGain || 1.0, now);
+                        } catch(e){}
+                    }
+
+                    if (window.app.masterRxGain && window.app.masterRxGain.gain) {
+                        try {
+                            window.app.masterRxGain.gain.setValueAtTime(3.5, now);
+                        } catch(e){}
+                    }
+
+                    if (window.app.txGate && window.app.txGate.gain) {
+                        try {
+                            window.app.txGate.gain.setValueAtTime(window.app.pttStateInternal ? 2.5 : 0, now);
+                        } catch(e){}
+                    }
+
+                    if (window.RadioAudioEngine) {
+                        window.RadioAudioEngine.connectVoiceChain();
+                    }
+
+                    if (window.app.remoteSinks) {
                         Object.keys(window.app.remoteSinks).forEach(function(k) {
                             var el = window.app.remoteSinks[k];
                             if (el) try { el.play().catch(e=>{}); } catch(e){}
@@ -463,10 +485,28 @@ object RadioAudioManager {
                         if (window.app.voiceBoost && window.app.txGate) {
                             try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
                         }
-                        try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(2.5, now, 0.03); } catch(e) {}
+                        try {
+                            if (window.app.txGate && window.app.ctx) {
+                                window.app.txGate.gain.cancelScheduledValues(now);
+                                window.app.txGate.gain.setValueAtTime(window.app.txGate.gain.value, now);
+                                window.app.txGate.gain.setTargetAtTime(2.5, now, 0.03);
+                            }
+                        } catch(e) {}
                         if (window.updatePeerSenders) try { window.updatePeerSenders(); } catch(e) {}
-                        try { if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.04); } catch(e) {}
-                        try { if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(0, now, 0.04); } catch(e) {}
+                        try {
+                            if (window.app.masterRxGain && window.app.ctx) {
+                                window.app.masterRxGain.gain.cancelScheduledValues(now);
+                                window.app.masterRxGain.gain.setValueAtTime(window.app.masterRxGain.gain.value, now);
+                                window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.04);
+                            }
+                        } catch(e) {}
+                        try {
+                            if (window.app.noise && window.app.ctx) {
+                                window.app.noise.gain.cancelScheduledValues(now);
+                                window.app.noise.gain.setValueAtTime(window.app.noise.gain.value, now);
+                                window.app.noise.gain.setTargetAtTime(0, now, 0.04);
+                            }
+                        } catch(e) {}
                         try { if (window.updateMoniGain) window.updateMoniGain(); } catch(e) {}
                     } else {
                         window.app.pttStateInternal = false;
@@ -475,7 +515,13 @@ object RadioAudioManager {
                         if (window.app.silenceCheckInterval) { clearInterval(window.app.silenceCheckInterval); window.app.silenceCheckInterval = null; }
                         window.app.silenceStartTime = null;
 
-                        try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(0, now, 0.03); } catch(e) {}
+                        try {
+                            if (window.app.txGate && window.app.ctx) {
+                                window.app.txGate.gain.cancelScheduledValues(now);
+                                window.app.txGate.gain.setValueAtTime(window.app.txGate.gain.value, now);
+                                window.app.txGate.gain.setTargetAtTime(0, now, 0.03);
+                            }
+                        } catch(e) {}
 
                         if (window.app.ctx && window.app.ctx.state !== 'running') {
                             try { window.app.ctx.resume(); } catch(e){}
@@ -492,18 +538,20 @@ object RadioAudioManager {
                                     window.app.isBeeping = true;
                                     window.app.isTransmittingInternal = true;
 
-                                    var bTime = window.app.ctx.currentTime + 0.02;
+                                    var bTime = window.app.ctx.currentTime + 0.01;
                                     var beepOsc = window.app.ctx.createOscillator();
                                     var beepGain = window.app.ctx.createGain();
                                     beepOsc.type = "triangle";
                                     beepOsc.frequency.setValueAtTime(1955, bTime);
 
+                                    beepGain.gain.cancelScheduledValues(bTime);
                                     beepGain.gain.setValueAtTime(0.50, bTime);
                                     beepGain.gain.setValueAtTime(0.50, bTime + 0.292);
                                     beepGain.gain.linearRampToValueAtTime(0.001, bTime + 0.30);
                                     beepOsc.connect(beepGain);
 
                                     var localBeepGain = window.app.ctx.createGain();
+                                    localBeepGain.gain.cancelScheduledValues(bTime);
                                     localBeepGain.gain.setValueAtTime(0.50, bTime);
                                     localBeepGain.gain.setValueAtTime(0.50, bTime + 0.292);
                                     localBeepGain.gain.linearRampToValueAtTime(0.001, bTime + 0.30);
@@ -532,8 +580,16 @@ object RadioAudioManager {
                                 try { if (sessionRef) sessionRef.update({ tx: false }); } catch(e) {}
                                 try {
                                     var endNow = window.app.ctx ? window.app.ctx.currentTime : now;
-                                    if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.05);
-                                    if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.05);
+                                    if (window.app.masterRxGain && window.app.ctx) {
+                                        window.app.masterRxGain.gain.cancelScheduledValues(endNow);
+                                        window.app.masterRxGain.gain.setValueAtTime(window.app.masterRxGain.gain.value, endNow);
+                                        window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.05);
+                                    }
+                                    if (window.app.noise && window.app.ctx) {
+                                        window.app.noise.gain.cancelScheduledValues(endNow);
+                                        window.app.noise.gain.setValueAtTime(window.app.noise.gain.value, endNow);
+                                        window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.05);
+                                    }
                                     if (window.updateMoniGain) window.updateMoniGain();
                                 } catch(e) {}
                                 if (window.checkControlStationResponse) try { window.checkControlStationResponse(); } catch(e) {}
@@ -546,8 +602,16 @@ object RadioAudioManager {
                             try { if (sessionRef) sessionRef.update({ tx: false }); } catch(e) {}
                             try {
                                 var endNow = window.app.ctx ? window.app.ctx.currentTime : now;
-                                if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.06);
-                                if (window.app.noise && window.app.ctx) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.06);
+                                if (window.app.masterRxGain && window.app.ctx) {
+                                    window.app.masterRxGain.gain.cancelScheduledValues(endNow);
+                                    window.app.masterRxGain.gain.setValueAtTime(window.app.masterRxGain.gain.value, endNow);
+                                    window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.06);
+                                }
+                                if (window.app.noise && window.app.ctx) {
+                                    window.app.noise.gain.cancelScheduledValues(endNow);
+                                    window.app.noise.gain.setValueAtTime(window.app.noise.gain.value, endNow);
+                                    window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.06);
+                                }
                                 if (window.updateMoniGain) window.updateMoniGain();
                             } catch(e) {}
                             if (window.checkControlStationResponse) try { window.checkControlStationResponse(); } catch(e) {}

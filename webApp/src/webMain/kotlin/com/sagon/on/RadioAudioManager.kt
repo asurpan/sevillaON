@@ -116,8 +116,11 @@ object RadioAudioManager {
                         window.app.ctx.resume().then(() => { console.log("🔊 AudioContext reanudado."); });
                     }
                     if (window.installIosKeepAlive) window.installIosKeepAlive();
-                    if (!window.app.rawStream && typeof window.manosLibres_requestMic === 'function') {
+                    if (typeof window.manosLibres_requestMic === 'function') {
                         window.manosLibres_requestMic();
+                    }
+                    if (window.app.voiceBoost && window.app.txGate) {
+                        try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
                     }
                     return;
                 }
@@ -378,6 +381,9 @@ object RadioAudioManager {
 
                     if (typeof window.manosLibres_requestMic === 'function') {
                         window.manosLibres_requestMic();
+                    }
+                    if (window.app.voiceBoost && window.app.txGate) {
+                        try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
                     }
                 } catch(e) { }
             };

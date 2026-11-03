@@ -17,7 +17,18 @@ object ManosLibres {
             var noiseFloor = 0.01; 
 
             window.manosLibres_requestMic = function() {
-                if (window.app.rawStream) return Promise.resolve(true);
+                if (window.app.rawStream && window.app.rawStream.getAudioTracks().length > 0) {
+                    if (window.app.voiceBoost && window.app.txGate) {
+                        try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
+                    }
+                    if (window.app.voiceBoost && window.app.moniGainNode) {
+                        try { window.app.voiceBoost.connect(window.app.moniGainNode); } catch(e){}
+                    }
+                    if (window.app.voiceBoost && window.app.masterRecordBus) {
+                        try { window.app.voiceBoost.connect(window.app.masterRecordBus); } catch(e){}
+                    }
+                    return Promise.resolve(true);
+                }
                 if (window.initAudio) window.initAudio();
                 
                 var constraints = { 

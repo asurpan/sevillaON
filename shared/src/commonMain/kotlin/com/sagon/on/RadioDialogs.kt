@@ -74,7 +74,7 @@ fun RadioDialogs(
                 containerColor = LuxeColors.DeepSea,
                 title = { Text("AUDITORÍA WEBRTC V12.4", fontWeight = FontWeight.Black, color = LuxeColors.Gold) },
                 text = {
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Column(modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                         Text("MIC PERMISSION: ${diag.micPermission}", color = if(diag.micPermission == "granted") Color.Green else Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         Text("CTX STATE: ${diag.ctxState}", color = if(diag.ctxState == "running") Color.Green else Color.Yellow, fontSize = 11.sp)
                         Text("TX PACKETS: ${diag.txPackets}", color = Color.White, fontSize = 11.sp)
@@ -987,7 +987,7 @@ fun RadioDialogs(
             modifier = Modifier.border(1.dp, LuxeColors.GlassBorder, RoundedCornerShape(24.dp)),
             title = { Text("AJUSTES DE EQUIPO", fontWeight = FontWeight.Black) },
             text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Column(modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                     Text("Configuración de audio y sistema.", color = Color.White.copy(0.6f), fontSize = 12.sp)
                     Spacer(Modifier.height(20.dp))
                     
@@ -1198,7 +1198,7 @@ fun RadioDialogs(
                 }
             },
             text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
+                Column(Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                     Text("⚙️ GUÍA RÁPIDA DE FUNCIONES", fontWeight = FontWeight.Black, fontSize = 11.sp, color = LuxeColors.Gold)
                     Spacer(Modifier.height(8.dp))
                     Text("• 📻 Banda Ciudadana (CB 27MHz): 40 canales con modulación FM, S-Meter con portadora fija real e indicadores de pisotón según la potencia del emisor.\n• 🚦 Confirmación de Voz Real (Handshake TX/RX): La pantalla Nexus muestra 🔴 TX CONFIRMADO cuando tu voz suena físicamente por el altavoz de la otra persona, 🔴 TX VOZ cuando modulas voz por el micro, 🟡 PORTADORA en silencios, y 🟢 VOZ REAL cuando recibes audio por tus altavoces.\n• 🔋 Sistema de Potencia (Watts): Ganas vatios reales acumulando tiempo de transmisión (PTT). Las estaciones Base y el Bot operan a 50W (S9+30dB).\n• 🎨 Temas Tácticos y Colores: Personaliza el estilo del chasis y la pantalla Nexus (Deep Sea, Luxe Gold, Militar, Cyberpunk, Circuito PCB, Fibra de Carbono, Walkie ABS, Acero y Negro OLED).\n• 🤖 Bot de Canal / Operador Base: Te da la bienvenida al entrar a un canal libre, comprueba si tu micrófono tiene permisos activos y te asiste con reportes de señal. Puedes desactivarlo en Ajustes.\n• 📡 Red de Malla P2P: Comunicación móvil a móvil de emergencia sin necesidad de 4G.\n• 👂 Modo Oreja: Escucha privada acercando el teléfono a la oreja.\n• 🎛️ Procesador DSP & Replay: Ecualización de voz HiFi y rebobinado de los últimos 30 segundos.", fontSize = 11.sp, color = Color.White.copy(0.85f))

@@ -151,13 +151,16 @@ fun RadioDialogs(
                 LuxeButton("ENTENDIDO", onDismiss, true, Modifier.fillMaxWidth().height(48.dp), LuxeColors.Gold, Color.Black)
             }
         )
-        RadioDialogType.FRIENDS -> FeatureHelpDialog(
-            title = "Tus Amigos en Oro",
-            icon = Icons.Rounded.Favorite,
-            description = "Marca a otros usuarios como favoritos. Sus nombres brillarán en ORO para que los identifiques rápido.",
-            onDismiss = { 
+        RadioDialogType.FRIENDS -> FriendsDialog(
+            friends = state.friends,
+            onRemoveFriend = { friendNick ->
+                onStateChange(state.copy(friends = state.friends - friendNick))
+            },
+            onPrivateChat = { friendNick ->
+                onPrivateChat(friendNick)
                 onDismiss()
-            }
+            },
+            onDismiss = onDismiss
         )
         RadioDialogType.DSP -> AlertDialog(
             onDismissRequest = onDismiss,
@@ -1086,6 +1089,22 @@ fun RadioDialogs(
                     EliteSlider("RF GAIN", state.rfGain) { onStateChange(state.copy(rfGain = it)) }
                     
                     Spacer(Modifier.height(16.dp))
+
+                    Surface(
+                        onClick = { onPendingDialogChange(RadioDialogType.FRIENDS, null) },
+                        color = LuxeColors.Gold.copy(0.12f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Icon(Icons.Rounded.Star, null, tint = LuxeColors.Gold, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Text("MIS AMIGOS & CONTACTOS", color = LuxeColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
 
                     Surface(
                         onClick = { onPendingDialogChange(RadioDialogType.BLACKLIST, null) },

@@ -1025,6 +1025,7 @@ fun RadioPanel(
                 // --- 💬 MINI-CHAT TÁCTICO INTEGRADO (CÓMODO Y PRÁCTICO) ---
                 InlineTacticalChat(
                     chatMessages = chatMessages,
+                    friends = state.friends,
                     targetNick = privateChatTargetNick,
                     onTargetChange = { privateChatTargetNick = it },
                     isChatOpen = state.isChatVisible,
@@ -1230,6 +1231,7 @@ fun formatMessageTime(timestamp: Long): String {
 @Composable
 fun InlineTacticalChat(
     chatMessages: List<ChatMessage>,
+    friends: Set<String> = emptySet(),
     targetNick: String? = null,
     onTargetChange: (String?) -> Unit = {},
     isChatOpen: Boolean = false,
@@ -1397,23 +1399,34 @@ fun InlineTacticalChat(
                 } else {
                     nonSysMsgs.forEachIndexed { idx, msg ->
                         val isLast = (idx == nonSysMsgs.lastIndex)
+                        val isFriend = friends.contains(msg.senderNick) || friends.contains(msg.senderNick.uppercase())
                         val annotatedMsg = buildAnnotatedString {
                             withStyle(SpanStyle(color = Color(0xFF00E5FF).copy(0.70f), fontSize = 11.5.sp, fontWeight = FontWeight.Medium)) {
                                 append("[${formatMessageTime(msg.timestamp)}] ")
                             }
-                            withStyle(SpanStyle(color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF), fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)) {
+                            if (isFriend) {
+                                withStyle(SpanStyle(color = LuxeColors.Gold, fontSize = 11.5.sp, fontWeight = FontWeight.Black)) {
+                                    append("⭐ ")
+                                }
+                            }
+                            withStyle(SpanStyle(color = if (isFriend) LuxeColors.Gold else (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)), fontSize = 12.5.sp, fontWeight = FontWeight.ExtraBold)) {
                                 append("${msg.senderNick}: ")
                             }
                             withStyle(SpanStyle(color = Color.White, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)) {
                                 append(msg.text)
                             }
                         }
+                        val onMsgClick = {
+                            onPlaySound("click")
+                            onTargetChange(msg.senderNick)
+                            if (!isChatOpen) onChatOpenChange(true)
+                        }
                         if (isLast) {
                             Surface(
                                 color = (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)).copy(0.12f * pulseAlpha),
                                 shape = RoundedCornerShape(8.dp),
                                 border = BorderStroke(1.dp, (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)).copy(0.45f * pulseAlpha)),
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth().clickable { onMsgClick() }
                             ) {
                                 Text(
                                     text = annotatedMsg,
@@ -1426,7 +1439,7 @@ fun InlineTacticalChat(
                         } else {
                             Text(
                                 text = annotatedMsg,
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 1.dp),
+                                modifier = Modifier.fillMaxWidth().clickable { onMsgClick() }.padding(horizontal = 4.dp, vertical = 1.dp),
                                 maxLines = 1,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 lineHeight = 16.sp
@@ -1540,16 +1553,26 @@ fun InlineTacticalChat(
                         ) {
                             modalMsgs.forEachIndexed { idx, msg ->
                                 val isLastModal = (idx == modalMsgs.lastIndex)
+                                val isFriendModal = friends.contains(msg.senderNick) || friends.contains(msg.senderNick.uppercase())
                                 val annotatedModalMsg = buildAnnotatedString {
                                     withStyle(SpanStyle(color = Color.White.copy(0.60f), fontSize = 11.5.sp, fontWeight = FontWeight.Medium)) {
                                         append("[${formatMessageTime(msg.timestamp)}] ")
                                     }
-                                    withStyle(SpanStyle(color = if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF), fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold)) {
+                                    if (isFriendModal) {
+                                        withStyle(SpanStyle(color = LuxeColors.Gold, fontSize = 12.5.sp, fontWeight = FontWeight.Black)) {
+                                            append("⭐ ")
+                                        }
+                                    }
+                                    withStyle(SpanStyle(color = if (isFriendModal) LuxeColors.Gold else (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)), fontSize = 13.5.sp, fontWeight = FontWeight.ExtraBold)) {
                                         append("${msg.senderNick}: ")
                                     }
                                     withStyle(SpanStyle(color = Color.White, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold)) {
                                         append(msg.text)
                                     }
+                                }
+                                val onModalMsgClick = {
+                                    onPlaySound("click")
+                                    onTargetChange(msg.senderNick)
                                 }
                                 if (isLastModal) {
                                     Box(
@@ -1558,6 +1581,7 @@ fun InlineTacticalChat(
                                             .clip(RoundedCornerShape(8.dp))
                                             .background((if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)).copy(0.12f * pulseAlpha))
                                             .border(1.dp, (if (targetNick != null) LuxeColors.Gold else Color(0xFF00E5FF)).copy(0.45f * pulseAlpha), RoundedCornerShape(8.dp))
+                                            .clickable { onModalMsgClick() }
                                             .padding(horizontal = 8.dp, vertical = 4.dp)
                                     ) {
                                         Text(
@@ -1569,7 +1593,7 @@ fun InlineTacticalChat(
                                 } else {
                                     Text(
                                         text = annotatedModalMsg,
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier.fillMaxWidth().clickable { onModalMsgClick() },
                                         lineHeight = 18.sp
                                     )
                                 }

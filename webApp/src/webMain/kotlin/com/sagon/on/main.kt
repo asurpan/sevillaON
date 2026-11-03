@@ -282,6 +282,8 @@ fun main() {
         };
     """)
 
+    RadioAudioEngine.install()
+    RadioRtcEngine.install()
     RadioNetworkManager.install()
     RadioAudioManager.install()
     RadioMapsManager.install()

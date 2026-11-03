@@ -119,9 +119,7 @@ object RadioAudioManager {
                     if (typeof window.manosLibres_requestMic === 'function') {
                         window.manosLibres_requestMic();
                     }
-                    if (window.app.voiceBoost && window.app.txGate) {
-                        try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
-                    }
+                    if (window.RadioAudioEngine) window.RadioAudioEngine.connectVoiceChain();
                     return;
                 }
                 console.log("🏗️ Inicializando Motor de Audio...");

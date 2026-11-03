@@ -489,6 +489,8 @@ fun main() {
                     val isPrivatePath = currentPath.contains("private_messages")
                     if (rawData != null) {
                         val keys = js("Object").keys(rawData)
+                        val nowMs = Date.now()
+                        val twentyFourHoursAgo = nowMs - (24.0 * 60.0 * 60.0 * 1000.0)
                         for (i in 0 until (keys.length as Int)) {
                             val k = keys[i] as String
                             val m = rawData[k] ?: continue
@@ -497,7 +499,10 @@ fun main() {
                             val ts = (m.timestamp as? Double ?: 0.0).toLong()
                             val isSys = (m.isSystem as? Boolean ?: false)
                             val msgIsPrivate = isPrivatePath || (m.isPrivate as? Boolean ?: false)
-                            if (text.isNotEmpty()) {
+                            
+                            // 🛡️ FILTRO 24 HORAS: Mensajes públicos vencen a las 24 horas para mantener el canal fresco sin dejarlo vacío
+                            val isRecent = msgIsPrivate || isSys || (ts >= twentyFourHoursAgo)
+                            if (text.isNotEmpty() && isRecent) {
                                 list.add(ChatMessage(id = k, senderNick = sender, text = text, timestamp = ts, isSystem = isSys, isPrivate = msgIsPrivate))
                             }
                         }

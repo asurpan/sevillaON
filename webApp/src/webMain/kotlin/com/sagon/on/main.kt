@@ -489,10 +489,9 @@ fun main() {
                     val list = mutableListOf<ChatMessage>()
                     val currentPath = (win.currentChatPath as? String ?: "")
                     val isPrivatePath = currentPath.contains("private_messages")
+                    val joinTime = (win.channelJoinTime as? Double ?: 0.0).toLong()
                     if (rawData != null) {
                         val keys = js("Object").keys(rawData)
-                        val nowMs = Date.now()
-                        val twentyFourHoursAgo = nowMs - (24.0 * 60.0 * 60.0 * 1000.0)
                         for (i in 0 until (keys.length as Int)) {
                             val k = keys[i] as String
                             val m = rawData[k] ?: continue
@@ -502,9 +501,9 @@ fun main() {
                             val isSys = (m.isSystem as? Boolean ?: false)
                             val msgIsPrivate = isPrivatePath || (m.isPrivate as? Boolean ?: false)
                             
-                            // 🛡️ FILTRO 24 HORAS: Mensajes públicos vencen a las 24 horas para mantener el canal fresco sin dejarlo vacío
-                            val isRecent = msgIsPrivate || isSys || (ts >= twentyFourHoursAgo)
-                            if (text.isNotEmpty() && isRecent) {
+                            // 🛡️ CHAT PÚBLICO EFÍMERO EN TIEMPO REAL: Los mensajes de canal público solo se muestran a partir del momento en que el usuario entra al canal
+                            val isVisible = msgIsPrivate || isSys || (joinTime == 0L) || (ts >= (joinTime - 10000))
+                            if (text.isNotEmpty() && isVisible) {
                                 list.add(ChatMessage(id = k, senderNick = sender, text = text, timestamp = ts, isSystem = isSys, isPrivate = msgIsPrivate))
                             }
                         }

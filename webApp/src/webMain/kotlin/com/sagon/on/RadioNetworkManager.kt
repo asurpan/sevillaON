@@ -72,6 +72,7 @@ object RadioNetworkManager {
                 
                 if (window.currentChatPath === chatPath) return;
                 window.currentChatPath = chatPath;
+                window.channelJoinTime = Date.now();
 
                 if (window.currentChatRef) try { window.currentChatRef.off(); } catch(e) {}
                 window.currentChatRef = window.app.db.ref(chatPath).limitToLast(50);

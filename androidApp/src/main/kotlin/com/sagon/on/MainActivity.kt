@@ -1681,7 +1681,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         clearCache(true)
                         postDelayed({
                             val githubUrl = "https://asurpan.github.io/sevillaON/?native=true&nocache=${System.currentTimeMillis()}"
-                            val localAssetUrl = "file:///android_asset/index.html?native=true&v=${System.currentTimeMillis()}"
+                            val localAssetUrl = "file:///android_asset/index.html"
                             
                             val baseUrl = if (USE_GITHUB_REMOTE_SERVER) githubUrl else localAssetUrl
                             val incomingUrl = intent.data?.toString()

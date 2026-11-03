@@ -17,19 +17,17 @@ object ManosLibres {
             var noiseFloor = 0.01; 
 
             window.manosLibres_requestMic = function() {
+                if (!window.app) return Promise.resolve(false);
                 if (window.app.rawStream && window.app.rawStream.getAudioTracks().length > 0) {
-                    if (window.app.voiceBoost && window.app.txGate) {
-                        try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
-                    }
-                    if (window.app.voiceBoost && window.app.moniGainNode) {
-                        try { window.app.voiceBoost.connect(window.app.moniGainNode); } catch(e){}
-                    }
-                    if (window.app.voiceBoost && window.app.masterRecordBus) {
-                        try { window.app.voiceBoost.connect(window.app.masterRecordBus); } catch(e){}
-                    }
+                    if (window.RadioAudioEngine) window.RadioAudioEngine.connectVoiceChain();
                     return Promise.resolve(true);
                 }
-                if (window.initAudio) window.initAudio();
+                if (window.app.isRequestingMic) return Promise.resolve(false);
+                window.app.isRequestingMic = true;
+
+                if (!window.app.ctx && window.initAudio && !window.app.isInitializingAudio) {
+                    window.initAudio();
+                }
                 
                 var constraints = { 
                     audio: { 
@@ -42,6 +40,7 @@ object ManosLibres {
 
                 return navigator.mediaDevices.getUserMedia(constraints)
                 .then(function(stream) {
+                    window.app.isRequestingMic = false;
                     console.log("🛡️ AUDITORÍA: Micrófono concedido. Tracks:", stream.getAudioTracks().length);
                     if (stream.getAudioTracks().length > 0) {
                         var track = stream.getAudioTracks()[0];
@@ -77,7 +76,7 @@ object ManosLibres {
                     if (window.app.masterRecordBus) try { voiceBoost.connect(window.app.masterRecordBus); } catch(e){}
                     
                     return true;
-                }).catch(function(err) { return false; });
+                }).catch(function(err) { window.app.isRequestingMic = false; return false; });
             };
 
             var lastDispatchedLevel = -1.0;

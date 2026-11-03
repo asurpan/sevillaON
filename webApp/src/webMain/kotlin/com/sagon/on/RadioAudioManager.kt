@@ -111,21 +111,26 @@ object RadioAudioManager {
             };
 
             window.initAudio = function() {
-                if (window.app.ctx) {
-                    if (window.app.ctx.state === 'suspended') {
-                        window.app.ctx.resume().then(() => { console.log("🔊 AudioContext reanudado."); });
-                    }
-                    if (window.installIosKeepAlive) window.installIosKeepAlive();
-                    if (typeof window.manosLibres_requestMic === 'function') {
-                        window.manosLibres_requestMic();
-                    }
-                    if (window.RadioAudioEngine) window.RadioAudioEngine.connectVoiceChain();
-                    return;
-                }
-                console.log("🏗️ Inicializando Motor de Audio...");
-                if (window.installIosKeepAlive) window.installIosKeepAlive();
-                var AC = window.AudioContext || window.webkitAudioContext;
+                if (!window.app) return;
+                if (window.app.isInitializingAudio) return;
+                window.app.isInitializingAudio = true;
+
                 try {
+                    if (window.app.ctx) {
+                        if (window.app.ctx.state === 'suspended') {
+                            window.app.ctx.resume().then(() => { console.log("🔊 AudioContext reanudado."); });
+                        }
+                        if (window.installIosKeepAlive) window.installIosKeepAlive();
+                        if (!window.app.rawStream && typeof window.manosLibres_requestMic === 'function' && !window.app.isRequestingMic) {
+                            window.manosLibres_requestMic();
+                        }
+                        if (window.RadioAudioEngine) window.RadioAudioEngine.connectVoiceChain();
+                        window.app.isInitializingAudio = false;
+                        return;
+                    }
+                    console.log("🏗️ Inicializando Motor de Audio...");
+                    if (window.installIosKeepAlive) window.installIosKeepAlive();
+                    var AC = window.AudioContext || window.webkitAudioContext;
                     window.app.ctx = new AC({ latencyHint: 'interactive' });
                     window.app.diag.ctxState = window.app.ctx.state;
                     
@@ -377,13 +382,12 @@ object RadioAudioManager {
                     window.app.replayCompressor.ratio.value = 8;
                     window.app.masterRecordBus.connect(window.app.replayCompressor);
 
-                    if (typeof window.manosLibres_requestMic === 'function') {
+                    if (!window.app.rawStream && typeof window.manosLibres_requestMic === 'function' && !window.app.isRequestingMic) {
                         window.manosLibres_requestMic();
                     }
-                    if (window.app.voiceBoost && window.app.txGate) {
-                        try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
-                    }
+                    if (window.RadioAudioEngine) window.RadioAudioEngine.connectVoiceChain();
                 } catch(e) { }
+                window.app.isInitializingAudio = false;
             };
 
             window.broadcastPTT = function(active, roger, power) {

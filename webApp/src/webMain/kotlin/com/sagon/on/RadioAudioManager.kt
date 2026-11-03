@@ -197,9 +197,12 @@ object RadioAudioManager {
 
                         if (window.app.filter) {
                             if (enabled) {
+                                // 🎙️ FILTRO PASA-BANDA DSP DE VOZ RADIO 27MHz (300Hz - 3400Hz)
                                 window.app.filter.type = "bandpass";
-                                window.app.filter.frequency.setTargetAtTime(1200 + (lvl * 1000), now, 0.05);
-                                window.app.filter.Q.setTargetAtTime(0.8 + (lvl * 1.2), now, 0.05);
+                                var freq = 1200 + (lvl * 1200); 
+                                var qVal = 0.9 + (lvl * 2.5); 
+                                window.app.filter.frequency.setTargetAtTime(freq, now, 0.03);
+                                window.app.filter.Q.setTargetAtTime(qVal, now, 0.03);
                             } else {
                                 window.app.filter.type = "allpass";
                             }
@@ -208,20 +211,20 @@ object RadioAudioManager {
                         if (window.app.dspPresence) {
                             if (enabled) {
                                 window.app.dspPresence.type = "peaking";
-                                window.app.dspPresence.frequency.setTargetAtTime(2500, now, 0.05);
-                                window.app.dspPresence.gain.setTargetAtTime(3.0 + (lvl * 9.0), now, 0.05);
+                                window.app.dspPresence.frequency.setTargetAtTime(2400, now, 0.03);
+                                window.app.dspPresence.gain.setTargetAtTime(4.0 + (lvl * 12.0), now, 0.03);
                             } else {
-                                window.app.dspPresence.gain.setTargetAtTime(0, now, 0.05);
+                                window.app.dspPresence.gain.setTargetAtTime(0, now, 0.03);
                             }
                         }
 
                         if (window.app.mainCompressor) {
                             if (enabled) {
-                                window.app.mainCompressor.threshold.setTargetAtTime(-18 - (lvl * 12), now, 0.05);
-                                window.app.mainCompressor.ratio.setTargetAtTime(8 + (lvl * 8), now, 0.05);
+                                window.app.mainCompressor.threshold.setTargetAtTime(-18 - (lvl * 16), now, 0.03);
+                                window.app.mainCompressor.ratio.setTargetAtTime(8 + (lvl * 12), now, 0.03);
                             } else {
-                                window.app.mainCompressor.threshold.setTargetAtTime(0, now, 0.05);
-                                window.app.mainCompressor.ratio.setTargetAtTime(1, now, 0.05);
+                                window.app.mainCompressor.threshold.setTargetAtTime(0, now, 0.03);
+                                window.app.mainCompressor.ratio.setTargetAtTime(1, now, 0.03);
                             }
                         }
                     };
@@ -645,7 +648,7 @@ object RadioAudioManager {
                     
                     if (remoteStream.getAudioTracks().length === 0) console.error("⚠️ ALERTA: Stream recibido pero tiene 0 pistas de audio.");
                     remoteAudio.srcObject = remoteStream;
-                    remoteAudio.volume = 1.0;
+                    remoteAudio.volume = 0.01; // 🛡️ Keep-alive para el decodificador de hardware, sin duplicar salida sin filtrar
                     remoteAudio.play().catch(function(e) { console.error("Autoplay play error", e); });
 
                     if (!window.app.ctx && window.initAudio) window.initAudio();
@@ -658,10 +661,14 @@ object RadioAudioManager {
 
                     source.connect(analyser); 
                     source.connect(gainNode);
-                    if (window.app.masterRxGain) gainNode.connect(window.app.masterRxGain);
-                    if (window.app.ctx && window.app.ctx.destination) {
-                        try { gainNode.connect(window.app.ctx.destination); } catch(e) {}
+
+                    // 🎛️ CONEXIÓN DSP: La voz remota DEBE pasar por el filtro DSP para que el deslizador tenga efecto directo
+                    if (window.app.filter) {
+                        gainNode.connect(window.app.filter);
+                    } else if (window.app.masterRxGain) {
+                        gainNode.connect(window.app.masterRxGain);
                     }
+
                     // 🛡️ REPLAY RECORDING: Conectar audio remoto al bus de grabación para Replay
                     if (window.app.masterRecordBus) gainNode.connect(window.app.masterRecordBus);
 
@@ -675,12 +682,9 @@ object RadioAudioManager {
                     if (window.updatePeerSenders) try { window.updatePeerSenders(); } catch(e) {}
                     
                     if (window.app.ctx.state !== 'running') {
-                        window.app.ctx.resume().then(() => { 
-                            remoteAudio.volume = 1.0;
+                        window.app.ctx.resume().then(function() { 
                             remoteAudio.play().catch(function(e) {});
                         });
-                    } else {
-                        remoteAudio.volume = 1.0;
                     }
                     if (window.app.masterOut) window.app.masterOut.connect(window.app.ctx.destination);
                 });

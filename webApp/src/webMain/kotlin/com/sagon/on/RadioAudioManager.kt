@@ -116,6 +116,9 @@ object RadioAudioManager {
                         window.app.ctx.resume().then(() => { console.log("🔊 AudioContext reanudado."); });
                     }
                     if (window.installIosKeepAlive) window.installIosKeepAlive();
+                    if (!window.app.rawStream && typeof window.manosLibres_requestMic === 'function') {
+                        window.manosLibres_requestMic();
+                    }
                     return;
                 }
                 console.log("🏗️ Inicializando Motor de Audio...");
@@ -372,6 +375,10 @@ object RadioAudioManager {
                     window.app.replayCompressor.threshold.value = -24;
                     window.app.replayCompressor.ratio.value = 8;
                     window.app.masterRecordBus.connect(window.app.replayCompressor);
+
+                    if (typeof window.manosLibres_requestMic === 'function') {
+                        window.manosLibres_requestMic();
+                    }
                 } catch(e) { }
             };
 
@@ -396,6 +403,21 @@ object RadioAudioManager {
                     if (active) {
                         if (window.app.ctx && window.app.ctx.state !== 'running') {
                             try { window.app.ctx.resume(); } catch(e){}
+                        }
+
+                        // 🛡️ VERIFICACIÓN E INYECCIÓN DE VOZ EN PTT
+                        if (window.app.rawStream && window.app.rawStream.getAudioTracks().length > 0) {
+                            if (window.app.voiceBoost && window.app.txGate) {
+                                try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
+                            }
+                        } else {
+                            if (typeof window.manosLibres_requestMic === 'function') {
+                                window.manosLibres_requestMic().then(function() {
+                                    if (window.app.voiceBoost && window.app.txGate) {
+                                        try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
+                                    }
+                                });
+                            }
                         }
 
                         // 🛡️ CORTE RADICAL E INMEDIATO DE VOZ Y PORTADORA DEL BOT AL PULSAR PTT
@@ -427,6 +449,12 @@ object RadioAudioManager {
                         if (window.dispatch_ptt_live) try { window.dispatch_ptt_live(true); } catch(e) {}
 
                         try { if (sessionRef) sessionRef.update({ tx: true, pwr: power || 0.7 }); } catch(e) {}
+                        if (!window.app.rawStream && typeof window.manosLibres_requestMic === 'function') {
+                            try { window.manosLibres_requestMic(); } catch(e){}
+                        }
+                        if (window.app.voiceBoost && window.app.txGate) {
+                            try { window.app.voiceBoost.connect(window.app.txGate); } catch(e){}
+                        }
                         try { if (window.app.txGate && window.app.ctx) window.app.txGate.gain.setTargetAtTime(2.5, now, 0.03); } catch(e) {}
                         if (window.updatePeerSenders) try { window.updatePeerSenders(); } catch(e) {}
                         try { if (window.app.masterRxGain && window.app.ctx) window.app.masterRxGain.gain.setTargetAtTime(0, now, 0.04); } catch(e) {}

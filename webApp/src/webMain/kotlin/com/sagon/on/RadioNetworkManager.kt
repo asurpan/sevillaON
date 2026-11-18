@@ -204,8 +204,6 @@ object RadioNetworkManager {
                         }
                     } catch(e) {}
                 """)
-
-                js("if (window.checkControlStationResponse) setTimeout(function() { window.checkControlStationResponse(); }, 800);")
             }
         }
     }

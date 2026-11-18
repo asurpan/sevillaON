@@ -1242,6 +1242,7 @@ fun InlineTacticalChat(
     onChatMutedChange: (Boolean) -> Unit = {}
 ) {
     var textInput by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
 
     val infiniteTransition = rememberInfiniteTransition()
     val pulseAlpha by infiniteTransition.animateFloat(
@@ -1676,6 +1677,8 @@ fun InlineTacticalChat(
                                         onSendMessage(textInput.trim(), targetNick)
                                         onPlaySound("chat_msg")
                                         textInput = ""
+                                        focusManager.clearFocus()
+                                        onChatOpenChange(false)
                                     }
                                 }
                             ),
@@ -1691,6 +1694,8 @@ fun InlineTacticalChat(
                                                 onSendMessage(textInput.trim(), targetNick)
                                                 onPlaySound("chat_msg")
                                                 textInput = ""
+                                                focusManager.clearFocus()
+                                                onChatOpenChange(false)
                                             }
                                         },
                                         modifier = Modifier

@@ -59,7 +59,9 @@ object RadioAudioManager {
 
                     if (window.app.masterRxGain && window.app.masterRxGain.gain) {
                         try {
-                            window.app.masterRxGain.gain.setValueAtTime(3.5, now);
+                            var rxGainTarget = (window.app.pttStateInternal || window.app.isBeeping) ? 0 : 3.5;
+                            window.app.masterRxGain.gain.cancelScheduledValues(now);
+                            window.app.masterRxGain.gain.setValueAtTime(rxGainTarget, now);
                         } catch(e){}
                     }
 
@@ -548,23 +550,23 @@ object RadioAudioManager {
                                     beepOsc.frequency.setValueAtTime(1955, bTime);
 
                                     beepGain.gain.cancelScheduledValues(bTime);
-                                    beepGain.gain.setValueAtTime(0.50, bTime);
-                                    beepGain.gain.setValueAtTime(0.50, bTime + 0.292);
-                                    beepGain.gain.linearRampToValueAtTime(0.001, bTime + 0.30);
+                                    beepGain.gain.setValueAtTime(0.60, bTime);
+                                    beepGain.gain.setValueAtTime(0.60, bTime + 0.25);
+                                    beepGain.gain.exponentialRampToValueAtTime(0.001, bTime + 0.32);
                                     beepOsc.connect(beepGain);
 
                                     var localBeepGain = window.app.ctx.createGain();
                                     localBeepGain.gain.cancelScheduledValues(bTime);
-                                    localBeepGain.gain.setValueAtTime(0.50, bTime);
-                                    localBeepGain.gain.setValueAtTime(0.50, bTime + 0.292);
-                                    localBeepGain.gain.linearRampToValueAtTime(0.001, bTime + 0.30);
+                                    localBeepGain.gain.setValueAtTime(0.60, bTime);
+                                    localBeepGain.gain.setValueAtTime(0.60, bTime + 0.25);
+                                    localBeepGain.gain.exponentialRampToValueAtTime(0.001, bTime + 0.32);
                                     beepOsc.connect(localBeepGain);
 
                                     if (window.app.masterOut) localBeepGain.connect(window.app.masterOut);
                                     if (window.app.txBus) beepGain.connect(window.app.txBus);
 
                                     beepOsc.start(bTime);
-                                    beepOsc.stop(bTime + 0.305);
+                                    beepOsc.stop(bTime + 0.33);
                                 } catch(e) { console.error("Beep error", e); }
                             };
 
@@ -583,20 +585,19 @@ object RadioAudioManager {
                                 try { if (sessionRef) sessionRef.update({ tx: false }); } catch(e) {}
                                 try {
                                     var endNow = window.app.ctx ? window.app.ctx.currentTime : now;
-                                    if (window.app.masterRxGain && window.app.ctx) {
+                                    if (window.app.masterRxGain && window.app.ctx && !window.app.pttStateInternal) {
                                         window.app.masterRxGain.gain.cancelScheduledValues(endNow);
                                         window.app.masterRxGain.gain.setValueAtTime(window.app.masterRxGain.gain.value, endNow);
-                                        window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.05);
+                                        window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow + 0.02, 0.05);
                                     }
-                                    if (window.app.noise && window.app.ctx) {
+                                    if (window.app.noise && window.app.ctx && !window.app.pttStateInternal) {
                                         window.app.noise.gain.cancelScheduledValues(endNow);
                                         window.app.noise.gain.setValueAtTime(window.app.noise.gain.value, endNow);
-                                        window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow, 0.05);
+                                        window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget || 0, endNow + 0.02, 0.05);
                                     }
                                     if (window.updateMoniGain) window.updateMoniGain();
                                 } catch(e) {}
-                                if (window.checkControlStationResponse) try { window.checkControlStationResponse(); } catch(e) {}
-                            }, 310);
+                            }, 350);
                         } else {
                             window.app.isTransmittingInternal = false;
                             window.app.isBeeping = false;

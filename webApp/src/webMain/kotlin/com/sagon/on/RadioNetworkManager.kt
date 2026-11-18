@@ -21,13 +21,25 @@ object RadioNetworkManager {
             window.app = window.app || {};
             window.app.db = (typeof firebase !== 'undefined' && typeof firebase.database === 'function') ? firebase.database() : null;
 
+            window.getDb = function() {
+                if (window.app && window.app.db) return window.app.db;
+                if (typeof firebase !== 'undefined' && typeof firebase.database === 'function') {
+                    if (!firebase.apps.length && typeof cfg !== 'undefined') firebase.initializeApp(cfg);
+                    window.app = window.app || {};
+                    window.app.db = firebase.database();
+                    return window.app.db;
+                }
+                return null;
+            };
+
             window.sanitizePath = function(p) {
                 return (p || "").toString().replace(/[.#${'$'}\[\]]/g, "_");
             };
 
             window.initFirebaseListener = function() {
-                if (window.app.db) {
-                    window.app.db.ref("users").on('value', function(s) { 
+                var db = window.getDb();
+                if (db) {
+                    db.ref("users").on('value', function(s) { 
                         if(window.dispatch_users_update) window.dispatch_users_update(s.val()); 
                     });
 
@@ -38,7 +50,7 @@ object RadioNetworkManager {
                         }
                         var sanitizedNick = window.sanitizePath(nick);
                         if (window.privateInboxRef) try { window.privateInboxRef.off(); } catch(e){}
-                        window.privateInboxRef = window.app.db.ref("private_inbox/" + sanitizedNick);
+                        window.privateInboxRef = db.ref("private_inbox/" + sanitizedNick);
                         window.privateInboxRef.on('child_added', function(snapshot) {
                             var msg = snapshot.val();
                             if (!msg) return;
@@ -61,7 +73,8 @@ object RadioNetworkManager {
             };
 
             window.updateChatListener = function(target) {
-                if (!window.app || !window.app.db) return;
+                var db = window.getDb();
+                if (!db) return;
                 var nick = (window.app && window.app.nick) ? window.app.nick : (localStorage.getItem("indicativo") || "ANÓNIMO");
                 var city = (window.app && window.app.currentCity) ? window.app.currentCity : (localStorage.getItem("lastCity") || "SEVILLA");
                 var channel = (window.app && window.app.currentChannel) ? window.app.currentChannel : (localStorage.getItem("lastChannel") || city);
@@ -70,12 +83,11 @@ object RadioNetworkManager {
                 var chatPath = target ? ("private_messages/" + window.sanitizePath([nick, target].sort()[0]) + "_" + window.sanitizePath([nick, target].sort()[1])) 
                                       : ("messages/" + window.sanitizePath(city) + "/" + window.sanitizePath(channelKey));
                 
-                if (window.currentChatPath === chatPath) return;
                 window.currentChatPath = chatPath;
                 window.channelJoinTime = Date.now();
 
                 if (window.currentChatRef) try { window.currentChatRef.off(); } catch(e) {}
-                window.currentChatRef = window.app.db.ref(chatPath).limitToLast(50);
+                window.currentChatRef = db.ref(chatPath).limitToLast(50);
                 window.currentChatRef.on('value', function(snapshot) { 
                     if (window.dispatch_chat_update) window.dispatch_chat_update(snapshot.val()); 
                 });
@@ -106,13 +118,16 @@ object RadioNetworkManager {
             "messages/${win.sanitizePath(city)}/${win.sanitizePath(channelKey)}"
         }
 
-        if (win.app != null && win.app.db != null) {
+        val db = win.getDb()
+        if (db != null) {
             if (win.updateChatListener != null) {
                 win.updateChatListener(target)
             }
             val m: dynamic = js("{}")
             m.senderNick = nick
             m.text = text
+            m.timestamp = Date.now()
+            db.ref(chatPath).push(m)
             m.timestamp = Date.now()
             win.app.db.ref(chatPath).push(m)
 

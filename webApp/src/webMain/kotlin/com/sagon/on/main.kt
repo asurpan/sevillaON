@@ -616,7 +616,25 @@ fun main() {
             },
 
 
-            onSendMessage = { t, tg -> RadioNetworkManager.sendMessage(t, tg) },
+            onSendMessage = { t, tg -> 
+                RadioNetworkManager.sendMessage(t, tg)
+                val cleanText = t.trim()
+                if (cleanText.isNotEmpty()) {
+                    val myNick = (win.app?.nick as? String ?: localStorage.getItem("indicativo") ?: "ANÓNIMO").trim().uppercase()
+                    val now = Date.now().toLong()
+                    val localMsg = ChatMessage(
+                        id = "local_" + now,
+                        senderNick = myNick,
+                        text = cleanText,
+                        timestamp = now,
+                        isSystem = false,
+                        isPrivate = (tg != null)
+                    )
+                    if (!chatMessagesState.any { it.text == localMsg.text && (now - it.timestamp) < 5000 }) {
+                        chatMessagesState.add(localMsg)
+                    }
+                }
+            },
             onDeleteMessage = { id, tg -> RadioNetworkManager.deleteMessage(id, tg) },
             onPrivateChatRequest = { targetNick ->
                 if (targetNick.isNotEmpty()) {

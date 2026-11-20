@@ -81,6 +81,22 @@
             </intent-filter>
         </service>
 
+        <!-- 📟 WIDGET TÁCTICO PTT -->
+        <receiver
+            android:name=".RadioWidgetProvider"
+            android:exported="true"
+            android:label="ON AIR PTT">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.sagon.on.ACTION_WIDGET_PTT" />
+                <action android:name="com.sagon.on.ACTION_WIDGET_APP" />
+                <action android:name="com.sagon.on.ACTION_WIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_radio_info" />
+        </receiver>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

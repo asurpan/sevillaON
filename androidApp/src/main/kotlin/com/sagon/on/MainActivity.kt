@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
 
 
-    private val USE_GITHUB_REMOTE_SERVER = false
+    private val USE_GITHUB_REMOTE_SERVER = true
 
 
 
@@ -1276,9 +1276,40 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
                             @JavascriptInterface
                             fun share(city: String, channel: String, subtone: String?, proRole: String?) {
-                                post {
-                                    val topic = getDailyDebateTopic(city)
+                                Thread {
                                     val cleanCity = city.split("-")[0].uppercase()
+                                    var topic = getDailyDebateTopic(city)
+
+                                    if (!topic.startsWith("🔴 ÚLTIMA HORA")) {
+                                        try {
+                                            val encodedCity = java.net.URLEncoder.encode(cleanCity, "UTF-8")
+                                            val cityUrl = java.net.URL("https://news.google.com/rss/search?q=${encodedCity}+actualidad&hl=es&gl=ES&ceid=ES:es")
+                                            val conn = cityUrl.openConnection() as java.net.HttpURLConnection
+                                            conn.instanceFollowRedirects = true
+                                            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+                                            conn.connectTimeout = 2000
+                                            conn.readTimeout = 2000
+                                            val xml = conn.inputStream.bufferedReader().readText()
+                                            val liveHeadline = parseRssHeadline(xml, cleanCity)
+                                            if (liveHeadline != null) {
+                                                topic = liveHeadline
+                                                updateCachedNewsTopic(cleanCity, liveHeadline)
+                                            } else {
+                                                val nationalUrl = java.net.URL("https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es")
+                                                val conn2 = nationalUrl.openConnection() as java.net.HttpURLConnection
+                                                conn2.instanceFollowRedirects = true
+                                                conn2.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+                                                conn2.connectTimeout = 2000
+                                                conn2.readTimeout = 2000
+                                                val xml2 = conn2.inputStream.bufferedReader().readText()
+                                                val liveNational = parseRssHeadline(xml2, cleanCity)
+                                                if (liveNational != null) {
+                                                    topic = liveNational
+                                                    updateCachedNewsTopic(cleanCity, liveNational)
+                                                }
+                                            }
+                                        } catch (_: Exception) {}
+                                    }
 
                                     val shareText = if (subtone != null && subtone != "0000") {
                                         "🎙️ *ENTRAR A MI CANAL PRIVADO EN ON AIR GLOBAL*\n\n" +
@@ -1302,15 +1333,16 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                         }
                                     }
 
-
-                                    val sendIntent = android.content.Intent().apply {
-                                        action = android.content.Intent.ACTION_SEND
-                                        putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-                                        type = "text/plain"
+                                    post {
+                                        val sendIntent = android.content.Intent().apply {
+                                            action = android.content.Intent.ACTION_SEND
+                                            putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                                            type = "text/plain"
+                                        }
+                                        val shareIntent = android.content.Intent.createChooser(sendIntent, "Compartir Debate de Radio")
+                                        context.startActivity(shareIntent)
                                     }
-                                    val shareIntent = android.content.Intent.createChooser(sendIntent, "Compartir Debate de Radio")
-                                    context.startActivity(shareIntent)
-                                }
+                                }.start()
                             }
 
                             @JavascriptInterface

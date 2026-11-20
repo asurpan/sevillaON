@@ -187,3 +187,5 @@ actual fun fetchHttpGetApi(url: String, callback: (String?) -> Unit) {
 
 actual fun testBotVoice(text: String) {}
 
+actual fun requestPinWidget() {}
+

@@ -1086,7 +1086,7 @@ fun RadioDialogs(
                         text = "📟 ANCLAR WIDGET PTT EN ESCRITORIO",
                         onClick = {
                             triggerUiSound("switch")
-                            js("if (window.AndroidApp && window.AndroidApp.pinWidget) window.AndroidApp.pinWidget();")
+                            requestPinWidget()
                         },
                         enabled = true,
                         modifier = Modifier.fillMaxWidth().height(44.dp),
@@ -1224,7 +1224,7 @@ fun RadioDialogs(
                     Button(
                         onClick = {
                             triggerUiSound("switch")
-                            js("if (window.AndroidApp && window.AndroidApp.pinWidget) window.AndroidApp.pinWidget();")
+                            requestPinWidget()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF), contentColor = Color.Black),
                         shape = RoundedCornerShape(12.dp),

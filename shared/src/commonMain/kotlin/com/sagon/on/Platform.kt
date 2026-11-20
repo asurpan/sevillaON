@@ -43,3 +43,5 @@ expect fun fetchHttpGetApi(url: String, callback: (String?) -> Unit)
 
 expect fun testBotVoice(text: String)
 
+expect fun requestPinWidget()
+

@@ -272,17 +272,6 @@ fun getDailyDebateTopic(city: String): String {
     
     return "🔴 DEBATE Y NOTICIAS EN VIVO DE $cleanCity"
 }
-        "¿Cuál es la actividad cultural o festival más destacado de $cleanCity?",
-        "¿Qué opinas de la evolución de las comunicaciones de voz frente al texto escrito?",
-        "¿Cómo ha evolucionado el ocio nocturno y los puntos de encuentro en $cleanCity?",
-        "¿Qué iniciativas comunitarias o de voluntariado destacarías en $cleanCity?",
-        "¿Cuál es la carretera o ruta escénica más bonita para recorrer cerca de $cleanCity?",
-        "Rueda Libre de Radio en $cleanCity: Saludos, pruebas de modulación e intercambios."
-    )
-    
-    val topicIndex = (dayOfYear + cityHash) % topics.size
-    return topics[topicIndex]
-}
 
 
 fun getActivityIcon(profile: ActivityProfile): ImageVector {

@@ -169,7 +169,8 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
 
 actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     val cleanCity = city.split("-")[0].trim().uppercase()
-    val cityUrl = "https://news.google.com/rss/search?q=" + encodeURIComponent(cleanCity) + "+actualidad&hl=es&gl=ES&ceid=ES:es"
+    val encodedCity = js("encodeURIComponent(cleanCity)") as String
+    val cityUrl = "https://news.google.com/rss/search?q=$encodedCity+actualidad&hl=es&gl=ES&ceid=ES:es"
     val nationalUrl = "https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es"
 
     js("""
@@ -246,6 +247,13 @@ actual fun testBotVoice(text: String) {
     val win: dynamic = window
     if (win.deliverSpeech != null) {
         win.deliverSpeech(text, null, true)
+    }
+}
+
+actual fun requestPinWidget() {
+    val win: dynamic = window
+    if (win.AndroidApp != null && win.AndroidApp.pinWidget != null) {
+        win.AndroidApp.pinWidget()
     }
 }
 

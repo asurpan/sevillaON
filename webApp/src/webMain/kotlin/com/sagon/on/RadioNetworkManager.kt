@@ -128,8 +128,6 @@ object RadioNetworkManager {
             m.text = text
             m.timestamp = Date.now()
             db.ref(chatPath).push(m)
-            m.timestamp = Date.now()
-            win.app.db.ref(chatPath).push(m)
 
             if (target != null) {
                 val targetSanitized = win.sanitizePath(target)
@@ -137,51 +135,15 @@ object RadioNetworkManager {
                 notifObj.senderNick = nick
                 notifObj.text = text
                 notifObj.timestamp = Date.now()
-                win.app.db.ref("private_inbox/$targetSanitized").push(notifObj)
-
-                // =======================================================
-                // 🔒 HARD-LOCK: SPARK FCM DIRECT PUSH FOR PRIVATE CHAT (PROHIBIDO MODIFICAR)
-                // =======================================================
-                js("""
-                    try {
-                        var _k1 = "AIza"; var _k2 = "SyAtXii"; var _k3 = "PTJG2okE0"; var _k4 = "IBPb8DBiH"; var _k5 = "_6A-wkZULM";
-                        var fcmKey = _k1 + _k2 + _k3 + _k4 + _k5;
-                        var payload = {
-                            "to": "/topics/user_" + targetSanitized,
-                            "priority": "high",
-                            "data": {
-                                "type": "private_chat",
-                                "sender_nick": nick,
-                                "message": text,
-                                "title": "💬 MENSAJE PRIVADO DE " + nick.toUpperCase()
-                            },
-                            "notification": {
-                                "title": "💬 MENSAJE PRIVADO DE " + nick.toUpperCase(),
-                                "body": text,
-                                "sound": "default",
-                                "channel_id": "chat_notifications"
-                            }
-                        };
-                        fetch("https://fcm.googleapis.com/fcm/send", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Authorization": "key=" + fcmKey
-                            },
-                            body: JSON.stringify(payload)
-                        }).catch(function(e){ console.log("FCM Direct Push Error:", e); });
-                    } catch(e) {}
-                """)
+                db.ref("private_inbox/$targetSanitized").push(notifObj)
             } else {
                 win.app.lastUserTranscript = text
 
                 // =======================================================
-                // 🔒 HARD-LOCK: SPARK FCM DIRECT PUSH FOR PUBLIC @MENTIONS (PROHIBIDO MODIFICAR)
+                // 🔒 SECURE BACKEND PUSH FOR PUBLIC @MENTIONS (CLOUD FUNCTIONS)
                 // =======================================================
                 js("""
                     try {
-                        var _k1 = "AIza"; var _k2 = "SyAtXii"; var _k3 = "PTJG2okE0"; var _k4 = "IBPb8DBiH"; var _k5 = "_6A-wkZULM";
-                        var fcmKey = _k1 + _k2 + _k3 + _k4 + _k5;
                         var mentions = text.match(/@([a-zA-Z0-9_\-\u00C0-\u024F]+)/g);
                         if (mentions && mentions.length > 0) {
                             var notified = {};
@@ -190,30 +152,12 @@ object RadioNetworkManager {
                                 if (rawTarget && rawTarget !== nick && !notified[rawTarget]) {
                                     notified[rawTarget] = true;
                                     var targetSanitized = window.sanitizePath(rawTarget);
-                                    var payload = {
-                                        "to": "/topics/user_" + targetSanitized,
-                                        "priority": "high",
-                                        "data": {
-                                            "type": "public_mention",
-                                            "sender_nick": nick,
-                                            "message": text,
-                                            "title": "📣 TE HAN MENCIONADO EN CANAL (" + nick.toUpperCase() + ")"
-                                        },
-                                        "notification": {
-                                            "title": "📣 TE HAN MENCIONADO EN CANAL (" + nick.toUpperCase() + ")",
-                                            "body": text,
-                                            "sound": "default",
-                                            "channel_id": "chat_notifications"
-                                        }
+                                    var mentionObj = {
+                                        senderNick: nick,
+                                        text: text,
+                                        timestamp: Date.now()
                                     };
-                                    fetch("https://fcm.googleapis.com/fcm/send", {
-                                        method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json",
-                                            "Authorization": "key=" + fcmKey
-                                        },
-                                        body: JSON.stringify(payload)
-                                    }).catch(function(e){ console.log("FCM Mention Error:", e); });
+                                    window.app.db.ref("public_mentions/" + targetSanitized).push(mentionObj);
                                 }
                             }
                         }

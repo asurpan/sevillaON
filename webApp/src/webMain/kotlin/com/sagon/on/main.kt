@@ -318,6 +318,47 @@ fun main() {
         LaunchedEffect(Unit) {
             js("if (window.checkHardwareRestore) window.checkHardwareRestore(function(n) { if (n && window.dispatch_hardware_restored) window.dispatch_hardware_restored(n); });")
             js("""
+                setInterval(function() {
+                    if (window.app && window.app.activeCalls) {
+                        var calls = Object.keys(window.app.activeCalls);
+                        if (calls.length === 0) {
+                            if (window.dispatch_webrtc_ping) window.dispatch_webrtc_ping(null);
+                            return;
+                        }
+                        var minRtt = null;
+                        var pending = calls.length;
+                        calls.forEach(function(id) {
+                            var call = window.app.activeCalls[id];
+                            if (call && call.peerConnection && call.peerConnection.getStats) {
+                                call.peerConnection.getStats().then(function(stats) {
+                                    stats.forEach(function(report) {
+                                        if (report.type === 'candidate-pair' && (report.state === 'succeeded' || report.nominated)) {
+                                            var rtt = report.currentRoundTripTime ? Math.round(report.currentRoundTripTime * 1000) : null;
+                                            if (rtt !== null && (minRtt === null || rtt < minRtt)) {
+                                                minRtt = rtt;
+                                            }
+                                        }
+                                    });
+                                    pending--;
+                                    if (pending <= 0 && window.dispatch_webrtc_ping) {
+                                        window.dispatch_webrtc_ping(minRtt);
+                                    }
+                                }).catch(function() {
+                                    pending--;
+                                    if (pending <= 0 && window.dispatch_webrtc_ping) {
+                                        window.dispatch_webrtc_ping(minRtt);
+                                    }
+                                });
+                            } else {
+                                pending--;
+                                if (pending <= 0 && window.dispatch_webrtc_ping) {
+                                    window.dispatch_webrtc_ping(minRtt);
+                                }
+                            }
+                        });
+                    }
+                }, 3000);
+
                 if (window.app && window.app.db) {
                     window.app.db.ref("reports").on("value", function(snapshot) {
                         var data = snapshot.val();
@@ -363,6 +404,7 @@ fun main() {
         val replayProgressState = remember { mutableStateOf(0f) }
         val chatMessagesState = remember { mutableStateListOf<ChatMessage>() }
         val isChangingChannelState = remember { mutableStateOf(false) }
+        val webrtcPingState = remember { mutableStateOf<Int?>(null) }
 
         LaunchedEffect(isChangingChannelState.value) {
             if (isChangingChannelState.value) {
@@ -384,6 +426,7 @@ fun main() {
             onNickConflict = { conflictingNick ->
                 showSystemNotification("⚠️ INDICATIVO DUPLICADO", "El indicativo $conflictingNick ya está activo en otro terminal. Por favor elige uno diferente.")
             },
+            onWebRtcPing = { ping -> webrtcPingState.value = ping },
             onUsersUpdate = { users ->
                 try {
                     val list = mutableListOf<RemoteUser>()
@@ -753,6 +796,7 @@ fun main() {
             micLevel = micLevelState.value,
             isBeeping = false,
             isCodedRx = false,
+            webrtcPing = webrtcPingState.value,
             externalPtt = voxPttState.value,
             externalPttBlocked = false,
             replayProgress = replayProgressState.value,

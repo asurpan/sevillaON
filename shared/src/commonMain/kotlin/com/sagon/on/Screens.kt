@@ -265,6 +265,7 @@ fun RadioPanel(
     rx: Boolean,
     transmitterNick: String?,
     isBeeping: Boolean,
+    webrtcPing: Int? = null,
     onNoise: (Float) -> Unit,
     onMic: (Boolean, Float) -> Unit,
     onShare: (String, String, String?, String?) -> Unit,
@@ -549,22 +550,23 @@ fun RadioPanel(
                                 // 🛡️ ESTADO DE TRANSMISIÓN Y CONFIRMACIÓN DE VOZ REAL (SIEMPRE VISIBLE)
                                 val showRemoteRx = rx && !isTransmitting && !isBeeping
                                 Box(modifier = Modifier.fillMaxWidth().height(24.dp), contentAlignment = Alignment.Center) {
+                                    val pingTag = if (webrtcPing != null) " • ${webrtcPing}ms" else ""
                                     val (statusColor, statusText) = when {
                                         showRemoteRx -> {
                                             if (state.isRxVoiceActive) {
-                                                Color(0xFF10B981) to "VOZ REAL | ${transmitterNick?.uppercase() ?: "RECEPTOR"}"
+                                                Color(0xFF10B981) to "VOZ REAL | ${transmitterNick?.uppercase() ?: "RECEPTOR"}$pingTag"
                                             } else {
-                                                Color(0xFF00E5FF) to "RF | ${transmitterNick?.uppercase() ?: "RECEPTOR"}"
+                                                Color(0xFF00E5FF) to "RF | ${transmitterNick?.uppercase() ?: "RECEPTOR"}$pingTag"
                                             }
                                         }
                                         isTransmitting || isBeeping -> {
                                             val isLocalModulating = mic > 0.05f
                                             if (state.isTxConfirmed) {
-                                                Color(0xFFEF4444) to "TX CONFIRMADO"
+                                                Color(0xFFEF4444) to "TX CONFIRMADO$pingTag"
                                             } else if (isLocalModulating) {
-                                                Color(0xFFEF4444) to "TX VOZ"
+                                                Color(0xFFEF4444) to "TX VOZ$pingTag"
                                             } else {
-                                                Color(0xFFFACC15) to "PORTADORA"
+                                                Color(0xFFFACC15) to "PORTADORA$pingTag"
                                             }
                                         }
                                         else -> {
@@ -597,41 +599,47 @@ fun RadioPanel(
 
                                 Spacer(Modifier.height(6.dp))
 
-                                // 🚨 REGLA DE ORO CB 27MHz: PORTADORA FIJA Y PISOTÓN BASE (NO ALTERAR LÓGICA DE LEDS FIJOS)
-                                // 1. En RX la portadora mantiene los LEDs TOTALMENTE FIJOS marcando el nivel RF real del emisor.
-                                // 2. Agente / Bot / Base (BASE/CONTROL) transmite SIEMPRE con potencia a tope (50W -> 20 LEDs Fijos S9+30dB).
-                                // 3. Pisotón: Las estaciones de mayor potencia se imponen fijando un nivel de LEDs superior.
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().height(18.dp).padding(vertical = 1.dp), 
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                // 🚨 REGLA DE ORO CB 27MHz: PORTADORA FIJA Y PISOTÓN BASE (CANVAS DE ALTO RENDIMIENTO)
+                                val isControlBase = transmitterNick?.startsWith("BASE ") == true || 
+                                                     transmitterNick?.startsWith("CONTROL ") == true || 
+                                                     transmitterNick?.contains("BASE", ignoreCase = true) == true
+
+                                val remoteUser = users.find { it.nick.equals(transmitterNick, ignoreCase = true) }
+                                val remotePower = if (isControlBase) 1.0f else (remoteUser?.txPower ?: 0.7f)
+                                val sameCity = isControlBase || (remoteUser != null && remoteUser.city.split("-")[0] == state.city.split("-")[0])
+                                val sameChannel = isControlBase || (remoteUser != null && remoteUser.channel == state.channel)
+
+                                val cbSignalFactor = when {
+                                    isControlBase -> 1.0f
+                                    sameChannel && sameCity -> (0.85f + (remotePower * 0.15f)).coerceIn(0.85f, 1.0f)
+                                    sameCity -> (0.65f + (remotePower * 0.20f)).coerceIn(0.65f, 0.85f)
+                                    else -> (0.40f + (remotePower * 0.15f)).coerceIn(0.40f, 0.55f)
+                                }
+
+                                val signalLevel = if (isTransmitting) mic else if (rx) cbSignalFactor.coerceIn(0.25f, 1.0f) else 0f
+
+                                Canvas(
+                                    modifier = Modifier.fillMaxWidth().height(18.dp).padding(vertical = 1.dp)
                                 ) {
-                                    val isControlBase = transmitterNick?.startsWith("BASE ") == true || 
-                                                         transmitterNick?.startsWith("CONTROL ") == true || 
-                                                         transmitterNick?.contains("BASE", ignoreCase = true) == true
+                                    val totalLeds = 20
+                                    val spacing = 2.dp.toPx()
+                                    val ledWidth = (size.width - (spacing * (totalLeds - 1))) / totalLeds
+                                    val ledHeight = size.height
+                                    val inactiveColor = Color.White.copy(alpha = 0.05f)
 
-                                    val remoteUser = users.find { it.nick.equals(transmitterNick, ignoreCase = true) }
-                                    val remotePower = if (isControlBase) 1.0f else (remoteUser?.txPower ?: 0.7f)
-                                    val sameCity = isControlBase || (remoteUser != null && remoteUser.city.split("-")[0] == state.city.split("-")[0])
-                                    val sameChannel = isControlBase || (remoteUser != null && remoteUser.channel == state.channel)
-
-                                    // 📶 ESCALA RIGUROSA CB 27MHz: Portadora fija marcando potencia RF exacta (Pisotón Base 50W S9+30dB = 20 LEDs Fijos)
-                                    val cbSignalFactor = when {
-                                        isControlBase -> 1.0f // 💥 ESTACIÓN BASE / BOT (50W): PORTADORA FIJA A TOPE (20 LEDs - S9+30dB)
-                                        sameChannel && sameCity -> (0.85f + (remotePower * 0.15f)).coerceIn(0.85f, 1.0f) // SARTENAZO SEGÚN POTENCIA
-                                        sameCity -> (0.65f + (remotePower * 0.20f)).coerceIn(0.65f, 0.85f) // Mismo pueblo / ciudad
-                                        else -> (0.40f + (remotePower * 0.15f)).coerceIn(0.40f, 0.55f) // Otra provincia
-                                    }
-
-                                    val signalLevel = if (isTransmitting) mic else if (rx) cbSignalFactor.coerceIn(0.25f, 1.0f) else 0f
-                                    repeat(20) { i ->
-                                        val isActive = i < (signalLevel * 20)
+                                    for (i in 0 until totalLeds) {
+                                        val isActive = i < (signalLevel * totalLeds)
                                         val ledColor = when {
                                             i > 16 -> Color(0xFFEF4444)
                                             i > 12 -> Color(0xFFFACC15)
                                             else -> LuxeColors.Green
                                         }
-                                        Box(
-                                            modifier = Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(1.dp)).background(if (isActive) ledColor else Color.White.copy(0.05f))
+                                        val x = i * (ledWidth + spacing)
+                                        drawRoundRect(
+                                            color = if (isActive) ledColor else inactiveColor,
+                                            topLeft = Offset(x, 0f),
+                                            size = androidx.compose.ui.geometry.Size(ledWidth, ledHeight),
+                                            cornerRadius = CornerRadius(1.dp.toPx(), 1.dp.toPx())
                                         )
                                     }
                                 }

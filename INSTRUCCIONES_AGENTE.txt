@@ -1,4 +1,4 @@
-# 📘 MANUAL DE OPERACIONES V19.0 - RADIO ON AIR SPAIN (ELITE SUPREME)
+# 📘 MANUAL DE OPERACIONES V20.0 - RADIO ON AIR SPAIN (MASTER SUPREME)
 
 Este manual contiene las instrucciones técnicas, comerciales y de seguridad absoluta. Lectura OBLIGATORIA para cualquier IA.
 
@@ -7,52 +7,44 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **MEMORIA DE SESIÓN**: Al entrar en este proyecto, lee primero `PROTECTED_CORE.md`.
 
 ## 🏗️ ARQUITECTURA DE MISIÓN CRÍTICA
-1. **RadioAudioManager.kt**: Corazón del AudioContext con motor de supervivencia infrasónico (5Hz) y enrutamiento dinámico Rx/Tx.
+1. **RadioAudioManager.kt**: Corazón del AudioContext con motor de supervivencia infrasónico (5Hz) y ultrasónico (20.5kHz), Dither suave y ruido rosa QRM 27MHz.
 2. **RadioMeshModule.kt**: Clase independiente para comunicación P2P en caso de Blackout total.
-3. **RadioDialogs.kt**: Gestión de seguridad crítica y disuasión de cambios de Nick.
-4. **Screens.kt**: Interfaz Nexus blindada geométricamente.
+3. **RadioWidgetProvider.kt**: Widget táctico de escritorio con botón PTT cian neón y LED de estado en tiempo real.
+4. **RadioDialogs.kt**: Gestión de seguridad crítica, diálogos de ajustes, anclaje de widget e interfaz Nexus.
+5. **Screens.kt**: Interfaz Nexus blindada geométricamente con S-Meter Canvas de alto rendimiento y métrica de latencia WebRTC.
 
-## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK V19.0)
+## ⚠️ REGLAS TÉCNICAS INAMOVIBLES (HARD-LOCK V20.0)
 
 ### 🔊 AUDIO, VOZ Y CADENA PTT (BLINDAJE TOTAL)
 - **Cadena de Voz Intocable (`voiceBoost` ➔ `txGate` ➔ `txBus`)**: La voz del micro DEBE inyectarse en `txGate` y este a `txBus`. `window.app.voiceBoost` DEBE mantenerse guardado y reconectarse dinámicamente en `initAudio()`.
 - **Apertura de Puerta PTT (`txGate`)**: En `broadcastPTT`, la ganancia de `txGate` se abre a **2.5x** al pulsar PTT.
-- **AGC Hardware Obligatorio**: `autoGainControl: true` DEBE mantenerse habilitado en `getUserMedia` para que los chips de micrófono de teléfonos Android entreguen ganancia de voz completa (`sensorGain = 4.0`, `voiceBoost = 2.5`).
+- **AGC Hardware Obligatorio**: `autoGainControl: true` DEBE mantenerse habilitado en `getUserMedia` (`sensorGain = 4.0`, `voiceBoost = 2.5`).
 - **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen **0.01** vía un nodo Gain `dummy`.
-- **Ruteo DSP de Voz Remota Intocable**: Toda voz WebRTC entrante DEBE conectarse obligatoriamente a `window.app.filter`. Queda prohibido conectar el audio entrante directo al altavoz o subir el volumen de `<audio>` a 1.0, para garantizar que el deslizador DSP tenga efecto real.
+- **Ruteo DSP de Voz Remota Intocable**: Toda voz WebRTC entrante DEBE conectarse obligatoriamente a `window.app.filter`. Queda prohibido conectar el audio entrante directo al altavoz o subir el volumen de `<audio>` a 1.0.
 - **Infrasonic Keep-Alive**: Oscilador **5Hz** activo durante silencios de recepción.
 - **Re-activación de AudioContext en PTT / Roger Beep**: `broadcastPTT` DEBE ejecutar `window.app.ctx.resume()` si el motor no está en `'running'`.
 - **Filtro de Emisión Real para Roger Beep**: El Roger Beep de 1955Hz SOLO suena si el usuario estuvo transmitiendo (`wasTransmitting === true`). Mantiene ganancia constante **0.40** durante **292ms** con un micro-remate final de **8ms** sin fundidos largos.
-- **Handshake de Confirmación de Voz Real**: Medición PCM de altavoz remoto (`audioVol > 0.05`) que emite confirmación ACK activando el LED **`🔴 TX CONFIRMADO`** en la pantalla Nexus.
-- **Protección Anti-Chime de PTT**: Queda ESTRICTAMENTE PROHIBIDO ejecutar `webkitSpeechRecognition` durante el PTT en la app nativa Android (`window.AndroidApp != null`) para evitar que el sistema emita el pitido ("piri") de Búsqueda por Voz de Google.
+- **Handshake de Confirmación de Voz Real**: Medición PCM de altavoz remoto (`audioVol > 0.05`) que activa el LED **`🔴 TX CONFIRMADO`** en la pantalla Nexus.
 
-### 📡 RED, PEERJS Y LLAMADA INTELIGENTE
-- **Llamada Inteligente Anti-Glare (`mySess < user.id`)**: En el bucle de mantenimiento de `main.kt`, SOLO el cliente con la ID de sesión lexicográficamente menor inicia la llamada saliente.
-- **Sanitización Estricta de PeerJS**: La `sessionID` enviada a `new Peer()` DEBE sanitizarse mediante `cleanNick.replace(/[^A-Z0-9_-]/gi, "_")`. Queda prohibido enviar espacios o tildes a PeerJS para evitar el error `invalid-id`.
-- **Reconexión por Hardware (`deviceId`)**: En `onUsersUpdate`, se DEBE verificar `otherDeviceId == myDeviceID`. Si la conexión proviene del mismo dispositivo, es reconexión legítima y NO debe expulsar al usuario.
-- **ICE Servers Reforzados (4G/5G)**: Es obligatorio el uso de servidores STUN/TURN con transporte TCP (puerto 443).
+### 🛡️ SEGURIDAD FCM PUSH VÍA CLOUD FUNCTIONS
+- **Cero Claves FCM en Cliente**: El envío de notificaciones push para chats privados y menciones públicas `@NICK` se realiza escribiendo en `/private_inbox` y `/public_mentions`. `functions/index.js` gestiona la entrega de notificaciones en el servidor de forma 100% segura.
 
-### 📱 SEGUNDO PLANO Y COMPATIBILIDAD
-- **Foreground Service Android 14/15/16**: La app nativa debe ejecutar `RadioService` en primer plano con tipos `mediaPlayback|microphone`.
-- **FCM Push High Priority + WakeLock**: `MyFirebaseMessagingService` debe adquirir un `WakeLock` de CPU de 10s y despertar a `RadioService`.
-- **FCM Direct Push Spark (0€) + Menciones @NICK**: `RadioNetworkManager.kt` realiza el envío Push directo en segundo plano a `user_TARGET` en chats privados y menciones `@NICK` en canal público con claves ofuscadas.
-- **Llamadas Nativas (`RadioConnectionService`)**: Integrado con `ConnectionService` y `MANAGE_OWN_CALLS` de Android.
-- **Guiado iPhone (iOS Safari)**: La versión Web detecta iPhone y muestra el cartel `ios-install-banner` indicando pulsar *"Añadir a la pantalla de inicio"*.
+### ⚡ RENDIMIENTO UI & S-METER CANVAS
+- **S-Meter Canvas**: Dibujado sobre un solo componente `Canvas` (`Screens.kt`), reduciendo un 95% las recomposiciones en Compose UI.
 
-### 💬 CHAT TÁCTICO Y ACCIONES DE USUARIO
-- **Acciones de Usuario (`USER_ACTIONS`)**: Pulsar o mantener pulsado `UserCard` despliega el menú con Chat Privado, Favoritos/Amigos, Reportar Portadora y Bloquear/Desbloquear.
-- **Sanción Comunitaria Automática**: 3 reportes de portadora en 5 minutos activan `dispatch_community_mute`, bloqueando a la estación infractora en toda la frecuencia.
-- **Botón Mute**: Icono de silenciar/activar en el encabezado de `InlineTacticalChat` (`Screens.kt`).
-- **Notificaciones de Privados en Tiempo Real**: Notificación en vivo vía `private_inbox/NICK` que reproduce el sonido `chat_msg` y muestra la notificación del sistema en el móvil destino.
-- **Hora de Publicación**: Todos los mensajes muestran la hora `[HH:mm]`.
-- **Flujo Multilínea y Auto-Scroll**: Mensajes con `buildAnnotatedString` para salto de línea automático y `animateScrollTo(maxValue)` en el modal.
+### 🔗 DEEP LINKING SIN RECARGA DE PÁGINA
+- **Sintonía Suave**: `onNewIntent` en `MainActivity.kt` evalúa `window.onDeepLinkParams(city, channel, subtone)` sin llamar a `loadUrl()`, evitando reinicios de la WebView o parpadeos.
 
-### 📱 ENTORNO CONMUTABLE ANDROID (LOCAL vs GITHUB SERVIDOR)
-- **Variable de conmutación**: En `MainActivity.kt` (línea ~75): `private val USE_GITHUB_REMOTE_SERVER = true` (ó `false`).
-- **Cómo conmutar a MODO LOCAL (Desarrollo)**: Si el usuario pide "cambia a local" o "ponlo en local", establecer `USE_GITHUB_REMOTE_SERVER = false` en `MainActivity.kt`.
-- **Cómo conmutar a MODO SERVIDOR / GITHUB (Producción)**: Si el usuario pide "cambia a servidor", "ponlo en github" o "modo producción", establecer `USE_GITHUB_REMOTE_SERVER = true` en `MainActivity.kt`.
+### 📟 WIDGET TÁCTICO PTT Y AVISO AUTOMÁTICO
+- **AppWidget Provider**: Widget táctico redondeado (`widget_radio.xml`, `RadioWidgetProvider.kt`) con botón PTT gigante, LED de estado y aviso de anclaje de 1 clic `WIDGET_PROMPT`.
+
+### 💬 COMPATIBILIDAD CON X (TWITTER) Y REDES SOCIALES
+- **Límite 280 Caracteres**: Los textos de compartir acortan el titular a un máximo de 87 caracteres para garantizar compatibilidad con cuentas gratuitas de X (Twitter).
+
+### 🎨 PREVENCIÓN DE TEXTO CORTADO EN COMPOSE
+- **Altura Flexible**: Prohibido `.height()` fijo en botones con texto largo. Usar siempre **`.heightIn(min = 44.dp)`** y `contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)`.
 
 ### 🛑 REGLA SUPREMA DE SEGURIDAD (PERMISO EXPLÍCITO OBLIGATORIO)
-- **Flujos Blindados**: El sistema de entrada de usuarios, canales, micrófono, emisión (TX) y recepción (RX) está prohibido de modificar sin permiso explícito por escrito del usuario.
+- **Flujos Blindados**: El sistema completo de entrada de usuarios, canales, micrófono, emisión (TX) y recepción (RX) está prohibido de modificar sin permiso explícito por escrito del usuario.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 19.0 (BLINDAJE DE FLUJOS BAJO PERMISO EXPLÍCITO)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 20.0 (BLINDAJE MASTER SUPREME - BUILD 90)

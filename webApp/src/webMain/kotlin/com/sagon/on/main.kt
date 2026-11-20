@@ -839,14 +839,17 @@ fun main() {
                 } else {
                     val topic = getDailyDebateTopic(city)
                     val cleanCity = city.split("-")[0].uppercase()
-                    val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + "&v=100"
-                    val shareText = if (topic.startsWith("🔴 ÚLTIMA HORA")) {
-                        "🎙️ *ON AIR GLOBAL — DEBATE DE ÚLTIMA HORA*\n\n" +
-                        topic + "\n\n" +
-                        "👉 Toca el enlace para sintonizar en directo por radio y dar tu opinión:\n" + url
+                    val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + (if (subtone != "0000") "&subtone=$subtone" else "") + "&v=100"
+                    val shareText = if (subtone != "0000") {
+                        "🔒 *SALA PRIVADA DE RADIO EN DIRECTO*\n\n" +
+                        "🔑 *Código Secreto:* $subtone\n" +
+                        "📻 *Sintonía:* $cleanCity | Canal $channel\n\n" +
+                        "🎙️ *Toca el enlace para conectar a nuestro Walkie-Talkie privado:*\n" + url
                     } else {
-                        "🎙️ *DEBATE EN VIVO — $cleanCity*\n\n" +
-                        "💬 " + topic + "\n\n" + url
+                        "🚨 *¿QUÉ OPINAS DE ESTO EN $cleanCity?*\n\n" +
+                        topic + "\n\n" +
+                        "🎙️ Hay vecinos modulando en directo sobre esto en la radio de $cleanCity.\n\n" +
+                        "🔴 *Entra a escuchar o da tu opinión en 1 clic (100% gratis, sin instalar nada):*\n" + url
                     }
                     val nav = win.navigator
                     if (nav != null && nav.share != null) {

@@ -1312,25 +1312,19 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                     }
 
                                     val shareText = if (subtone != null && subtone != "0000") {
-                                        "🎙️ *ENTRAR A MI CANAL PRIVADO EN ON AIR GLOBAL*\n\n" +
-                                        "🔑 *Código / Subtono Privado:* $subtone\n" +
-                                        "📻 *Ciudad / País:* $cleanCity | *Canal:* $channel\n\n" +
-                                        "👉 Toca el enlace para entrar directo a la frecuencia privada:\n" +
+                                        "🔒 *SALA PRIVADA DE RADIO EN DIRECTO*\n\n" +
+                                        "🔑 *Código Secreto:* $subtone\n" +
+                                        "📻 *Sintonía:* $cleanCity | Canal $channel\n\n" +
+                                        "🎙️ *Toca el enlace para conectar a nuestro Walkie-Talkie privado:*\n" +
                                         "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&v=100"
                                     } else if (city == "RADAR") {
                                         "📡 ¡Vigilancia Hertz Activa! *ON AIR GLOBAL*\nAnalizando presencia biológica... 🧬\n\nhttps://asurpan.github.io/sevillaON/?v=100"
                                     } else {
-                                        if (topic.startsWith("🔴 ÚLTIMA HORA")) {
-                                            "🎙️ *ON AIR GLOBAL — DEBATE DE ÚLTIMA HORA*\n\n" +
-                                            "$topic\n\n" +
-                                            "👉 Toca el enlace para sintonizar en directo por radio y dar tu opinión:\n" +
-                                            "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=100"
-                                        } else {
-                                            "🎙️ *DEBATE EN VIVO — $cleanCity*\n\n" +
-                                            "💬 $topic\n\n" +
-                                            "👉 Toca el enlace para entrar en directo a la radio:\n" +
-                                            "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=100"
-                                        }
+                                        "🚨 *¿QUÉ OPINAS DE ESTO EN $cleanCity?*\n\n" +
+                                        "$topic\n\n" +
+                                        "🎙️ Hay vecinos modulando en directo sobre esto en la radio de $cleanCity.\n\n" +
+                                        "🔴 *Entra a escuchar o da tu opinión en 1 clic (100% gratis, sin instalar nada):*\n" +
+                                        "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=100"
                                     }
 
                                     post {

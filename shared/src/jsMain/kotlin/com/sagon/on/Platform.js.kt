@@ -169,61 +169,51 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
 
 actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     val cleanCity = city.split("-")[0].trim().uppercase()
-    val url = "https://news.google.com/rss/search?q=empleo+leyes+senado+recortes+sucesos+crimen+polemica+actualidad+ultima+hora&hl=es&gl=ES&ceid=ES:es"
+    val cityUrl = "https://news.google.com/rss/search?q=" + encodeURIComponent(cleanCity) + "+actualidad&hl=es&gl=ES&ceid=ES:es"
+    val nationalUrl = "https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es"
 
     js("""
-        fetch(url)
-            .then(function(response) { return response.text(); })
-            .then(function(xmlText) {
-                if (xmlText && xmlText.indexOf("<item>") !== -1) {
-                    var items = xmlText.split("<item>").slice(1, 30);
-                    var bestHeadline = null;
-                    var highestScore = -1;
-                    var impactKeywords = [
-                        "última hora", "urgente", "crimen", "asesinato", "detenido", "policía", 
-                        "tribunal", "juez", "prisión", "robo", "agresión", "droga", "tiroteo", 
-                        "incendio", "polémica", "dimisión", "escándalo", "multa", "condena", 
-                        "crisis", "alquiler", "vivienda", "huelga", "protesta", "fraude", 
-                        "investigado", "accidente", "tragedia", "alerta", "fallece", "suceso",
-                        "empleo", "paro", "desempleo", "salario", "sueldo", "pensiones", 
-                        "recortes", "impuestos", "hacienda", "hipoteca", "inflación", 
-                        "ley", "senado", "congreso", "gobierno", "ministro", "norma", 
-                        "decreto", "reforma", "prohibido"
-                    ];
-                    
-                    for (var i = 0; i < items.length; i++) {
-                        var itemBlock = items[i];
-                        if (itemBlock.indexOf("<title>") === -1 || itemBlock.indexOf("</title>") === -1) continue;
-                        var rawTitle = itemBlock.split("<title>")[1].split("</title>")[0];
-                        var cleanTitle = rawTitle.split(" - ")[0].replace("<![CDATA[", "").replace("]]>", "").replace("&amp;", "&").trim();
-                        
-                        if (cleanTitle.length > 12) {
-                            var lower = cleanTitle.toLowerCase();
-                            var score = 0;
-                            for (var k = 0; k < impactKeywords.length; k++) {
-                                if (lower.indexOf(impactKeywords[k]) !== -1) score += 2;
-                            }
-                            if (cleanTitle.length >= 15 && cleanTitle.length <= 90) score += 1;
-                            
-                            if (score > highestScore) {
-                                highestScore = score;
-                                bestHeadline = cleanTitle;
-                            }
-                        }
-                    }
-                    if (!bestHeadline && items.length > 0) {
-                        var rawTitle = items[0].split("<title>")[1].split("</title>")[0];
-                        bestHeadline = rawTitle.split(" - ")[0].replace("<![CDATA[", "").replace("]]>", "").trim();
-                    }
-                    if (bestHeadline) {
-                        var formatted = "📰 TEMA CANDENTE EN EL DEBATE: " + bestHeadline;
-                        callback(formatted);
-                        return;
-                    }
+        function parseRss(xmlText) {
+            if (!xmlText || xmlText.indexOf("<item>") === -1) return null;
+            var items = xmlText.split("<item>").slice(1, 20);
+            for (var i = 0; i < items.length; i++) {
+                var itemBlock = items[i];
+                if (itemBlock.indexOf("<title>") === -1) continue;
+                var rawTitle = itemBlock.split("<title>")[1].split("</title>")[0];
+                var cleanTitle = rawTitle.split(" - ")[0]
+                    .replace("<![CDATA[", "")
+                    .replace("]]>", "")
+                    .replace("&amp;", "&")
+                    .replace("&quot;", '"')
+                    .replace("&#39;", "'")
+                    .trim();
+                if (cleanTitle.length >= 15 && cleanTitle.indexOf("Google") === -1) {
+                    return "🔴 ÚLTIMA HORA EN " + cleanCity + ":\n\"" + cleanTitle + "\"";
                 }
-                callback(null);
+            }
+            return null;
+        }
+
+        fetch(cityUrl)
+            .then(function(r) { return r.text(); })
+            .then(function(xml) {
+                var headline = parseRss(xml);
+                if (headline) {
+                    if (window.updateCachedNewsTopic) window.updateCachedNewsTopic(cleanCity, headline);
+                    callback(headline);
+                } else {
+                    return fetch(nationalUrl).then(function(r2) { return r2.text(); }).then(function(xml2) {
+                        var h2 = parseRss(xml2);
+                        if (h2) {
+                            if (window.updateCachedNewsTopic) window.updateCachedNewsTopic(cleanCity, h2);
+                            callback(h2);
+                        } else {
+                            callback(null);
+                        }
+                    });
+                }
             })
-            .catch(function(error) { callback(null); });
+            .catch(function(e) { callback(null); });
     """)
 }
 

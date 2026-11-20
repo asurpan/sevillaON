@@ -622,7 +622,20 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                 val params = url.substringAfter("?", "")
                 "https://asurpan.github.io/sevillaON/?native=true" + (if (params.isNotEmpty()) "&$params" else "")
             } else url
-            webViewInstance?.loadUrl(finalUrl)
+
+            val uri = android.net.Uri.parse(finalUrl)
+            val city = uri.getQueryParameter("city") ?: ""
+            val channel = uri.getQueryParameter("channel") ?: ""
+            val subtone = uri.getQueryParameter("subtone") ?: "0000"
+
+            if (webViewInstance != null && (city.isNotBlank() || channel.isNotBlank())) {
+                webViewInstance?.post {
+                    val jsCode = "if (window.onDeepLinkParams) window.onDeepLinkParams('$city', '$channel', '$subtone');"
+                    webViewInstance?.evaluateJavascript(jsCode, null)
+                }
+            } else {
+                webViewInstance?.loadUrl(finalUrl)
+            }
         }
         handleIntent(intent)
     }
@@ -1276,9 +1289,17 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                     } else if (city == "RADAR") {
                                         "📡 ¡Vigilancia Hertz Activa! *ON AIR GLOBAL*\nAnalizando presencia biológica... 🧬\n\nhttps://asurpan.github.io/sevillaON/?v=100"
                                     } else {
-                                        "🎙️ *DEBATE EN VIVO — $cleanCity*\n\n" +
-                                        "💬 \"$topic\"\n\n" +
-                                        "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=100"
+                                        if (topic.startsWith("🔴 ÚLTIMA HORA")) {
+                                            "🎙️ *ON AIR GLOBAL — DEBATE DE ÚLTIMA HORA*\n\n" +
+                                            "$topic\n\n" +
+                                            "👉 Toca el enlace para sintonizar en directo por radio y dar tu opinión:\n" +
+                                            "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=100"
+                                        } else {
+                                            "🎙️ *DEBATE EN VIVO — $cleanCity*\n\n" +
+                                            "💬 $topic\n\n" +
+                                            "👉 Toca el enlace para entrar en directo a la radio:\n" +
+                                            "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=100"
+                                        }
                                     }
 
 

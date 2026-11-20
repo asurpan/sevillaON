@@ -266,38 +266,12 @@ fun updateCachedNewsTopic(city: String, headline: String) {
 fun getDailyDebateTopic(city: String): String {
     val cleanCity = city.split("-")[0].trim().uppercase()
     val cached = cachedLiveNewsMap[cleanCity]
-    if (cached != null && (getTimeMillis() - cached.second < 15 * 60 * 1000L)) {
+    if (cached != null && (getTimeMillis() - cached.second < 30 * 60 * 1000L)) {
         return cached.first
     }
     
-    val dayOfYear = (getTimeMillis() / (1000 * 60 * 60 * 24)).toInt()
-    val cityHash = cleanCity.hashCode().let { if (it < 0) -it else it }
-    
-    val topics = listOf(
-        "¿Cuáles son los cruces y rotondas con más peligro y retenciones en $cleanCity?",
-        "¿Qué opinas de las nuevas zonas peatonales y regulaciones de tráfico en $cleanCity?",
-        "¿Cuáles son los mejores lugares de $cleanCity para una escapada de fin de semana?",
-        "¿Deberían regularse de forma más estricta los patinetes eléctricos en $cleanCity?",
-        "¿Cuál es el plato o tapa más representativa de la gastronomía de $cleanCity?",
-        "¿Preferirías una jornada laboral de 4 días o mantener los horarios actuales?",
-        "¿Qué obras o mejoras de infraestructuras necesita urgentemente $cleanCity?",
-        "¿Qué tradiciones o eventos culturales definen mejor la identidad de $cleanCity?",
-        "¿Cómo ha cambiado el ambiente y el ritmo de vida en $cleanCity en los últimos años?",
-        "¿Cuál es tu lugar o rincón favorito de $cleanCity para desconectar?",
-        "¿Qué consejo le darías a alguien que viene a visitar por primera vez $cleanCity?",
-        "¿Cómo podemos mejorar la convivencia y los espacios verdes en $cleanCity?",
-        "¿Qué transporte público funciona mejor en $cleanCity y qué línea necesita mejoras?",
-        "¿Cuál ha sido la mejor época histórica o de crecimiento de $cleanCity?",
-        "¿Qué tipo de eventos deportivos o culturales te gustaría que se organizaran en $cleanCity?",
-        "¿Crees que el teletrabajo ha mejoardo la calidad de vida en $cleanCity?",
-        "¿Cuál es el secreto para disfrutar de un buen fin de semana al aire libre en $cleanCity?",
-        "¿Cómo fomentar el pequeño comercio y las tiendas tradicionales en $cleanCity?",
-        "¿Qué rutas de montaña, senderismo o paisajes recomiendas cerca de $cleanCity?",
-        "¿Qué recuerdas con más cariño de la radio analógica y las comunicaciones clásicas?",
-        "¿Cuál es el mayor atractivo turístico desconocido que tiene $cleanCity?",
-        "¿Qué servicios o equipamientos faltan en los nuevos desarrollos de $cleanCity?",
-        "¿Cómo influye el clima y las estaciones del año en la vida cotidiana de $cleanCity?",
-        "¿Qué lugares recomendarías en $cleanCity para ir en familia o con amigos el domingo?",
+    return "🔴 DEBATE Y NOTICIAS EN VIVO DE $cleanCity"
+}
         "¿Cuál es la actividad cultural o festival más destacado de $cleanCity?",
         "¿Qué opinas de la evolución de las comunicaciones de voz frente al texto escrito?",
         "¿Cómo ha evolucionado el ocio nocturno y los puntos de encuentro en $cleanCity?",

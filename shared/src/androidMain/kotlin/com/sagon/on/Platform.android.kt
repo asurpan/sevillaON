@@ -67,70 +67,62 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
     }
 }
 
+private fun parseRssHeadline(xmlText: String, cleanCity: String): String? {
+    if (!xmlText.contains("<item>")) return null
+    val items = xmlText.split("<item>").drop(1).take(20)
+    for (itemBlock in items) {
+        val rawTitle = itemBlock.substringAfter("<title>").substringBefore("</title>")
+        val cleanTitle = rawTitle.substringBefore(" - ")
+            .replace("<![CDATA[", "")
+            .replace("]]>", "")
+            .replace("&amp;", "&")
+            .replace("&quot;", "\"")
+            .replace("&#39;", "'")
+            .trim()
+        if (cleanTitle.length >= 15 && !cleanTitle.contains("Google", ignoreCase = true) && !cleanTitle.contains("Weather", ignoreCase = true)) {
+            return "🔴 ÚLTIMA HORA EN $cleanCity:\n\"$cleanTitle\""
+        }
+    }
+    return null
+}
+
 actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     tourismScope.launch {
         try {
             val cleanCity = city.split("-")[0].trim().uppercase()
-            // 📰 RSS DE ALTO IMPACTO (EMPLEO, LEYES, SENADO, RECORTES, SUCESOS, POLÉMICAS)
-            val url = java.net.URL("https://news.google.com/rss/search?q=empleo+leyes+senado+recortes+sucesos+crimen+polemica+actualidad+ultima+hora&hl=es&gl=ES&ceid=ES:es")
-            val connection = url.openConnection() as java.net.HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0")
-            connection.connectTimeout = 4000
-            connection.readTimeout = 4000
-            val xmlText = connection.inputStream.bufferedReader().readText()
-            
-            var bestHeadline: String? = null
-            var highestScore = -1
-            
-            if (xmlText.contains("<item>")) {
-                val items = xmlText.split("<item>").drop(1).take(30)
-                val impactKeywords = listOf(
-                    "última hora", "urgente", "crimen", "asesinato", "detenido", "policía", 
-                    "tribunal", "juez", "prisión", "robo", "agresión", "droga", "tiroteo", 
-                    "incendio", "polémica", "dimisión", "escándalo", "multa", "condena", 
-                    "crisis", "alquiler", "vivienda", "huelga", "protesta", "fraude", 
-                    "investigado", "accidente", "tragedia", "alerta", "fallece", "suceso",
-                    "empleo", "paro", "desempleo", "salario", "sueldo", "pensiones", 
-                    "recortes", "impuestos", "hacienda", "hipoteca", "inflación", 
-                    "ley", "senado", "congreso", "gobierno", "ministro", "norma", 
-                    "decreto", "reforma", "prohibido"
-                )
-                
-                for (itemBlock in items) {
-                    val rawTitle = itemBlock.substringAfter("<title>").substringBefore("</title>")
-                    val cleanTitle = rawTitle.substringBefore(" - ")
-                        .replace("<![CDATA[", "")
-                        .replace("]]>", "")
-                        .replace("&amp;", "&")
-                        .trim()
-                        
-                    if (cleanTitle.length > 12) {
-                        val lower = cleanTitle.lowercase()
-                        var score = 0
-                        for (kw in impactKeywords) {
-                            if (lower.contains(kw)) score += 2
-                        }
-                        if (cleanTitle.length in 15..90) score += 1
-                        
-                        if (score > highestScore) {
-                            highestScore = score
-                            bestHeadline = cleanTitle
-                        }
-                    }
-                }
-                
-                if (bestHeadline == null && items.isNotEmpty()) {
-                    val rawTitle = items[0].substringAfter("<title>").substringBefore("</title>")
-                    bestHeadline = rawTitle.substringBefore(" - ").replace("<![CDATA[", "").replace("]]>", "").trim()
-                }
+            val encodedCity = java.net.URLEncoder.encode(cleanCity, "UTF-8")
+            var headline: String? = null
+
+            // 1. Noticia específica de la ciudad
+            try {
+                val cityUrl = java.net.URL("https://news.google.com/rss/search?q=${encodedCity}+actualidad&hl=es&gl=ES&ceid=ES:es")
+                val conn = cityUrl.openConnection() as java.net.HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0")
+                conn.connectTimeout = 3000
+                conn.readTimeout = 3000
+                val xml = conn.inputStream.bufferedReader().readText()
+                headline = parseRssHeadline(xml, cleanCity)
+            } catch (_: Exception) {}
+
+            // 2. Noticia Principal Top del Día a Nivel Nacional
+            if (headline == null) {
+                try {
+                    val nationalUrl = java.net.URL("https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es")
+                    val conn = nationalUrl.openConnection() as java.net.HttpURLConnection
+                    conn.requestMethod = "GET"
+                    conn.setRequestProperty("User-Agent", "Mozilla/5.0")
+                    conn.connectTimeout = 3000
+                    conn.readTimeout = 3000
+                    val xml = conn.inputStream.bufferedReader().readText()
+                    headline = parseRssHeadline(xml, cleanCity)
+                } catch (_: Exception) {}
             }
 
             withContext(Dispatchers.Main) {
-                if (bestHeadline != null) {
-                    val formatted = "📰 TEMA CANDENTE EN EL DEBATE: $bestHeadline"
-                    updateCachedNewsTopic(cleanCity, formatted)
-                    callback(formatted)
+                if (headline != null) {
+                    updateCachedNewsTopic(cleanCity, headline)
+                    callback(headline)
                 } else {
                     callback(null)
                 }

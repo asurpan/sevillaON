@@ -318,6 +318,12 @@ fun main() {
         LaunchedEffect(Unit) {
             js("if (window.checkHardwareRestore) window.checkHardwareRestore(function(n) { if (n && window.dispatch_hardware_restored) window.dispatch_hardware_restored(n); });")
             js("""
+                window.onDeepLinkParams = function(newCity, newChannel, newSubtone) {
+                    if (window.dispatch_deeplink_channel) {
+                        window.dispatch_deeplink_channel(newCity || "", newChannel || "", newSubtone || "0000");
+                    }
+                };
+
                 setInterval(function() {
                     if (window.app && window.app.activeCalls) {
                         var calls = Object.keys(window.app.activeCalls);
@@ -427,6 +433,18 @@ fun main() {
                 showSystemNotification("⚠️ INDICATIVO DUPLICADO", "El indicativo $conflictingNick ya está activo en otro terminal. Por favor elige uno diferente.")
             },
             onWebRtcPing = { ping -> webrtcPingState.value = ping },
+            onDeepLinkChannel = { newCity, newChannel, newSubtone ->
+                val targetCity = if (newCity.isNotBlank()) newCity.trim().uppercase() else radioState.value.city
+                val targetChannel = if (newChannel.isNotBlank()) newChannel.trim().uppercase() else targetCity
+                val targetSubtone = if (newSubtone.isNotBlank()) newSubtone.trim() else "0000"
+                radioState.value = radioState.value.copy(
+                    city = targetCity,
+                    channel = targetChannel,
+                    subtone = targetSubtone
+                )
+                if (win.playUiSound != null) win.playUiSound("switch")
+                showSystemNotification("📻 CAMBIO DE CANAL", "Sintonizando $targetCity (Canal $targetChannel)")
+            },
             onUsersUpdate = { users ->
                 try {
                     val list = mutableListOf<RemoteUser>()

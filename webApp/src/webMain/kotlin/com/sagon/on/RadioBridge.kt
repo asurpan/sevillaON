@@ -36,7 +36,8 @@ object RadioBridge {
         onIsRoomEmpty: () -> Boolean = { true },
         onControlActive: (String?, Boolean) -> Unit = { _, _ -> },
         onRxVoiceChange: (Boolean) -> Unit = {},
-        onWebRtcPing: (Int?) -> Unit = {}
+        onWebRtcPing: (Int?) -> Unit = {},
+        onDeepLinkChannel: (String, String, String) -> Unit = { _, _, _ -> }
     ) {
         win.dispatch_mic = onMic
         win.dispatch_beeping = onBeep
@@ -64,5 +65,6 @@ object RadioBridge {
         win.dispatch_control_active = onControlActive
         win.dispatch_rx_voice = onRxVoiceChange
         win.dispatch_webrtc_ping = onWebRtcPing
+        win.dispatch_deeplink_channel = onDeepLinkChannel
     }
 }

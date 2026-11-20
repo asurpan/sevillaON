@@ -4,22 +4,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="12dp"
-    android:background="@android:color/black"
+    android:padding="14dp"
+    android:background="@drawable/bg_widget_glass"
     android:gravity="center_vertical">
 
-    <!-- HEADER SUPERIOR -->
+    <!-- HEADER SUPERIOR CIAN Y LED VERDE -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingBottom="6dp">
+        android:paddingBottom="8dp">
 
         <ImageView
             android:id="@+id/widget_status_led"
-            android:layout_width="10dp"
-            android:layout_height="10dp"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
             android:src="@android:drawable/presence_online" />
 
         <TextView
@@ -27,24 +27,29 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
-            android:text="ON AIR GLOBAL • RADIO CB"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="ON AIR GLOBAL • RADIO CB 27MHz"
             android:textColor="#00E5FF"
             android:textSize="11sp"
+            android:letterSpacing="0.05"
             android:textStyle="bold" />
 
+        <!-- BADGE ESTADO VERDE -->
         <TextView
             android:id="@+id/widget_status_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="LISTO"
+            android:background="@drawable/bg_widget_status_badge"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:text="EN LÍNEA"
             android:textColor="#10B981"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- ZONA CENTRAL: CANAL Y BOTÓN PTT PROMINENTE -->
+    <!-- ZONA CENTRAL: CANAL Y BOTÓN PTT PROMINENTE DE GAMA ALTA -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -64,29 +69,38 @@
                 android:layout_height="wrap_content"
                 android:text="SEVILLA"
                 android:textColor="#FFFFFF"
-                android:textSize="15sp"
+                android:textSize="16sp"
+                android:letterSpacing="0.02"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/widget_channel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_widget_channel_badge"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
                 android:text="CANAL 27"
-                android:textColor="#22D3EE"
-                android:textSize="12sp"
+                android:textColor="#00E5FF"
+                android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- BOTÓN PTT HABLAR GRANDE Y PROMINENTE -->
-        <Button
+        <!-- BOTÓN PTT NEÓN CIAN REDONDEADO Y ELEGANTE -->
+        <TextView
             android:id="@+id/widget_btn_ptt"
-            android:layout_width="120dp"
+            android:layout_width="125dp"
             android:layout_height="44dp"
+            android:background="@drawable/bg_widget_button_ptt"
+            android:gravity="center"
             android:text="🎙️ HABLAR"
             android:textColor="#000000"
-            android:backgroundTint="#22D3EE"
             android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:letterSpacing="0.05"
+            android:clickable="true"
+            android:focusable="true" />
     </LinearLayout>
 
 </LinearLayout>

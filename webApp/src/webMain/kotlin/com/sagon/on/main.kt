@@ -838,18 +838,17 @@ fun main() {
                     win.AndroidApp.share(city, channel, subtone, proRole)
                 } else {
                     val topic = getDailyDebateTopic(city)
+                    val shortTopic = if (topic.length > 90) topic.take(87) + "..." else topic
                     val cleanCity = city.split("-")[0].uppercase()
                     val url = "https://asurpan.github.io/sevillaON/?city=" + city + "&channel=" + channel + (if (subtone != "0000") "&subtone=$subtone" else "") + "&v=100"
                     val shareText = if (subtone != "0000") {
                         "🔒 *SALA PRIVADA DE RADIO EN DIRECTO*\n\n" +
-                        "🔑 *Código Secreto:* $subtone\n" +
-                        "📻 *Sintonía:* $cleanCity | Canal $channel\n\n" +
-                        "🎙️ *Toca el enlace para conectar a nuestro Walkie-Talkie privado:*\n" + url
+                        "🔑 *Código:* $subtone | 📻 $cleanCity - Ch $channel\n\n" +
+                        "🎙️ *Toca para conectar al Walkie-Talkie:*\n" + url
                     } else {
-                        "🚨 *¿QUÉ OPINAS DE ESTO EN $cleanCity?*\n\n" +
-                        topic + "\n\n" +
-                        "🎙️ Hay vecinos modulando en directo sobre esto en la radio de $cleanCity.\n\n" +
-                        "🔴 *Entra a escuchar o da tu opinión en 1 clic (100% gratis, sin instalar nada):*\n" + url
+                        "🚨 *¿QUÉ OPINAS EN $cleanCity?*\n\n" +
+                        shortTopic + "\n\n" +
+                        "🎙️ *Escucha o da tu opinión en 1 clic:*\n" + url
                     }
                     val nav = win.navigator
                     if (nav != null && nav.share != null) {

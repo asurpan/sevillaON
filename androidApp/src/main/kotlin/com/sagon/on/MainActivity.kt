@@ -1311,19 +1311,19 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                         } catch (_: Exception) {}
                                     }
 
+                                    val shortTopic = if (topic.length > 90) topic.take(87) + "..." else topic
+
                                     val shareText = if (subtone != null && subtone != "0000") {
                                         "🔒 *SALA PRIVADA DE RADIO EN DIRECTO*\n\n" +
-                                        "🔑 *Código Secreto:* $subtone\n" +
-                                        "📻 *Sintonía:* $cleanCity | Canal $channel\n\n" +
-                                        "🎙️ *Toca el enlace para conectar a nuestro Walkie-Talkie privado:*\n" +
+                                        "🔑 *Código:* $subtone | 📻 $cleanCity - Ch $channel\n\n" +
+                                        "🎙️ *Toca para conectar al Walkie-Talkie:*\n" +
                                         "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&v=100"
                                     } else if (city == "RADAR") {
-                                        "📡 ¡Vigilancia Hertz Activa! *ON AIR GLOBAL*\nAnalizando presencia biológica... 🧬\n\nhttps://asurpan.github.io/sevillaON/?v=100"
+                                        "📡 ¡Vigilancia Hertz Activa! *ON AIR GLOBAL*\n\nhttps://asurpan.github.io/sevillaON/?v=100"
                                     } else {
-                                        "🚨 *¿QUÉ OPINAS DE ESTO EN $cleanCity?*\n\n" +
-                                        "$topic\n\n" +
-                                        "🎙️ Hay vecinos modulando en directo sobre esto en la radio de $cleanCity.\n\n" +
-                                        "🔴 *Entra a escuchar o da tu opinión en 1 clic (100% gratis, sin instalar nada):*\n" +
+                                        "🚨 *¿QUÉ OPINAS EN $cleanCity?*\n\n" +
+                                        "$shortTopic\n\n" +
+                                        "🎙️ *Escucha o da tu opinión en 1 clic:*\n" +
                                         "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=100"
                                     }
 

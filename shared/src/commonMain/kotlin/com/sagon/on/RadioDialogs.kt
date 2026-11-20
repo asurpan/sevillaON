@@ -1083,7 +1083,7 @@ fun RadioDialogs(
 
                     Spacer(Modifier.height(12.dp))
                     LuxeButton(
-                        text = "📟 ANCLAR WIDGET PTT EN ESCRITORIO",
+                        text = "📟 ANCLAR WIDGET PTT",
                         onClick = {
                             triggerUiSound("switch")
                             requestPinWidget()
@@ -1092,7 +1092,7 @@ fun RadioDialogs(
                         modifier = Modifier.fillMaxWidth().height(44.dp),
                         containerColor = Color(0xFF00E5FF).copy(0.2f),
                         contentColor = Color(0xFF00E5FF),
-                        fontSize = 12.sp
+                        fontSize = 11.sp
                     )
 
                     Spacer(Modifier.height(20.dp))

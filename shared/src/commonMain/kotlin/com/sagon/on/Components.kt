@@ -206,6 +206,7 @@ fun LuxeButton(
         modifier = modifier,
         colors = ButtonDefaults.buttonColors(containerColor = containerColor, contentColor = contentColor),
         shape = RoundedCornerShape(16.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
     ) {
         Row(
@@ -215,13 +216,13 @@ fun LuxeButton(
         ) {
             if (icon != null) {
                 Icon(icon, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(8.dp))
             }
             Text(
                 text = text,
                 fontWeight = FontWeight.Black,
                 fontSize = fontSize,
-                letterSpacing = 1.sp,
+                letterSpacing = 0.5.sp,
                 textAlign = TextAlign.Center
             )
         }

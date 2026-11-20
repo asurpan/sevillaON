@@ -212,6 +212,15 @@ fun App(
         }
     }
 
+    LaunchedEffect(screenState, radioState.hasPromptedWidgetPin, radioState.hasAcceptedMicExplain) {
+        if (screenState == Screen.RadioCB && !radioState.hasPromptedWidgetPin && radioState.hasAcceptedMicExplain) {
+            delay(3500)
+            if (pendingDialog == null) {
+                pendingDialog = RadioDialogType.WIDGET_PROMPT
+            }
+        }
+    }
+
     LaunchedEffect(chatMessages.size) {
         if (chatMessages.isNotEmpty()) {
             val latest = chatMessages.last()

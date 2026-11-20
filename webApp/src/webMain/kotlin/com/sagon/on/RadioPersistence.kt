@@ -38,6 +38,8 @@ object RadioPersistence {
             val bgStyleStr = localStorage.getItem("bgStyle")
             val bgStyle = BackgroundStyle.entries.find { it.id == bgStyleStr } ?: BackgroundStyle.DEEP_SEA
 
+            val hasWidgetPin = localStorage.getItem("hasWidgetPin")?.toBoolean() ?: false
+
             RadioState(
                 city = finalCity,
                 channel = initialChannel,
@@ -63,7 +65,8 @@ object RadioPersistence {
                 squelch = localStorage.getItem("squelch")?.toFloatOrNull() ?: 0.90f,
                 systemVolume = initialSysVol,
                 hasAcceptedMicExplain = hasMicExplain,
-                backgroundStyle = bgStyle
+                backgroundStyle = bgStyle,
+                hasPromptedWidgetPin = hasWidgetPin
             )
         } catch(e: Exception) { RadioState() }
     }
@@ -80,6 +83,7 @@ object RadioPersistence {
             localStorage.setItem("lastCity", normCity)
             localStorage.setItem("lastChannel", normCh)
             localStorage.setItem("lastSubtone", s.subtone)
+            localStorage.setItem("hasWidgetPin", s.hasPromptedWidgetPin.toString())
             localStorage.setItem("voxSens", s.voxSensitivity.toString())
             localStorage.setItem("moniVol", s.monitorVolume.toString())
             localStorage.setItem("rfGain", s.rfGain.toString())

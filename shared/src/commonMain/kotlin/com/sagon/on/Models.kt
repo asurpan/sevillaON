@@ -198,7 +198,8 @@ data class RadioState(
     val activeProfile: ActivityProfile = ActivityProfile.NORMAL,
     val backgroundStyle: BackgroundStyle = BackgroundStyle.DEEP_SEA,
     val isTxConfirmed: Boolean = false,
-    val isRxVoiceActive: Boolean = false
+    val isRxVoiceActive: Boolean = false,
+    val hasPromptedWidgetPin: Boolean = false
 )
 
 enum class BackgroundStyle(

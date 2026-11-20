@@ -39,7 +39,7 @@ enum class RadioDialogType {
     INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, 
     BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, DISCRETE, SELECT_NICK, 
     HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, USER_ACTIONS, SQUELCH_CONTROL, GAIN_CONTROL, VOLUME_CONTROL,
-    DIAGNOSTIC, HELP, BACKGROUND_THEME
+    DIAGNOSTIC, HELP, BACKGROUND_THEME, WIDGET_PROMPT
 }
 
 @Composable
@@ -97,6 +97,61 @@ fun RadioDialogs(
                 confirmButton = { LuxeButton("CERRAR", onDismiss) }
             )
         }
+        RadioDialogType.WIDGET_PROMPT -> AlertDialog(
+            onDismissRequest = {
+                onStateChange(state.copy(hasPromptedWidgetPin = true))
+                onDismiss()
+            },
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.padding(12.dp).border(1.5.dp, Color(0xFF00E5FF).copy(0.6f), RoundedCornerShape(28.dp)),
+            icon = { Icon(Icons.Rounded.Widgets, null, tint = Color(0xFF00E5FF), modifier = Modifier.size(44.dp)) },
+            title = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("ANCLAR WIDGET EN ESCRITORIO", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(4.dp))
+                    Surface(color = Color(0xFF00E5FF).copy(0.15f), shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(0.4f))) {
+                        Text("ACCESO TÁCTICO DE 1 SOLO CLIC", color = Color(0xFF00E5FF), fontSize = 10.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                    }
+                }
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "¿Te gustaría añadir el botón Walkie-Talkie PTT a tu pantalla de inicio de Android?\n\nPodrás ver tu canal activo en vivo y hablar con 1 solo toque desde tu escritorio.",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            },
+            confirmButton = {
+                LuxeButton(
+                    text = "📌 AÑADIR A MI PANTALLA",
+                    onClick = {
+                        onStateChange(state.copy(hasPromptedWidgetPin = true))
+                        onDismiss()
+                        triggerUiSound("switch")
+                        requestPinWidget()
+                    },
+                    enabled = true,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    containerColor = Color(0xFF00E5FF),
+                    contentColor = Color.Black,
+                    fontSize = 13.sp
+                )
+            },
+            dismissButton = {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    TextButton(onClick = {
+                        onStateChange(state.copy(hasPromptedWidgetPin = true))
+                        onDismiss()
+                    }) {
+                        Text("AHORA NO", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                    }
+                }
+            }
+        )
         RadioDialogType.ANTENNA -> FeatureHelpDialog(
             title = "Sistema de Calibración",
             icon = Icons.Rounded.SettingsInputAntenna,

@@ -1335,6 +1335,19 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             }
 
                             @JavascriptInterface
+                            fun pinWidget() {
+                                Thread {
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                        val appWidgetManager = getSystemService(android.appwidget.AppWidgetManager::class.java)
+                                        if (appWidgetManager != null && appWidgetManager.isRequestPinAppWidgetSupported) {
+                                            val myProvider = android.content.ComponentName(context, RadioWidgetProvider::class.java)
+                                            appWidgetManager.requestPinAppWidget(myProvider, null, null)
+                                        }
+                                    }
+                                }.start()
+                            }
+
+                            @JavascriptInterface
                             fun isBatteryOptimized(): Boolean {
                                 val pm = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
                                 return !pm.isIgnoringBatteryOptimizations(packageName)

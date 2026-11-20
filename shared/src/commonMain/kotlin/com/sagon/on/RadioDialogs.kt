@@ -1081,6 +1081,20 @@ fun RadioDialogs(
                         fontSize = 12.sp
                     )
 
+                    Spacer(Modifier.height(12.dp))
+                    LuxeButton(
+                        text = "📟 ANCLAR WIDGET PTT EN ESCRITORIO",
+                        onClick = {
+                            triggerUiSound("switch")
+                            js("if (window.AndroidApp && window.AndroidApp.pinWidget) window.AndroidApp.pinWidget();")
+                        },
+                        enabled = true,
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        containerColor = Color(0xFF00E5FF).copy(0.2f),
+                        contentColor = Color(0xFF00E5FF),
+                        fontSize = 12.sp
+                    )
+
                     Spacer(Modifier.height(20.dp))
                     
                     Text("HARDWARE", color = LuxeColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Black)
@@ -1207,6 +1221,18 @@ fun RadioDialogs(
                     Spacer(Modifier.height(4.dp))
                     Text("Desarrollado con pasión para la comunidad de radio.\nContacto: asurpan@gmail.com", fontSize = 11.sp, color = Color.White.copy(0.7f))
                     Spacer(Modifier.height(12.dp))
+                    Button(
+                        onClick = {
+                            triggerUiSound("switch")
+                            js("if (window.AndroidApp && window.AndroidApp.pinWidget) window.AndroidApp.pinWidget();")
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF), contentColor = Color.Black),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("📟 ANCLAR WIDGET PTT A MI ESCRITORIO", fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    }
+                    Spacer(Modifier.height(8.dp))
                     OutlinedButton(
                         onClick = { onPendingDialogChange(RadioDialogType.HELP_PRIVACY, null) },
                         border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(0.4f)),

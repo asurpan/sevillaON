@@ -49,7 +49,7 @@ class RadioWidgetProvider : AppWidgetProvider() {
                     }
                 } catch (_: Exception) {}
 
-                // 2. Abrir la actividad principal de la radio al instante
+                // 2. Abrir la actividad principal de la radio al instante lista en PTT
                 val appIntent = Intent(context, MainActivity::class.java).apply {
                     action = "OPEN_CHAT"
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -82,7 +82,7 @@ class RadioWidgetProvider : AppWidgetProvider() {
         views.setTextViewText(R.id.widget_city, cleanCity)
         views.setTextViewText(R.id.widget_channel, "CANAL $channel")
 
-        // Intent para PTT
+        // Intent para PTT (botón grande)
         val pttIntent = Intent(context, RadioWidgetProvider::class.java).apply {
             action = ACTION_WIDGET_PTT
         }
@@ -92,7 +92,7 @@ class RadioWidgetProvider : AppWidgetProvider() {
         )
         views.setOnClickPendingIntent(R.id.widget_btn_ptt, pttPendingIntent)
 
-        // Intent para abrir App
+        // Intent para abrir App (al pulsar en cualquier otra parte del widget)
         val appIntent = Intent(context, RadioWidgetProvider::class.java).apply {
             action = ACTION_WIDGET_APP
         }
@@ -100,7 +100,6 @@ class RadioWidgetProvider : AppWidgetProvider() {
             context, 102, appIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        views.setOnClickPendingIntent(R.id.widget_btn_app, appPendingIntent)
         views.setOnClickPendingIntent(R.id.widget_root, appPendingIntent)
 
         appWidgetManager.updateAppWidget(appWidgetId, views)

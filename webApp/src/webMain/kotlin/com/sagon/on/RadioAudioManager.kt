@@ -417,6 +417,103 @@ object RadioAudioManager {
                 window.app.isInitializingAudio = false;
             };
 
+            window.stopCurrentRogerBeep = function() {
+                if (!window.app) return;
+                window.app.isBeeping = false;
+                if (window.app.currentRogerOsc) {
+                    try {
+                        window.app.currentRogerOsc.stop();
+                        window.app.currentRogerOsc.disconnect();
+                    } catch(e) {}
+                    window.app.currentRogerOsc = null;
+                }
+                if (window.app.currentRogerGain) {
+                    try { window.app.currentRogerGain.disconnect(); } catch(e) {}
+                    window.app.currentRogerGain = null;
+                }
+                if (window.app.currentLocalRogerGain) {
+                    try { window.app.currentLocalRogerGain.disconnect(); } catch(e) {}
+                    window.app.currentLocalRogerGain = null;
+                }
+            };
+
+            window.playRogerBeepTone = function(sendToTxBus) {
+                if (!window.app || !window.app.ctx) return;
+                if (window.stopCurrentRogerBeep) window.stopCurrentRogerBeep();
+
+                var doPlay = function() {
+                    if (!window.app || !window.app.ctx) return;
+                    try {
+                        var ctx = window.app.ctx;
+                        var bTime = ctx.currentTime + 0.01;
+
+                        var beepOsc = ctx.createOscillator();
+                        var localBeepGain = ctx.createGain();
+
+                        beepOsc.type = "triangle";
+                        beepOsc.frequency.setValueAtTime(1955, bTime);
+
+                        localBeepGain.gain.cancelScheduledValues(bTime);
+                        localBeepGain.gain.setValueAtTime(0.40, bTime);
+                        localBeepGain.gain.setValueAtTime(0.40, bTime + 0.24);
+                        localBeepGain.gain.linearRampToValueAtTime(0.0001, bTime + 0.29);
+                        localBeepGain.gain.setValueAtTime(0, bTime + 0.295);
+
+                        if (window.app.masterOut) localBeepGain.connect(window.app.masterOut);
+
+                        if (sendToTxBus && window.app.txBus) {
+                            var txBeepGain = ctx.createGain();
+                            txBeepGain.gain.cancelScheduledValues(bTime);
+                            txBeepGain.gain.setValueAtTime(0.40, bTime);
+                            txBeepGain.gain.setValueAtTime(0.40, bTime + 0.24);
+                            txBeepGain.gain.linearRampToValueAtTime(0.0001, bTime + 0.29);
+                            txBeepGain.gain.setValueAtTime(0, bTime + 0.295);
+
+                            beepOsc.connect(txBeepGain);
+                            txBeepGain.connect(window.app.txBus);
+                            window.app.currentLocalRogerGain = txBeepGain;
+                        }
+
+                        beepOsc.connect(localBeepGain);
+
+                        window.app.currentRogerOsc = beepOsc;
+                        window.app.currentRogerGain = localBeepGain;
+                        window.app.isBeeping = true;
+
+                        beepOsc.start(bTime);
+                        beepOsc.stop(bTime + 0.30);
+
+                        setTimeout(function() {
+                            if (window.app && window.app.currentRogerOsc === beepOsc) {
+                                window.stopCurrentRogerBeep();
+                            }
+                        }, 350);
+
+                    } catch(e) {
+                        console.error("RogerBeep error", e);
+                        if (window.app) window.app.isBeeping = false;
+                    }
+                };
+
+                if (window.app.ctx.state !== 'running') {
+                    window.app.ctx.resume().then(doPlay).catch(doPlay);
+                } else {
+                    doPlay();
+                }
+            };
+
+            window.resumeRemoteAudios = function() {
+                if (!window.app || !window.app.remoteSinks) return;
+                try {
+                    Object.keys(window.app.remoteSinks).forEach(function(peerId) {
+                        var audioEl = window.app.remoteSinks[peerId];
+                        if (audioEl && audioEl.paused) {
+                            audioEl.play().catch(function(e){});
+                        }
+                    });
+                } catch(e) {}
+            };
+
             window.broadcastPTT = function(active, roger, power) {
                 try {
                     if(!window.app) return;
@@ -436,6 +533,8 @@ object RadioAudioManager {
                     }
 
                     if (active) {
+                        if (window.stopCurrentRogerBeep) window.stopCurrentRogerBeep();
+                        if (window.resumeRemoteAudios) window.resumeRemoteAudios();
                         if (window.app.ctx && window.app.ctx.state !== 'running') {
                             try { window.app.ctx.resume(); } catch(e){}
                         }
@@ -538,48 +637,13 @@ object RadioAudioManager {
                         var shouldPlayRoger = (wasTransmitting === true && isRogerConfigured && !isChanging && !isSuppressed);
 
                         if (shouldPlayRoger && window.app.ctx) {
-                            var fireBeep = function() {
-                                try {
-                                    window.app.isBeeping = true;
-                                    window.app.isTransmittingInternal = true;
-
-                                    var bTime = window.app.ctx.currentTime + 0.01;
-                                    var beepOsc = window.app.ctx.createOscillator();
-                                    var beepGain = window.app.ctx.createGain();
-                                    beepOsc.type = "triangle";
-                                    beepOsc.frequency.setValueAtTime(1955, bTime);
-
-                                    beepGain.gain.cancelScheduledValues(bTime);
-                                    beepGain.gain.setValueAtTime(0.60, bTime);
-                                    beepGain.gain.setValueAtTime(0.60, bTime + 0.298);
-                                    beepGain.gain.setValueAtTime(0.001, bTime + 0.30);
-                                    beepOsc.connect(beepGain);
-
-                                    var localBeepGain = window.app.ctx.createGain();
-                                    localBeepGain.gain.cancelScheduledValues(bTime);
-                                    localBeepGain.gain.setValueAtTime(0.60, bTime);
-                                    localBeepGain.gain.setValueAtTime(0.60, bTime + 0.298);
-                                    localBeepGain.gain.setValueAtTime(0.001, bTime + 0.30);
-                                    beepOsc.connect(localBeepGain);
-
-                                    if (window.app.masterOut) localBeepGain.connect(window.app.masterOut);
-                                    if (window.app.txBus) beepGain.connect(window.app.txBus);
-
-                                    beepOsc.start(bTime);
-                                    beepOsc.stop(bTime + 0.30);
-                                } catch(e) { console.error("Beep error", e); }
-                            };
-
-                            if (window.app.ctx.state !== 'running') {
-                                window.app.ctx.resume().then(fireBeep).catch(fireBeep);
-                            } else {
-                                fireBeep();
-                            }
+                            if (window.playRogerBeepTone) window.playRogerBeepTone(true);
 
                             if (window.app.rogerReleaseTimeout) clearTimeout(window.app.rogerReleaseTimeout);
                             window.app.rogerReleaseTimeout = setTimeout(function() {
                                 window.app.isTransmittingInternal = false;
                                 window.app.isBeeping = false;
+                                if (window.stopCurrentRogerBeep) window.stopCurrentRogerBeep();
                                 if (window.dispatch_ptt_sync) try { window.dispatch_ptt_sync(false); } catch(e) {}
                                 if (window.dispatch_ptt_live) try { window.dispatch_ptt_live(false); } catch(e) {}
                                 try { if (sessionRef) sessionRef.update({ tx: false }); } catch(e) {}

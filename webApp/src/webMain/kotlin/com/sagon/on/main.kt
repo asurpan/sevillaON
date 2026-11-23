@@ -487,6 +487,9 @@ fun main() {
                                 if (k != win.app.sessionID && (myCityBase != userCityBase || mySubtone != userSubtone)) continue
                                 val isCallActive = (win.app != null && win.app.activeCalls != null && win.app.activeCalls[k] != null)
                                 if (now - (u.lastSeen as? Double ?: 0.0) > 45000 && !isCallActive) continue 
+                                if (!isCallActive && k != win.app.sessionID && mySessionID.isNotEmpty() && (mySessionID < k)) {
+                                    win.establishOutgoingCall(k)
+                                }
                                 
                                 val isMe = (k == win.app.sessionID)
                                 var isTransmitting = if (isMe) (win.app?.isTransmittingInternal == true) else (u.tx == true)
@@ -506,9 +509,16 @@ fun main() {
                                 }
 
                                 win.app.remotePowers[k] = (u.pwr as? Double ?: 0.7).toFloat()
-                                val prevState = win.remoteTxStates[k] ?: false
-                                if (prevState && !isTransmitting && !isMe && u.roger == true) win.playUiSound("rx_off")
-                                win.remoteTxStates[k] = isTransmitting
+                                if (win.firebaseTxStates == null) win.firebaseTxStates = js("{}")
+                                val hasPrevState = (win.firebaseTxStates[k] != null)
+                                val prevState = (win.firebaseTxStates[k] as? Boolean) ?: false
+                                val txStart = (win.remoteTxStartTimes[k] as? Double ?: 0.0)
+                                val wasTransmittingLongEnough = (txStart > 0.0 && (now - txStart >= 400.0))
+
+                                if (hasPrevState && prevState && !isTransmitting && !isMe && u.roger == true && wasTransmittingLongEnough && win.app?.suppressRxOff != true) {
+                                    win.playUiSound("rx_off")
+                                }
+                                win.firebaseTxStates[k] = isTransmitting
                                 var userNick = (u.nick as? String ?: "").trim().uppercase()
                                 if (userNick.isEmpty()) userNick = k.split("_")[0].uppercase()
                                 if (k != win.app.sessionID && !usersNotified.contains(k)) {

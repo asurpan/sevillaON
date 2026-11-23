@@ -6,7 +6,7 @@
  * en zonas de baja cobertura (Rutas de Montaña / Carreteras).
  */
 
-const CACHE_NAME = 'on-air-spain-v1';
+const CACHE_NAME = 'on-air-spain-v2';
 const MAP_CACHE = 'on-air-maps-v1';
 
 /* Recursos base para que la radio arranque sin internet */

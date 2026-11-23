@@ -551,22 +551,22 @@ object RadioAudioManager {
 
                                     beepGain.gain.cancelScheduledValues(bTime);
                                     beepGain.gain.setValueAtTime(0.60, bTime);
-                                    beepGain.gain.setValueAtTime(0.60, bTime + 0.25);
-                                    beepGain.gain.exponentialRampToValueAtTime(0.001, bTime + 0.32);
+                                    beepGain.gain.setValueAtTime(0.60, bTime + 0.298);
+                                    beepGain.gain.setValueAtTime(0.001, bTime + 0.30);
                                     beepOsc.connect(beepGain);
 
                                     var localBeepGain = window.app.ctx.createGain();
                                     localBeepGain.gain.cancelScheduledValues(bTime);
                                     localBeepGain.gain.setValueAtTime(0.60, bTime);
-                                    localBeepGain.gain.setValueAtTime(0.60, bTime + 0.25);
-                                    localBeepGain.gain.exponentialRampToValueAtTime(0.001, bTime + 0.32);
+                                    localBeepGain.gain.setValueAtTime(0.60, bTime + 0.298);
+                                    localBeepGain.gain.setValueAtTime(0.001, bTime + 0.30);
                                     beepOsc.connect(localBeepGain);
 
                                     if (window.app.masterOut) localBeepGain.connect(window.app.masterOut);
                                     if (window.app.txBus) beepGain.connect(window.app.txBus);
 
                                     beepOsc.start(bTime);
-                                    beepOsc.stop(bTime + 0.33);
+                                    beepOsc.stop(bTime + 0.30);
                                 } catch(e) { console.error("Beep error", e); }
                             };
 
@@ -597,7 +597,7 @@ object RadioAudioManager {
                                     }
                                     if (window.updateMoniGain) window.updateMoniGain();
                                 } catch(e) {}
-                            }, 950);
+                            }, 680);
                         } else {
                             window.app.isTransmittingInternal = false;
                             window.app.isBeeping = false;

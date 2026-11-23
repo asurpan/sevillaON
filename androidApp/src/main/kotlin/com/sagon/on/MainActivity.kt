@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
 
 
-    private val USE_GITHUB_REMOTE_SERVER = true
+    private val USE_GITHUB_REMOTE_SERVER = false
 
 
 
@@ -106,10 +106,10 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                             runOnUiThread {
                                 // 🎙️ 1. REPRODUCIR EL ROGER BEEP ESTÁNDAR 1955Hz CON LA PORTADORA AÚN ABIERTA
                                 webViewInstance?.evaluateJavascript("if (window.playUiSound) { try { window.playUiSound('roger'); } catch(e){} } if (window.app) { window.app.isControlSpeaking = false; }", null)
-                                // 🛡️ 2. MANTENER LA PORTADORA ACTIVA HASTA QUE EL ROGER BEEP ACABA DE SONAR (650ms)
+                                // 🛡️ 2. MANTENER LA PORTADORA ACTIVA HASTA QUE EL ROGER BEEP ACABA DE SONAR (720ms)
                                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                                     webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); }", null)
-                                }, 650)
+                                }, 720)
                             }
                         }
                     }

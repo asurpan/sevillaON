@@ -59,7 +59,7 @@ object RadioAudioManager {
 
                     if (window.app.masterRxGain && window.app.masterRxGain.gain) {
                         try {
-                            var rxGainTarget = (window.app.pttStateInternal || window.app.isBeeping) ? 0 : 3.5;
+                            var rxGainTarget = (window.app.pttStateInternal || window.app.isBeeping) ? 0 : 1.2;
                             window.app.masterRxGain.gain.cancelScheduledValues(now);
                             window.app.masterRxGain.gain.setValueAtTime(rxGainTarget, now);
                         } catch(e){}
@@ -67,7 +67,7 @@ object RadioAudioManager {
 
                     if (window.app.txGate && window.app.txGate.gain) {
                         try {
-                            window.app.txGate.gain.setValueAtTime(window.app.pttStateInternal ? 2.5 : 0, now);
+                            window.app.txGate.gain.setValueAtTime(window.app.pttStateInternal ? 1.2 : 0, now);
                         } catch(e){}
                     }
 
@@ -164,12 +164,12 @@ object RadioAudioManager {
                     window.app.masterOut.gain.setValueAtTime(1.0, window.app.ctx.currentTime);
                     
                     window.app.masterRxGain = window.app.ctx.createGain();
-                    window.app.masterRxGain.gain.value = 2.5; 
+                    window.app.masterRxGain.gain.value = 1.2; 
                     
                     window.app.mainCompressor = window.app.ctx.createDynamicsCompressor();
-                    window.app.mainCompressor.threshold.value = -18; 
-                    window.app.mainCompressor.ratio.value = 12; 
-                    window.app.mainCompressor.attack.value = 0.003; 
+                    window.app.mainCompressor.threshold.value = -10; 
+                    window.app.mainCompressor.ratio.value = 4; 
+                    window.app.mainCompressor.attack.value = 0.015; 
                     window.app.mainCompressor.release.value = 0.25; 
 
                     window.app.filter = window.app.ctx.createBiquadFilter();
@@ -182,7 +182,7 @@ object RadioAudioManager {
                     window.app.dspPresence.type = "peaking";
                     window.app.dspPresence.frequency.value = 2500;
                     window.app.dspPresence.Q.value = 1.0;
-                    window.app.dspPresence.gain.value = 6.0; 
+                    window.app.dspPresence.gain.value = 2.0; 
 
                     window.app.filter.connect(window.app.dspPresence);
                     window.app.dspPresence.connect(window.app.masterRxGain);
@@ -214,7 +214,7 @@ object RadioAudioManager {
                             if (enabled) {
                                 window.app.dspPresence.type = "peaking";
                                 window.app.dspPresence.frequency.setTargetAtTime(2400, now, 0.03);
-                                window.app.dspPresence.gain.setTargetAtTime(4.0 + (lvl * 12.0), now, 0.03);
+                                window.app.dspPresence.gain.setTargetAtTime(1.0 + (lvl * 3.0), now, 0.03);
                             } else {
                                 window.app.dspPresence.gain.setTargetAtTime(0, now, 0.03);
                             }
@@ -222,8 +222,8 @@ object RadioAudioManager {
 
                         if (window.app.mainCompressor) {
                             if (enabled) {
-                                window.app.mainCompressor.threshold.setTargetAtTime(-18 - (lvl * 16), now, 0.03);
-                                window.app.mainCompressor.ratio.setTargetAtTime(8 + (lvl * 12), now, 0.03);
+                                window.app.mainCompressor.threshold.setTargetAtTime(-10 - (lvl * 8), now, 0.03);
+                                window.app.mainCompressor.ratio.setTargetAtTime(3 + (lvl * 3), now, 0.03);
                             } else {
                                 window.app.mainCompressor.threshold.setTargetAtTime(0, now, 0.03);
                                 window.app.mainCompressor.ratio.setTargetAtTime(1, now, 0.03);

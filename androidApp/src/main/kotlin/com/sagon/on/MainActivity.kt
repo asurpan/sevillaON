@@ -1318,6 +1318,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                                         "🔑 *Código:* $subtone | 📻 $cleanCity - Ch $channel\n\n" +
                                         "🎙️ *Toca para conectar al Walkie-Talkie:*\n" +
                                         "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&subtone=$subtone&v=100"
+                                    } else if (proRole == "INVITE" || proRole == "CHANNEL_ONLY") {
+                                        "📻 *SINTONIZA MI FRECUENCIA EN ON AIR GLOBAL*\n\n" +
+                                        "📍 *Sintonía:* $cleanCity | Canal $channel\n\n" +
+                                        "🎙️ *Toca el enlace para entrar en directo a la radio:*\n" +
+                                        "https://asurpan.github.io/sevillaON/?city=$city&channel=$channel&v=100"
                                     } else if (city == "RADAR") {
                                         "📡 ¡Vigilancia Hertz Activa! *ON AIR GLOBAL*\n\nhttps://asurpan.github.io/sevillaON/?v=100"
                                     } else {

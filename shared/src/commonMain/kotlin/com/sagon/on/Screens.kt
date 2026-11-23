@@ -724,7 +724,7 @@ fun RadioPanel(
                                             color = Color(0xFF00E5FF).copy(alpha = 0.12f),
                                             shape = RoundedCornerShape(10.dp),
                                             border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(alpha = 0.35f)),
-                                            modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { onShare(state.channel, state.subtone, null, null) }
+                                            modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable { onPendingDialogChange(RadioDialogType.SHARE_OPTIONS, null) }
                                         ) {
                                             Row(
                                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),

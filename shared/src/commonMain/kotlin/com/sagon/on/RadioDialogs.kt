@@ -39,7 +39,7 @@ enum class RadioDialogType {
     INVITE, MIC_REQUEST, DELETE_ROOM, DELETE_DATA, PORTADORA, SUBTONO, CREATE_CHANNEL, 
     BLACKLIST, ONBOARDING, SELECT_CITY, SETTINGS, DISCRETE, SELECT_NICK, 
     HELP_SQUELCH, HELP_GAIN, HELP_PRIVACY, USER_ACTIONS, SQUELCH_CONTROL, GAIN_CONTROL, VOLUME_CONTROL,
-    DIAGNOSTIC, HELP, BACKGROUND_THEME, WIDGET_PROMPT
+    DIAGNOSTIC, HELP, BACKGROUND_THEME, WIDGET_PROMPT, SHARE_OPTIONS
 }
 
 @Composable
@@ -150,6 +150,65 @@ fun RadioDialogs(
                         Text("AHORA NO", color = Color.White.copy(0.5f), fontWeight = FontWeight.Bold, fontSize = 11.sp)
                     }
                 }
+            }
+        )
+        RadioDialogType.SHARE_OPTIONS -> AlertDialog(
+            onDismissRequest = onDismiss,
+            containerColor = LuxeColors.DeepSea,
+            modifier = Modifier.padding(12.dp).border(1.5.dp, Color(0xFF00E5FF).copy(0.6f), RoundedCornerShape(28.dp)),
+            icon = { Icon(Icons.Rounded.Share, null, tint = Color(0xFF00E5FF), modifier = Modifier.size(42.dp)) },
+            title = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("COMPARTIR FRECUENCIA", fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeColors.Gold, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Selecciona el formato de invitación para tus contactos:", color = Color.White.copy(0.7f), fontSize = 11.sp, textAlign = TextAlign.Center)
+                }
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Surface(
+                        onClick = {
+                            onDismiss()
+                            onShare(state.channel, state.subtone, "INVITE", null)
+                        },
+                        color = Color(0xFF00E5FF).copy(0.10f),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, Color(0xFF00E5FF).copy(0.4f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Radio, null, tint = Color(0xFF00E5FF), modifier = Modifier.size(24.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("📻 INVITAR A MI CANAL O FRECUENCIA", color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp)
+                                Text("Enlace directo a la sintonía de ${state.city.split("-")[0]} - Canal ${state.channel}.", color = Color.White.copy(0.7f), fontSize = 10.sp)
+                            }
+                        }
+                    }
+
+                    Surface(
+                        onClick = {
+                            onDismiss()
+                            onShare(state.channel, state.subtone, "DEBATE", null)
+                        },
+                        color = LuxeColors.Gold.copy(0.10f),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, LuxeColors.Gold.copy(0.4f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Whatshot, null, tint = LuxeColors.Gold, modifier = Modifier.size(24.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("🔥 COMPARTIR DEBATE DE ÚLTIMA HORA", color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp)
+                                Text("Noticia de impacto de la ciudad optimizada para X / WhatsApp.", color = Color.White.copy(0.7f), fontSize = 10.sp)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                LuxeButton("CANCELAR", onDismiss, true, Modifier.fillMaxWidth().height(44.dp), Color.White.copy(0.1f), Color.White)
             }
         )
         RadioDialogType.ANTENNA -> FeatureHelpDialog(

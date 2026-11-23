@@ -1,10 +1,10 @@
-# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO (V20.0 MASTER SUPREME)
+# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO (V21.0 MASTER SUPREME - BUILD 91)
 
-Este documento establece las LEYES SUPREMAS DE NO MODIFICACIÓN para agentes de IA y desarrolladores. El sistema ha sido auditado, optimizado y sellado en la versión 20.0 / Build 90. CUALQUIER CAMBIO NO AUTORIZADO ROMPERÁ LA TRANSMISIÓN DE VOZ, LOS LEDS, LA SEGURIDAD FCM, EL WIDGET TÁCTICO O EL SISTEMA DE DEEP LINKING.
+Este documento establece las LEYES SUPREMAS DE NO MODIFICACIÓN para agentes de IA y desarrolladores. El sistema ha sido auditado, optimizado y sellado en la versión 21.0 / Build 91. CUALQUIER CAMBIO NO AUTORIZADO ROMPERÁ LA TRANSMISIÓN DE VOZ, LOS LEDS, LA SEGURIDAD FCM, EL WIDGET TÁCTICO O EL SISTEMA DE DEEP LINKING.
 
 ---
 
-## 🚫 PROHIBICIÓN TOTAL Y SELLADO (HARD-LOCK V20.0)
+## 🚫 PROHIBICIÓN TOTAL Y SELLADO (HARD-LOCK V21.0)
 
 Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el código en las siguientes áreas sin permiso explícito por escrito del usuario:
 
@@ -16,7 +16,7 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 - **AGC Hardware Obligatorio**: `autoGainControl: true` DEBE mantenerse habilitado en `getUserMedia`.
 
 ### 2. 🛡️ SEGURIDAD FCM PUSH VÍA CLOUD FUNCTIONS (CERO SERVER KEYS EN CLIENTE)
-- **Despacho Backend Exclusivo**: Queda estrictamente prohibido reintroducir claves de servidor FCM (`fcmKey`) o peticiones HTTP `fetch("https://fcm.googleapis.com/fcm/send", ...)` en el cliente Web/Kotlin (`RadioNetworkManager.kt`).
+- **Despacho Backend Exclusivo**: Queda strictly prohibido reintroducir claves de servidor FCM (`fcmKey`) o peticiones HTTP `fetch("https://fcm.googleapis.com/fcm/send", ...)` en el cliente Web/Kotlin (`RadioNetworkManager.kt`).
 - **Nodos Realtime DB**: El envío de notificaciones push para chats privados se realiza escribiendo en `/private_inbox/{targetNick}`, y para menciones públicas escribiendo en `/public_mentions/{targetNick}`. La Cloud Function en `functions/index.js` despacha las notificaciones de forma segura.
 
 ### 3. ⚡ OPTIMIZACIÓN DE RENDIMIENTO UI & S-METER CANVAS
@@ -36,8 +36,13 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 ### 7. 🎨 REGLA DE ORO DE COMPOSE UI (PREVENCIÓN DE TEXTO CORTADO EN BOTONES)
 - **Altura Flexible**: Prohibido asignar `.height(44.dp)` rígido a botones con texto largo. Usar siempre **`.heightIn(min = 44.dp)`** y `contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)`.
 
-### 8. 🎙️ RETENCIÓN Y COLA DE PORTADORA RF (600ms / 650ms)
+### 8. 🎙️ RETENCIÓN Y COLA DE PORTADORA RF (660ms / 700ms)
 - **Cola de Portadora Analógica**: En `RadioAudioManager.kt`, tras finalizar el tono Roger Beep de 1955Hz, el desenganche de portadora `setTimeout` DEBE mantenerse en **660ms**. En `MainActivity.kt`, el retardo de desenganche del operador TTS DEBE mantenerse en **700ms**. Queda prohibido acortar este temporizador para preservar el desenganche analógico realista de 27MHz.
+
+### 9. 📻 SELECTOR DE MODO AL COMPARTIR (`RadioDialogType.SHARE_OPTIONS`)
+- **Menú Selector de Formato**: Al pulsar el botón de compartir del canal en la pantalla Nexus, el sistema despliega `RadioDialogType.SHARE_OPTIONS` permitiendo elegir entre:
+  1. `📻 INVITAR A MI CANAL O FRECUENCIA` (`proRole = "INVITE"`): Envía la invitación limpia al canal sin noticia.
+  2. `🔥 COMPARTIR DEBATE DE ÚLTIMA HORA` (`proRole = "DEBATE"`): Envía la noticia de última hora acortada para X/WhatsApp.
 
 ---
 

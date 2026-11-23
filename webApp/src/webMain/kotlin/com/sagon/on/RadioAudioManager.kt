@@ -597,7 +597,7 @@ object RadioAudioManager {
                                     }
                                     if (window.updateMoniGain) window.updateMoniGain();
                                 } catch(e) {}
-                            }, 350);
+                            }, 600);
                         } else {
                             window.app.isTransmittingInternal = false;
                             window.app.isBeeping = false;

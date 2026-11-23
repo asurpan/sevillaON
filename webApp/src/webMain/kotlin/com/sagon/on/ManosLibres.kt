@@ -64,9 +64,9 @@ object ManosLibres {
                     sensorGain.connect(window.app.micAnalyser);
                     sensorGain.connect(compressor);
                     
-                    // 🚀 VOICE BOOST FINAL: Multiplicador de potencia antes de enviar a la red
+                    // 🚀 VOICE BOOST FINAL: Nivel de potencia limpio sin saturación antes de enviar a la red
                     var voiceBoost = window.app.ctx.createGain();
-                    voiceBoost.gain.value = 2.5; 
+                    voiceBoost.gain.value = 1.2; 
                     compressor.connect(voiceBoost);
 
                     window.app.voiceBoost = voiceBoost;

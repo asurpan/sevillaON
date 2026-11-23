@@ -17,8 +17,8 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 
 ### 🔊 AUDIO, VOZ Y CADENA PTT (BLINDAJE TOTAL)
 - **Cadena de Voz Intocable (`voiceBoost` ➔ `txGate` ➔ `txBus`)**: La voz del micro DEBE inyectarse en `txGate` y este a `txBus`. `window.app.voiceBoost` DEBE mantenerse guardado y reconectarse dinámicamente en `initAudio()`.
-- **Apertura de Puerta PTT (`txGate`)**: En `broadcastPTT`, la ganancia de `txGate` se abre a **2.5x** al pulsar PTT.
-- **AGC Hardware Obligatorio**: `autoGainControl: true` DEBE mantenerse habilitado en `getUserMedia` (`sensorGain = 4.0`, `voiceBoost = 2.5`).
+- **Apertura de Puerta PTT (`txGate`)**: En `broadcastPTT`, la ganancia de `txGate` se abre a **1.2x** al pulsar PTT para garantizar voz limpia sin clipping digital.
+- **AGC Hardware y Ganancia Anti-Distorsión**: `autoGainControl: true` DEBE mantenerse habilitado en `getUserMedia` (`voiceBoost = 1.2x`, `masterRxGain = 1.2x`). Compresor maestro `mainCompressor` fijado en `threshold = -10dB`, `ratio = 4:1`, `attack = 15ms` para sonido cristalino sin distorsión armónica ni bombeo.
 - **Decoding Bridge**: Mantener siempre la conexión del stream remoto a la salida física con volumen **0.01** vía un nodo Gain `dummy`.
 - **Ruteo DSP de Voz Remota Intocable**: Toda voz WebRTC entrante DEBE conectarse obligatoriamente a `window.app.filter`. Queda prohibido conectar el audio entrante directo al altavoz o subir el volumen de `<audio>` a 1.0.
 - **Infrasonic Keep-Alive**: Oscilador **5Hz** activo durante silencios de recepción.

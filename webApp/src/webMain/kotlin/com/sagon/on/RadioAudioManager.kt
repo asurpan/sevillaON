@@ -593,7 +593,7 @@ object RadioAudioManager {
                             if (window.app.txGate && window.app.ctx) {
                                 window.app.txGate.gain.cancelScheduledValues(now);
                                 window.app.txGate.gain.setValueAtTime(window.app.txGate.gain.value, now);
-                                window.app.txGate.gain.setTargetAtTime(2.5, now, 0.03);
+                                window.app.txGate.gain.setTargetAtTime(1.2, now, 0.03);
                             }
                         } catch(e) {}
                         if (window.updatePeerSenders) try { window.updatePeerSenders(); } catch(e) {}
@@ -652,7 +652,7 @@ object RadioAudioManager {
                                     if (window.app.masterRxGain && window.app.ctx && !window.app.pttStateInternal) {
                                         window.app.masterRxGain.gain.cancelScheduledValues(endNow);
                                         window.app.masterRxGain.gain.setValueAtTime(window.app.masterRxGain.gain.value, endNow);
-                                        window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow + 0.02, 0.05);
+                                        window.app.masterRxGain.gain.setTargetAtTime(1.2, endNow + 0.02, 0.05);
                                     }
                                     if (window.app.noise && window.app.ctx && !window.app.pttStateInternal) {
                                         window.app.noise.gain.cancelScheduledValues(endNow);
@@ -673,7 +673,7 @@ object RadioAudioManager {
                                 if (window.app.masterRxGain && window.app.ctx) {
                                     window.app.masterRxGain.gain.cancelScheduledValues(endNow);
                                     window.app.masterRxGain.gain.setValueAtTime(window.app.masterRxGain.gain.value, endNow);
-                                    window.app.masterRxGain.gain.setTargetAtTime(3.5, endNow, 0.06);
+                                    window.app.masterRxGain.gain.setTargetAtTime(1.2, endNow, 0.06);
                                 }
                                 if (window.app.noise && window.app.ctx) {
                                     window.app.noise.gain.cancelScheduledValues(endNow);
@@ -792,7 +792,7 @@ object RadioAudioManager {
                         window.app.masterRxGain.gain.setTargetAtTime(0.0, window.app.ctx.currentTime, 0.03);
                     } else if (!window.app.isBeeping) {
                         if (window.app.masterRxGain.gain.value < 1.0) {
-                            window.app.masterRxGain.gain.setTargetAtTime(3.5, window.app.ctx.currentTime, 0.1);
+                            window.app.masterRxGain.gain.setTargetAtTime(1.2, window.app.ctx.currentTime, 0.1);
                         }
                     }
                 }
@@ -1384,7 +1384,7 @@ object ReplayEngine {
                     if (replaySafetyTimer) { clearTimeout(replaySafetyTimer); replaySafetyTimer = null; }
                     isPlaying = false; 
                     if (window.app.masterRxGain) {
-                        window.app.masterRxGain.gain.setTargetAtTime(3.5, window.app.ctx.currentTime, 0.3);
+                        window.app.masterRxGain.gain.setTargetAtTime(1.2, window.app.ctx.currentTime, 0.3);
                     }
                     if (window.dispatch_replay_progress) window.dispatch_replay_progress(0);
                 }

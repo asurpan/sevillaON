@@ -9,10 +9,11 @@ Este documento establece las LEYES SUPREMAS DE NO MODIFICACIÓN para agentes de 
 Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el código en las siguientes áreas sin permiso explícito por escrito del usuario:
 
 ### 1. 🔊 CADENA DE VOZ INTOCABLE (`voiceBoost` ➔ `txGate` ➔ `txBus`)
-- **Inyección Directa**: La señal del micrófono capturada por `getUserMedia` DEBE pasar por `micSrc ➔ voiceFilter (150Hz) ➔ sensorGain (4.0) ➔ compressor ➔ voiceBoost (2.5)`. `sensorGain` DEBE conectarse obligatoriamente a `compressor` (`sensorGain.connect(compressor)`).
+- **Inyección Directa**: La señal del micrófono capturada por `getUserMedia` DEBE pasar por `micSrc ➔ voiceFilter (150Hz) ➔ sensorGain (4.0) ➔ compressor ➔ voiceBoost (1.2)`. `sensorGain` DEBE conectarse obligatoriamente a `compressor` (`sensorGain.connect(compressor)`).
 - **Reemplazo Dinámico de Pistas (`replaceTrack`)**: `window.updatePeerSenders()` DEBE actualizar las llamadas activas de PeerJS reinsertando `txBus.stream.getAudioTracks()[0]`.
 - **Conexión Multicapa**: `window.app.voiceBoost` DEBE guardarse globalmente y conectarse a `window.app.txGate` tanto en `manosLibres_requestMic()` como en `initAudio()`.
-- **Apertura de Puerta PTT (`txGate`)**: En `broadcastPTT`, la ganancia de `txGate` se abre a **2.5x** (`setTargetAtTime(2.5, now, 0.005)`).
+- **Apertura de Puerta PTT (`txGate`)**: En `broadcastPTT`, la ganancia de `txGate` se abre a **1.2x** (`setTargetAtTime(1.2, now, 0.005)`) y `masterRxGain` a **1.2x** para evitar clipping/saturación.
+- **Compresor y Ganancias Anti-Distorsión**: `mainCompressor` configurado en `threshold = -10dB`, `ratio = 4:1`, `attack = 15ms` para voz limpia, transparente y sin artefactos de bombeo.
 - **AGC Hardware Obligatorio**: `autoGainControl: true` DEBE mantenerse habilitado en `getUserMedia`.
 
 ### 2. 🛡️ SEGURIDAD FCM PUSH VÍA CLOUD FUNCTIONS (CERO SERVER KEYS EN CLIENTE)

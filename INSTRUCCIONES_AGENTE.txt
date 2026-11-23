@@ -43,7 +43,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Límite 280 Caracteres**: Los textos de compartir acortan el titular a un máximo de 87 caracteres para garantizar compatibilidad con cuentas gratuitas de X (Twitter).
 
 ### 📻 SELECTOR DE OPCIONES AL COMPARTIR
-- **Opciones de Compartir (`SHARE_OPTIONS`)**: Al pulsar el botón de compartir del canal en la pantalla Nexus, se abre el diálogo selector para elegir entre `📻 INVITAR A MI CANAL O FRECUENCIA` (`proRole = "INVITE"`) o `🔥 COMPARTIR DEBATE DE ÚLTIMA HORA` (`proRole = "DEBATE"`).
+- **Opciones de Compartir (`SHARE_OPTIONS`)**: Al pulsar el botón de compartir del canal en la pantalla Nexus o la tarjeta de "FRECUENCIA LIBRE EN... / INVITAR", se abre el diálogo selector para elegir entre `📻 INVITAR A MI CANAL O FRECUENCIA` (`proRole = "INVITE"`) o `🔥 COMPARTIR DEBATE DE ÚLTIMA HORA` (`proRole = "DEBATE"`).
 
 ### 🎨 PREVENCIÓN DE TEXTO CORTADO EN COMPOSE
 - **Altura Flexible**: Prohibido `.height()` fijo en botones con texto largo. Usar siempre **`.heightIn(min = 44.dp)`** y `contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)`.

@@ -40,7 +40,7 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 - **Cola de Portadora Analógica**: En `RadioAudioManager.kt`, tras finalizar el tono Roger Beep de 1955Hz, el desenganche de portadora `setTimeout` DEBE mantenerse en **660ms**. En `MainActivity.kt`, el retardo de desenganche del operador TTS DEBE mantenerse en **700ms**. Queda prohibido acortar este temporizador para preservar el desenganche analógico realista de 27MHz.
 
 ### 9. 📻 SELECTOR DE MODO AL COMPARTIR (`RadioDialogType.SHARE_OPTIONS`)
-- **Menú Selector de Formato**: Al pulsar el botón de compartir del canal en la pantalla Nexus, el sistema despliega `RadioDialogType.SHARE_OPTIONS` permitiendo elegir entre:
+- **Menú Selector de Formato**: Al pulsar el botón de compartir del canal en la pantalla Nexus o el botón/tarjeta de "FRECUENCIA LIBRE EN... / INVITAR", el sistema despliega `RadioDialogType.SHARE_OPTIONS` permitiendo elegir entre:
   1. `📻 INVITAR A MI CANAL O FRECUENCIA` (`proRole = "INVITE"`): Envía la invitación limpia al canal sin noticia.
   2. `🔥 COMPARTIR DEBATE DE ÚLTIMA HORA` (`proRole = "DEBATE"`): Envía la noticia de última hora acortada para X/WhatsApp.
 

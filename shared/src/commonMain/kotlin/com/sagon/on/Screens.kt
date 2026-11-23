@@ -961,7 +961,7 @@ fun RadioPanel(
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
                             .clickable {
-                                onShare(state.channel, state.subtone, null, null)
+                                onPendingDialogChange(RadioDialogType.SHARE_OPTIONS, null)
                                 onPlaySound("switch")
                             }
                     ) {

@@ -69,7 +69,14 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
 
 fun parseRssHeadline(xmlText: String, cleanCity: String): String? {
     if (!xmlText.contains("<item", ignoreCase = true)) return null
-    val items = xmlText.split(Regex("<item[^>]*>")).drop(1).take(20)
+    val sportsExclusions = listOf(
+        "fútbol", "futbol", "liga", "champions", "real madrid", "barça", "barcelona", 
+        "betis", "sevilla fc", "gol", "fichaje", "fichajes", "entrenador", "partido", 
+        "balón", "balon", "copa del rey", "eurocopa", "mundial", "baloncesto", "nba", 
+        "tenis", "fórmula 1", "formula 1", "motogp", "marcador", "árbitro", "arbitro"
+    )
+
+    val items = xmlText.split(Regex("<item[^>]*>")).drop(1).take(25)
     for (itemBlock in items) {
         if (!itemBlock.contains("<title>", ignoreCase = true)) continue
         var title = itemBlock.substringAfter("<title>").substringBefore("</title>")
@@ -85,7 +92,11 @@ fun parseRssHeadline(xmlText: String, cleanCity: String): String? {
         if (title.contains(" - ")) {
             title = title.substringBeforeLast(" - ").trim()
         }
-        if (title.length in 15..120 && !title.contains("Google", ignoreCase = true) && !title.contains("Weather", ignoreCase = true)) {
+
+        val isSports = sportsExclusions.any { title.contains(it, ignoreCase = true) }
+        val isIgnored = title.contains("Google", ignoreCase = true) || title.contains("Weather", ignoreCase = true)
+
+        if (title.length in 15..120 && !isSports && !isIgnored) {
             return "🔴 ÚLTIMA HORA EN $cleanCity:\n\"$title\""
         }
     }
@@ -99,9 +110,9 @@ actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
             val encodedCity = java.net.URLEncoder.encode(cleanCity, "UTF-8")
             var headline: String? = null
 
-            // 1. Noticia específica de la ciudad
+            // 1. Noticia de sucesos y actualidad de la ciudad (Excluyendo fútbol)
             try {
-                val cityUrl = java.net.URL("https://news.google.com/rss/search?q=${encodedCity}+actualidad&hl=es&gl=ES&ceid=ES:es")
+                val cityUrl = java.net.URL("https://news.google.com/rss/search?q=${encodedCity}+(sucesos|urgente|policia|alerta|investigacion)&hl=es&gl=ES&ceid=ES:es")
                 val conn = cityUrl.openConnection() as java.net.HttpURLConnection
                 conn.instanceFollowRedirects = true
                 conn.requestMethod = "GET"
@@ -112,18 +123,33 @@ actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
                 headline = parseRssHeadline(xml, cleanCity)
             } catch (_: Exception) {}
 
-            // 2. Noticia Principal Top del Día a Nivel Nacional
+            // 2. Noticia de actualidad general de la ciudad
+            if (headline == null) {
+                try {
+                    val cityUrl2 = java.net.URL("https://news.google.com/rss/search?q=${encodedCity}+actualidad&hl=es&gl=ES&ceid=ES:es")
+                    val conn2 = cityUrl2.openConnection() as java.net.HttpURLConnection
+                    conn2.instanceFollowRedirects = true
+                    conn2.requestMethod = "GET"
+                    conn2.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+                    conn2.connectTimeout = 3000
+                    conn2.readTimeout = 3000
+                    val xml2 = conn2.inputStream.bufferedReader().readText()
+                    headline = parseRssHeadline(xml2, cleanCity)
+                } catch (_: Exception) {}
+            }
+
+            // 3. Noticia Principal Top Nacional (Excluyendo fútbol)
             if (headline == null) {
                 try {
                     val nationalUrl = java.net.URL("https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es")
-                    val conn = nationalUrl.openConnection() as java.net.HttpURLConnection
-                    conn.instanceFollowRedirects = true
-                    conn.requestMethod = "GET"
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
-                    conn.connectTimeout = 3000
-                    conn.readTimeout = 3000
-                    val xml = conn.inputStream.bufferedReader().readText()
-                    headline = parseRssHeadline(xml, cleanCity)
+                    val conn3 = nationalUrl.openConnection() as java.net.HttpURLConnection
+                    conn3.instanceFollowRedirects = true
+                    conn3.requestMethod = "GET"
+                    conn3.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+                    conn3.connectTimeout = 3000
+                    conn3.readTimeout = 3000
+                    val xml3 = conn3.inputStream.bufferedReader().readText()
+                    headline = parseRssHeadline(xml3, cleanCity)
                 } catch (_: Exception) {}
             }
 

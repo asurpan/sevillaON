@@ -170,13 +170,21 @@ actual fun fetchTourismInfo(city: String, callback: (String?) -> Unit) {
 actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
     val cleanCity = city.split("-")[0].trim().uppercase()
     val encodedCity = js("encodeURIComponent(cleanCity)") as String
-    val cityUrl = "https://news.google.com/rss/search?q=$encodedCity+actualidad&hl=es&gl=ES&ceid=ES:es"
+    val citySucesosUrl = "https://news.google.com/rss/search?q=" + encodedCity + "+(sucesos|urgente|policia|alerta|investigacion)&hl=es&gl=ES&ceid=ES:es"
+    val cityUrl = "https://news.google.com/rss/search?q=" + encodedCity + "+actualidad&hl=es&gl=ES&ceid=ES:es"
     val nationalUrl = "https://news.google.com/rss?hl=es&gl=ES&ceid=ES:es"
 
     js("""
+        var sportsExclusions = [
+            "fútbol", "futbol", "liga", "champions", "real madrid", "barça", "barcelona", 
+            "betis", "sevilla fc", "gol", "fichaje", "fichajes", "entrenador", "partido", 
+            "balón", "balon", "copa del rey", "eurocopa", "mundial", "baloncesto", "nba", 
+            "tenis", "fórmula 1", "formula 1", "motogp", "marcador", "árbitro", "arbitro"
+        ];
+
         function parseRss(xmlText) {
-            if (!xmlText || xmlText.indexOf("<item>") === -1) return null;
-            var items = xmlText.split("<item>").slice(1, 20);
+            if (!xmlText || xmlText.indexOf("<item") === -1) return null;
+            var items = xmlText.split("<item").slice(1, 25);
             for (var i = 0; i < items.length; i++) {
                 var itemBlock = items[i];
                 if (itemBlock.indexOf("<title>") === -1) continue;
@@ -188,31 +196,49 @@ actual fun fetchLiveNewsTopic(city: String, callback: (String?) -> Unit) {
                     .replace("&quot;", '"')
                     .replace("&#39;", "'")
                     .trim();
-                if (cleanTitle.length >= 15 && cleanTitle.indexOf("Google") === -1) {
+                
+                var lower = cleanTitle.toLowerCase();
+                var isSports = false;
+                for (var s = 0; s < sportsExclusions.length; s++) {
+                    if (lower.indexOf(sportsExclusions[s]) !== -1) {
+                        isSports = true;
+                        break;
+                    }
+                }
+                
+                if (cleanTitle.length >= 15 && !isSports && cleanTitle.indexOf("Google") === -1) {
                     return "🔴 ÚLTIMA HORA EN " + cleanCity + ":\n\"" + cleanTitle + "\"";
                 }
             }
             return null;
         }
 
-        fetch(cityUrl)
+        fetch(citySucesosUrl)
             .then(function(r) { return r.text(); })
-            .then(function(xml) {
-                var headline = parseRss(xml);
-                if (headline) {
-                    if (window.updateCachedNewsTopic) window.updateCachedNewsTopic(cleanCity, headline);
-                    callback(headline);
-                } else {
-                    return fetch(nationalUrl).then(function(r2) { return r2.text(); }).then(function(xml2) {
-                        var h2 = parseRss(xml2);
-                        if (h2) {
-                            if (window.updateCachedNewsTopic) window.updateCachedNewsTopic(cleanCity, h2);
-                            callback(h2);
-                        } else {
-                            callback(null);
-                        }
-                    });
+            .then(function(xml0) {
+                var h0 = parseRss(xml0);
+                if (h0) {
+                    if (window.updateCachedNewsTopic) window.updateCachedNewsTopic(cleanCity, h0);
+                    callback(h0);
+                    return;
                 }
+                return fetch(cityUrl).then(function(r) { return r.text(); }).then(function(xml) {
+                    var headline = parseRss(xml);
+                    if (headline) {
+                        if (window.updateCachedNewsTopic) window.updateCachedNewsTopic(cleanCity, headline);
+                        callback(headline);
+                    } else {
+                        return fetch(nationalUrl).then(function(r2) { return r2.text(); }).then(function(xml2) {
+                            var h2 = parseRss(xml2);
+                            if (h2) {
+                                if (window.updateCachedNewsTopic) window.updateCachedNewsTopic(cleanCity, h2);
+                                callback(h2);
+                            } else {
+                                callback(null);
+                            }
+                        });
+                    }
+                });
             })
             .catch(function(e) { callback(null); });
     """)

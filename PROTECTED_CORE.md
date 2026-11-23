@@ -36,9 +36,12 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 ### 7. 🎨 REGLA DE ORO DE COMPOSE UI (PREVENCIÓN DE TEXTO CORTADO EN BOTONES)
 - **Altura Flexible**: Prohibido asignar `.height(44.dp)` rígido a botones con texto largo. Usar siempre **`.heightIn(min = 44.dp)`** y `contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)`.
 
+### 8. 🎙️ RETENCIÓN Y COLA DE PORTADORA RF (600ms / 650ms)
+- **Cola de Portadora Analógica**: En `RadioAudioManager.kt`, tras finalizar el tono Roger Beep de 1955Hz, el desenganche de portadora `setTimeout` DEBE mantenerse en **600ms** (+250ms de cola de portadora tras el tono). En `MainActivity.kt`, el retardo de desenganche del operador TTS DEBE mantenerse en **650ms**. Queda prohibido acortar este temporizador para preservar el desenganche analógico realista de 27MHz.
+
 ---
 
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al usuario. ÚNICAMENTE se permite modificar las secciones selladas tras recibir el **permiso explícito y por escrito del usuario**.
 
-**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y PROTEGIDO EN VERSIÓN 20.0 / BUILD 90.**
+**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y PROTEGIDO EN VERSIÓN 21.0 / BUILD 91.**

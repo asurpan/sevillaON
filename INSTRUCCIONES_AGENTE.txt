@@ -24,6 +24,7 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 - **Infrasonic Keep-Alive**: Oscilador **5Hz** activo durante silencios de recepción.
 - **Re-activación de AudioContext en PTT / Roger Beep**: `broadcastPTT` DEBE ejecutar `window.app.ctx.resume()` si el motor no está en `'running'`.
 - **Filtro de Emisión Real para Roger Beep**: El Roger Beep de 1955Hz SOLO suena si el usuario estuvo transmitiendo (`wasTransmitting === true`). Mantiene ganancia constante **0.40** durante **292ms** con un micro-remate final de **8ms** sin fundidos largos.
+- **Cola de Portadora RF (600ms / 650ms)**: El retardo de desenganche de la portadora tras sonar el Roger Beep se mantiene en **600ms** en `RadioAudioManager.kt` y **650ms** en `MainActivity.kt` para imitar la cola de desenganche de emisoras analógicas profesionales de 27MHz.
 - **Handshake de Confirmación de Voz Real**: Medición PCM de altavoz remoto (`audioVol > 0.05`) que activa el LED **`🔴 TX CONFIRMADO`** en la pantalla Nexus.
 
 ### 🛡️ SEGURIDAD FCM PUSH VÍA CLOUD FUNCTIONS
@@ -47,4 +48,4 @@ Este manual contiene las instrucciones técnicas, comerciales y de seguridad abs
 ### 🛑 REGLA SUPREMA DE SEGURIDAD (PERMISO EXPLÍCITO OBLIGATORIO)
 - **Flujos Blindados**: El sistema completo de entrada de usuarios, canales, micrófono, emisión (TX) y recepción (RX) está prohibido de modificar sin permiso explícito por escrito del usuario.
 
-# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 20.0 (BLINDAJE MASTER SUPREME - BUILD 90)
+# 🔒 SELLADO POR AGENTE GEMINI - VERSIÓN 21.0 (BLINDAJE MASTER SUPREME - BUILD 91)

@@ -778,24 +778,26 @@ object RadioAudioManager {
                 var peers = Object.keys(window.app.remoteSources);
                 var rxActive = window.app.rxActiveInternal || false;
 
-                if (!window._lastDiag || Date.now() - window._lastDiag > 5000) {
-                    console.log("📊 AUDIO-DIAG: " + window.app.ctx.state + " | Peers: " + peers.length + " | Out: " + (window.app.masterOut?window.app.masterOut.gain.value.toFixed(2):'0'));
-                    window._lastDiag = Date.now();
-                }
+                var isLocalTransmitting = (window.app && (window.app.pttStateInternal === true || window.app.isTransmittingInternal === true));
 
                 if (window.app.noise) {
                     var now = window.app.ctx.currentTime;
-                    if (rxActive) window.app.noise.gain.setTargetAtTime(0, now, 0.05);
-                    else if (window.app.currentNoiseTarget > 0 && !window.app.pttStateInternal && !window.app.isBeeping) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, now, 0.2);
+                    if (rxActive || isLocalTransmitting) window.app.noise.gain.setTargetAtTime(0, now, 0.05);
+                    else if (window.app.currentNoiseTarget > 0 && !isLocalTransmitting && !window.app.isBeeping) window.app.noise.gain.setTargetAtTime(window.app.currentNoiseTarget, now, 0.2);
                 }
 
-                if (window.app.masterRxGain && !window.app.pttStateInternal && !window.app.isBeeping) {
-                    if (window.app.masterRxGain.gain.value < 1.0) {
-                        window.app.masterRxGain.gain.setTargetAtTime(3.5, window.app.ctx.currentTime, 0.1);
+                if (window.app.masterRxGain) {
+                    if (isLocalTransmitting) {
+                        // 🎙️ SILENCIO TRANSMISIÓN LOCAL (HALF-DUPLEX RADIO CB): Al pulsar PTT, silenciar la recepción de otros hablantes
+                        window.app.masterRxGain.gain.setTargetAtTime(0.0, window.app.ctx.currentTime, 0.03);
+                    } else if (!window.app.isBeeping) {
+                        if (window.app.masterRxGain.gain.value < 1.0) {
+                            window.app.masterRxGain.gain.setTargetAtTime(3.5, window.app.ctx.currentTime, 0.1);
+                        }
                     }
                 }
 
-                if (window.app.masterOut && !window.app.pttStateInternal) {
+                if (window.app.masterOut && !isLocalTransmitting) {
                     try { window.app.masterOut.connect(window.app.ctx.destination); } catch(e) {}
                     if (window.app.masterOut.gain.value < 0.1) {
                         window.app.masterOut.gain.setTargetAtTime(window.app.currentMasterGain || 1.0, window.app.ctx.currentTime, 0.1);
@@ -846,10 +848,10 @@ object RadioAudioManager {
                     // 🎛️ FIX BANDA CIUDADANA: El Squelch NUNCA silencia transmisiones de voz activas (isTx)
                     var isBlockedByDiscrete = window.app.discreteMode === true;
 
-                    if (isBlockedByDiscrete) {
-                        // 👂 MODO DISCRETO ACTIVADO
-                        gain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.01);
-                        if (isTx && !window.app.discreteBeepPlayed[id]) {
+                    if (isBlockedByDiscrete || isLocalTransmitting) {
+                        // 👂 MODO DISCRETO O TRANSMISIÓN LOCAL ACTIVADA: Silenciar voz entrante
+                        gain.gain.setTargetAtTime(0, window.app.ctx.currentTime, 0.03);
+                        if (isBlockedByDiscrete && isTx && !window.app.discreteBeepPlayed[id]) {
                             window.app.discreteBeepPlayed[id] = true;
                             if (window.playUiSound) window.playUiSound("incoming");
                         } else if (!isTx) {

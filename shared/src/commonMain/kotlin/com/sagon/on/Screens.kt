@@ -561,12 +561,14 @@ fun RadioPanel(
                                         }
                                         isTransmitting || isBeeping -> {
                                             val isLocalModulating = mic > 0.05f
-                                            if (state.isTxConfirmed) {
+                                            if (isBeeping) {
+                                                Color(0xFFEF4444) to "TX ROGER$pingTag"
+                                            } else if (state.isTxConfirmed) {
                                                 Color(0xFFEF4444) to "TX CONFIRMADO$pingTag"
                                             } else if (isLocalModulating) {
                                                 Color(0xFFEF4444) to "TX VOZ$pingTag"
                                             } else {
-                                                Color(0xFFFACC15) to "PORTADORA$pingTag"
+                                                Color(0xFFEF4444) to "TX PORTADORA$pingTag"
                                             }
                                         }
                                         else -> {
@@ -616,7 +618,9 @@ fun RadioPanel(
                                     else -> (0.40f + (remotePower * 0.15f)).coerceIn(0.40f, 0.55f)
                                 }
 
-                                val signalLevel = if (isTransmitting) mic else if (rx) cbSignalFactor.coerceIn(0.25f, 1.0f) else 0f
+                                val signalLevel = if (isTransmitting || isBeeping) {
+                                    if (isBeeping) 1.0f else if (mic > 0.05f) mic.coerceAtLeast(0.85f) else 0.95f
+                                } else if (rx) cbSignalFactor.coerceIn(0.25f, 1.0f) else 0f
 
                                 Canvas(
                                     modifier = Modifier.fillMaxWidth().height(18.dp).padding(vertical = 1.dp)

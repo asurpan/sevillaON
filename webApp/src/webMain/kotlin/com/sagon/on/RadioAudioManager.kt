@@ -454,20 +454,20 @@ object RadioAudioManager {
                         beepOsc.frequency.setValueAtTime(1955, bTime);
 
                         localBeepGain.gain.cancelScheduledValues(bTime);
-                        localBeepGain.gain.setValueAtTime(0.40, bTime);
-                        localBeepGain.gain.setValueAtTime(0.40, bTime + 0.24);
-                        localBeepGain.gain.linearRampToValueAtTime(0.0001, bTime + 0.29);
-                        localBeepGain.gain.setValueAtTime(0, bTime + 0.295);
+                        localBeepGain.gain.setValueAtTime(0.50, bTime);
+                        localBeepGain.gain.setValueAtTime(0.50, bTime + 0.292);
+                        localBeepGain.gain.linearRampToValueAtTime(0.001, bTime + 0.30);
+                        localBeepGain.gain.setValueAtTime(0, bTime + 0.305);
 
                         if (window.app.masterOut) localBeepGain.connect(window.app.masterOut);
 
                         if (sendToTxBus && window.app.txBus) {
                             var txBeepGain = ctx.createGain();
                             txBeepGain.gain.cancelScheduledValues(bTime);
-                            txBeepGain.gain.setValueAtTime(0.40, bTime);
-                            txBeepGain.gain.setValueAtTime(0.40, bTime + 0.24);
-                            txBeepGain.gain.linearRampToValueAtTime(0.0001, bTime + 0.29);
-                            txBeepGain.gain.setValueAtTime(0, bTime + 0.295);
+                            txBeepGain.gain.setValueAtTime(0.50, bTime);
+                            txBeepGain.gain.setValueAtTime(0.50, bTime + 0.292);
+                            txBeepGain.gain.linearRampToValueAtTime(0.001, bTime + 0.30);
+                            txBeepGain.gain.setValueAtTime(0, bTime + 0.305);
 
                             beepOsc.connect(txBeepGain);
                             txBeepGain.connect(window.app.txBus);

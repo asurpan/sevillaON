@@ -105,11 +105,11 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
                         if (utteranceId == "on_air_tts") {
                             runOnUiThread {
                                 // 🎙️ 1. REPRODUCIR EL ROGER BEEP ESTÁNDAR 1955Hz CON LA PORTADORA AÚN ABIERTA
-                                webViewInstance?.evaluateJavascript("if (window.playUiSound) { try { window.playUiSound('roger'); } catch(e){} } if (window.app) { window.app.isControlSpeaking = false; }", null)
-                                // 🛡️ 2. MANTENER LA PORTADORA ACTIVA HASTA QUE EL ROGER BEEP ACABA DE SONAR (700ms)
+                                webViewInstance?.evaluateJavascript("if (window.playRogerBeepTone) { try { window.playRogerBeepTone(true); } catch(e){} } else if (window.playUiSound) { try { window.playUiSound('roger'); } catch(e){} } if (window.app) { window.app.isControlSpeaking = false; }", null)
+                                // 🛡️ 2. MANTENER LA PORTADORA ACTIVA HASTA QUE EL ROGER BEEP ACABA DE SONAR (660ms)
                                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                                     webViewInstance?.evaluateJavascript("if (window.dispatch_control_active) { window.dispatch_control_active(null, false); }", null)
-                                }, 700)
+                                }, 660)
                             }
                         }
                     }

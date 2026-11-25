@@ -1,6 +1,6 @@
-# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO (V21.0 MASTER SUPREME - BUILD 91)
+# 🔒 ON AIR SPAIN - NÚCLEO PROTEGIDO (V21.0 MASTER SUPREME - BUILD 92)
 
-Este documento establece las LEYES SUPREMAS DE NO MODIFICACIÓN para agentes de IA y desarrolladores. El sistema ha sido auditado, optimizado y sellado en la versión 21.0 / Build 91. CUALQUIER CAMBIO NO AUTORIZADO ROMPERÁ LA TRANSMISIÓN DE VOZ, LOS LEDS, LA SEGURIDAD FCM, EL WIDGET TÁCTICO O EL SISTEMA DE DEEP LINKING.
+Este documento establece las LEYES SUPREMAS DE NO MODIFICACIÓN para agentes de IA y desarrolladores. El sistema ha sido auditado, optimizado y sellado en la versión 21.0 / Build 92. CUALQUIER CAMBIO NO AUTORIZADO ROMPERÁ LA TRANSMISIÓN DE VOZ, LOS LEDS, LA SEGURIDAD FCM, EL WIDGET TÁCTICO O EL SISTEMA DE DEEP LINKING.
 
 ---
 
@@ -56,4 +56,4 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 ## ⚠️ PROTOCOLO DE ACTUACIÓN
 Si detectas un fallo, informa al usuario. ÚNICAMENTE se permite modificar las secciones selladas tras recibir el **permiso explícito y por escrito del usuario**.
 
-**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y PROTEGIDO EN VERSIÓN 21.0 / BUILD 91.**
+**ESTADO DEL NÚCLEO: SELLADO, BLINDADO Y PROTEGIDO EN VERSIÓN 21.0 / BUILD 92.**

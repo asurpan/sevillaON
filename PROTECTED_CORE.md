@@ -37,12 +37,18 @@ Queda terminantemente prohibido alterar, "simplificar" o re-estructurar el códi
 ### 7. 🎨 REGLA DE ORO DE COMPOSE UI (PREVENCIÓN DE TEXTO CORTADO EN BOTONES)
 - **Altura Flexible**: Prohibido asignar `.height(44.dp)` rígido a botones con texto largo. Usar siempre **`.heightIn(min = 44.dp)`** y `contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)`.
 
-### 8. 🎙️ RETENCIÓN Y COLA DE PORTADORA RF (660ms / 700ms)
-- **Cola de Portadora Analógica**: En `RadioAudioManager.kt`, tras finalizar el tono Roger Beep de 1955Hz, el desenganche de portadora `setTimeout` DEBE mantenerse en **660ms**. En `MainActivity.kt`, el retardo de desenganche del operador TTS DEBE mantenerse en **700ms**. Queda prohibido acortar este temporizador para preservar el desenganche analógico realista de 27MHz.
+### 8. 🎙️ RETENCIÓN, COLA DE PORTADORA Y LEDS S-METER EN EMISIÓN (660ms)
+- **Cola de Portadora Analógica**: En `RadioAudioManager.kt`, tras finalizar el tono Roger Beep de 1955Hz, el desenganche de portadora `setTimeout` DEBE mantenerse en **660ms**. En `MainActivity.kt`, la voz TTS DEBE llamar a `playRogerBeepTone(true)` y desenganchar a los **660ms**.
+- **Tono Roger Beep Pleno**: `playRogerBeepTone` mantiene ganancia constante `0.50` durante **292ms** con un remate final de **8ms** sin fundidos tempranos.
+- **S-Meter LEDs Rojos**: Durante la emisión, Roger Beep o cola de portadora (`isTransmitting || isBeeping`), `signalLevel` DEBE mantenerse en la **zona roja (diodos 17-20 / nivel 0.95f - 1.0f)** con insignia roja `"TX ROGER"` / `"TX PORTADORA"`.
 
 ### 9. 📻 SELECTOR DE MODO AL COMPARTIR (`RadioDialogType.SHARE_OPTIONS`)
 - **Menú Selector de Formato**: Al pulsar el botón de compartir del canal en la pantalla Nexus o el botón/tarjeta de "FRECUENCIA LIBRE EN... / INVITAR", el sistema despliega `RadioDialogType.SHARE_OPTIONS` permitiendo elegir entre:
   1. `📻 INVITAR A MI CANAL O FRECUENCIA` (`proRole = "INVITE"`): Envía la invitación limpia al canal sin noticia.
+  2. `🔥 COMPARTIR DEBATE DE ÚLTIMA HORA` (`proRole = "DEBATE"`): Envía la noticia de última hora acortada para X/WhatsApp.
+
+### 10. 🌐 MATRIZ DE SERVIDORES WEBRTC STUN/TURN GRATUITOS (COSTE 0€)
+- **Redundancia Total**: `main.kt` DEBE preservar la matriz redundante de servidores STUN y TURN gratuitos (Google, Cloudflare, Nextcloud, OpenRelay Metered UDP/TCP/TLS) para garantizar que la app funcione siempre de forma gratuita e instantánea en redes móviles 4G/5G con CGNAT sin ningún coste.
   2. `🔥 COMPARTIR DEBATE DE ÚLTIMA HORA` (`proRole = "DEBATE"`): Envía la noticia de última hora acortada para X/WhatsApp.
 
 ---
